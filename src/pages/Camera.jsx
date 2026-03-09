@@ -10,6 +10,7 @@ export default function Camera() {
   const [capturedImage, setCapturedImage] = useState(null)
   const [assignName, setAssignName] = useState('')
   const [selectedClass, setSelectedClass] = useState(activeClass?.id || classes[0]?.id)
+  const cameraRef = useRef()
   const fileRef = useRef()
 
   const typeConfig = [
@@ -123,8 +124,9 @@ export default function Camera() {
       <p className="text-text-muted text-sm mb-8">Camera · Upload · AI reads all formats</p>
 
       <div className="grid gap-4 mb-8">
+        {/* Camera button — triggers device camera directly */}
         <button
-          onClick={() => { setMode('upload'); fileRef.current?.click() }}
+          onClick={() => cameraRef.current?.click()}
           className="p-8 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01]"
           style={{ background: 'linear-gradient(135deg, #1a2a4a, #0f1a2e)', border: '1px solid #3b7ef440' }}
         >
@@ -133,6 +135,7 @@ export default function Camera() {
           <p className="text-text-muted text-sm">Take a photo of any document</p>
         </button>
 
+        {/* Upload button — opens file picker */}
         <button
           onClick={() => fileRef.current?.click()}
           className="p-6 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01]"
@@ -148,7 +151,24 @@ export default function Camera() {
         <p className="text-text-muted text-xs text-center">Grade sheets · Tests · Worksheets · School ID · Barcode · Anything</p>
       </div>
 
-      <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileSelect} />
+      {/* Camera input — capture=environment forces camera on mobile */}
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
+
+      {/* File upload input — no capture, opens file picker */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,application/pdf"
+        className="hidden"
+        onChange={handleFileSelect}
+      />
     </div>
   )
 }
