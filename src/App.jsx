@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import ReactDOM from 'react-dom'
 import { useStore } from './lib/store'
 import Dashboard from './pages/Dashboard'
 import Gradebook from './pages/Gradebook'
@@ -118,9 +117,8 @@ function NewAssignmentModal({ onClose }) {
 }
 
 export default function App() {
-  const { activeScreen, teacher, setScreen, notifications, setActiveClass, setActiveStudent, lessonPlanMode } = useStore()
+  const { activeScreen, teacher, setScreen, notifications, setActiveClass, setActiveStudent } = useStore()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [showNewAssignment, setShowNewAssignment] = useState(false)
 
   function goHome() {
     setMenuOpen(false)
@@ -134,6 +132,14 @@ export default function App() {
     setScreen(screen)
   }
 
+  useEffect(() => {
+    function handleOutsideClick(e) {
+      if (menuOpen && menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [menuOpen])
+
   const navItems = [
     { id: 'dashboard', icon: '🏠', label: 'Home', action: goHome },
     { id: 'gradebook', icon: '📚', label: 'Classes', action: () => goTo('gradebook') },
@@ -141,6 +147,7 @@ export default function App() {
     { id: 'reports', icon: '📊', label: 'Reports', action: () => goTo('reports') },
     { id: 'newAssign', icon: '➕', label: 'Assign', action: () => setShowNewAssignment(true), special: true },
     { id: 'parentMessages', icon: '💬', label: 'Messages', action: () => goTo('parentMessages') },
+    { id: 'lessonPlan', icon: '📋', label: 'Lesson Plans', action: () => goTo('lessonPlan') },
   ]
 
   const screens = {
@@ -183,10 +190,7 @@ export default function App() {
             </button>
 
             <div className="relative">
-              <button
-                onClick={() => setMenuOpen(m => !m)}
-                className="flex items-center gap-2 hover:bg-elevated rounded-full px-3 py-1.5 transition-colors"
-              >
+              <button onClick={() => setMenuOpen(m => !m)} className="flex items-center gap-2 hover:bg-elevated rounded-full px-3 py-1.5 transition-colors">
                 <span className="text-lg">{teacher.avatar}</span>
                 <span className="text-sm font-medium text-text-primary hidden sm:block">{teacher.name}</span>
                 <span className="text-text-muted text-xs ml-1">▾</span>
@@ -194,17 +198,9 @@ export default function App() {
 
               {menuOpen && (
                 <>
-                  {/* Overlay — high z so it blocks nav and page clicks, closes menu but stays on current page */}
-                  <div
-                    className="fixed inset-0"
-                    style={{ zIndex: 9980 }}
-                    onClick={e => { e.preventDefault(); e.stopPropagation(); setMenuOpen(false) }}
-                  />
-                  {/* Dropdown above the overlay */}
-                  <div
-                    className="absolute right-0 top-full mt-2 w-52 rounded-card border border-elevated overflow-hidden animate-slide-up"
-                    style={{ background: '#161923', zIndex: 9981 }}
-                  >
+                  {/* Clicking anywhere outside (including dashboard) closes the menu */}
+                  <div className="fixed inset-0" style={{ zIndex: 200 }} onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-52 rounded-card border border-elevated overflow-hidden animate-slide-up" style={{ background: "#161923", zIndex: 210 }}>
                     {[
                       { icon: '🏠', label: 'Dashboard', action: () => { setMenuOpen(false) } },
                       { icon: '📚', label: 'Gradebook', action: () => goTo('gradebook') },
@@ -222,7 +218,6 @@ export default function App() {
                       </button>
                     ))}
                   </div>
-                </>
               )}
             </div>
           </div>
