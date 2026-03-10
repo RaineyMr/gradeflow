@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
 import ReactDOM from 'react-dom'
-import ReactDOM from 'react-dom'
 import { useStore } from './lib/store'
 import Dashboard from './pages/Dashboard'
 import Gradebook from './pages/Gradebook'
