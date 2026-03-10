@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { useStore } from './lib/store'
 import Dashboard from './pages/Dashboard'
 import Gradebook from './pages/Gradebook'
@@ -117,8 +117,9 @@ function NewAssignmentModal({ onClose }) {
 }
 
 export default function App() {
-  const { activeScreen, teacher, setScreen, notifications, setActiveClass, setActiveStudent } = useStore()
+  const { activeScreen, teacher, setScreen, notifications, setActiveClass, setActiveStudent, startQuickCreateAssignment } = useStore()
   const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
 
   function goHome() {
     setMenuOpen(false)
@@ -148,6 +149,8 @@ export default function App() {
     { id: 'newAssign', icon: '➕', label: 'Assign', action: () => setShowNewAssignment(true), special: true },
     { id: 'parentMessages', icon: '💬', label: 'Messages', action: () => goTo('parentMessages') },
     { id: 'lessonPlan', icon: '📋', label: 'Lesson Plans', action: () => goTo('lessonPlan') },
+    { id: 'reports', icon: '📊', label: 'Reports', action: () => goTo('reports') },
+    { id: 'newAssignment', icon: '➕', label: 'New', action: () => startQuickCreateAssignment('quiz') },
   ]
 
   const screens = {
@@ -189,7 +192,7 @@ export default function App() {
               )}
             </button>
 
-            <div className="relative">
+            <div className="relative" ref={menuRef}>
               <button onClick={() => setMenuOpen(m => !m)} className="flex items-center gap-2 hover:bg-elevated rounded-full px-3 py-1.5 transition-colors">
                 <span className="text-lg">{teacher.avatar}</span>
                 <span className="text-sm font-medium text-text-primary hidden sm:block">{teacher.name}</span>
@@ -197,9 +200,6 @@ export default function App() {
               </button>
 
               {menuOpen && (
-                <>
-                  {/* Clicking anywhere outside (including dashboard) closes the menu */}
-                  <div className="fixed inset-0" style={{ zIndex: 200 }} onClick={() => setMenuOpen(false)} />
                   <div className="absolute right-0 top-full mt-2 w-52 rounded-card border border-elevated overflow-hidden animate-slide-up" style={{ background: "#161923", zIndex: 210 }}>
                     {[
                       { icon: '🏠', label: 'Dashboard', action: () => { setMenuOpen(false) } },
