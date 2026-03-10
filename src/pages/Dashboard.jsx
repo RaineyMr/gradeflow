@@ -4,7 +4,7 @@ import { useStore } from '../lib/store'
 import { GradeBadge, TrendBadge, Tag } from '../components/ui'
 
 // ── Portal modal shell ────────────────────────────────────────────────────────
-// Renders at document.body so nothing in the page DOM can trap it.
+// Renders directly at document.body — nothing in the page DOM can trap it.
 function Modal({ onClose, title, children }) {
   return ReactDOM.createPortal(
     <div
@@ -34,12 +34,10 @@ function Modal({ onClose, title, children }) {
           zIndex: 9001,
         }}
       >
-        {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #2a2f42' }}>
           <span style={{ fontWeight: 700, color: '#eef0f8', fontSize: 15 }}>{title}</span>
           <button onClick={onClose} style={{ color: '#6b7494', fontSize: 20, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
         </div>
-        {/* Body */}
         <div style={{ overflowY: 'auto', flex: 1 }}>
           {children}
         </div>
@@ -252,8 +250,8 @@ function DailyOverview() {
   const pending   = messages.filter(m => m.status === 'pending').length
   const attention = getNeedsAttention().length
 
-  const [showReminders, setShowReminders]     = useState(false)
-  const [showAttention, setShowAttention]     = useState(false)
+  const [showReminders, setShowReminders] = useState(false)
+  const [showAttention, setShowAttention] = useState(false)
 
   const reminders = [
     { text: 'Parent-teacher conferences Friday 3pm', icon: '📅' },
@@ -261,10 +259,10 @@ function DailyOverview() {
   ]
 
   const stats = [
-    { icon: '💬', value: pending,           label: 'Pending Msgs',  action: () => useStore.getState().setScreen('parentMessages'), color: '#3b7ef4' },
-    { icon: '⚑',  value: attention,         label: 'Need Attention', action: () => setShowAttention(true),                          color: '#f04a4a' },
-    { icon: '📚', value: classes.length,    label: 'Classes',        action: () => useStore.getState().setScreen('gradebook'),      color: '#22c97a' },
-    { icon: '🔔', value: reminders.length,  label: 'Reminders',      action: () => setShowReminders(true),                          color: '#f5a623' },
+    { icon: '💬', value: pending,          label: 'Pending Msgs',   action: () => useStore.getState().setScreen('parentMessages') },
+    { icon: '⚑',  value: attention,        label: 'Need Attention',  action: () => setShowAttention(true) },
+    { icon: '📚', value: classes.length,   label: 'Classes',         action: () => useStore.getState().setScreen('gradebook') },
+    { icon: '🔔', value: reminders.length, label: 'Reminders',       action: () => setShowReminders(true) },
   ]
 
   return (
@@ -273,16 +271,17 @@ function DailyOverview() {
         <p className="tag-label mb-3">Daily Overview</p>
         <div className="grid grid-cols-4 gap-2">
           {stats.map(s => (
-            // NOTE: No transform/scale on these buttons — transforms create stacking contexts
-            // that can trap fixed-position portals in some browsers.
+            // NO CSS transform on these buttons — transforms create stacking contexts
+            // that can intercept fixed-position portals on some browsers.
             <button
               key={s.label}
               onClick={s.action}
               style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                padding: 12, borderRadius: 10, background: 'rgba(255,255,255,0.10)',
-                border: 'none', cursor: 'pointer', transition: 'background .15s',
-                minHeight: 80,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', padding: 12, borderRadius: 10,
+                background: 'rgba(255,255,255,0.10)',
+                border: 'none', cursor: 'pointer', minHeight: 80,
+                transition: 'background .15s',
               }}
               onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.18)'}
               onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.10)'}
@@ -295,7 +294,6 @@ function DailyOverview() {
         </div>
       </div>
 
-      {/* Reminders popup */}
       {showReminders && (
         <Modal onClose={() => setShowReminders(false)} title="🔔 Reminders">
           <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -339,16 +337,16 @@ function TodaysLessons() {
       </div>
       <p className="font-bold text-text-primary mb-0.5">{current.title}</p>
       <p className="text-text-muted mb-3" style={{ fontSize: '11px' }}>{current.period} Period · {current.subject} · {current.duration} min</p>
-      <button onClick={() => setScreen('lessonPlan')} className="text-xs mb-3 block" style={{ color: '#22c97a' }}>
+      <button onClick={() => setScreen('lessonPlan')} className="text-xs mb-3 block" style={{ color: '#22c97a', background: 'none', border: 'none', cursor: 'pointer' }}>
         Tap to expand ›
       </button>
       <div className="flex gap-2">
         <button onClick={() => setDoneIndex(i => Math.min(i + 1, lessons.length))}
-          className="flex-1 py-2 rounded-pill text-xs font-bold" style={{ background: '#22c97a20', color: '#22c97a' }}>
+          className="flex-1 py-2 rounded-pill text-xs font-bold" style={{ background: '#22c97a20', color: '#22c97a', border: 'none', cursor: 'pointer' }}>
           ✓ Done
         </button>
         <button onClick={() => setDoneIndex(i => Math.min(i + 1, lessons.length))}
-          className="flex-1 py-2 rounded-pill text-xs font-semibold" style={{ background: '#1e2231', color: '#6b7494' }}>
+          className="flex-1 py-2 rounded-pill text-xs font-semibold" style={{ background: '#1e2231', color: '#6b7494', border: 'none', cursor: 'pointer' }}>
           TBC
         </button>
       </div>
@@ -366,8 +364,10 @@ function MyClasses() {
       <div className="grid grid-cols-2 gap-3">
         {classes.map(cls => (
           <button key={cls.id} onClick={() => setActiveClass(cls)}
-            className="p-3 rounded-card text-left transition-all hover:scale-[1.01]"
-            style={{ background: '#0c0e14', border: `1px solid ${cls.color}30` }}>
+            className="p-3 rounded-card text-left"
+            style={{ background: '#0c0e14', border: `1px solid ${cls.color}30`, cursor: 'pointer', transition: 'border-color .15s' }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = cls.color}
+            onMouseLeave={e => e.currentTarget.style.borderColor = cls.color + '30'}>
             <div className="flex items-start justify-between mb-1">
               <div>
                 <p className="font-bold text-xs" style={{ color: cls.color }}>{cls.period} Period</p>
@@ -390,42 +390,60 @@ function MyClasses() {
 // ── Needs Attention widget ────────────────────────────────────────────────────
 function NeedsAttentionWidget() {
   const { students, setActiveStudent, setScreen } = useStore()
+  const [showModal, setShowModal] = useState(false)
   const attention = students.filter(s => s.grade < 70 || s.flagged || s.submitUngraded)
 
   return (
-    <div className="widget">
-      <div className="flex items-center justify-between mb-3">
-        <p className="widget-title">Needs Attention</p>
-        {attention.length > 0 && (
-          <button onClick={() => setScreen('parentMessages')}
-            className="py-1 px-3 rounded-pill text-xs font-bold" style={{ background: '#f04a4a20', color: '#f04a4a' }}>
-            📩 Message All
+    <>
+      <div className="widget">
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setShowModal(true)}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <p className="widget-title">Needs Attention</p>
+            {attention.length > 0 && (
+              <span style={{ fontSize: 10, color: '#f04a4a', fontWeight: 700 }}>({attention.length}) — view all ›</span>
+            )}
           </button>
+          {attention.length > 0 && (
+            <button onClick={() => setScreen('parentMessages')}
+              className="py-1 px-3 rounded-pill text-xs font-bold" style={{ background: '#f04a4a20', color: '#f04a4a', border: 'none', cursor: 'pointer' }}>
+              📩 Message All
+            </button>
+          )}
+        </div>
+        {attention.length === 0 ? (
+          <p className="text-text-muted text-sm">Everyone is on track 🎉</p>
+        ) : (
+          <div className="space-y-2">
+            {attention.slice(0, 3).map(s => (
+              <button key={s.id} onClick={() => setActiveStudent(s)}
+                className="w-full flex items-center justify-between p-2 rounded-card text-left"
+                style={{ background: '#0c0e14', border: 'none', cursor: 'pointer', transition: 'background .15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#1e2231'}
+                onMouseLeave={e => e.currentTarget.style.background = '#0c0e14'}>
+                <div>
+                  <p className="font-semibold text-sm text-text-primary">{s.name}</p>
+                  <p style={{ fontSize: '10px', color: '#f04a4a' }}>
+                    {s.submitUngraded ? 'Submitted work awaiting grade' : s.flagged ? `Flagged · ${s.grade}%` : `${s.grade}% — failing`}
+                  </p>
+                </div>
+                <GradeBadge score={s.grade} />
+              </button>
+            ))}
+            {attention.length > 3 && (
+              <button onClick={() => setShowModal(true)}
+                className="w-full text-center text-xs py-1"
+                style={{ color: '#3b7ef4', background: 'none', border: 'none', cursor: 'pointer' }}>
+                +{attention.length - 3} more — view all ›
+              </button>
+            )}
+          </div>
         )}
       </div>
-      {attention.length === 0 ? (
-        <p className="text-text-muted text-sm">Everyone is on track 🎉</p>
-      ) : (
-        <div className="space-y-2">
-          {attention.map(s => (
-            <button key={s.id} onClick={() => setActiveStudent(s)}
-              className="w-full flex items-center justify-between p-2 rounded-card text-left transition-all hover:bg-elevated"
-              style={{ background: '#0c0e14' }}>
-              <div>
-                <p className="font-semibold text-sm text-text-primary">{s.name}</p>
-                <p style={{ fontSize: '10px', color: '#f04a4a' }}>
-                  {s.submitUngraded ? 'Submitted work awaiting grade' : s.flagged ? `Flagged · ${s.grade}%` : `${s.grade}% — failing`}
-                </p>
-              </div>
-              <GradeBadge score={s.grade} />
-            </button>
-          ))}
-          <button onClick={() => setScreen('gradebook')} className="w-full text-center text-xs py-1" style={{ color: '#3b7ef4' }}>
-            View all in gradebook ›
-          </button>
-        </div>
-      )}
-    </div>
+
+      {showModal && <NeedsAttentionModal onClose={() => setShowModal(false)} />}
+    </>
   )
 }
 
@@ -442,7 +460,7 @@ function ParentMessagesWidget() {
     <div className="widget">
       <div className="flex items-center justify-between mb-3">
         <p className="widget-title">Parent Messages</p>
-        <button onClick={() => setScreen('parentMessages')} className="text-xs" style={{ color: '#3b7ef4' }}>View All ›</button>
+        <button onClick={() => setScreen('parentMessages')} className="text-xs" style={{ color: '#3b7ef4', background: 'none', border: 'none', cursor: 'pointer' }}>View All ›</button>
       </div>
       <p className="tag-label mb-2">Every negative trigger has a positive version · AI writes both</p>
       <div className="space-y-2">
@@ -460,8 +478,8 @@ function ParentMessagesWidget() {
             <div className="flex gap-2 mt-2">
               {['👍', '❤️', '😂'].map(emoji => (
                 <button key={emoji} onClick={() => react(m.id, emoji)}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-pill transition-all"
-                  style={{ background: '#1e2231', fontSize: 11, color: '#eef0f8' }}>
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-pill"
+                  style={{ background: '#1e2231', fontSize: 11, color: '#eef0f8', border: 'none', cursor: 'pointer' }}>
                   {emoji} <span style={{ fontSize: 9, color: '#6b7494' }}>{reactions[`${m.id}-${emoji}`] || 0}</span>
                 </button>
               ))}
@@ -491,15 +509,15 @@ function LessonPlanWidget() {
       )}
       <div className="flex gap-2">
         <button onClick={() => { useStore.getState().setLessonPlanMode('menu'); useStore.getState().setScreen('lessonPlan') }}
-          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#3b7ef420', color: '#3b7ef4' }}>
+          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#3b7ef420', color: '#3b7ef4', border: 'none', cursor: 'pointer' }}>
           📖 View Plan
         </button>
         <button onClick={() => { useStore.getState().setLessonPlanMode('ai'); useStore.getState().setScreen('lessonPlan') }}
-          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#9b6ef520', color: '#9b6ef5' }}>
+          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#9b6ef520', color: '#9b6ef5', border: 'none', cursor: 'pointer' }}>
           ✨ AI Generate
         </button>
         <button onClick={() => useStore.getState().setScreen('classFeed')}
-          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#22c97a20', color: '#22c97a' }}>
+          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#22c97a20', color: '#22c97a', border: 'none', cursor: 'pointer' }}>
           📤 Share
         </button>
       </div>
@@ -509,10 +527,10 @@ function LessonPlanWidget() {
 
 // ── Grading widget ────────────────────────────────────────────────────────────
 function GradingWidget() {
-  const [editWeights, setEditWeights] = useState(false)
-  const [localWeights, setLocalWeights] = useState(null)
+  const [editWeights, setEditWeights]         = useState(false)
+  const [localWeights, setLocalWeights]       = useState(null)
   const [showNeedsReview, setShowNeedsReview] = useState(false)
-  const [showKeyNeeded, setShowKeyNeeded] = useState(false)
+  const [showKeyNeeded, setShowKeyNeeded]     = useState(false)
   const { weights, students, grades, assignments, keyAlertsDismissed } = useStore()
   const display = localWeights || weights
 
@@ -534,28 +552,35 @@ function GradingWidget() {
         <div className="flex gap-1.5 mb-4">
           {Object.entries(display).map(([type, w]) => (
             <button key={type} onClick={openWeights}
-              className="flex-1 text-center p-2 rounded-card transition-all hover:bg-elevated"
-              style={{ background: '#1e2231', border: 'none', cursor: 'pointer' }}>
-              <div className="text-xs font-bold mb-1" style={{ color: '#6b7494', fontSize: '9px' }}>
+              className="flex-1 text-center p-2 rounded-card"
+              style={{ background: '#1e2231', border: 'none', cursor: 'pointer', transition: 'background .15s' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#252a3a'}
+              onMouseLeave={e => e.currentTarget.style.background = '#1e2231'}>
+              <div style={{ color: '#6b7494', fontSize: '9px', fontWeight: 700, marginBottom: 4 }}>
                 {type.charAt(0).toUpperCase() + type.slice(1)}
               </div>
-              <span className="font-bold text-sm" style={{ color: '#eef0f8' }}>{w}%</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: '#eef0f8' }}>{w}%</span>
             </button>
           ))}
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-3">
+          {/* NO transform animations on these buttons */}
           <button onClick={() => setShowNeedsReview(true)}
             className="p-2 rounded-card text-left"
-            style={{ background: '#1c1012', border: '1px solid #f04a4a30', cursor: 'pointer' }}>
-            <p className="font-bold" style={{ fontSize: '10px', color: '#f04a4a' }}>⚑ Needs Review</p>
+            style={{ background: '#1c1012', border: '1px solid #f04a4a30', cursor: 'pointer', transition: 'background .15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#221418'}
+            onMouseLeave={e => e.currentTarget.style.background = '#1c1012'}>
+            <p style={{ fontWeight: 700, fontSize: '10px', color: '#f04a4a' }}>⚑ Needs Review</p>
             <p className="font-display font-bold text-lg text-white">{needsReview}</p>
             <p style={{ fontSize: '9px', color: '#6b7494' }}>AI-graded · tap to approve</p>
           </button>
           <button onClick={() => setShowKeyNeeded(true)}
             className="p-2 rounded-card text-left"
-            style={{ background: '#1a1a0a', border: '1px solid #f5a62330', cursor: 'pointer' }}>
-            <p className="font-bold" style={{ fontSize: '10px', color: '#f5a623' }}>🔑 Key Needed</p>
+            style={{ background: '#1a1a0a', border: '1px solid #f5a62330', cursor: 'pointer', transition: 'background .15s' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#201e0a'}
+            onMouseLeave={e => e.currentTarget.style.background = '#1a1a0a'}>
+            <p style={{ fontWeight: 700, fontSize: '10px', color: '#f5a623' }}>🔑 Key Needed</p>
             <p className="font-display font-bold text-lg text-white">{keyNeeded}</p>
             <p style={{ fontSize: '9px', color: '#6b7494' }}>No answer key · tap to upload</p>
           </button>
@@ -568,7 +593,6 @@ function GradingWidget() {
         </button>
       </div>
 
-      {/* Weights modal */}
       {editWeights && (
         <Modal onClose={() => setEditWeights(false)} title="Assignment Weights">
           <div style={{ padding: 24 }}>
@@ -637,15 +661,21 @@ export default function Dashboard() {
           <GradingWidget />
         </div>
 
-        {/* Reports — single button at bottom, not a widget */}
+        {/* ── Reports — single button at bottom, NOT a widget ─────────────── */}
         <button
           onClick={() => useStore.getState().setScreen('reports')}
-          className="w-full py-3 rounded-card flex items-center justify-center gap-3 transition-all hover:scale-[1.01]"
-          style={{ background: '#161923', border: '1px solid #2a2f42', cursor: 'pointer' }}
+          style={{
+            width: '100%', padding: '14px 20px', borderRadius: 14,
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: '#161923', border: '1px solid #2a2f42',
+            cursor: 'pointer', transition: 'background .15s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = '#1e2231'}
+          onMouseLeave={e => e.currentTarget.style.background = '#161923'}
         >
-          <span className="text-xl">📊</span>
-          <span className="font-semibold text-text-primary">View Reports</span>
-          <span className="text-text-muted text-sm ml-auto">›</span>
+          <span style={{ fontSize: 22 }}>📊</span>
+          <span style={{ fontWeight: 600, color: '#eef0f8', fontSize: 15 }}>View Reports</span>
+          <span style={{ marginLeft: 'auto', color: '#6b7494', fontSize: 18 }}>›</span>
         </button>
       </div>
     </div>
