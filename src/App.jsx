@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import { useStore } from './lib/store'
 import Dashboard from './pages/Dashboard'
 import Gradebook from './pages/Gradebook'
@@ -128,6 +129,7 @@ export default function App() {
           ))}
         </div>
       </nav>
+      <SpeedInsights />
     </div>
   )
 }
