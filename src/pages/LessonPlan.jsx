@@ -3,6 +3,174 @@ import { useStore } from '../lib/store'
 import { generateLessonPlan, suggestTextbooks, suggestTopics, suggestStandards } from '../lib/ai'
 import { LoadingSpinner, Tag, AssignmentOptions } from '../components/ui'
 
+// ─── Search Textbook ──────────────────────────────────────────────────────────
+function SearchTextbook({ onBack }) {
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const fileRef = useRef()
+  const [barcodeMode, setBarcodeMode] = useState(false)
+
+  // Mock textbook database
+  const TEXTBOOKS = [
+    { id: 1, title: 'Everyday Mathematics', publisher: 'McGraw-Hill', grade: 'K-6', subject: 'Math', isbn: '978-0-02-135038-0' },
+    { id: 2, title: 'Go Math!', publisher: 'Houghton Mifflin', grade: '3-5', subject: 'Math', isbn: '978-0-544-71290-4' },
+    { id: 3, title: 'Into Reading', publisher: 'Houghton Mifflin', grade: 'K-6', subject: 'ELA', isbn: '978-1-328-49239-1' },
+    { id: 4, title: 'Amplify Science', publisher: 'Amplify', grade: '3-8', subject: 'Science', isbn: '978-1-642-32194-5' },
+    { id: 5, title: 'National Geographic Science', publisher: 'Cengage', grade: '3-5', subject: 'Science', isbn: '978-1-305-09019-6' },
+    { id: 6, title: 'myPerspectives', publisher: 'Savvas', grade: '6-12', subject: 'ELA', isbn: '978-0-328-93205-0' },
+    { id: 7, title: 'Savvas Texas Math', publisher: 'Savvas', grade: 'K-8', subject: 'Math', isbn: '978-0-134-91040-7' },
+    { id: 8, title: 'Discovery Social Studies', publisher: 'Discovery Education', grade: 'K-5', subject: 'Social Studies', isbn: '978-1-682-09115-2' },
+  ]
+
+  function handleSearch() {
+    if (!query.trim()) return
+    setLoading(true)
+    setTimeout(() => {
+      const q = query.toLowerCase()
+      const found = TEXTBOOKS.filter(b =>
+        b.title.toLowerCase().includes(q) ||
+        b.subject.toLowerCase().includes(q) ||
+        b.publisher.toLowerCase().includes(q) ||
+        b.grade.includes(q)
+      )
+      setResults(found)
+      setLoading(false)
+    }, 600)
+  }
+
+  if (selected) return (
+    <div>
+      <button onClick={() => setSelected(null)} className="flex items-center gap-2 text-text-muted text-sm mb-6 hover:text-text-primary">← Back to search</button>
+      <div className="p-4 rounded-widget mb-4" style={{ background: 'linear-gradient(135deg, #0f2a1a, #0a1a10)', border: '1px solid #1a3a2a' }}>
+        <div className="flex items-start gap-3">
+          <div className="w-12 h-16 rounded flex items-center justify-center text-2xl flex-shrink-0" style={{ background: '#1e2231' }}>📖</div>
+          <div>
+            <p className="font-bold text-text-primary">{selected.title}</p>
+            <p className="text-text-muted text-sm">{selected.publisher} · Grades {selected.grade}</p>
+            <p className="text-text-muted" style={{ fontSize: '10px' }}>ISBN: {selected.isbn}</p>
+            <div className="inline-flex items-center px-2 py-0.5 rounded-pill mt-1" style={{ background: '#22c97a20', color: '#22c97a', fontSize: '10px', fontWeight: 700 }}>
+              {selected.subject}
+            </div>
+          </div>
+        </div>
+      </div>
+      <p className="text-text-muted text-sm mb-4">What would you like to do with this textbook?</p>
+      <div className="space-y-2">
+        <button onClick={() => { useStore.getState().setLessonPlanMode('ai'); useStore.getState().setScreen('lessonPlan') }}
+          className="w-full p-3 rounded-card text-left flex items-center gap-3 transition-all hover:scale-[1.01]"
+          style={{ background: '#161923', border: '1px solid #0fb8a022' }}>
+          <span className="text-xl">✨</span>
+          <div>
+            <p className="font-semibold text-text-primary text-sm">AI Generate Lesson from This Textbook</p>
+            <p className="text-text-muted" style={{ fontSize: '11px' }}>Auto-fill textbook in AI generator</p>
+          </div>
+        </button>
+        <button onClick={onBack}
+          className="w-full p-3 rounded-card text-left flex items-center gap-3 transition-all hover:scale-[1.01]"
+          style={{ background: '#161923', border: '1px solid #3b7ef422' }}>
+          <span className="text-xl">📋</span>
+          <div>
+            <p className="font-semibold text-text-primary text-sm">Browse Chapters & Topics</p>
+            <p className="text-text-muted" style={{ fontSize: '11px' }}>View table of contents and create lessons</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div>
+      <button onClick={onBack} className="flex items-center gap-2 text-text-muted text-sm mb-6 hover:text-text-primary">← Back</button>
+      <h1 className="font-display font-bold text-xl text-text-primary mb-1">🔍 Search Textbook</h1>
+      <p className="text-text-muted text-sm mb-6">Find textbooks by title, subject, grade, or publisher — or scan the cover/barcode</p>
+
+      {/* Search input */}
+      <div className="flex gap-2 mb-4">
+        <input
+          className="flex-1 bg-elevated border border-border rounded-card px-3 py-2.5 text-text-primary text-sm"
+          placeholder="e.g. Go Math, 3rd Grade, Science..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && handleSearch()}
+          autoFocus
+        />
+        <button onClick={handleSearch} disabled={!query.trim() || loading}
+          className="px-4 py-2 rounded-pill text-sm font-bold disabled:opacity-40 text-white"
+          style={{ background: 'var(--school-color)' }}>
+          {loading ? '...' : 'Search'}
+        </button>
+      </div>
+
+      {/* Scan option */}
+      <button
+        onClick={() => useStore.getState().setScreen('camera')}
+        className="w-full p-3 rounded-card flex items-center gap-3 mb-4 transition-all hover:scale-[1.01]"
+        style={{ background: '#161923', border: '1px solid #9b6ef522' }}>
+        <span className="text-xl">📷</span>
+        <div className="text-left">
+          <p className="font-semibold text-text-primary text-sm">Scan Cover or Barcode</p>
+          <p className="text-text-muted" style={{ fontSize: '11px' }}>Point camera at textbook to identify it automatically</p>
+        </div>
+        <span className="text-text-muted ml-auto">›</span>
+      </button>
+
+      {/* Results */}
+      {loading && (
+        <div className="py-8 text-center">
+          <div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+          <p className="text-text-muted text-sm">Searching textbook database...</p>
+        </div>
+      )}
+
+      {!loading && results.length > 0 && (
+        <div className="space-y-2">
+          <p className="tag-label mb-2">{results.length} result{results.length !== 1 ? 's' : ''} found</p>
+          {results.map(book => (
+            <button key={book.id} onClick={() => setSelected(book)}
+              className="w-full p-3 rounded-card text-left flex items-center gap-3 transition-all hover:scale-[1.01]"
+              style={{ background: '#161923', border: '1px solid #22c97a22' }}>
+              <span className="text-2xl">📖</span>
+              <div className="flex-1">
+                <p className="font-semibold text-text-primary text-sm">{book.title}</p>
+                <p className="text-text-muted" style={{ fontSize: '10px' }}>{book.publisher} · Grades {book.grade} · {book.subject}</p>
+              </div>
+              <span className="text-text-muted">›</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {!loading && query && results.length === 0 && (
+        <div className="py-8 text-center">
+          <div className="text-4xl mb-3">🔍</div>
+          <p className="text-text-muted text-sm">No textbooks found for "{query}"</p>
+          <p className="text-text-muted mt-1" style={{ fontSize: '11px' }}>Try a different title, subject, or grade level</p>
+        </div>
+      )}
+
+      {!query && results.length === 0 && (
+        <div className="space-y-2">
+          <p className="tag-label mb-2">Popular Textbooks</p>
+          {TEXTBOOKS.slice(0, 4).map(book => (
+            <button key={book.id} onClick={() => setSelected(book)}
+              className="w-full p-3 rounded-card text-left flex items-center gap-3 transition-all hover:scale-[1.01]"
+              style={{ background: '#1e2231' }}>
+              <span className="text-xl">📖</span>
+              <div className="flex-1">
+                <p className="font-semibold text-text-primary text-sm">{book.title}</p>
+                <p className="text-text-muted" style={{ fontSize: '10px' }}>{book.publisher} · {book.subject}</p>
+              </div>
+              <span className="text-text-muted">›</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Build From Scratch ───────────────────────────────────────────────────────
 function BuildFromScratch({ onBack }) {
   const { saveLessonPlan, setScreen } = useStore()
@@ -553,12 +721,13 @@ function AIGenerator({ onBack }) {
 export default function LessonPlan({ initialMode }) {
   const [mode, setMode] = useState(initialMode || 'menu')
 
+  if (mode === 'search') return <SearchTextbook onBack={() => setMode('menu')} />
   if (mode === 'build') return <BuildFromScratch onBack={() => setMode('menu')} />
   if (mode === 'upload') return <UploadDoc onBack={() => setMode('menu')} />
   if (mode === 'ai') return <AIGenerator onBack={() => setMode('menu')} />
 
   const methods = [
-    { id: 'search', icon: '🔍', label: 'Search textbook / ed site', sub: '📷 scan cover or barcode', color: '#3b7ef4', comingSoon: true },
+    { id: 'search', icon: '🔍', label: 'Search textbook / ed site', sub: '📷 scan cover or barcode to identify', color: '#3b7ef4' },
     { id: 'build', icon: '🏗', label: 'Build from scratch', sub: 'Create section by section', color: '#22c97a' },
     { id: 'upload', icon: '📄', label: 'Upload lesson plan doc', sub: 'PDF · Word · Google Doc', color: '#f5a623' },
     { id: 'connect', icon: '🔗', label: 'Connect external app', sub: 'Planbook · Chalk · TPT · Google', color: '#9b6ef5', comingSoon: true },
