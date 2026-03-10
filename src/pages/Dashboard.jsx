@@ -3,244 +3,233 @@ import ReactDOM from 'react-dom'
 import { useStore } from '../lib/store'
 import { GradeBadge, TrendBadge, Tag } from '../components/ui'
 
-// ── Portal modal shell ────────────────────────────────────────────────────────
-// Renders directly at document.body — nothing in the page DOM can trap it.
-function Modal({ onClose, title, children }) {
-  return ReactDOM.createPortal(
+// ── Shared modal shell — uses portal to escape any stacking context ───────────
+function Popup({ onClose, title, children }) {
+  const modal = (
     <div
+      className="fixed inset-0 flex items-end sm:items-center justify-center"
+      style={{ zIndex: 9999 }}
       onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0,
-        display: 'flex', alignItems: 'flex-end',
-        justifyContent: 'center',
-        zIndex: 9000,
-        background: 'rgba(0,0,0,0.72)',
-        backdropFilter: 'blur(4px)',
-      }}
     >
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
+        className="relative w-full max-w-lg mx-4 rounded-widget border border-elevated animate-slide-up overflow-hidden"
+        style={{ background: '#161923', maxHeight: '85vh', zIndex: 10000 }}
         onClick={e => e.stopPropagation()}
-        style={{
-          position: 'relative',
-          width: '100%', maxWidth: 520,
-          margin: '0 16px 16px',
-          background: '#161923',
-          border: '1px solid #2a2f42',
-          borderRadius: 16,
-          maxHeight: '85vh',
-          display: 'flex',
-          flexDirection: 'column',
-          animation: 'slideUp .25s ease forwards',
-          zIndex: 9001,
-        }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #2a2f42' }}>
-          <span style={{ fontWeight: 700, color: '#eef0f8', fontSize: 15 }}>{title}</span>
-          <button onClick={onClose} style={{ color: '#6b7494', fontSize: 20, lineHeight: 1, background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-elevated">
+          <h3 className="font-bold text-text-primary">{title}</h3>
+          <button onClick={onClose} className="text-text-muted hover:text-text-primary text-xl leading-none">✕</button>
         </div>
-        <div style={{ overflowY: 'auto', flex: 1 }}>
+        <div className="overflow-y-auto" style={{ maxHeight: 'calc(85vh - 64px)' }}>
           {children}
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   )
+  return ReactDOM.createPortal(modal, document.body)
 }
 
 // ── Needs Attention modal ─────────────────────────────────────────────────────
 function NeedsAttentionModal({ onClose }) {
-  const { students, messages, assignments, keyAlertsDismissed, setScreen } = useStore()
+  const {
+    students,
+    messages,
+    assignments,
+    keyAlertsDismissed,
+    dismissKeyAlert,
+  } = useStore()
 
-  const belowPassing  = students.filter(s => s.grade < 70)
-  const ungraded      = students.filter(s => s.submitUngraded)
-  const dayOldMsgs    = messages.filter(m => m.status === 'pending' && m.dayOld)
-  const missingKeys   = assignments.filter(a => !a.hasKey && !keyAlertsDismissed.includes(a.id))
-  const total         = belowPassing.length + ungraded.length + dayOldMsgs.length + missingKeys.length
+  const belowPassing = students.filter(s => s.grade < 70)
+  const ungraded     = students.filter(s => s.submitUngraded)
+  const dayOldMsgs   = messages.filter(m => m.status === 'pending' && m.dayOld)
+  const missingKeys  = assignments.filter(a => !a.hasKey && !keyAlertsDismissed.includes(a.id))
+  const totalCount   = belowPassing.length + ungraded.length + dayOldMsgs.length + missingKeys.length
 
-  function openStudent(s) {
+  function goToStudent(s) {
     onClose()
     useStore.getState().setActiveStudent(s)
   }
 
   return (
-    <Modal onClose={onClose} title={`⚑ Needs Attention — ${total} items`}>
-      <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <Popup onClose={onClose} title={`⚑ Needs Attention — ${totalCount} items`}>
+      <div className="p-5 space-y-5">
 
         {belowPassing.length > 0 && (
           <section>
-            <p className="tag-label" style={{ marginBottom: 8 }}>📉 Below Passing ({belowPassing.length})</p>
-            {belowPassing.map(s => (
-              <button key={s.id} onClick={() => openStudent(s)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 10, marginBottom: 6, background: '#1c1012', border: '1px solid #f04a4a20', cursor: 'pointer', textAlign: 'left' }}>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: 13, color: '#eef0f8' }}>{s.name}</p>
-                  <p style={{ fontSize: 10, color: '#f04a4a' }}>{s.grade}% — below passing · tap to view</p>
-                </div>
-                <GradeBadge score={s.grade} />
-              </button>
-            ))}
+            <p className="tag-label mb-2">📉 Below Passing ({belowPassing.length})</p>
+            <div className="space-y-2">
+              {belowPassing.map(s => (
+                <button key={s.id} onClick={() => goToStudent(s)}
+                  className="w-full flex items-center justify-between p-3 rounded-card text-left transition-all hover:bg-elevated"
+                  style={{ background: '#1c1012', border: '1px solid #f04a4a20' }}>
+                  <div>
+                    <p className="font-semibold text-sm text-text-primary">{s.name}</p>
+                    <p className="text-danger" style={{ fontSize: '10px' }}>{s.grade}% — below passing · tap to view</p>
+                  </div>
+                  <GradeBadge score={s.grade} />
+                </button>
+              ))}
+            </div>
           </section>
         )}
 
         {ungraded.length > 0 && (
           <section>
-            <p className="tag-label" style={{ marginBottom: 8 }}>📬 Awaiting Grade ({ungraded.length})</p>
-            {ungraded.map(s => (
-              <button key={s.id} onClick={() => openStudent(s)}
-                style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 12, borderRadius: 10, marginBottom: 6, background: '#1a1a0a', border: '1px solid #f5a62320', cursor: 'pointer', textAlign: 'left' }}>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: 13, color: '#eef0f8' }}>{s.name}</p>
-                  <p style={{ fontSize: 10, color: '#f5a623' }}>Submission waiting for your grade</p>
-                </div>
-                <span style={{ fontSize: 20 }}>📬</span>
-              </button>
-            ))}
+            <p className="tag-label mb-2">📬 Submitted — Awaiting Grade ({ungraded.length})</p>
+            <div className="space-y-2">
+              {ungraded.map(s => (
+                <button key={s.id} onClick={() => goToStudent(s)}
+                  className="w-full flex items-center justify-between p-3 rounded-card text-left transition-all hover:bg-elevated"
+                  style={{ background: '#1a1a0a', border: '1px solid #f5a62320' }}>
+                  <div>
+                    <p className="font-semibold text-sm text-text-primary">{s.name}</p>
+                    <p style={{ fontSize: '10px', color: '#f5a623' }}>Submitted — ungraded · tap to grade</p>
+                  </div>
+                  <GradeBadge score={s.grade} />
+                </button>
+              ))}
+            </div>
           </section>
         )}
 
         {dayOldMsgs.length > 0 && (
           <section>
-            <p className="tag-label" style={{ marginBottom: 8 }}>💬 Unsent Messages Over 24hrs ({dayOldMsgs.length})</p>
-            {dayOldMsgs.map(m => (
-              <button key={m.id} onClick={() => { onClose(); setScreen('parentMessages') }}
-                style={{ width: '100%', display: 'flex', gap: 12, padding: 12, borderRadius: 10, marginBottom: 6, background: '#0f1a2e', border: '1px solid #3b7ef420', cursor: 'pointer', textAlign: 'left' }}>
-                <span style={{ fontSize: 20 }}>💬</span>
-                <div>
-                  <p style={{ fontWeight: 600, fontSize: 13, color: '#eef0f8' }}>{m.studentName}</p>
-                  <p style={{ fontSize: 10, color: '#3b7ef4' }}>{m.subject} · {m.trigger} · unsent</p>
-                </div>
-              </button>
-            ))}
+            <p className="tag-label mb-2">💬 Unsent Parent Messages ({dayOldMsgs.length})</p>
+            <div className="space-y-2">
+              {dayOldMsgs.map(m => (
+                <button key={m.id} onClick={() => { onClose(); useStore.getState().setScreen('parentMessages') }}
+                  className="w-full flex items-center justify-between p-3 rounded-card text-left transition-all hover:bg-elevated"
+                  style={{ background: '#0f1a2e', border: '1px solid #3b7ef430' }}>
+                  <div>
+                    <p className="font-semibold text-sm text-text-primary">{m.studentName}</p>
+                    <p style={{ fontSize: '10px', color: '#3b7ef4' }}>Triggered: {m.trigger} · tap to send</p>
+                  </div>
+                  <span className="text-xl">💬</span>
+                </button>
+              ))}
+            </div>
           </section>
         )}
 
         {missingKeys.length > 0 && (
           <section>
-            <p className="tag-label" style={{ marginBottom: 8 }}>🔑 No Answer Key ({missingKeys.length})</p>
-            {missingKeys.map(a => (
-              <div key={a.id} style={{ padding: 12, borderRadius: 10, marginBottom: 6, background: '#1a1a0a', border: '1px solid #f5a62320' }}>
-                <p style={{ fontWeight: 600, fontSize: 13, color: '#eef0f8', marginBottom: 4 }}>{a.name}</p>
-                <p style={{ fontSize: 10, color: '#f5a623', marginBottom: 8 }}>{a.type} · no key uploaded</p>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => { onClose(); setScreen('camera') }}
-                    style={{ flex: 1, padding: '6px 0', borderRadius: 999, fontSize: 11, fontWeight: 700, background: '#f5a62320', color: '#f5a623', border: 'none', cursor: 'pointer' }}>
-                    📎 Upload Key
-                  </button>
-                  <button onClick={() => useStore.getState().dismissKeyAlert(a.id)}
-                    style={{ flex: 1, padding: '6px 0', borderRadius: 999, fontSize: 11, fontWeight: 600, background: '#1e2231', color: '#6b7494', border: 'none', cursor: 'pointer' }}>
-                    No key needed
-                  </button>
+            <p className="tag-label mb-2">🔑 Missing Answer Keys ({missingKeys.length})</p>
+            <div className="space-y-2">
+              {missingKeys.map(a => (
+                <div key={a.id} className="p-3 rounded-card" style={{ background: '#1a1a0a', border: '1px solid #f5a62330' }}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-semibold text-sm text-text-primary">{a.name}</p>
+                      <p style={{ fontSize: '10px', color: '#f5a623' }}>{a.type} · {a.date} · no key uploaded</p>
+                    </div>
+                    <span className="text-xl">🔑</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { onClose(); useStore.getState().setScreen('camera') }}
+                      className="flex-1 py-1.5 rounded-pill text-xs font-bold"
+                      style={{ background: '#f5a62320', color: '#f5a623' }}>
+                      📷 Scan / Upload Key
+                    </button>
+                    <button onClick={() => dismissKeyAlert(a.id)}
+                      className="flex-1 py-1.5 rounded-pill text-xs font-semibold"
+                      style={{ background: '#1e2231', color: '#6b7494' }}>
+                      ✕ No key needed
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </section>
         )}
 
-        {total === 0 && (
-          <div style={{ padding: '32px 0', textAlign: 'center' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
-            <p style={{ color: '#6b7494' }}>All caught up! Nothing needs attention.</p>
+        {totalCount === 0 && (
+          <div className="py-8 text-center">
+            <div className="text-4xl mb-3">✅</div>
+            <p className="text-text-muted">Nothing needs attention.</p>
           </div>
         )}
       </div>
-    </Modal>
+    </Popup>
   )
 }
 
 // ── Needs Review modal ────────────────────────────────────────────────────────
 function NeedsReviewModal({ onClose }) {
   const { students, grades, assignments } = useStore()
+
   const aiGrades = grades.filter(g => g.aiGraded)
-  const reviewItems = aiGrades.map(g => ({
-    grade: g,
-    student: students.find(s => s.id === g.studentId),
-    assignment: assignments.find(a => a.id === g.assignmentId),
-  })).filter(x => x.student && x.assignment)
-  const flagged = students.filter(s => s.flagged && !aiGrades.find(g => g.studentId === s.id))
+  const reviewItems = aiGrades.map(g => {
+    const student    = students.find(s => s.id === g.studentId)
+    const assignment = assignments.find(a => a.id === g.assignmentId)
+    return { grade: g, student, assignment }
+  }).filter(item => item.student && item.assignment)
+
+  const flaggedStudents = students.filter(s => s.flagged && !aiGrades.find(g => g.studentId === s.id))
 
   return (
-    <Modal onClose={onClose} title={`⚑ Needs Review — ${reviewItems.length + flagged.length} items`}>
-      <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {reviewItems.map(({ grade, student, assignment }, i) => (
-          <div key={i} style={{ padding: 12, borderRadius: 10, background: '#1a1230', border: '1px solid #9b6ef530' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <div>
-                <p style={{ fontWeight: 600, fontSize: 13, color: '#eef0f8' }}>{student.name}</p>
-                <p style={{ fontSize: 10, color: '#9b6ef5' }}>{assignment.name} · AI scored {grade.score}%</p>
-                {grade.aiConfidence === 'low' && <p style={{ fontSize: 9, color: '#f04a4a' }}>⚠ Low confidence — please verify</p>}
-              </div>
-              <GradeBadge score={grade.score} />
+    <Popup onClose={onClose} title={`⚑ Needs Review — ${reviewItems.length + flaggedStudents.length} items`}>
+      <div className="p-5 space-y-5">
+        {reviewItems.length > 0 && (
+          <section>
+            <p className="tag-label mb-2">🤖 AI-Graded — Awaiting Your Approval ({reviewItems.length})</p>
+            <div className="space-y-2">
+              {reviewItems.map(({ grade, student, assignment }, i) => (
+                <div key={i} className="p-3 rounded-card" style={{ background: '#1a1230', border: '1px solid #9b6ef530' }}>
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-semibold text-sm text-text-primary">{student.name}</p>
+                      <p style={{ fontSize: '10px', color: '#9b6ef5' }}>{assignment.name} · AI scored {grade.score}%</p>
+                      {grade.aiConfidence === 'low' && (
+                        <p style={{ fontSize: '9px', color: '#f04a4a' }}>⚠ Low confidence — please verify</p>
+                      )}
+                    </div>
+                    <GradeBadge score={grade.score} />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => { onClose(); useStore.getState().setActiveStudent(student) }}
+                      className="flex-1 py-1.5 rounded-pill text-xs font-bold"
+                      style={{ background: '#9b6ef520', color: '#9b6ef5' }}>
+                      ✏ Review & Edit
+                    </button>
+                    <button className="flex-1 py-1.5 rounded-pill text-xs font-bold"
+                      style={{ background: '#22c97a20', color: '#22c97a' }}>
+                      ✓ Approve
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { onClose(); useStore.getState().setActiveStudent(student) }}
-                style={{ flex: 1, padding: '6px 0', borderRadius: 999, fontSize: 11, fontWeight: 700, background: '#9b6ef520', color: '#9b6ef5', border: 'none', cursor: 'pointer' }}>
-                ✏ Review & Edit
-              </button>
-              <button style={{ flex: 1, padding: '6px 0', borderRadius: 999, fontSize: 11, fontWeight: 700, background: '#22c97a20', color: '#22c97a', border: 'none', cursor: 'pointer' }}>
-                ✓ Approve
-              </button>
+          </section>
+        )}
+
+        {flaggedStudents.length > 0 && (
+          <section>
+            <p className="tag-label mb-2">⚑ Flagged for Review ({flaggedStudents.length})</p>
+            <div className="space-y-2">
+              {flaggedStudents.map(s => (
+                <button key={s.id} onClick={() => { onClose(); useStore.getState().setActiveStudent(s) }}
+                  className="w-full flex items-center justify-between p-3 rounded-card text-left transition-all hover:bg-elevated"
+                  style={{ background: '#1c1012', border: '1px solid #f04a4a20' }}>
+                  <div>
+                    <p className="font-semibold text-sm text-text-primary">{s.name}</p>
+                    <p className="text-danger" style={{ fontSize: '10px' }}>Flagged · {s.grade}% · tap to review</p>
+                  </div>
+                  <GradeBadge score={s.grade} />
+                </button>
+              ))}
             </div>
-          </div>
-        ))}
-        {flagged.map(s => (
-          <button key={s.id} onClick={() => { onClose(); useStore.getState().setActiveStudent(s) }}
-            style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: 12, borderRadius: 10, background: '#1c1012', border: '1px solid #f04a4a20', cursor: 'pointer', textAlign: 'left' }}>
-            <div>
-              <p style={{ fontWeight: 600, fontSize: 13, color: '#eef0f8' }}>{s.name}</p>
-              <p style={{ fontSize: 10, color: '#f04a4a' }}>Flagged · {s.grade}% · tap to review</p>
-            </div>
-            <GradeBadge score={s.grade} />
-          </button>
-        ))}
-        {reviewItems.length === 0 && flagged.length === 0 && (
-          <div style={{ padding: '32px 0', textAlign: 'center' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-            <p style={{ color: '#6b7494' }}>No AI grades waiting for review.</p>
+          </section>
+        )}
+
+        {reviewItems.length === 0 && flaggedStudents.length === 0 && (
+          <div className="py-8 text-center">
+            <div className="text-4xl mb-3">✅</div>
+            <p className="text-text-muted">No AI grades waiting for review.</p>
           </div>
         )}
       </div>
-    </Modal>
-  )
-}
-
-// ── Key Needed modal ──────────────────────────────────────────────────────────
-function KeyNeededModal({ onClose }) {
-  const { assignments, keyAlertsDismissed, dismissKeyAlert } = useStore()
-  const missing = assignments.filter(a => !a.hasKey && !keyAlertsDismissed.includes(a.id))
-
-  return (
-    <Modal onClose={onClose} title={`🔑 Answer Keys Needed — ${missing.length}`}>
-      <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {missing.length === 0 && (
-          <div style={{ padding: '32px 0', textAlign: 'center' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-            <p style={{ color: '#6b7494' }}>All assignments have answer keys.</p>
-          </div>
-        )}
-        {missing.map(a => (
-          <div key={a.id} style={{ padding: 16, borderRadius: 10, background: '#1a1a0a', border: '1px solid #f5a62330' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div>
-                <p style={{ fontWeight: 600, color: '#eef0f8', marginBottom: 2 }}>{a.name}</p>
-                <p style={{ fontSize: 10, color: '#f5a623' }}>{a.type} · {a.date}</p>
-              </div>
-              <span style={{ fontSize: 24 }}>🔑</span>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { onClose(); useStore.getState().setScreen('camera') }}
-                style={{ flex: 1, padding: '8px 0', borderRadius: 999, fontSize: 12, fontWeight: 700, background: '#f5a62320', color: '#f5a623', border: 'none', cursor: 'pointer' }}>
-                📷 Scan / Upload Key
-              </button>
-              <button onClick={() => dismissKeyAlert(a.id)}
-                style={{ flex: 1, padding: '8px 0', borderRadius: 999, fontSize: 12, fontWeight: 600, background: '#1e2231', color: '#6b7494', border: 'none', cursor: 'pointer' }}>
-                ✕ No key needed
-              </button>
-            </div>
-          </div>
-        ))}
-        <p style={{ textAlign: 'center', color: '#6b7494', fontSize: 10 }}>"No key needed" removes this alert permanently</p>
-      </div>
-    </Modal>
+    </Popup>
   )
 }
 
@@ -249,20 +238,19 @@ function DailyOverview() {
   const { messages, getNeedsAttention, classes } = useStore()
   const pending   = messages.filter(m => m.status === 'pending').length
   const attention = getNeedsAttention().length
-
   const [showReminders, setShowReminders] = useState(false)
   const [showAttention, setShowAttention] = useState(false)
 
   const reminders = [
     { text: 'Parent-teacher conferences Friday 3pm', icon: '📅' },
-    { text: 'Submit grades by end of week', icon: '📝' },
+    { text: 'Submit grades by end of week',          icon: '📝' },
   ]
 
   const stats = [
     { icon: '💬', value: pending,          label: 'Pending Msgs',   action: () => useStore.getState().setScreen('parentMessages') },
-    { icon: '⚑',  value: attention,        label: 'Need Attention',  action: () => setShowAttention(true) },
-    { icon: '📚', value: classes.length,   label: 'Classes',         action: () => useStore.getState().setScreen('gradebook') },
-    { icon: '🔔', value: reminders.length, label: 'Reminders',       action: () => setShowReminders(true) },
+    { icon: '⚑',  value: attention,        label: 'Need Attention', action: () => setShowAttention(true) },
+    { icon: '📚', value: classes.length,   label: 'Classes',        action: () => useStore.getState().setScreen('gradebook') },
+    { icon: '🔔', value: reminders.length, label: 'Reminders',      action: () => setShowReminders(true) },
   ]
 
   return (
@@ -271,44 +259,32 @@ function DailyOverview() {
         <p className="tag-label mb-3">Daily Overview</p>
         <div className="grid grid-cols-4 gap-2">
           {stats.map(s => (
-            // NO CSS transform on these buttons — transforms create stacking contexts
-            // that can intercept fixed-position portals on some browsers.
-            <button
-              key={s.label}
-              onClick={s.action}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center',
-                justifyContent: 'center', padding: 12, borderRadius: 10,
-                background: 'rgba(255,255,255,0.10)',
-                border: 'none', cursor: 'pointer', minHeight: 80,
-                transition: 'background .15s',
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.18)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.10)'}
-            >
-              <span style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</span>
-              <span style={{ fontFamily: 'DM Sans, sans-serif', fontWeight: 700, fontSize: 24, color: '#fff' }}>{s.value}</span>
-              <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3, textAlign: 'center', lineHeight: 1.2 }}>{s.label}</span>
+            <button key={s.label} className="stat-box hover:scale-[1.04] transition-transform" onClick={s.action}>
+              <span className="text-xl mb-1">{s.icon}</span>
+              <span className="font-display font-bold text-2xl text-white">{s.value}</span>
+              <span className="text-xs mt-1 text-center leading-tight" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '8px' }}>{s.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       {showReminders && (
-        <Modal onClose={() => setShowReminders(false)} title="🔔 Reminders">
-          <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <Popup onClose={() => setShowReminders(false)} title="🔔 Reminders">
+          <div className="p-5 space-y-3">
             {reminders.map((r, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 12, borderRadius: 10, background: '#1e2231' }}>
-                <span style={{ fontSize: 22 }}>{r.icon}</span>
-                <p style={{ fontSize: 13, color: '#eef0f8' }}>{r.text}</p>
+              <div key={i} className="flex items-center gap-3 p-3 rounded-card" style={{ background: '#1e2231' }}>
+                <span className="text-xl">{r.icon}</span>
+                <p className="text-sm text-text-primary">{r.text}</p>
               </div>
             ))}
-            <button onClick={() => setShowReminders(false)}
-              style={{ padding: '10px 0', borderRadius: 999, fontWeight: 700, color: '#fff', background: 'var(--school-color)', border: 'none', cursor: 'pointer', marginTop: 8, fontSize: 14 }}>
+            <button
+              onClick={() => setShowReminders(false)}
+              className="w-full py-2.5 rounded-pill text-sm font-bold text-white mt-2"
+              style={{ background: 'var(--school-color)' }}>
               Got it
             </button>
           </div>
-        </Modal>
+        </Popup>
       )}
 
       {showAttention && <NeedsAttentionModal onClose={() => setShowAttention(false)} />}
@@ -318,7 +294,7 @@ function DailyOverview() {
 
 // ── Today's Lessons ───────────────────────────────────────────────────────────
 function TodaysLessons() {
-  const { lessons, setScreen } = useStore()
+  const { lessons } = useStore()
   const [doneIndex, setDoneIndex] = useState(0)
   const current = lessons[doneIndex]
 
@@ -331,111 +307,107 @@ function TodaysLessons() {
 
   return (
     <div className="rounded-widget p-4" style={{ background: 'linear-gradient(135deg, #0f2a1a 0%, #0a1a10 100%)', border: '1px solid #1a3a2a' }}>
-      <div className="flex items-center justify-between mb-1">
-        <p className="tag-label">Today's Lessons</p>
-        <Tag color="#22c97a">{doneIndex + 1}/{lessons.length}</Tag>
+      <p className="tag-label mb-2">Today's Lessons</p>
+      <div className="inline-flex items-center px-2 py-0.5 rounded-pill mb-2"
+        style={{ background: '#0fb8a020', color: '#0fb8a0', fontSize: '10px', fontWeight: 700 }}>
+        {current.period} Period · {current.subject}
       </div>
-      <p className="font-bold text-text-primary mb-0.5">{current.title}</p>
-      <p className="text-text-muted mb-3" style={{ fontSize: '11px' }}>{current.period} Period · {current.subject} · {current.duration} min</p>
-      <button onClick={() => setScreen('lessonPlan')} className="text-xs mb-3 block" style={{ color: '#22c97a', background: 'none', border: 'none', cursor: 'pointer' }}>
-        Tap to expand ›
-      </button>
+      <p className="font-display font-bold text-base text-text-primary mb-1">{current.title}</p>
+      <p className="text-text-muted mb-3" style={{ fontSize: '11px' }}>Pages {current.pages} · {current.duration} min</p>
       <div className="flex gap-2">
-        <button onClick={() => setDoneIndex(i => Math.min(i + 1, lessons.length))}
-          className="flex-1 py-2 rounded-pill text-xs font-bold" style={{ background: '#22c97a20', color: '#22c97a', border: 'none', cursor: 'pointer' }}>
+        <button onClick={() => setDoneIndex(i => i + 1)}
+          className="flex-1 py-1.5 rounded-pill text-xs font-bold transition-all hover:opacity-90"
+          style={{ background: '#22c97a22', color: '#22c97a', border: '1px solid #22c97a40' }}>
           ✓ Done
         </button>
-        <button onClick={() => setDoneIndex(i => Math.min(i + 1, lessons.length))}
-          className="flex-1 py-2 rounded-pill text-xs font-semibold" style={{ background: '#1e2231', color: '#6b7494', border: 'none', cursor: 'pointer' }}>
-          TBC
+        <button onClick={() => setDoneIndex(i => i + 1)}
+          className="px-4 py-1.5 rounded-pill text-xs font-bold transition-all hover:opacity-90"
+          style={{ background: '#f5a62322', color: '#f5a623', border: '1px solid #f5a62340' }}>
+          TBC →
         </button>
       </div>
-    </div>
-  )
-}
-
-// ── My Classes ────────────────────────────────────────────────────────────────
-function MyClasses() {
-  const { classes, setActiveClass } = useStore()
-
-  return (
-    <div className="widget">
-      <p className="widget-title mb-3">My Classes</p>
-      <div className="grid grid-cols-2 gap-3">
-        {classes.map(cls => (
-          <button key={cls.id} onClick={() => setActiveClass(cls)}
-            className="p-3 rounded-card text-left"
-            style={{ background: '#0c0e14', border: `1px solid ${cls.color}30`, cursor: 'pointer', transition: 'border-color .15s' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor = cls.color}
-            onMouseLeave={e => e.currentTarget.style.borderColor = cls.color + '30'}>
-            <div className="flex items-start justify-between mb-1">
-              <div>
-                <p className="font-bold text-xs" style={{ color: cls.color }}>{cls.period} Period</p>
-                <p className="font-semibold text-sm text-text-primary">{cls.subject}</p>
-              </div>
-              <TrendBadge trend={cls.trend} />
-            </div>
-            <p className="font-display font-bold text-2xl text-white mb-0.5">{cls.gpa}</p>
-            <p className="text-text-muted" style={{ fontSize: '9px' }}>{cls.students} students</p>
-            {cls.gpa < 70 && (
-              <p className="mt-1 font-bold" style={{ fontSize: '9px', color: '#f04a4a' }}>⚑ Needs attention</p>
-            )}
-          </button>
-        ))}
-      </div>
+      {doneIndex < lessons.length - 1 && (
+        <p className="text-text-muted mt-2" style={{ fontSize: '9px' }}>
+          → {lessons.length - doneIndex - 1} more lesson{lessons.length - doneIndex - 1 !== 1 ? 's' : ''} today
+        </p>
+      )}
     </div>
   )
 }
 
 // ── Needs Attention widget ────────────────────────────────────────────────────
+// • Clicking the widget background / title / "View all" → opens full modal
+// • Clicking an individual student bubble → navigates directly to that student
+//   (e.stopPropagation prevents the widget onClick from also firing)
 function NeedsAttentionWidget() {
-  const { students, setActiveStudent, setScreen } = useStore()
+  const { getNeedsAttention } = useStore()
+  const students  = getNeedsAttention()
   const [showModal, setShowModal] = useState(false)
-  const attention = students.filter(s => s.grade < 70 || s.flagged || s.submitUngraded)
+
+  function goToStudent(e, s) {
+    e.stopPropagation()                          // don't bubble up to widget onClick
+    useStore.getState().setActiveStudent(s)
+  }
 
   return (
     <>
-      <div className="widget">
+      {/* The whole widget is clickable — opens the modal */}
+      <div
+        className="widget"
+        style={{ cursor: 'pointer' }}
+        onClick={() => setShowModal(true)}
+      >
         <div className="flex items-center justify-between mb-3">
-          <button
-            onClick={() => setShowModal(true)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <p className="widget-title">Needs Attention</p>
-            {attention.length > 0 && (
-              <span style={{ fontSize: 10, color: '#f04a4a', fontWeight: 700 }}>({attention.length}) — view all ›</span>
+          <p className="widget-title">
+            ⚑ Needs Attention
+            {students.length > 0 && (
+              <span
+                className="ml-1.5 px-1.5 py-0.5 rounded-pill font-bold"
+                style={{ background: '#f04a4a20', color: '#f04a4a', fontSize: '10px' }}>
+                {students.length}
+              </span>
             )}
+          </p>
+          {/* View all button also opens modal; stopPropagation not needed since
+              the parent also opens it, but kept for clarity */}
+          <button
+            onClick={e => { e.stopPropagation(); setShowModal(true) }}
+            className="text-xs font-semibold px-2 py-1 rounded-pill transition-opacity hover:opacity-70"
+            style={{ background: '#f04a4a20', color: '#f04a4a' }}>
+            View all →
           </button>
-          {attention.length > 0 && (
-            <button onClick={() => setScreen('parentMessages')}
-              className="py-1 px-3 rounded-pill text-xs font-bold" style={{ background: '#f04a4a20', color: '#f04a4a', border: 'none', cursor: 'pointer' }}>
-              📩 Message All
-            </button>
-          )}
         </div>
-        {attention.length === 0 ? (
-          <p className="text-text-muted text-sm">Everyone is on track 🎉</p>
+
+        {students.length === 0 ? (
+          <p className="text-text-muted text-sm">All students on track 🎉</p>
         ) : (
           <div className="space-y-2">
-            {attention.slice(0, 3).map(s => (
-              <button key={s.id} onClick={() => setActiveStudent(s)}
-                className="w-full flex items-center justify-between p-2 rounded-card text-left"
-                style={{ background: '#0c0e14', border: 'none', cursor: 'pointer', transition: 'background .15s' }}
-                onMouseEnter={e => e.currentTarget.style.background = '#1e2231'}
-                onMouseLeave={e => e.currentTarget.style.background = '#0c0e14'}>
+            {students.slice(0, 3).map(s => (
+              <button
+                key={s.id}
+                onClick={e => goToStudent(e, s)}   // goes straight to student profile
+                className="w-full flex items-center justify-between p-2.5 rounded-card text-left hover:bg-elevated transition-colors"
+                style={{ background: '#1c1012', border: '1px solid #f04a4a15' }}>
                 <div>
                   <p className="font-semibold text-sm text-text-primary">{s.name}</p>
-                  <p style={{ fontSize: '10px', color: '#f04a4a' }}>
-                    {s.submitUngraded ? 'Submitted work awaiting grade' : s.flagged ? `Flagged · ${s.grade}%` : `${s.grade}% — failing`}
+                  <p className="text-danger" style={{ fontSize: '10px' }}>
+                    {s.grade < 70
+                      ? `${s.grade}% — below passing`
+                      : s.submitUngraded
+                      ? 'Submitted — ungraded'
+                      : 'Flagged for review'}
                   </p>
                 </div>
                 <GradeBadge score={s.grade} />
               </button>
             ))}
-            {attention.length > 3 && (
-              <button onClick={() => setShowModal(true)}
-                className="w-full text-center text-xs py-1"
-                style={{ color: '#3b7ef4', background: 'none', border: 'none', cursor: 'pointer' }}>
-                +{attention.length - 3} more — view all ›
+
+            {students.length > 3 && (
+              <button
+                onClick={e => { e.stopPropagation(); setShowModal(true) }}
+                className="w-full text-center text-xs font-semibold py-2 rounded-card transition-opacity hover:opacity-70"
+                style={{ background: '#1e2231', color: '#f04a4a' }}>
+                +{students.length - 3} more · view all
               </button>
             )}
           </div>
@@ -447,9 +419,41 @@ function NeedsAttentionWidget() {
   )
 }
 
+// ── My Classes ────────────────────────────────────────────────────────────────
+function MyClasses() {
+  const { classes } = useStore()
+
+  return (
+    <div className="widget">
+      <div className="flex items-center justify-between mb-3">
+        <p className="widget-title">My Classes</p>
+        <button onClick={() => useStore.getState().setScreen('gradebook')} className="text-accent text-xs font-semibold">+ Add</button>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {classes.map(cls => (
+          <button key={cls.id} onClick={() => useStore.getState().setActiveClass(cls)}
+            className="p-3 rounded-card text-left transition-all hover:scale-[1.02]"
+            style={{ background: '#1e2231', borderLeft: `3px solid ${cls.color}` }}>
+            <p className="font-bold text-sm text-text-primary">{cls.period} · {cls.subject}</p>
+            <p className="text-text-muted mb-2" style={{ fontSize: '10px' }}>{cls.students} students</p>
+            <div className="flex items-center gap-2">
+              <span className="font-display font-bold text-xl text-white">{cls.gpa}</span>
+              <TrendBadge trend={cls.trend} />
+            </div>
+            {cls.gpa < 70 && (
+              <span className="text-danger" style={{ fontSize: '9px' }}>⚑ Needs attention</span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ── Parent Messages widget ────────────────────────────────────────────────────
 function ParentMessagesWidget() {
-  const { messages, setScreen } = useStore()
+  const { messages } = useStore()
+  const pending = messages.filter(m => m.status === 'pending')
   const [reactions, setReactions] = useState({})
 
   function react(msgId, emoji) {
@@ -460,224 +464,51 @@ function ParentMessagesWidget() {
     <div className="widget">
       <div className="flex items-center justify-between mb-3">
         <p className="widget-title">Parent Messages</p>
-        <button onClick={() => setScreen('parentMessages')} className="text-xs" style={{ color: '#3b7ef4', background: 'none', border: 'none', cursor: 'pointer' }}>View All ›</button>
+        <button onClick={() => useStore.getState().setScreen('parentMessages')} className="text-accent text-xs font-semibold">View all →</button>
       </div>
-      <p className="tag-label mb-2">Every negative trigger has a positive version · AI writes both</p>
-      <div className="space-y-2">
-        {messages.map(m => (
-          <div key={m.id} className="p-3 rounded-card" style={{ background: '#0f1a2e', border: '1px solid #3b7ef420' }}>
-            <div className="flex items-start justify-between mb-1">
-              <div>
-                <p className="font-semibold text-sm text-text-primary">{m.studentName}</p>
-                <p style={{ fontSize: '10px', color: '#6b7494' }}>{m.subject} · {m.trigger}</p>
-              </div>
-              <span className="text-xs px-2 py-0.5 rounded-pill" style={{ background: m.status === 'pending' ? '#f5a62320' : '#22c97a20', color: m.status === 'pending' ? '#f5a623' : '#22c97a' }}>
-                {m.status === 'pending' ? 'Pending' : 'Sent'}
-              </span>
-            </div>
-            <div className="flex gap-2 mt-2">
-              {['👍', '❤️', '😂'].map(emoji => (
-                <button key={emoji} onClick={() => react(m.id, emoji)}
-                  className="flex items-center gap-1 px-2 py-0.5 rounded-pill"
-                  style={{ background: '#1e2231', fontSize: 11, color: '#eef0f8', border: 'none', cursor: 'pointer' }}>
-                  {emoji} <span style={{ fontSize: 9, color: '#6b7494' }}>{reactions[`${m.id}-${emoji}`] || 0}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ── Lesson Plan widget ────────────────────────────────────────────────────────
-function LessonPlanWidget() {
-  const { lessons } = useStore()
-  const lesson = lessons[0]
-
-  return (
-    <div className="widget">
-      <p className="widget-title mb-3">Lesson Plan</p>
-      {lesson ? (
-        <>
-          <p className="font-bold text-sm text-text-primary mb-0.5">{lesson.title}</p>
-          <p className="text-text-muted mb-3" style={{ fontSize: '10px' }}>{lesson.period} Period · {lesson.subject} · {lesson.duration} min</p>
-        </>
+      {pending.length === 0 ? (
+        <p className="text-text-muted text-sm">No pending messages 📭</p>
       ) : (
-        <p className="text-text-muted text-sm mb-3">No lesson planned for today</p>
+        <div className="space-y-2">
+          {pending.slice(0, 2).map(m => (
+            <div key={m.id} className="p-3 rounded-card" style={{ background: '#0f1a2e', border: '1px solid #3b7ef420' }}>
+              <p className="font-semibold text-sm text-text-primary mb-0.5">{m.studentName}</p>
+              <p style={{ fontSize: '10px', color: '#3b7ef4' }}>{m.trigger}</p>
+            </div>
+          ))}
+          {pending.length > 2 && (
+            <button onClick={() => useStore.getState().setScreen('parentMessages')}
+              className="w-full text-center text-xs font-semibold py-2 rounded-card"
+              style={{ background: '#1e2231', color: '#6b7494' }}>
+              +{pending.length - 2} more →
+            </button>
+          )}
+        </div>
       )}
-      <div className="flex gap-2">
-        <button onClick={() => { useStore.getState().setLessonPlanMode('menu'); useStore.getState().setScreen('lessonPlan') }}
-          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#3b7ef420', color: '#3b7ef4', border: 'none', cursor: 'pointer' }}>
-          📖 View Plan
-        </button>
-        <button onClick={() => { useStore.getState().setLessonPlanMode('ai'); useStore.getState().setScreen('lessonPlan') }}
-          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#9b6ef520', color: '#9b6ef5', border: 'none', cursor: 'pointer' }}>
-          ✨ AI Generate
-        </button>
-        <button onClick={() => useStore.getState().setScreen('classFeed')}
-          className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#22c97a20', color: '#22c97a', border: 'none', cursor: 'pointer' }}>
-          📤 Share
-        </button>
-      </div>
     </div>
   )
 }
 
-// ── Grading widget ────────────────────────────────────────────────────────────
-function GradingWidget() {
-  const [editWeights, setEditWeights]         = useState(false)
-  const [localWeights, setLocalWeights]       = useState(null)
-  const [showNeedsReview, setShowNeedsReview] = useState(false)
-  const [showKeyNeeded, setShowKeyNeeded]     = useState(false)
-  const { weights, students, grades, assignments, keyAlertsDismissed } = useStore()
-  const display = localWeights || weights
-
-  const needsReview = students.filter(s => s.flagged).length + grades.filter(g => g.aiGraded).length
-  const keyNeeded   = assignments.filter(a => !a.hasKey && !keyAlertsDismissed.includes(a.id)).length
-
-  function openWeights() { setLocalWeights({ ...weights }); setEditWeights(true) }
-  function saveWeights()  { useStore.getState().updateWeights(localWeights); setEditWeights(false) }
-
-  return (
-    <>
-      <div className="widget">
-        <div className="flex items-center justify-between mb-3">
-          <p className="widget-title">Grading</p>
-          <Tag color="#22c97a">Synced ✓</Tag>
-        </div>
-
-        <p className="tag-label mb-2">Assignment weights · tap to edit</p>
-        <div className="flex gap-1.5 mb-4">
-          {Object.entries(display).map(([type, w]) => (
-            <button key={type} onClick={openWeights}
-              className="flex-1 text-center p-2 rounded-card"
-              style={{ background: '#1e2231', border: 'none', cursor: 'pointer', transition: 'background .15s' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#252a3a'}
-              onMouseLeave={e => e.currentTarget.style.background = '#1e2231'}>
-              <div style={{ color: '#6b7494', fontSize: '9px', fontWeight: 700, marginBottom: 4 }}>
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </div>
-              <span style={{ fontWeight: 700, fontSize: 14, color: '#eef0f8' }}>{w}%</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          {/* NO transform animations on these buttons */}
-          <button onClick={() => setShowNeedsReview(true)}
-            className="p-2 rounded-card text-left"
-            style={{ background: '#1c1012', border: '1px solid #f04a4a30', cursor: 'pointer', transition: 'background .15s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#221418'}
-            onMouseLeave={e => e.currentTarget.style.background = '#1c1012'}>
-            <p style={{ fontWeight: 700, fontSize: '10px', color: '#f04a4a' }}>⚑ Needs Review</p>
-            <p className="font-display font-bold text-lg text-white">{needsReview}</p>
-            <p style={{ fontSize: '9px', color: '#6b7494' }}>AI-graded · tap to approve</p>
-          </button>
-          <button onClick={() => setShowKeyNeeded(true)}
-            className="p-2 rounded-card text-left"
-            style={{ background: '#1a1a0a', border: '1px solid #f5a62330', cursor: 'pointer', transition: 'background .15s' }}
-            onMouseEnter={e => e.currentTarget.style.background = '#201e0a'}
-            onMouseLeave={e => e.currentTarget.style.background = '#1a1a0a'}>
-            <p style={{ fontWeight: 700, fontSize: '10px', color: '#f5a623' }}>🔑 Key Needed</p>
-            <p className="font-display font-bold text-lg text-white">{keyNeeded}</p>
-            <p style={{ fontSize: '9px', color: '#6b7494' }}>No answer key · tap to upload</p>
-          </button>
-        </div>
-
-        <button onClick={() => useStore.getState().setScreen('camera')}
-          className="w-full py-4 rounded-card font-display font-bold text-lg"
-          style={{ background: 'linear-gradient(135deg, var(--school-color), #5c9ef8)', color: 'white', border: 'none', cursor: 'pointer' }}>
-          📷 Scan / Grade
-        </button>
-      </div>
-
-      {editWeights && (
-        <Modal onClose={() => setEditWeights(false)} title="Assignment Weights">
-          <div style={{ padding: 24 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
-              {Object.entries(localWeights).map(([type, w]) => (
-                <div key={type} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <label style={{ fontSize: 13, color: '#eef0f8', textTransform: 'capitalize' }}>{type}</label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input type="number" min="0" max="100"
-                      style={{ width: 64, background: '#1e2231', border: '1px solid #2a2f42', borderRadius: 8, padding: '4px 8px', color: '#eef0f8', textAlign: 'center', fontSize: 13 }}
-                      value={w}
-                      onChange={e => setLocalWeights(lw => ({ ...lw, [type]: Number(e.target.value) }))} />
-                    <span style={{ color: '#6b7494', fontSize: 13 }}>%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <p style={{ fontSize: 11, color: '#6b7494', marginBottom: 16 }}>
-              Total: {Object.values(localWeights).reduce((a, b) => a + b, 0)}% (should equal 100%)
-            </p>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setEditWeights(false)}
-                style={{ flex: 1, padding: '8px 0', borderRadius: 999, fontSize: 13, background: '#1e2231', color: '#6b7494', border: 'none', cursor: 'pointer' }}>
-                Cancel
-              </button>
-              <button onClick={saveWeights}
-                style={{ flex: 1, padding: '8px 0', borderRadius: 999, fontSize: 13, fontWeight: 700, background: 'var(--school-color)', color: '#fff', border: 'none', cursor: 'pointer' }}>
-                Save
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {showNeedsReview && <NeedsReviewModal onClose={() => setShowNeedsReview(false)} />}
-      {showKeyNeeded  && <KeyNeededModal   onClose={() => setShowKeyNeeded(false)} />}
-    </>
-  )
-}
-
-// ── Main Dashboard ────────────────────────────────────────────────────────────
+// ── Dashboard ─────────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { teacher } = useStore()
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div>
-      <div className="mb-6">
+    <div className="space-y-4 pb-6">
+      <div className="pt-2 pb-1">
         <h1 className="font-display font-bold text-2xl text-text-primary">
-          Good morning, {teacher.name} 👋
+          {greeting}, {teacher.name.split(' ')[1] || teacher.name} 👋
         </h1>
-        <p className="text-text-muted text-sm">
-          {teacher.school} · {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-        </p>
+        <p className="text-text-muted text-sm">{teacher.school}</p>
       </div>
 
-      <div className="space-y-4">
-        <DailyOverview />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <TodaysLessons />
-          <NeedsAttentionWidget />
-        </div>
-        <MyClasses />
-        <ParentMessagesWidget />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <LessonPlanWidget />
-          <GradingWidget />
-        </div>
-
-        {/* ── Reports — single button at bottom, NOT a widget ─────────────── */}
-        <button
-          onClick={() => useStore.getState().setScreen('reports')}
-          style={{
-            width: '100%', padding: '14px 20px', borderRadius: 14,
-            display: 'flex', alignItems: 'center', gap: 12,
-            background: '#161923', border: '1px solid #2a2f42',
-            cursor: 'pointer', transition: 'background .15s',
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = '#1e2231'}
-          onMouseLeave={e => e.currentTarget.style.background = '#161923'}
-        >
-          <span style={{ fontSize: 22 }}>📊</span>
-          <span style={{ fontWeight: 600, color: '#eef0f8', fontSize: 15 }}>View Reports</span>
-          <span style={{ marginLeft: 'auto', color: '#6b7494', fontSize: 18 }}>›</span>
-        </button>
-      </div>
+      <DailyOverview />
+      <TodaysLessons />
+      <NeedsAttentionWidget />
+      <MyClasses />
+      <ParentMessagesWidget />
     </div>
   )
 }
