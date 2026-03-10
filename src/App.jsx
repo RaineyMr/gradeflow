@@ -16,16 +16,6 @@ function NewAssignmentModal({ onClose, defaultType = 'quiz' }) {
   const addAssignment = useStore((state) => state.addAssignment)
   const clearQuickCreateAssignment = useStore((state) => state.clearQuickCreateAssignment)
 
-  const [form, setForm] = useState({
-    name: '',
-    type: defaultType,
-    date: new Date().toISOString().split('T')[0],
-    dueDate: '',
-    weight: 30,
-    classId: classes[0]?.id || '',
-  })
-  const [applyAll, setApplyAll] = useState(true)
-
   const types = [
     { id: 'test', label: 'Test', weight: 40, color: '#f04a4a', icon: '📝' },
     { id: 'quiz', label: 'Quiz', weight: 30, color: '#f5a623', icon: '📋' },
@@ -33,25 +23,37 @@ function NewAssignmentModal({ onClose, defaultType = 'quiz' }) {
     { id: 'participation', label: 'Participation', weight: 10, color: '#9b6ef5', icon: '✋' },
   ]
 
-  useEffect(() => {
-    const selectedType = types.find((item) => item.id === defaultType)
-    if (selectedType) {
-      setForm((current) => ({
-        ...current,
-        type: selectedType.id,
-        weight: selectedType.weight,
-      }))
-    }
-  }, [defaultType])
+  const selectedDefaultType = types.find((item) => item.id === defaultType)
 
-  function handleTypeChange(type) {
-    const selectedType = types.find((item) => item.id === type)
-    if (!selectedType) return
+  const [form, setForm] = useState({
+    name: '',
+    type: selectedDefaultType?.id || 'quiz',
+    date: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    weight: selectedDefaultType?.weight || 30,
+    classId: classes[0]?.id || '',
+  })
+  const [applyAll, setApplyAll] = useState(true)
+
+  useEffect(() => {
+    const type = types.find((item) => item.id === defaultType)
+    if (!type) return
 
     setForm((current) => ({
       ...current,
-      type,
-      weight: selectedType.weight,
+      type: type.id,
+      weight: type.weight,
+    }))
+  }, [defaultType])
+
+  function handleTypeChange(typeId) {
+    const type = types.find((item) => item.id === typeId)
+    if (!type) return
+
+    setForm((current) => ({
+      ...current,
+      type: type.id,
+      weight: type.weight,
     }))
   }
 
@@ -282,7 +284,6 @@ export default function App() {
       if (!menuOpen) return
 
       const target = event.target
-
       const clickedInsideMenu =
         menuRef.current && menuRef.current.contains(target)
       const clickedMenuButton =
@@ -327,7 +328,13 @@ export default function App() {
     { id: 'gradebook', icon: '📚', label: 'Classes', action: () => goTo('gradebook') },
     { id: 'lessonPlan', icon: '📋', label: 'Plans', action: () => goTo('lessonPlan') },
     { id: 'reports', icon: '📊', label: 'Reports', action: () => goTo('reports') },
-    { id: 'newAssign', icon: '➕', label: 'New', action: () => openQuickCreate('quiz'), special: true },
+    {
+      id: 'newAssign',
+      icon: '➕',
+      label: 'New',
+      action: () => openQuickCreate('quiz'),
+      special: true,
+    },
     { id: 'parentMessages', icon: '💬', label: 'Messages', action: () => goTo('parentMessages') },
   ]
 
@@ -344,9 +351,7 @@ export default function App() {
   }
 
   const activeNav =
-    ['gradebook', 'studentProfile'].includes(activeScreen)
-      ? 'gradebook'
-      : activeScreen
+    ['gradebook', 'studentProfile'].includes(activeScreen) ? 'gradebook' : activeScreen
 
   const notificationCount = Array.isArray(notifications)
     ? notifications.length
