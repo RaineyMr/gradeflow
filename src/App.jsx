@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import ReactDOM from 'react-dom'
 import { useStore } from './lib/store'
 import Dashboard from './pages/Dashboard'
 import Gradebook from './pages/Gradebook'
@@ -19,9 +20,9 @@ function NewAssignmentModal({ onClose }) {
   const [applyAll, setApplyAll] = useState(true)
 
   const types = [
-    { id: 'test', label: 'Test', weight: 40, color: '#f04a4a', icon: '📝' },
-    { id: 'quiz', label: 'Quiz', weight: 30, color: '#f5a623', icon: '📋' },
-    { id: 'homework', label: 'Homework', weight: 20, color: '#22c97a', icon: '📚' },
+    { id: 'test',          label: 'Test',          weight: 40, color: '#f04a4a', icon: '📝' },
+    { id: 'quiz',          label: 'Quiz',          weight: 30, color: '#f5a623', icon: '📋' },
+    { id: 'homework',      label: 'Homework',      weight: 20, color: '#22c97a', icon: '📚' },
     { id: 'participation', label: 'Participation', weight: 10, color: '#9b6ef5', icon: '✋' },
   ]
 
@@ -36,7 +37,11 @@ function NewAssignmentModal({ onClose }) {
   }
 
   const modal = (
-    <div className="fixed inset-0 flex items-end sm:items-center justify-center" style={{ zIndex: 9999 }} onClick={onClose}>
+    <div
+      className="fixed inset-0 flex items-end sm:items-center justify-center"
+      style={{ zIndex: 9999 }}
+      onClick={onClose}
+    >
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
       <div
         className="relative w-full max-w-lg mx-4 rounded-widget border border-elevated animate-slide-up overflow-hidden"
@@ -48,7 +53,6 @@ function NewAssignmentModal({ onClose }) {
           <button onClick={onClose} className="text-text-muted hover:text-text-primary text-xl leading-none">✕</button>
         </div>
         <div className="overflow-y-auto p-5 space-y-4" style={{ maxHeight: 'calc(90vh - 64px)' }}>
-
           <div>
             <label className="tag-label block mb-2">Assignment Type</label>
             <div className="grid grid-cols-2 gap-2">
@@ -84,23 +88,30 @@ function NewAssignmentModal({ onClose }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="tag-label block mb-1">Assign Date</label>
-              <input type="date" className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
+              <input type="date"
+                className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
                 value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
             </div>
             <div>
               <label className="tag-label block mb-1">Due Date</label>
-              <input type="date" className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
+              <input type="date"
+                className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
                 value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
             </div>
           </div>
 
           <div className="flex items-center gap-2 p-3 rounded-card" style={{ background: '#1e2231' }}>
-            <input type="checkbox" id="applyAllGlobal" checked={applyAll} onChange={e => setApplyAll(e.target.checked)} className="rounded" />
-            <label htmlFor="applyAllGlobal" className="text-sm text-text-muted cursor-pointer">Apply to all my classes</label>
+            <input type="checkbox" id="applyAllGlobal" checked={applyAll}
+              onChange={e => setApplyAll(e.target.checked)} className="rounded" />
+            <label htmlFor="applyAllGlobal" className="text-sm text-text-muted cursor-pointer">
+              Apply to all my classes
+            </label>
           </div>
 
           <div className="flex gap-2 pt-1">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-pill text-sm font-semibold" style={{ background: '#1e2231', color: '#6b7494' }}>
+            <button onClick={onClose}
+              className="flex-1 py-2.5 rounded-pill text-sm font-semibold"
+              style={{ background: '#1e2231', color: '#6b7494' }}>
               Cancel
             </button>
             <button onClick={handleSave} disabled={!form.name}
@@ -116,9 +127,29 @@ function NewAssignmentModal({ onClose }) {
   return ReactDOM.createPortal(modal, document.body)
 }
 
+// ── Transparent overlay that captures the click closing the menu ──────────────
+// Uses a portal so it sits above everything except the dropdown itself.
+// onMouseDown + preventDefault stops the click from reaching any element below.
+function MenuOverlay({ onClose }) {
+  return ReactDOM.createPortal(
+    <div
+      className="fixed inset-0"
+      style={{ zIndex: 9975 }}
+      onMouseDown={e => { e.preventDefault(); e.stopPropagation(); onClose() }}
+      onTouchStart={e => { e.preventDefault(); e.stopPropagation(); onClose() }}
+    />,
+    document.body
+  )
+}
+
 export default function App() {
-  const { activeScreen, teacher, setScreen, notifications, setActiveClass, setActiveStudent } = useStore()
+  const {
+    activeScreen, teacher, setScreen, notifications,
+    setActiveClass, setActiveStudent, lessonPlanMode
+  } = useStore()
+
   const [menuOpen, setMenuOpen] = useState(false)
+  const [showNewAssignment, setShowNewAssignment] = useState(false)
 
   function goHome() {
     setMenuOpen(false)
@@ -132,34 +163,25 @@ export default function App() {
     setScreen(screen)
   }
 
-  useEffect(() => {
-    function handleOutsideClick(e) {
-      if (menuOpen && menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleOutsideClick)
-    return () => document.removeEventListener('mousedown', handleOutsideClick)
-  }, [menuOpen])
-
   const navItems = [
-    { id: 'dashboard', icon: '🏠', label: 'Home', action: goHome },
-    { id: 'gradebook', icon: '📚', label: 'Classes', action: () => goTo('gradebook') },
-    { id: 'lessonPlan', icon: '📋', label: 'Plans', action: () => goTo('lessonPlan') },
-    { id: 'reports', icon: '📊', label: 'Reports', action: () => goTo('reports') },
-    { id: 'newAssign', icon: '➕', label: 'Assign', action: () => setShowNewAssignment(true), special: true },
+    { id: 'dashboard',      icon: '🏠', label: 'Home',     action: goHome },
+    { id: 'gradebook',      icon: '📚', label: 'Classes',  action: () => goTo('gradebook') },
+    { id: 'lessonPlan',     icon: '📋', label: 'Plans',    action: () => goTo('lessonPlan') },
+    { id: 'reports',        icon: '📊', label: 'Reports',  action: () => goTo('reports') },
+    { id: 'newAssign',      icon: '➕', label: 'Assign',   action: () => setShowNewAssignment(true), special: true },
     { id: 'parentMessages', icon: '💬', label: 'Messages', action: () => goTo('parentMessages') },
-    { id: 'lessonPlan', icon: '📋', label: 'Lesson Plans', action: () => goTo('lessonPlan') },
   ]
 
   const screens = {
-    dashboard: <Dashboard />,
-    gradebook: <Gradebook />,
+    dashboard:      <Dashboard />,
+    gradebook:      <Gradebook />,
     studentProfile: <StudentProfile />,
-    lessonPlan: <LessonPlan initialMode={lessonPlanMode || 'menu'} />,
-    testingSuite: <TestingSuite />,
-    reports: <Reports />,
+    lessonPlan:     <LessonPlan initialMode={lessonPlanMode || 'menu'} />,
+    testingSuite:   <TestingSuite />,
+    reports:        <Reports />,
     parentMessages: <ParentMessages />,
-    camera: <Camera />,
-    classFeed: <ClassFeed />,
+    camera:         <Camera />,
+    classFeed:      <ClassFeed />,
   }
 
   const activeNav = ['gradebook', 'studentProfile'].includes(activeScreen) ? 'gradebook' : activeScreen
@@ -167,20 +189,35 @@ export default function App() {
   return (
     <div className="min-h-screen bg-app flex flex-col" style={{ '--school-color': teacher.schoolColor }}>
 
-      <header className="sticky top-0 z-40 border-b border-elevated" style={{ background: '#0c0e14ee', backdropFilter: 'blur(12px)' }}>
+      {/* ── Top header ── */}
+      <header
+        className="sticky top-0 border-b border-elevated"
+        style={{ background: '#0c0e14ee', backdropFilter: 'blur(12px)', zIndex: 9960 }}
+      >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {activeScreen !== 'dashboard' && (
-              <button onClick={goHome} className="text-text-muted hover:text-text-primary transition-colors text-sm">←</button>
+              <button
+                onClick={goHome}
+                className="text-text-muted hover:text-text-primary transition-colors text-sm"
+              >←</button>
             )}
-            <button onClick={goHome} className="font-display font-bold text-xl hover:opacity-80 transition-opacity" style={{ color: 'var(--school-color)' }}>
+            <button
+              onClick={goHome}
+              className="font-display font-bold text-xl hover:opacity-80 transition-opacity"
+              style={{ color: 'var(--school-color)' }}
+            >
               GradeFlow
             </button>
             <span className="text-text-muted text-xs hidden sm:block">{teacher.school}</span>
           </div>
 
           <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-full hover:bg-elevated transition-colors" onClick={() => goTo('parentMessages')}>
+            {/* Notification bell */}
+            <button
+              className="relative p-2 rounded-full hover:bg-elevated transition-colors"
+              onClick={() => goTo('parentMessages')}
+            >
               <span className="text-lg">🔔</span>
               {notifications > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 bg-danger text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
@@ -189,49 +226,71 @@ export default function App() {
               )}
             </button>
 
-            <div className="relative">
-              <button onClick={() => setMenuOpen(m => !m)} className="flex items-center gap-2 hover:bg-elevated rounded-full px-3 py-1.5 transition-colors">
+            {/* Avatar / dropdown */}
+            <div className="relative" style={{ zIndex: 9980 }}>
+              <button
+                onClick={() => setMenuOpen(m => !m)}
+                className="flex items-center gap-2 hover:bg-elevated rounded-full px-3 py-1.5 transition-colors"
+              >
                 <span className="text-lg">{teacher.avatar}</span>
                 <span className="text-sm font-medium text-text-primary hidden sm:block">{teacher.name}</span>
                 <span className="text-text-muted text-xs ml-1">▾</span>
               </button>
 
+              {/*
+                When open: render the full-screen invisible overlay FIRST (lower z),
+                then the dropdown ON TOP of it (higher z).
+                Clicking the overlay fires onMouseDown with preventDefault() which
+                swallows the event before it can reach nav buttons, page content, etc.
+              */}
+              {menuOpen && <MenuOverlay onClose={() => setMenuOpen(false)} />}
+
               {menuOpen && (
-                <>
-                  {/* Clicking anywhere outside (including dashboard) closes the menu */}
-                  <div className="fixed inset-0" style={{ zIndex: 200 }} onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-52 rounded-card border border-elevated overflow-hidden animate-slide-up" style={{ background: "#161923", zIndex: 210 }}>
-                    {[
-                      { icon: '🏠', label: 'Dashboard', action: () => { setMenuOpen(false) } },
-                      { icon: '📚', label: 'Gradebook', action: () => goTo('gradebook') },
-                      { icon: '📋', label: 'Lesson Plans', action: () => goTo('lessonPlan') },
-                      { icon: '🧪', label: 'Testing Suite', action: () => goTo('testingSuite') },
-                      { icon: '📊', label: 'Reports', action: () => goTo('reports') },
-                      { icon: '💬', label: 'Messages', action: () => goTo('parentMessages') },
-                      { icon: '📢', label: 'Class Feed', action: () => goTo('classFeed') },
-                      { icon: '⚙️', label: 'Settings', action: () => { setMenuOpen(false); alert('Settings — coming in onboarding build') } },
-                      { icon: '🚪', label: 'Sign Out', action: () => { setMenuOpen(false); alert('Sign out — auth coming in onboarding build') } },
-                    ].map(item => (
-                      <button key={item.label} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-elevated transition-colors text-left border-b border-elevated last:border-0">
-                        <span>{item.icon}</span>
-                        <span>{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
+                <div
+                  className="absolute right-0 top-full mt-2 w-52 rounded-card border border-elevated overflow-hidden animate-slide-up"
+                  style={{ background: '#161923', zIndex: 9990 }}
+                >
+                  {[
+                    { icon: '🏠', label: 'Dashboard',    action: () => { setMenuOpen(false); goHome() } },
+                    { icon: '📚', label: 'Gradebook',    action: () => goTo('gradebook') },
+                    { icon: '📋', label: 'Lesson Plans', action: () => goTo('lessonPlan') },
+                    { icon: '🧪', label: 'Testing Suite',action: () => goTo('testingSuite') },
+                    { icon: '📊', label: 'Reports',      action: () => goTo('reports') },
+                    { icon: '💬', label: 'Messages',     action: () => goTo('parentMessages') },
+                    { icon: '📢', label: 'Class Feed',   action: () => goTo('classFeed') },
+                    { icon: '⚙️', label: 'Settings',
+                      action: () => { setMenuOpen(false); alert('Settings — coming in onboarding build') } },
+                    { icon: '🚪', label: 'Sign Out',
+                      action: () => { setMenuOpen(false); alert('Sign out — auth coming in onboarding build') } },
+                  ].map(item => (
+                    <button
+                      key={item.label}
+                      onClick={item.action}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-elevated transition-colors text-left border-b border-elevated last:border-0"
+                    >
+                      <span>{item.icon}</span>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
         </div>
       </header>
 
+      {/* ── Main content ── */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-24">
         <div className="animate-slide-up" key={activeScreen}>
           {screens[activeScreen] || <Dashboard />}
         </div>
       </main>
 
-      {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-elevated" style={{ background: '#0c0e14f0', backdropFilter: 'blur(12px)' }}>
+      {/* ── Bottom nav ── */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 border-t border-elevated"
+        style={{ background: '#0c0e14f0', backdropFilter: 'blur(12px)', zIndex: 9960 }}
+      >
         <div className="max-w-6xl mx-auto flex">
           {navItems.map(item => {
             const isActive = activeNav === item.id
@@ -251,13 +310,16 @@ export default function App() {
                   <span className="text-xl">{item.icon}</span>
                 )}
                 <span style={{ fontSize: '9px', fontWeight: 600 }}>{item.label}</span>
-                {isActive && !item.special && <div className="w-1 h-1 rounded-full" style={{ background: 'var(--school-color)' }} />}
+                {isActive && !item.special && (
+                  <div className="w-1 h-1 rounded-full" style={{ background: 'var(--school-color)' }} />
+                )}
               </button>
             )
           })}
         </div>
       </nav>
 
+      {/* ── New Assignment modal ── */}
       {showNewAssignment && <NewAssignmentModal onClose={() => setShowNewAssignment(false)} />}
     </div>
   )
