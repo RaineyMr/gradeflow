@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useStore } from './lib/store'
 import Dashboard from './pages/Dashboard'
 import Gradebook from './pages/Gradebook'
@@ -11,15 +11,14 @@ import Camera from './pages/Camera'
 import ClassFeed from './pages/ClassFeed'
 
 export default function App() {
-  const { activeScreen, teacher, setScreen, goBack, screenHistory, notifications } = useStore()
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const { activeScreen, teacher, setScreen, notifications } = useStore()
 
   const navItems = [
     { id: 'dashboard', icon: '🏠', label: 'Home' },
     { id: 'camera', icon: '📷', label: 'Scan' },
     { id: 'gradebook', icon: '📚', label: 'Classes' },
     { id: 'parentMessages', icon: '💬', label: 'Messages' },
-    { id: 'lessonPlan', icon: '📖', label: 'Lesson Plans' },
+    { id: 'classFeed', icon: '📢', label: 'Feed' },
   ]
 
   const screens = {
@@ -40,15 +39,6 @@ export default function App() {
       <header className="sticky top-0 z-40 border-b border-elevated" style={{ background: '#0c0e14ee', backdropFilter: 'blur(12px)' }}>
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {/* Back arrow — only shows when there's history */}
-            {screenHistory.length > 0 && (
-              <button
-                onClick={goBack}
-                className="p-1.5 rounded-full hover:bg-elevated transition-colors text-text-muted hover:text-text-primary"
-              >
-                ← 
-              </button>
-            )}
             <span className="font-display font-bold text-xl" style={{ color: 'var(--school-color)' }}>GradeFlow</span>
             <span className="text-text-muted text-xs hidden sm:block">{teacher.school}</span>
           </div>
@@ -64,50 +54,10 @@ export default function App() {
                 </span>
               )}
             </button>
-
-            {/* Profile button + dropdown menu */}
-            <div className="relative">
-              <button
-                onClick={() => setProfileMenuOpen(o => !o)}
-                className="flex items-center gap-2 hover:bg-elevated rounded-full px-3 py-1.5 transition-colors"
-              >
-                <span className="text-lg">{teacher.avatar}</span>
-                <span className="text-sm font-medium text-text-primary hidden sm:block">{teacher.name}</span>
-              </button>
-
-              {profileMenuOpen && (
-                <>
-                  {/* Backdrop */}
-                  <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)} />
-                  {/* Menu */}
-                  <div
-                    className="absolute right-0 top-full mt-2 w-52 rounded-widget border border-elevated z-50 overflow-hidden animate-slide-up"
-                    style={{ background: '#161923' }}
-                  >
-                    <div className="px-4 py-3 border-b border-elevated">
-                      <p className="font-bold text-sm text-text-primary">{teacher.name}</p>
-                      <p className="text-text-muted text-xs">{teacher.school}</p>
-                    </div>
-                    {[
-                      { icon: '👤', label: 'My Profile' },
-                      { icon: '⚙', label: 'Settings' },
-                      { icon: '🎨', label: 'School Branding' },
-                      { icon: '🔔', label: 'Notifications' },
-                      { icon: '🚪', label: 'Sign Out' },
-                    ].map(item => (
-                      <button
-                        key={item.label}
-                        onClick={() => setProfileMenuOpen(false)}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-text-muted hover:text-text-primary hover:bg-elevated transition-colors text-left"
-                      >
-                        <span>{item.icon}</span>
-                        <span>{item.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+            <button className="flex items-center gap-2 hover:bg-elevated rounded-full px-3 py-1.5 transition-colors">
+              <span className="text-lg">{teacher.avatar}</span>
+              <span className="text-sm font-medium text-text-primary hidden sm:block">{teacher.name}</span>
+            </button>
           </div>
         </div>
       </header>
