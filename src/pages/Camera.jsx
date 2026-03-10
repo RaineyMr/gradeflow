@@ -1,260 +1,870 @@
-import React, { useEffect, useRef, useState } from 'react'
-import ReactDOM from 'react-dom'
-import { useStore } from './lib/store'
-import Dashboard from './pages/Dashboard'
-import Gradebook from './pages/Gradebook'
-import StudentProfile from './pages/StudentProfile'
-import LessonPlan from './pages/LessonPlan'
-import TestingSuite from './pages/TestingSuite'
-import Reports from './pages/Reports'
-import ParentMessages from './pages/ParentMessages'
-import Camera from './pages/Camera'
-import ClassFeed from './pages/ClassFeed'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useStore } from '../lib/store'
+import { scanGradedDocument } from '../lib/ai'
 
-// ── New Assignment Quick-Create Modal ─────────────────────────────────────────
-function NewAssignmentModal({ onClose }) {
-  const { addAssignment, classes } = useStore()
-  const [form, setForm] = useState({
-    name: '', type: 'quiz', date: new Date().toISOString().split('T')[0], dueDate: '', weight: 30
-  })
-  const [applyAll, setApplyAll] = useState(true)
+export default function Camera() {import React, { useState, useRef, useEffect, useCallback } from 'react'
+import { useStore } from '../lib/store'
+import { scanGradedDocument } from '../lib/ai'
 
-  const types = [
-    { id: 'test', label: 'Test', weight: 40, color: '#f04a4a', icon: '📝' },
-    { id: 'quiz', label: 'Quiz', weight: 30, color: '#f5a623', icon: '📋' },
-    { id: 'homework', label: 'Homework', weight: 20, color: '#22c97a', icon: '📚' },
-    { id: 'participation', label: 'Participation', weight: 10, color: '#9b6ef5', icon: '✋' },
+export default function Camera() {
+  const { classes, activeClass, addAssignment } = useStore()
+  const [mode, setMode] = useState('menu')
+  const [assignType, setAssignType] = useState('quiz')
+  const [capturedImage, setCapturedImage] = useState(null)
+  const [assignName, setAssignName] = useState('')
+  const [selectedClass, setSelectedClass] = useState(activeClass?.id || classes[0]?.id)
+  const [cameraError, setCameraError] = useState(null)
+  const [cameraReady, setCameraReady] = useState(false)
+  const [scanResult, setScanResult] = useState(null)
+  const [scanError, setScanError] = useState(null)
+  const [manualScore, setManualScore] = useState('')
+  const [manualTotal, setManualTotal] = useState('100')
+
+  const streamRef = useRef(null)
+  const videoRef  = useRef(null)
+  const canvasRef = useRef(null)
+  const fileRef   = useRef(null)
+
+  const typeConfig = [
+    { id: 'test',          label: 'Test',  weight: 40, color: '#f04a4a' },
+    { id: 'quiz',          label: 'Quiz',  weight: 30, color: '#f5a623' },
+    { id: 'participation', label: 'Part.', weight: 10, color: '#9b6ef5' },
+    { id: 'homework',      label: 'Other', weight: 20, color: '#22c97a' },
   ]
 
-  function handleTypeChange(type) {
-    const t = types.find(x => x.id === type)
-    setForm(f => ({ ...f, type, weight: t.weight }))
+  function stopStream() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop())
+      streamRef.current = null
+    }
+    setCameraReady(false)
   }
 
-  function handleSave() {
-    addAssignment({ ...form, classId: classes[0]?.id, applyAll })
-    onClose()
+  useEffect(() => () => stopStream(), [])
+
+  const attachStream = useCallback((stream) => {
+    const video = videoRef.current
+    if (!video) return
+    video.srcObject = stream
+    if (typeof video.load === 'function') video.load()
+
+    const tryPlay = () => {
+      const p = video.play()
+      if (p !== undefined) {
+        p.then(() => setCameraReady(true)).catch(() => {
+          video.muted = true
+          video.play()
+            .then(() => setCameraReady(true))
+            .catch(err => {
+              setCameraError('Could not start camera: ' + err.message)
+              stopStream()
+              setMode('menu')
+            })
+        })
+      } else {
+        video.addEventListener('canplay', () => setCameraReady(true), { once: true })
+      }
+    }
+
+    if (video.isConnected) {
+      tryPlay()
+    } else {
+      requestAnimationFrame(() => { if (videoRef.current) tryPlay() })
+    }
+  }, [])
+
+  // Callback ref fires the moment <video> mounts — eliminates the race condition
+  const videoCallbackRef = useCallback((node) => {
+    videoRef.current = node
+    if (node && streamRef.current) attachStream(streamRef.current)
+  }, [attachStream])
+
+  async function openCamera() {
+    setCameraError(null)
+    setCameraReady(false)
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError(
+        location.protocol === 'http:' && location.hostname !== 'localhost'
+          ? 'Camera requires HTTPS. Use the Vercel URL.'
+          : 'Browser does not support camera. Try Chrome or Safari, or upload instead.'
+      )
+      return
+    }
+
+    const attempts = [
+      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
+      { video: { facingMode: 'environment' } },
+      { video: { facingMode: 'user' } },
+      { video: true },
+    ]
+
+    let stream = null
+    let lastErr = null
+    for (const c of attempts) {
+      try { stream = await navigator.mediaDevices.getUserMedia(c); break }
+      catch (err) { lastErr = err; if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break }
+    }
+
+    if (!stream) {
+      const n = lastErr?.name
+      setCameraError(
+        n === 'NotAllowedError' || n === 'PermissionDeniedError'
+          ? 'Camera permission denied. Tap the lock icon in your address bar, allow camera, then retry.'
+          : n === 'NotFoundError' ? 'No camera found. Use Upload instead.'
+          : n === 'NotReadableError' ? 'Camera in use by another app. Close it and retry.'
+          : 'Camera error (' + (n || 'unknown') + '). Use Upload instead.'
+      )
+      return
+    }
+
+    streamRef.current = stream
+    setMode('camera')
   }
 
-  const modal = (
-    <div className="fixed inset-0 flex items-end sm:items-center justify-center" style={{ zIndex: 9999 }} onClick={onClose}>
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-lg mx-4 rounded-widget border border-elevated animate-slide-up overflow-hidden"
-        style={{ background: '#161923', maxHeight: '90vh', zIndex: 10000 }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-elevated">
-          <h3 className="font-bold text-text-primary">➕ New Assignment</h3>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary text-xl leading-none">✕</button>
+  function capturePhoto() {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas) return
+    const w = video.videoWidth || 1280
+    const h = video.videoHeight || 720
+    canvas.width = w
+    canvas.height = h
+    canvas.getContext('2d').drawImage(video, 0, 0, w, h)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
+    stopStream()
+    processImage(dataUrl, dataUrl.split(',')[1], 'image/jpeg')
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    e.target.value = ''
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const dataUrl = ev.target.result
+      processImage(dataUrl, dataUrl.split(',')[1], file.type || 'image/jpeg')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function processImage(dataUrl, base64, mime) {
+    setCapturedImage(dataUrl)
+    setScanResult(null)
+    setScanError(null)
+    setMode('processing')
+    runAI(base64, mime)
+  }
+
+  async function runAI(base64, mime) {
+    try {
+      const result = await scanGradedDocument(base64, mime)
+      setScanResult(result)
+      if (result.assignmentTitle) setAssignName(result.assignmentTitle)
+      if (result.documentType) {
+        const map = { quiz: 'quiz', test: 'test', homework: 'homework', worksheet: 'homework' }
+        setAssignType(map[result.documentType] || 'quiz')
+      }
+      if (result.earnedPoints != null) setManualScore(String(result.earnedPoints))
+      if (result.totalPoints != null)  setManualTotal(String(result.totalPoints))
+      setMode('review')
+    } catch (err) {
+      setScanError(err.message || 'Scan failed')
+      setMode('review')
+    }
+  }
+
+  function calcPercentage() {
+    const earned = parseFloat(manualScore)
+    const total  = parseFloat(manualTotal)
+    if (isNaN(earned) || isNaN(total) || total === 0) return null
+    return Math.round((earned / total) * 100)
+  }
+
+  function letterFromPct(pct) {
+    if (pct == null) return '--'
+    if (pct >= 90) return 'A'
+    if (pct >= 80) return 'B'
+    if (pct >= 70) return 'C'
+    if (pct >= 60) return 'D'
+    return 'F'
+  }
+
+  function resetAll() {
+    stopStream()
+    setCapturedImage(null)
+    setScanResult(null)
+    setScanError(null)
+    setManualScore('')
+    setManualTotal('100')
+    setAssignName('')
+    setMode('menu')
+  }
+
+  function postToGradebook() {
+    const pct = calcPercentage()
+    if (pct == null) return
+    addAssignment({
+      classId: Number(selectedClass),
+      name: assignName || ('Scanned ' + assignType),
+      type: assignType,
+      weight: typeConfig.find(t => t.id === assignType)?.weight || 30,
+      date: new Date().toISOString().split('T')[0],
+      dueDate: new Date().toISOString().split('T')[0],
+      hasKey: true,
+      scannedScore: pct,
+      aiGraded: !!scanResult,
+      aiConfidence: scanResult?.confidence || 'low',
+    })
+    setMode('posted')
+  }
+
+  if (mode === 'posted') return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="text-6xl mb-4">&#10003;</div>
+      <h2 className="font-display font-bold text-xl text-text-primary mb-2">Posted to Gradebook</h2>
+      <p className="text-text-muted text-sm mb-6">Assignment added</p>
+      <button onClick={resetAll} className="px-6 py-2.5 rounded-pill font-bold text-white" style={{ background: 'var(--school-color)' }}>
+        Scan Another
+      </button>
+    </div>
+  )
+
+  if (mode === 'processing') return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      {capturedImage && (
+        <div className="w-28 h-28 rounded-card overflow-hidden mb-6 border border-elevated opacity-70">
+          <img src={capturedImage} alt="Scanning" className="w-full h-full object-cover" />
         </div>
-        <div className="overflow-y-auto p-5 space-y-4" style={{ maxHeight: 'calc(90vh - 64px)' }}>
+      )}
+      <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+      <p className="font-semibold text-text-primary mb-1">Claude Vision is reading this paper</p>
+      <p className="text-text-muted text-sm">Detecting score format...</p>
+    </div>
+  )
+
+  if (mode === 'camera') return (
+    <div>
+      <button onClick={() => { stopStream(); setMode('menu') }} className="flex items-center gap-2 text-text-muted text-sm mb-4 hover:text-text-primary">
+        X Cancel
+      </button>
+      <div className="relative rounded-widget overflow-hidden bg-black mb-4" style={{ aspectRatio: '4/3', maxHeight: '60vh' }}>
+        <video ref={videoCallbackRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ display: 'block' }} />
+        {!cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-white text-sm opacity-60">Starting camera...</p>
+            </div>
+          </div>
+        )}
+        {cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-4/5 h-4/5">
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white" />
+              <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white" />
+            </div>
+          </div>
+        )}
+      </div>
+      <canvas ref={canvasRef} className="hidden" />
+      <p className="text-center text-text-muted text-xs mb-4">Fill the frame with the graded paper</p>
+      <button
+        onClick={capturePhoto}
+        disabled={!cameraReady}
+        className="w-full py-4 rounded-widget font-display font-bold text-lg text-white disabled:opacity-40"
+        style={{ background: cameraReady ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231' }}>
+        {cameraReady ? 'Capture and Scan' : 'Starting camera...'}
+      </button>
+    </div>
+  )
+
+  if (mode === 'review') {
+    const pct = calcPercentage()
+    const letter = letterFromPct(pct)
+    const sr = scanResult
+    const scoreColor = pct >= 90 ? '#22c97a' : pct >= 70 ? '#f5a623' : '#f04a4a'
+
+    return (
+      <div>
+        <button onClick={resetAll} className="flex items-center gap-2 text-text-muted text-sm mb-4 hover:text-text-primary">
+          &larr; Scan Again
+        </button>
+        <h1 className="font-display font-bold text-xl text-text-primary mb-4">Review and Post</h1>
+
+        {sr && !scanError && (
+          <div className="p-4 rounded-card mb-4" style={{ background: '#0d1520', border: '1px solid #3b7ef430' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs px-2 py-0.5 rounded-pill font-bold" style={{ background: '#9b6ef520', color: '#9b6ef5' }}>
+                Claude Vision
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-pill font-bold" style={{
+                background: sr.confidence === 'high' ? '#22c97a20' : '#f5a62320',
+                color: sr.confidence === 'high' ? '#22c97a' : '#f5a623'
+              }}>
+                {sr.confidence === 'high' ? 'High confidence' : 'Low confidence - verify'}
+              </span>
+            </div>
+            <p className="text-sm text-text-primary">{sr.rawText}</p>
+          </div>
+        )}
+
+        {scanError && (
+          <div className="p-4 rounded-card mb-4" style={{ background: '#1c1012', border: '1px solid #f04a4a30' }}>
+            <p className="font-semibold mb-1" style={{ color: '#f04a4a' }}>Scan error</p>
+            <p className="text-sm" style={{ color: '#f04a4a', opacity: 0.85 }}>{scanError}</p>
+            <p className="text-text-muted text-sm mt-2">Enter score manually below.</p>
+          </div>
+        )}
+
+        <div className="space-y-3 mb-4">
           <div>
-            <label className="tag-label block mb-2">Assignment Type</label>
-            <div className="grid grid-cols-2 gap-2">
-              {types.map(t => (
-                <button key={t.id} onClick={() => handleTypeChange(t.id)}
-                  className="py-3 rounded-card text-sm font-bold transition-all flex items-center gap-2 px-3"
+            <label className="tag-label block mb-1">Assignment name</label>
+            <input value={assignName} onChange={e => setAssignName(e.target.value)}
+              placeholder="e.g. Ch.4 Quiz"
+              className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+              style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="tag-label block mb-1">Points earned</label>
+              <input value={manualScore} onChange={e => setManualScore(e.target.value)}
+                placeholder="e.g. 82" type="number"
+                className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+                style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+            </div>
+            <div>
+              <label className="tag-label block mb-1">Total points</label>
+              <input value={manualTotal} onChange={e => setManualTotal(e.target.value)}
+                placeholder="e.g. 100" type="number"
+                className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+                style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+            </div>
+          </div>
+          <div>
+            <label className="tag-label block mb-1">Assignment type</label>
+            <div className="flex gap-2">
+              {typeConfig.map(t => (
+                <button key={t.id} onClick={() => setAssignType(t.id)}
+                  className="flex-1 py-1.5 rounded-pill text-xs font-bold transition-all"
                   style={{
-                    background: form.type === t.id ? `${t.color}22` : '#1e2231',
-                    color: form.type === t.id ? t.color : '#6b7494',
-                    border: `1px solid ${form.type === t.id ? t.color + '50' : 'transparent'}`
+                    background: assignType === t.id ? t.color + '30' : '#1e2231',
+                    color: assignType === t.id ? t.color : '#6b7494',
+                    border: '1px solid ' + (assignType === t.id ? t.color + '60' : 'transparent')
                   }}>
-                  <span className="text-lg">{t.icon}</span>
-                  <div className="text-left">
-                    <div>{t.label}</div>
-                    <div style={{ fontSize: '9px', opacity: 0.7 }}>{t.weight}% weight</div>
-                  </div>
+                  {t.label}
                 </button>
               ))}
             </div>
           </div>
-
           <div>
-            <label className="tag-label block mb-1">Assignment Name</label>
-            <input
-              className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
-              placeholder="e.g. Chapter 4 Quiz"
-              value={form.name}
-              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              autoFocus
-            />
+            <label className="tag-label block mb-1">Class</label>
+            <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
+              className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+              style={{ background: '#1e2231', border: '1px solid #2a2f42' }}>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.period} - {c.subject}</option>
+              ))}
+            </select>
           </div>
+        </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="tag-label block mb-1">Assign Date</label>
-              <input type="date" className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
-                value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+        <div className="p-4 rounded-card mb-4" style={{ background: '#0d1520', border: '1px solid ' + (pct != null ? scoreColor + '40' : '#2a2f42') }}>
+          <p className="tag-label mb-1">Calculated Grade</p>
+          {pct != null ? (
+            <div className="flex items-center gap-3">
+              <span className="font-display font-bold text-3xl" style={{ color: scoreColor }}>{pct}%</span>
+              <span className="font-bold text-lg text-text-muted">{letter}</span>
             </div>
-            <div>
-              <label className="tag-label block mb-1">Due Date</label>
-              <input type="date" className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
-                value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
-            </div>
-          </div>
+          ) : (
+            <p className="text-text-muted text-sm">Enter points above to calculate</p>
+          )}
+        </div>
 
-          <div className="flex items-center gap-2 p-3 rounded-card" style={{ background: '#1e2231' }}>
-            <input type="checkbox" id="applyAllGlobal" checked={applyAll} onChange={e => setApplyAll(e.target.checked)} className="rounded" />
-            <label htmlFor="applyAllGlobal" className="text-sm text-text-muted cursor-pointer">Apply to all my classes</label>
-          </div>
+        <button onClick={postToGradebook} disabled={pct == null || !assignName.trim()}
+          className="w-full py-3 rounded-widget font-bold text-white disabled:opacity-40 transition-all"
+          style={{ background: pct != null ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231' }}>
+          {pct != null ? 'Post ' + pct + '% (' + letter + ') to Gradebook' : 'Enter score above'}
+        </button>
+      </div>
+    )
+  }
 
-          <div className="flex gap-2 pt-1">
-            <button onClick={onClose} className="flex-1 py-2.5 rounded-pill text-sm font-semibold" style={{ background: '#1e2231', color: '#6b7494' }}>
-              Cancel
-            </button>
-            <button onClick={handleSave} disabled={!form.name}
-              className="flex-1 py-2.5 rounded-pill text-sm font-bold text-white disabled:opacity-40"
-              style={{ background: 'var(--school-color)' }}>
-              Create
-            </button>
-          </div>
+  // Menu
+  return (
+    <div>
+      <h1 className="font-display font-bold text-2xl text-text-primary mb-1">Scan and Grade</h1>
+      <p className="text-text-muted text-sm mb-6">AI reads any scoring format: 82/100, -8 missed, 17/20, letter grades, percentages</p>
+
+      {cameraError && (
+        <div className="p-4 rounded-card mb-4" style={{ background: '#1c1012', border: '1px solid #f04a4a30' }}>
+          <p className="font-semibold mb-1" style={{ color: '#f04a4a' }}>Camera unavailable</p>
+          <p className="text-sm" style={{ color: '#f04a4a', opacity: 0.85 }}>{cameraError}</p>
+        </div>
+      )}
+
+      <div className="grid gap-4 mb-6">
+        <button onClick={openCamera}
+          className="p-8 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          style={{ background: 'linear-gradient(135deg, #1a2a4a, #0f1a2e)', border: '1px solid #3b7ef440' }}>
+          <span className="text-5xl" role="img" aria-label="camera">&#128247;</span>
+          <p className="font-display font-bold text-lg text-text-primary">Use Camera</p>
+          <p className="text-text-muted text-sm text-center">Point at the graded paper - AI reads the score</p>
+        </button>
+
+        <button onClick={() => fileRef.current?.click()}
+          className="p-6 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          style={{ background: '#161923', border: '1px solid #2a2f42' }}>
+          <span className="text-4xl" role="img" aria-label="photo">&#128444;</span>
+          <p className="font-bold text-text-primary">Upload Photo or File</p>
+          <p className="text-text-muted text-sm">Photo from camera roll - PDF - Any image</p>
+        </button>
+      </div>
+
+      <div className="p-3 rounded-card" style={{ background: '#161923' }}>
+        <p className="tag-label mb-2 text-center">Scoring formats AI understands</p>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {['82 / 100', '-8 missed', '17 / 20', '94%', 'Letter A-F', 'Rubric score', 'Raw points'].map(f => (
+            <span key={f} className="px-2 py-0.5 rounded-pill text-xs" style={{ background: '#1e2231', color: '#6b7494' }}>{f}</span>
+          ))}
         </div>
       </div>
+
+      <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileSelect} />
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
-  return ReactDOM.createPortal(modal, document.body)
 }
 
-export default function App() {
-  const { activeScreen, teacher, setScreen, notifications, setActiveClass, setActiveStudent, lessonPlanMode } = useStore()
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [showNewAssignment, setShowNewAssignment] = useState(false)
-  const menuRef = useRef(null)
+  const { classes, activeClass, addAssignment } = useStore()
+  const [mode, setMode] = useState('menu')
+  const [assignType, setAssignType] = useState('quiz')
+  const [capturedImage, setCapturedImage] = useState(null)
+  const [assignName, setAssignName] = useState('')
+  const [selectedClass, setSelectedClass] = useState(activeClass?.id || classes[0]?.id)
+  const [cameraError, setCameraError] = useState(null)
+  const [cameraReady, setCameraReady] = useState(false)
+  const [scanResult, setScanResult] = useState(null)
+  const [scanError, setScanError] = useState(null)
+  const [manualScore, setManualScore] = useState('')
+  const [manualTotal, setManualTotal] = useState('100')
 
-  function goHome() {
-    setMenuOpen(false)
-    setActiveClass(null)
-    setActiveStudent(null)
-    setScreen('dashboard')
-  }
+  const streamRef = useRef(null)
+  const videoRef  = useRef(null)
+  const canvasRef = useRef(null)
+  const fileRef   = useRef(null)
 
-  function goTo(screen) {
-    setMenuOpen(false)
-    setScreen(screen)
-  }
+  const typeConfig = [
+    { id: 'test',          label: 'Test',  weight: 40, color: '#f04a4a' },
+    { id: 'quiz',          label: 'Quiz',  weight: 30, color: '#f5a623' },
+    { id: 'participation', label: 'Part.', weight: 10, color: '#9b6ef5' },
+    { id: 'homework',      label: 'Other', weight: 20, color: '#22c97a' },
+  ]
 
-  useEffect(() => {
-    function handleOutsideClick(e) {
-      if (menuOpen && menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+  function stopStream() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop())
+      streamRef.current = null
     }
-    document.addEventListener('mousedown', handleOutsideClick)
-    return () => document.removeEventListener('mousedown', handleOutsideClick)
-  }, [menuOpen])
-
-  const navItems = [
-    { id: 'dashboard', icon: '🏠', label: 'Home', action: goHome },
-    { id: 'gradebook', icon: '📚', label: 'Classes', action: () => goTo('gradebook') },
-    { id: 'lessonPlan', icon: '📋', label: 'Plans', action: () => goTo('lessonPlan') },
-    { id: 'reports', icon: '📊', label: 'Reports', action: () => goTo('reports') },
-    { id: 'newAssign', icon: '➕', label: 'Assign', action: () => setShowNewAssignment(true), special: true },
-    { id: 'parentMessages', icon: '💬', label: 'Messages', action: () => goTo('parentMessages') },
-  ]
-
-  const homeMenuItems = [
-    { icon: '🏠', label: 'Dashboard', action: () => { setMenuOpen(false); goHome() } },
-    { icon: '📚', label: 'Gradebook', action: () => goTo('gradebook') },
-    { icon: '📋', label: 'Lesson Plans', action: () => goTo('lessonPlan') },
-    { icon: '🧪', label: 'Testing Suite', action: () => goTo('testingSuite') },
-    { icon: '📊', label: 'Reports', action: () => goTo('reports') },
-    { icon: '💬', label: 'Messages', action: () => goTo('parentMessages') },
-    { icon: '📢', label: 'Class Feed', action: () => goTo('classFeed') },
-    { icon: '⚙️', label: 'Settings', action: () => { setMenuOpen(false); alert('Settings — coming in onboarding build') } },
-    { icon: '🚪', label: 'Sign Out', action: () => { setMenuOpen(false); alert('Sign out — auth coming in onboarding build') } },
-  ]
-
-  const screens = {
-    dashboard: <Dashboard />,
-    gradebook: <Gradebook />,
-    studentProfile: <StudentProfile />,
-    lessonPlan: <LessonPlan initialMode={lessonPlanMode || 'menu'} />,
-    testingSuite: <TestingSuite />,
-    reports: <Reports />,
-    parentMessages: <ParentMessages />,
-    camera: <Camera />,
-    classFeed: <ClassFeed />,
+    setCameraReady(false)
   }
 
-  const activeNav = ['gradebook', 'studentProfile'].includes(activeScreen) ? 'gradebook' : activeScreen
+  useEffect(() => () => stopStream(), [])
 
-  return (
-    <div className="min-h-screen bg-app flex flex-col" style={{ '--school-color': teacher.schoolColor }}>
+  const attachStream = useCallback((stream) => {
+    const video = videoRef.current
+    if (!video) return
+    video.srcObject = stream
+    if (typeof video.load === 'function') video.load()
 
-      <header className="sticky top-0 z-40 border-b border-elevated" style={{ background: '#0c0e14ee', backdropFilter: 'blur(12px)' }}>
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {activeScreen !== 'dashboard' && (
-              <button onClick={goHome} className="text-text-muted hover:text-text-primary transition-colors text-sm">←</button>
-            )}
-            <button onClick={goHome} className="font-display font-bold text-xl hover:opacity-80 transition-opacity" style={{ color: 'var(--school-color)' }}>
-              GradeFlow
-            </button>
-            <span className="text-text-muted text-xs hidden sm:block">{teacher.school}</span>
-          </div>
+    const tryPlay = () => {
+      const p = video.play()
+      if (p !== undefined) {
+        p.then(() => setCameraReady(true)).catch(() => {
+          video.muted = true
+          video.play()
+            .then(() => setCameraReady(true))
+            .catch(err => {
+              setCameraError('Could not start camera: ' + err.message)
+              stopStream()
+              setMode('menu')
+            })
+        })
+      } else {
+        video.addEventListener('canplay', () => setCameraReady(true), { once: true })
+      }
+    }
 
-          <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-full hover:bg-elevated transition-colors" onClick={() => goTo('parentMessages')}>
-              <span className="text-lg">🔔</span>
-              {notifications > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 bg-danger text-white text-xs w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                  {notifications}
-                </span>
-              )}
-            </button>
+    if (video.isConnected) {
+      tryPlay()
+    } else {
+      requestAnimationFrame(() => { if (videoRef.current) tryPlay() })
+    }
+  }, [])
 
-            <div className="relative" ref={menuRef}>
-              <button onClick={() => setMenuOpen(m => !m)} className="flex items-center gap-2 hover:bg-elevated rounded-full px-3 py-1.5 transition-colors">
-                <span className="text-lg">{teacher.avatar}</span>
-                <span className="text-sm font-medium text-text-primary hidden sm:block">{teacher.name}</span>
-                <span className="text-text-muted text-xs ml-1">▾</span>
-              </button>
+  // Callback ref fires the moment <video> mounts — eliminates the race condition
+  const videoCallbackRef = useCallback((node) => {
+    videoRef.current = node
+    if (node && streamRef.current) attachStream(streamRef.current)
+  }, [attachStream])
 
-              {menuOpen && (
-                <div className="absolute right-0 top-full mt-2 w-52 rounded-card border border-elevated overflow-y-auto animate-slide-up" style={{ background: '#161923', zIndex: 9981, maxHeight: 'min(70vh, 32rem)' }}>
-                  {homeMenuItems.map(item => (
-                    <button key={item.label} onClick={item.action} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-text-primary hover:bg-elevated transition-colors text-left border-b border-elevated last:border-0">
-                      <span>{item.icon}</span>
-                      <span>{item.label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+  async function openCamera() {
+    setCameraError(null)
+    setCameraReady(false)
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError(
+        location.protocol === 'http:' && location.hostname !== 'localhost'
+          ? 'Camera requires HTTPS. Use the Vercel URL.'
+          : 'Browser does not support camera. Try Chrome or Safari, or upload instead.'
+      )
+      return
+    }
+
+    const attempts = [
+      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
+      { video: { facingMode: 'environment' } },
+      { video: { facingMode: 'user' } },
+      { video: true },
+    ]
+
+    let stream = null
+    let lastErr = null
+    for (const c of attempts) {
+      try { stream = await navigator.mediaDevices.getUserMedia(c); break }
+      catch (err) { lastErr = err; if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break }
+    }
+
+    if (!stream) {
+      const n = lastErr?.name
+      setCameraError(
+        n === 'NotAllowedError' || n === 'PermissionDeniedError'
+          ? 'Camera permission denied. Tap the lock icon in your address bar, allow camera, then retry.'
+          : n === 'NotFoundError' ? 'No camera found. Use Upload instead.'
+          : n === 'NotReadableError' ? 'Camera in use by another app. Close it and retry.'
+          : 'Camera error (' + (n || 'unknown') + '). Use Upload instead.'
+      )
+      return
+    }
+
+    streamRef.current = stream
+    setMode('camera')
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas) return
+    const w = video.videoWidth || 1280
+    const h = video.videoHeight || 720
+    canvas.width = w
+    canvas.height = h
+    canvas.getContext('2d').drawImage(video, 0, 0, w, h)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
+    stopStream()
+    processImage(dataUrl, dataUrl.split(',')[1], 'image/jpeg')
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    e.target.value = ''
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const dataUrl = ev.target.result
+      processImage(dataUrl, dataUrl.split(',')[1], file.type || 'image/jpeg')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function processImage(dataUrl, base64, mime) {
+    setCapturedImage(dataUrl)
+    setScanResult(null)
+    setScanError(null)
+    setMode('processing')
+    runAI(base64, mime)
+  }
+
+  async function runAI(base64, mime) {
+    try {
+      const result = await scanGradedDocument(base64, mime)
+      setScanResult(result)
+      if (result.assignmentTitle) setAssignName(result.assignmentTitle)
+      if (result.documentType) {
+        const map = { quiz: 'quiz', test: 'test', homework: 'homework', worksheet: 'homework' }
+        setAssignType(map[result.documentType] || 'quiz')
+      }
+      if (result.earnedPoints != null) setManualScore(String(result.earnedPoints))
+      if (result.totalPoints != null)  setManualTotal(String(result.totalPoints))
+      setMode('review')
+    } catch (err) {
+      setScanError(err.message || 'Scan failed')
+      setMode('review')
+    }
+  }
+
+  function calcPercentage() {
+    const earned = parseFloat(manualScore)
+    const total  = parseFloat(manualTotal)
+    if (isNaN(earned) || isNaN(total) || total === 0) return null
+    return Math.round((earned / total) * 100)
+  }
+
+  function letterFromPct(pct) {
+    if (pct == null) return '--'
+    if (pct >= 90) return 'A'
+    if (pct >= 80) return 'B'
+    if (pct >= 70) return 'C'
+    if (pct >= 60) return 'D'
+    return 'F'
+  }
+
+  function resetAll() {
+    stopStream()
+    setCapturedImage(null)
+    setScanResult(null)
+    setScanError(null)
+    setManualScore('')
+    setManualTotal('100')
+    setAssignName('')
+    setMode('menu')
+  }
+
+  function postToGradebook() {
+    const pct = calcPercentage()
+    if (pct == null) return
+    addAssignment({
+      classId: Number(selectedClass),
+      name: assignName || ('Scanned ' + assignType),
+      type: assignType,
+      weight: typeConfig.find(t => t.id === assignType)?.weight || 30,
+      date: new Date().toISOString().split('T')[0],
+      dueDate: new Date().toISOString().split('T')[0],
+      hasKey: true,
+      scannedScore: pct,
+      aiGraded: !!scanResult,
+      aiConfidence: scanResult?.confidence || 'low',
+    })
+    setMode('posted')
+  }
+
+  if (mode === 'posted') return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="text-6xl mb-4">&#10003;</div>
+      <h2 className="font-display font-bold text-xl text-text-primary mb-2">Posted to Gradebook</h2>
+      <p className="text-text-muted text-sm mb-6">Assignment added</p>
+      <button onClick={resetAll} className="px-6 py-2.5 rounded-pill font-bold text-white" style={{ background: 'var(--school-color)' }}>
+        Scan Another
+      </button>
+    </div>
+  )
+
+  if (mode === 'processing') return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      {capturedImage && (
+        <div className="w-28 h-28 rounded-card overflow-hidden mb-6 border border-elevated opacity-70">
+          <img src={capturedImage} alt="Scanning" className="w-full h-full object-cover" />
+        </div>
+      )}
+      <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+      <p className="font-semibold text-text-primary mb-1">Claude Vision is reading this paper</p>
+      <p className="text-text-muted text-sm">Detecting score format...</p>
+    </div>
+  )
+
+  if (mode === 'camera') return (
+    <div>
+      <button onClick={() => { stopStream(); setMode('menu') }} className="flex items-center gap-2 text-text-muted text-sm mb-4 hover:text-text-primary">
+        X Cancel
+      </button>
+      <div className="relative rounded-widget overflow-hidden bg-black mb-4" style={{ aspectRatio: '4/3', maxHeight: '60vh' }}>
+        <video ref={videoCallbackRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ display: 'block' }} />
+        {!cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-white text-sm opacity-60">Starting camera...</p>
             </div>
           </div>
-        </div>
-      </header>
+        )}
+        {cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-4/5 h-4/5">
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white" />
+              <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white" />
+            </div>
+          </div>
+        )}
+      </div>
+      <canvas ref={canvasRef} className="hidden" />
+      <p className="text-center text-text-muted text-xs mb-4">Fill the frame with the graded paper</p>
+      <button
+        onClick={capturePhoto}
+        disabled={!cameraReady}
+        className="w-full py-4 rounded-widget font-display font-bold text-lg text-white disabled:opacity-40"
+        style={{ background: cameraReady ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231' }}>
+        {cameraReady ? 'Capture and Scan' : 'Starting camera...'}
+      </button>
+    </div>
+  )
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-24">
-        <div className="animate-slide-up" key={activeScreen}>
-          {screens[activeScreen] || <Dashboard />}
-        </div>
-      </main>
+  if (mode === 'review') {
+    const pct = calcPercentage()
+    const letter = letterFromPct(pct)
+    const sr = scanResult
+    const scoreColor = pct >= 90 ? '#22c97a' : pct >= 70 ? '#f5a623' : '#f04a4a'
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-elevated" style={{ background: '#0c0e14f0', backdropFilter: 'blur(12px)' }}>
-        <div className="max-w-6xl mx-auto flex">
-          {navItems.map(item => {
-            const isActive = activeNav === item.id
-            return (
-              <button
-                key={item.id}
-                onClick={item.action}
-                className="flex-1 flex flex-col items-center py-2 gap-0.5 transition-colors relative"
-                style={{ color: isActive ? 'var(--school-color)' : '#6b7494' }}
-              >
-                {item.special ? (
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full text-base font-bold" style={{ background: 'var(--school-color)', color: 'white' }}>+</span>
-                ) : (
-                  <span className="text-xl">{item.icon}</span>
-                )}
-                <span style={{ fontSize: '9px', fontWeight: 600 }}>{item.label}</span>
-                {isActive && !item.special && <div className="w-1 h-1 rounded-full" style={{ background: 'var(--school-color)' }} />}
-              </button>
-            )
-          })}
-        </div>
-      </nav>
+    return (
+      <div>
+        <button onClick={resetAll} className="flex items-center gap-2 text-text-muted text-sm mb-4 hover:text-text-primary">
+          &larr; Scan Again
+        </button>
+        <h1 className="font-display font-bold text-xl text-text-primary mb-4">Review and Post</h1>
 
-      {showNewAssignment && <NewAssignmentModal onClose={() => setShowNewAssignment(false)} />}
+        {sr && !scanError && (
+          <div className="p-4 rounded-card mb-4" style={{ background: '#0d1520', border: '1px solid #3b7ef430' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs px-2 py-0.5 rounded-pill font-bold" style={{ background: '#9b6ef520', color: '#9b6ef5' }}>
+                Claude Vision
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-pill font-bold" style={{
+                background: sr.confidence === 'high' ? '#22c97a20' : '#f5a62320',
+                color: sr.confidence === 'high' ? '#22c97a' : '#f5a623'
+              }}>
+                {sr.confidence === 'high' ? 'High confidence' : 'Low confidence - verify'}
+              </span>
+            </div>
+            <p className="text-sm text-text-primary">{sr.rawText}</p>
+          </div>
+        )}
+
+        {scanError && (
+          <div className="p-4 rounded-card mb-4" style={{ background: '#1c1012', border: '1px solid #f04a4a30' }}>
+            <p className="font-semibold mb-1" style={{ color: '#f04a4a' }}>Scan error</p>
+            <p className="text-sm" style={{ color: '#f04a4a', opacity: 0.85 }}>{scanError}</p>
+            <p className="text-text-muted text-sm mt-2">Enter score manually below.</p>
+          </div>
+        )}
+
+        <div className="space-y-3 mb-4">
+          <div>
+            <label className="tag-label block mb-1">Assignment name</label>
+            <input value={assignName} onChange={e => setAssignName(e.target.value)}
+              placeholder="e.g. Ch.4 Quiz"
+              className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+              style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="tag-label block mb-1">Points earned</label>
+              <input value={manualScore} onChange={e => setManualScore(e.target.value)}
+                placeholder="e.g. 82" type="number"
+                className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+                style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+            </div>
+            <div>
+              <label className="tag-label block mb-1">Total points</label>
+              <input value={manualTotal} onChange={e => setManualTotal(e.target.value)}
+                placeholder="e.g. 100" type="number"
+                className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+                style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+            </div>
+          </div>
+          <div>
+            <label className="tag-label block mb-1">Assignment type</label>
+            <div className="flex gap-2">
+              {typeConfig.map(t => (
+                <button key={t.id} onClick={() => setAssignType(t.id)}
+                  className="flex-1 py-1.5 rounded-pill text-xs font-bold transition-all"
+                  style={{
+                    background: assignType === t.id ? t.color + '30' : '#1e2231',
+                    color: assignType === t.id ? t.color : '#6b7494',
+                    border: '1px solid ' + (assignType === t.id ? t.color + '60' : 'transparent')
+                  }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="tag-label block mb-1">Class</label>
+            <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
+              className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+              style={{ background: '#1e2231', border: '1px solid #2a2f42' }}>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.period} - {c.subject}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="p-4 rounded-card mb-4" style={{ background: '#0d1520', border: '1px solid ' + (pct != null ? scoreColor + '40' : '#2a2f42') }}>
+          <p className="tag-label mb-1">Calculated Grade</p>
+          {pct != null ? (
+            <div className="flex items-center gap-3">
+              <span className="font-display font-bold text-3xl" style={{ color: scoreColor }}>{pct}%</span>
+              <span className="font-bold text-lg text-text-muted">{letter}</span>
+            </div>
+          ) : (
+            <p className="text-text-muted text-sm">Enter points above to calculate</p>
+          )}
+        </div>
+
+        <button onClick={postToGradebook} disabled={pct == null || !assignName.trim()}
+          className="w-full py-3 rounded-widget font-bold text-white disabled:opacity-40 transition-all"
+          style={{ background: pct != null ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231' }}>
+          {pct != null ? 'Post ' + pct + '% (' + letter + ') to Gradebook' : 'Enter score above'}
+        </button>
+      </div>
+    )
+  }
+
+  // Menu
+  return (
+    <div>
+      <h1 className="font-display font-bold text-2xl text-text-primary mb-1">Scan and Grade</h1>
+      <p className="text-text-muted text-sm mb-6">AI reads any scoring format: 82/100, -8 missed, 17/20, letter grades, percentages</p>
+
+      {cameraError && (
+        <div className="p-4 rounded-card mb-4" style={{ background: '#1c1012', border: '1px solid #f04a4a30' }}>
+          <p className="font-semibold mb-1" style={{ color: '#f04a4a' }}>Camera unavailable</p>
+          <p className="text-sm" style={{ color: '#f04a4a', opacity: 0.85 }}>{cameraError}</p>
+        </div>
+      )}
+
+      <div className="grid gap-4 mb-6">
+        <button onClick={openCamera}
+          className="p-8 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          style={{ background: 'linear-gradient(135deg, #1a2a4a, #0f1a2e)', border: '1px solid #3b7ef440' }}>
+          <span className="text-5xl" role="img" aria-label="camera">&#128247;</span>
+          <p className="font-display font-bold text-lg text-text-primary">Use Camera</p>
+          <p className="text-text-muted text-sm text-center">Point at the graded paper - AI reads the score</p>
+        </button>
+
+        <button onClick={() => fileRef.current?.click()}
+          className="p-6 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          style={{ background: '#161923', border: '1px solid #2a2f42' }}>
+          <span className="text-4xl" role="img" aria-label="photo">&#128444;</span>
+          <p className="font-bold text-text-primary">Upload Photo or File</p>
+          <p className="text-text-muted text-sm">Photo from camera roll - PDF - Any image</p>
+        </button>
+      </div>
+
+      <div className="p-3 rounded-card" style={{ background: '#161923' }}>
+        <p className="tag-label mb-2 text-center">Scoring formats AI understands</p>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {['82 / 100', '-8 missed', '17 / 20', '94%', 'Letter A-F', 'Rubric score', 'Raw points'].map(f => (
+            <span key={f} className="px-2 py-0.5 rounded-pill text-xs" style={{ background: '#1e2231', color: '#6b7494' }}>{f}</span>
+          ))}
+        </div>
+      </div>
+
+      <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileSelect} />
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
 }
