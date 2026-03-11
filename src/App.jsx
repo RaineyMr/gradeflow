@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import Login from './pages/Login'
 import Tutorials from './pages/Tutorials'
 import Dashboard from './pages/Dashboard'
@@ -10,12 +10,32 @@ function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [activePage, setActivePage] = useState('login')
 
+  useEffect(() => {
+    const savedUser = localStorage.getItem('gradeflow_user')
+    if (!savedUser) return
+
+    try {
+      const parsed = JSON.parse(savedUser)
+      setCurrentUser(parsed)
+      setActivePage(parsed.role || 'login')
+    } catch (error) {
+      localStorage.removeItem('gradeflow_user')
+    }
+  }, [])
+
+  const roleTitle = useMemo(() => {
+    if (!currentUser?.role) return 'Guest'
+    return currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)
+  }, [currentUser])
+
   const handleLogin = (account) => {
     setCurrentUser(account)
     setActivePage(account.role)
+    localStorage.setItem('gradeflow_user', JSON.stringify(account))
   }
 
   const handleLogout = () => {
+    localStorage.removeItem('gradeflow_user')
     setCurrentUser(null)
     setActivePage('login')
   }
@@ -39,7 +59,9 @@ function App() {
 
   const theme = currentUser?.theme || {
     primary: '#f97316',
+    heroGradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
     border: '#1e2231',
+    card: '#161923',
     muted: '#6b7494',
     soft: 'rgba(249,115,22,0.14)',
   }
@@ -85,7 +107,7 @@ function App() {
             <div>
               <div style={{ fontWeight: 800 }}>{currentUser.schoolName}</div>
               <div style={{ fontSize: '12px', color: theme.muted }}>
-                {currentUser.userName} · {currentUser.role}
+                {currentUser.userName} · {roleTitle}
               </div>
             </div>
           </div>
@@ -143,9 +165,13 @@ function App() {
       </div>
 
       {activePage === 'tutorials' && <Tutorials />}
+
       {activePage === 'teacher' && <Dashboard currentUser={currentUser} />}
+
       {activePage === 'student' && <StudentDashboard currentUser={currentUser} />}
+
       {activePage === 'parent' && <ParentDashboard currentUser={currentUser} />}
+
       {activePage === 'admin' && <AdminDashboard currentUser={currentUser} />}
     </div>
   )
