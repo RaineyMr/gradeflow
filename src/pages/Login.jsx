@@ -175,6 +175,14 @@ function Login({ onLogin, onDemoLogin }) {
 
           <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '22px', padding: '20px' }}>
             <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.82)', fontWeight: 700 }}>Identify struggling students early · Communicate with families instantly · Keep everyone informed</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(100px, 1fr))', gap: '12px', marginTop: '14px' }}>
+              {[['Assignments', '1.2k'], ['Students', '8.4k'], ['Alerts', '94']].map(([label, value]) => (
+                <div key={label} style={{ background: 'rgba(0,0,0,0.16)', borderRadius: '16px', padding: '14px' }}>
+                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>{label}</div>
+                  <div style={{ marginTop: '6px', fontSize: '24px', fontWeight: 800 }}>{value}</div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
