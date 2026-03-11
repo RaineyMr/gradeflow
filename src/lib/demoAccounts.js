@@ -1,28 +1,7 @@
-// ─── School logo URLs (with fallback to initials if image fails to load) ─────
-// KIPP New Orleans: real logo from their site
-// Houston ISD, Bellaire, Lamar: use official HISD/school URLs with fallback
-export const SCHOOL_LOGOS = {
-  teacher: {
-    url: 'https://kippneworleans.org/wp-content/uploads/2024/11/Reverse-20-Year-Logo.png',
-    initials: 'KIPP',
-    alt: 'KIPP New Orleans Schools',
-  },
-  student: {
-    url: 'https://www.houstonisd.org/cms/lib2/TX01001591/Centricity/Domain/7967/HISD-logo-white.png',
-    initials: 'HISD',
-    alt: 'Houston ISD',
-  },
-  parent: {
-    url: 'https://bellaire.houstonisd.org/cms/lib2/TX01001591/Centricity/Domain/8/BHS_logo_white.png',
-    initials: 'BHS',
-    alt: 'Bellaire High School',
-  },
-  admin: {
-    url: 'https://lamar.houstonisd.org/cms/lib2/TX01001591/Centricity/Domain/7/Lamar_Logo_white.png',
-    initials: 'LHS',
-    alt: 'Lamar High School',
-  },
-}
+// ─── GradeFlow Demo Accounts ──────────────────────────────────────────────────
+// Each role maps to a real school with its actual brand colors.
+// Login page uses GradeFlow orange/blue only.
+// Authenticated views use ONLY their school palette.
 
 export const demoAccounts = {
   teacher: {
@@ -31,18 +10,22 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'KIPP New Orleans Schools',
     districtName: 'KIPP New Orleans',
-    userName: 'Ms. Alexis Johnson',
-    // KIPP New Orleans real colors: orange & black
+    userName: 'Ms. Johnson',
+    studentName: null,
+    avatar: '👩‍🏫',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9b/KIPP_Foundation_logo.svg/200px-KIPP_Foundation_logo.svg.png',
     theme: {
-      primary: '#f97316',
+      primary: '#BA0C2F',
       secondary: '#000000',
-      accent: '#fb923c',
-      heroGradient: 'linear-gradient(135deg, #f97316 0%, #c2410c 100%)',
-      sidebar: '#121208',
+      accent: '#BA0C2F',
+      heroGradient: 'linear-gradient(135deg, #BA0C2F 0%, #7a0820 100%)',
+      headerGradient: 'linear-gradient(135deg, #BA0C2F 0%, #000000 100%)',
+      sidebar: '#1a0005',
       card: '#161923',
-      border: '#2a1f0f',
-      muted: '#8a7060',
-      soft: 'rgba(249,115,22,0.15)',
+      border: '#3a0010',
+      muted: '#907080',
+      soft: 'rgba(186,12,47,0.15)',
+      navActive: '#BA0C2F',
     },
   },
 
@@ -52,18 +35,22 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'Houston ISD',
     districtName: 'Houston Independent School District',
-    userName: 'Jordan Smith',
-    // Houston ISD real colors: navy #003087 & gold #FFB81C
+    userName: 'Marcus Thompson',
+    studentName: 'Marcus',
+    avatar: '🎓',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
     theme: {
-      primary: '#003087',
-      secondary: '#FFB81C',
-      accent: '#FFB81C',
-      heroGradient: 'linear-gradient(135deg, #003087 0%, #001a4d 100%)',
-      sidebar: '#00091f',
+      primary: '#003057',
+      secondary: '#B3A369',
+      accent: '#B3A369',
+      heroGradient: 'linear-gradient(135deg, #003057 0%, #B3A369 100%)',
+      headerGradient: 'linear-gradient(135deg, #003057 0%, #002040 100%)',
+      sidebar: '#000d1a',
       card: '#161923',
-      border: '#001a3d',
-      muted: '#6070a0',
-      soft: 'rgba(0,48,135,0.18)',
+      border: '#002040',
+      muted: '#7090a0',
+      soft: 'rgba(0,48,87,0.20)',
+      navActive: '#B3A369',
     },
   },
 
@@ -73,18 +60,22 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'Bellaire High School',
     districtName: 'Houston ISD',
-    userName: 'Mrs. Taylor Smith',
-    // Bellaire High School real colors: Cardinal red #C8102E & white
+    userName: 'Ms. Thompson',
+    studentName: 'Marcus',
+    avatar: '👨‍👩‍👧',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
     theme: {
       primary: '#C8102E',
       secondary: '#ffffff',
-      accent: '#e63950',
+      accent: '#C8102E',
       heroGradient: 'linear-gradient(135deg, #C8102E 0%, #8b0a1f 100%)',
+      headerGradient: 'linear-gradient(135deg, #C8102E 0%, #8b0a1f 100%)',
       sidebar: '#1a0408',
       card: '#161923',
       border: '#2a0a10',
       muted: '#907080',
       soft: 'rgba(200,16,46,0.15)',
+      navActive: '#C8102E',
     },
   },
 
@@ -95,26 +86,30 @@ export const demoAccounts = {
     schoolName: 'Lamar High School',
     districtName: 'Houston ISD',
     userName: 'Principal Carter',
-    // Lamar High School real colors: LSU Purple #461D7C & gold #FDD023
+    studentName: null,
+    avatar: '🏫',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
     theme: {
       primary: '#461D7C',
       secondary: '#FDD023',
       accent: '#FDD023',
       heroGradient: 'linear-gradient(135deg, #461D7C 0%, #2d1254 100%)',
+      headerGradient: 'linear-gradient(135deg, #461D7C 0%, #2d1254 100%)',
       sidebar: '#0e0518',
       card: '#161923',
       border: '#1e0f35',
       muted: '#7060a0',
       soft: 'rgba(70,29,124,0.18)',
+      navActive: '#FDD023',
     },
   },
 }
 
 export const demoLoginList = [
-  { role: 'teacher', label: 'Teacher Demo', email: 'teacher@kippneworleans.org', password: 'demo123', school: 'KIPP New Orleans Schools' },
-  { role: 'student', label: 'Student Demo', email: 'student@houstonisd.org', password: 'demo123', school: 'Houston ISD' },
-  { role: 'parent', label: 'Parent Demo', email: 'parent@bellaire.org', password: 'demo123', school: 'Bellaire High School' },
-  { role: 'admin', label: 'Admin Demo', email: 'admin@lamarhs.org', password: 'demo123', school: 'Lamar High School' },
+  { role: 'teacher', label: '🧑‍🏫 Teacher Demo', email: 'teacher@kippneworleans.org', password: 'demo123', school: 'KIPP New Orleans' },
+  { role: 'student', label: '🎓 Student Demo',  email: 'student@houstonisd.org',     password: 'demo123', school: 'Houston ISD' },
+  { role: 'parent',  label: '👨‍👩‍👧 Parent Demo',  email: 'parent@bellaire.org',       password: 'demo123', school: 'Bellaire High School' },
+  { role: 'admin',   label: '🏫 Admin Demo',    email: 'admin@lamarhs.org',          password: 'demo123', school: 'Lamar High School' },
 ]
 
 export function getDemoAccountByRole(role) {
