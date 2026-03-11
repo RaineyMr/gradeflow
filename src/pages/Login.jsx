@@ -147,41 +147,34 @@ function Login({ onLogin, onDemoLogin }) {
         {/* ── HERO PANEL (hidden on mobile) ── */}
         <section className="login-hero" style={heroPanel}>
           <div>
-            <div style={badge}>⚡ GradeFlow Demo Access</div>
+            <div style={badge}>⚡ GradeFlow</div>
             <div style={{ marginTop: '28px' }}>
-              <h1 style={{ margin: 0, fontSize: '42px', lineHeight: 1.08, fontWeight: 800 }}>
-                Different roles.<br />Different schools.<br />Different schemes.
+              <h1 style={{ margin: 0, fontSize: '38px', lineHeight: 1.08, fontWeight: 800 }}>
+                Teach.<br />GradeFlow handles<br />the rest.
               </h1>
               <p style={{ ...subText, marginTop: '16px', maxWidth: '560px', fontSize: '15px' }}>
-                Switch between teacher, student, parent, and admin demos to preview how GradeFlow
-                changes branding and visual tone by account type.
+                GradeFlow brings grading, assignments, communication, testing, and analytics into one seamless system. Everything—from grading to lesson planning—lives in one platform designed to help teachers spend less time managing systems and more time teaching.
               </p>
             </div>
 
             <div style={{ marginTop: '28px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(180px, 1fr))', gap: '14px' }}>
-              {roleOptions.map((role) => {
-                const account = demoAccounts[role.id]
-                return (
-                  <div key={role.id} style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '18px', padding: '16px' }}>
-                    <div style={{ fontSize: '22px' }}>{role.icon}</div>
-                    <div style={{ marginTop: '10px', fontWeight: 800 }}>{role.label}</div>
-                    <div style={{ marginTop: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.82)' }}>{account.schoolName}</div>
-                  </div>
-                )
-              })}
+              {[
+                { icon: '📷', title: 'Auto-grade with camera', body: 'Capture student work and GradeFlow grades it and updates your gradebook instantly.' },
+                { icon: '📋', title: 'All assignments in one place', body: 'Upload spreadsheets, collect digital work, proctor tests, and generate reports.' },
+                { icon: '🔔', title: 'Automatic alerts', body: 'When performance changes, GradeFlow notifies teachers, students, and parents automatically.' },
+                { icon: '🎨', title: 'Built for your school', body: 'Customized for each school\'s branding and workflows so teachers can focus on teaching.' },
+              ].map((item) => (
+                <div key={item.title} style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '18px', padding: '16px' }}>
+                  <div style={{ fontSize: '22px' }}>{item.icon}</div>
+                  <div style={{ marginTop: '10px', fontWeight: 800, fontSize: '14px' }}>{item.title}</div>
+                  <div style={{ marginTop: '6px', fontSize: '12px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{item.body}</div>
+                </div>
+              ))}
             </div>
           </div>
 
           <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '22px', padding: '20px' }}>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.82)', fontWeight: 700 }}>Platform highlights</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(100px, 1fr))', gap: '12px', marginTop: '14px' }}>
-              {[['Assignments', '1.2k'], ['Students', '8.4k'], ['Alerts', '94']].map(([label, value]) => (
-                <div key={label} style={{ background: 'rgba(0,0,0,0.16)', borderRadius: '16px', padding: '14px' }}>
-                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>{label}</div>
-                  <div style={{ marginTop: '6px', fontSize: '24px', fontWeight: 800 }}>{value}</div>
-                </div>
-              ))}
-            </div>
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.82)', fontWeight: 700 }}>Identify struggling students early · Communicate with families instantly · Keep everyone informed</div>
           </div>
         </section>
 
