@@ -1,48 +1,81 @@
 import React, { useState } from 'react'
 
 const C = {
-  bg: '#0c0e14',
-  card: '#161923',
-  inner: '#1e2231',
-  text: '#eef0f8',
-  muted: '#6b7494',
-  hint: '#3d4460',
-  green: '#22c97a',
-  blue: '#3b7ef4',
+  bg:     '#060810',
+  card:   '#161923',
+  inner:  '#1e2231',
+  text:   '#eef0f8',
+  muted:  '#6b7494',
+  hint:   '#3d4460',
+  blue:   '#3b7ef4',
+  green:  '#22c97a',
+  red:    '#f04a4a',
   purple: '#9b6ef5',
-  amber: '#f5a623',
-  red: '#f04a4a',
-  teal: '#0fb8a0',
-  aGrad: 'linear-gradient(135deg, #1e3a2a 0%, #1a1230 100%)',
-  ovGrad: 'linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%)',
+  amber:  '#f5a623',
+  teal:   '#0fb8a0',
+  ovGrad: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
+}
+
+// ── Collapsible Widget Wrapper ────────────────────────────────────────────────
+function Widget({ title, borderColor, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${borderColor || C.inner}`,
+      borderRadius: 18,
+      marginBottom: 10,
+      overflow: 'hidden',
+    }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: '100%', background: 'transparent', border: 'none', cursor: 'pointer',
+          padding: '13px 16px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}
+      >
+        <span style={{ fontSize: 13, fontWeight: 700, color: C.text }}>{title}</span>
+        <span style={{
+          fontSize: 9, color: C.muted,
+          display: 'inline-block',
+          transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+          transition: 'transform 0.2s',
+        }}>▼</span>
+      </button>
+      {open && <div style={{ padding: '0 16px 14px' }}>{children}</div>}
+    </div>
+  )
 }
 
 // ── Header ────────────────────────────────────────────────────────────────────
 function Header() {
   return (
-    <div style={{ background: C.aGrad, padding: '14px 18px 18px', position: 'relative' }}>
-      <div style={{ position: 'absolute', top: 14, right: 18 }}>
+    <div style={{ background: C.ovGrad, padding: '18px 16px 20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>Admin Dashboard</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Principal Carter 🏫</div>
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)' }}>Lamar High School · Manage teachers + parents</div>
+        </div>
         <div style={{ position: 'relative' }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔔</div>
-          <div style={{ position: 'absolute', top: -3, right: -3, width: 14, height: 14, borderRadius: '50%', background: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#fff', fontWeight: 700 }}>5</div>
+          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🔔</div>
+          <div style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: '50%', background: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 700, color: '#fff' }}>5</div>
         </div>
       </div>
-      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>Lincoln Elementary · Houston ISD</div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Admin Dashboard 🏫</div>
-      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>School-level analytics · No individual grades · Manage teachers + parents</div>
-      <div style={{ fontSize: 9, color: C.hint }}>Hold widget to customize · Saved to account</div>
+      <div style={{ marginTop: 8, fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>Hold widget to customize · Saved to account</div>
     </div>
   )
 }
 
-// ── AW1: School Overview ──────────────────────────────────────────────────────
+// ── AW1: School Overview (gradient tile — always open) ────────────────────────
 function AW1_SchoolOverview() {
   const tiles = [
     { icon: '👩‍🏫', value: '24',   label: 'Teachers' },
     { icon: '🎒',  value: '612',  label: 'Students' },
     { icon: '📊',  value: '78.4', label: 'School GPA' },
-    { icon: '⚑',   value: '42',   label: 'Need Attention' },
-    { icon: '💬',  value: '18',   label: 'Pending Msgs' },
+    { icon: '⚑',   value: '42',   label: 'Need Attn' },
+    { icon: '💬',  value: '18',   label: 'Msgs' },
   ]
   return (
     <div style={{ background: C.ovGrad, borderRadius: 18, padding: '14px 16px 18px', marginBottom: 10 }}>
@@ -68,8 +101,7 @@ function AW2_Analytics() {
     { name: 'Science', score: 60.0, pct: 60, color: C.red   },
   ]
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>School-wide Analytics</div>
+    <Widget title="School-wide Analytics">
       <div style={{ fontSize: 9, color: C.muted, marginBottom: 14 }}>No individual grades · Class-level and school-level only</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         {subjects.map(s => (
@@ -83,7 +115,7 @@ function AW2_Analytics() {
         ))}
       </div>
       <div style={{ fontSize: 9, color: C.red, marginTop: 10 }}>⚑ Science needs school-wide attention</div>
-    </div>
+    </Widget>
   )
 }
 
@@ -94,11 +126,7 @@ function AW3_TeachersLowGPA() {
     { name: 'Ms. Patel',  subject: 'Writing · 5th Period', gpa: '71.8 ↓', gpaColor: C.amber, avg: '(school avg 81.0)', border: 'rgba(245,166,35,0.12)' },
   ]
   return (
-    <div style={{ background: C.card, border: '1px solid rgba(240,74,74,0.12)', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>⚑ Teachers — Low Class GPA</div>
-        <div style={{ fontSize: 10, color: C.blue, cursor: 'pointer' }}>All Teachers →</div>
-      </div>
+    <Widget title="⚑ Teachers — Low Class GPA" borderColor="rgba(240,74,74,0.2)">
       <div style={{ fontSize: 9, color: C.muted, marginBottom: 12 }}>Classes below school GPA threshold · Tap row to message</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {flagged.map(t => (
@@ -117,7 +145,7 @@ function AW3_TeachersLowGPA() {
         ))}
       </div>
       <div style={{ fontSize: 9, color: C.muted, marginTop: 10 }}>2 of 24 teachers flagged · Admin sees class-level data only, never individual grades</div>
-    </div>
+    </Widget>
   )
 }
 
@@ -130,8 +158,7 @@ function AW4_SchoolReports() {
     { label: '💬 Comm. Summary',    color: C.purple },
   ]
   return (
-    <div style={{ background: C.card, border: '1px solid rgba(34,201,122,0.12)', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>School Reports 📊</div>
+    <Widget title="School Reports 📊" borderColor="rgba(34,201,122,0.12)">
       <div style={{ fontSize: 9, color: C.muted, marginBottom: 12 }}>School-level only · No individual student data · Filter by grade level / subject</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
         {filters.map(f => (
@@ -144,7 +171,7 @@ function AW4_SchoolReports() {
         <button style={{ background: 'rgba(59,126,244,0.12)', color: C.blue, border: 'none', borderRadius: 9, padding: '5px 14px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>🖨 Print</button>
         <button style={{ background: 'rgba(34,201,122,0.12)', color: C.green, border: 'none', borderRadius: 9, padding: '5px 14px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>⬇ PDF</button>
       </div>
-    </div>
+    </Widget>
   )
 }
 
@@ -156,8 +183,7 @@ function AW5_CommHub() {
     { label: '📢 School Announcement',   color: C.green  },
   ]
   return (
-    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>Communication Hub 💬</div>
+    <Widget title="Communication Hub 💬">
       <div style={{ fontSize: 9, color: C.muted, marginBottom: 12 }}>Message all teachers · Message all parents · School-wide announcements</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {actions.map(a => (
@@ -167,14 +193,14 @@ function AW5_CommHub() {
         ))}
       </div>
       <div style={{ fontSize: 9, color: C.muted, marginTop: 10 }}>Admin sees class-level data only · No individual student grades ever</div>
-    </div>
+    </Widget>
   )
 }
 
 // ── Bottom Nav ────────────────────────────────────────────────────────────────
 function BottomNav({ active, onSelect }) {
   const items = [
-    { id: 'home',     icon: '⊞',   label: 'Home' },
+    { id: 'home',     icon: '🏠',  label: 'Home' },
     { id: 'teachers', icon: '👩‍🏫', label: 'Teachers' },
     { id: 'reports',  icon: '📊',  label: 'Reports' },
     { id: 'messages', icon: '💬',  label: 'Messages' },
