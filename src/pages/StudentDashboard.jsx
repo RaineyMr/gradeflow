@@ -1,658 +1,242 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-const defaultStudent = {
-  name: 'Jordan Smith',
-  gradeLevel: '10th Grade',
-  school: 'Lincoln High School',
-  homeroom: 'Ms. Johnson',
-  currentAverage: 87,
-  attendance: 95,
-  streak: 6,
-  upcomingAssignments: [
-    { id: 1, title: 'Stoichiometry Practice', course: 'Chemistry', due: 'Tomorrow', status: 'due-soon' },
-    { id: 2, title: 'Lab Safety Reflection', course: 'Chemistry', due: 'Friday', status: 'pending' },
-    { id: 3, title: 'Vocabulary Check', course: 'English', due: 'Next Monday', status: 'pending' },
-  ],
-  recentGrades: [
-    { id: 1, title: 'Unit 4 Quiz', course: 'Chemistry', score: '92%', trend: 'up' },
-    { id: 2, title: 'Lab Report #3', course: 'Chemistry', score: '88%', trend: 'steady' },
-    { id: 3, title: 'Homework Set 12', course: 'Math', score: '100%', trend: 'up' },
-  ],
-  needsAttention: [
-    { id: 1, label: 'Missed assignment', detail: 'Gas Laws Exit Ticket was not submitted' },
-    { id: 2, label: 'Low quiz score', detail: 'Unit 4 Quiz dropped below class average' },
-    { id: 3, label: 'Late work', detail: 'Lab Safety Reflection is still pending' },
-  ],
-  feedback: [
-    {
-      id: 1,
-      teacher: 'Ms. Johnson',
-      message: 'Great improvement on your problem setup. Keep showing your work on each conversion step.',
-    },
-    {
-      id: 2,
-      teacher: 'Mr. Patel',
-      message: 'You are participating more in class. Stay consistent this week.',
-    },
-  ],
-  classBreakdown: [
-    { id: 1, name: 'Chemistry', average: 87, color: '#3b82f6' },
-    { id: 2, name: 'Math', average: 92, color: '#22c55e' },
-    { id: 3, name: 'English', average: 84, color: '#f59e0b' },
-    { id: 4, name: 'History', average: 89, color: '#a855f7' },
-  ],
-  messages: [
-    {
-      id: 1,
-      sender: 'Ms. Johnson',
-      preview: 'Please make sure you turn in the missing exit ticket tonight.',
-      time: '10m ago',
-      unread: true,
-    },
-    {
-      id: 2,
-      sender: 'Ava R.',
-      preview: 'Did you finish the chemistry practice yet?',
-      time: '32m ago',
-      unread: false,
-    },
-    {
-      id: 3,
-      sender: 'Math Group',
-      preview: 'Reminder: quiz corrections are due tomorrow.',
-      time: '1h ago',
-      unread: true,
-    },
-  ],
-  feed: [
-    {
-      id: 1,
-      author: 'Chemistry',
-      title: 'Lab materials posted',
-      detail: 'Today’s lab sheet and safety checklist are now available in class resources.',
-      time: '18m ago',
-    },
-    {
-      id: 2,
-      author: 'School Feed',
-      title: 'Pep rally schedule updated',
-      detail: 'Friday dismissal times have been adjusted for the afternoon assembly.',
-      time: '1h ago',
-    },
-    {
-      id: 3,
-      author: 'English',
-      title: 'Vocabulary list uploaded',
-      detail: 'New practice set added for next week’s reading check.',
-      time: '3h ago',
-    },
-  ],
+const C = {
+  bg: '#0d1117',
+  card: '#161923',
+  inner: '#1e2231',
+  text: '#eef0f8',
+  muted: '#6b7494',
+  hint: '#3d4460',
+  green: '#22c97a',
+  blue: '#3b7ef4',
+  purple: '#9b6ef5',
+  amber: '#f5a623',
+  red: '#f04a4a',
+  teal: '#0fb8a0',
+  pink: '#f54a7a',
+  sGrad: 'linear-gradient(135deg, #ea580c 0%, #db2777 100%)',
+  ovGrad: 'linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%)',
+  lGrad: 'linear-gradient(135deg, #064e3b 0%, #1e3a5f 100%)',
 }
 
-const shell = {
-  minHeight: '100vh',
-  background: '#060810',
-  color: '#eef0f8',
-  padding: '24px 24px 110px',
-  fontFamily: 'Inter, Arial, sans-serif',
-}
-
-const container = {
-  maxWidth: '1400px',
-  margin: '0 auto',
-}
-
-const heroBase = {
-  borderRadius: '24px',
-  padding: '24px',
-  boxShadow: '0 18px 50px rgba(0,0,0,0.28)',
-  marginBottom: '20px',
-}
-
-const cardBase = {
-  borderRadius: '20px',
-  padding: '18px',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
-}
-
-const sectionTitle = {
-  fontSize: '16px',
-  fontWeight: 700,
-  margin: 0,
-}
-
-const pillBase = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '6px',
-  borderRadius: '999px',
-  padding: '6px 10px',
-  fontSize: '12px',
-  fontWeight: 700,
-}
-
-function tone(score) {
-  if (score >= 90) return { color: '#22c55e', bg: 'rgba(34,197,94,0.14)' }
-  if (score >= 80) return { color: '#f59e0b', bg: 'rgba(245,158,11,0.14)' }
-  return { color: '#f04a4a', bg: 'rgba(240,74,74,0.14)' }
-}
-
-function StudentDashboard({ currentUser, student = defaultStudent }) {
-  const theme = currentUser?.theme || {
-    primary: '#3b82f6',
-    secondary: '#1d4ed8',
-    accent: '#60a5fa',
-    heroGradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-    card: '#161923',
-    border: '#1d2940',
-    muted: '#6f7fa7',
-    soft: 'rgba(37,99,235,0.14)',
-  }
-
-  const displayStudent = {
-    ...student,
-    name: currentUser?.userName || student.name,
-    school: currentUser?.schoolName || student.school,
-  }
-
-  const overallTone = tone(displayStudent.currentAverage)
-
-  const card = {
-    ...cardBase,
-    background: theme.card,
-    border: `1px solid ${theme.border}`,
-  }
-
-  const muted = {
-    color: theme.muted,
-  }
-
-  const hero = {
-    ...heroBase,
-    background: theme.heroGradient,
-  }
-
+// ── Header ────────────────────────────────────────────────────────────────────
+function Header() {
   return (
-    <div style={shell}>
-      <div style={container}>
-        <div style={hero}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ ...pillBase, background: 'rgba(255,255,255,0.14)', color: '#fff', marginBottom: '12px' }}>
-                🎓 Student Dashboard
-              </div>
-              <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 800 }}>{displayStudent.name}</h1>
-              <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.82)' }}>
-                {displayStudent.gradeLevel} · {displayStudent.school} · Homeroom: {displayStudent.homeroom}
-              </p>
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(120px, 1fr))',
-                gap: '12px',
-                minWidth: '320px',
-                flex: 1,
-              }}
-            >
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Current Average</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{displayStudent.currentAverage}%</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Attendance</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{displayStudent.attendance}%</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Streak</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{displayStudent.streak} days</div>
-              </div>
-            </div>
-          </div>
+    <div style={{ background: C.sGrad, padding: '14px 18px 18px', position: 'relative' }}>
+      {/* Bell + backpack top-right */}
+      <div style={{ position: 'absolute', top: 14, right: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔔</div>
+          <div style={{ position: 'absolute', top: -3, right: -3, width: 14, height: 14, borderRadius: '50%', background: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#fff', fontWeight: 700 }}>4</div>
         </div>
-
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1.3fr 0.9fr',
-            gap: '20px',
-            alignItems: 'start',
-          }}
-        >
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <section style={card}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '16px',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <h2 style={sectionTitle}>Class Snapshot</h2>
-                <span style={{ ...pillBase, background: overallTone.bg, color: overallTone.color }}>
-                  {displayStudent.currentAverage >= 85 ? 'On Track' : 'Watch Progress'}
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-                {displayStudent.classBreakdown.map((course) => (
-                  <div
-                    key={course.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                      borderLeft: `4px solid ${course.color}`,
-                    }}
-                  >
-                    <div style={{ fontSize: '13px', color: '#eef0f8', fontWeight: 700 }}>{course.name}</div>
-                    <div style={{ fontSize: '30px', fontWeight: 800, marginTop: '8px' }}>{course.average}%</div>
-                    <div
-                      style={{
-                        marginTop: '10px',
-                        height: '8px',
-                        background: '#11141d',
-                        borderRadius: '999px',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${course.average}%`,
-                          height: '100%',
-                          borderRadius: '999px',
-                          background: course.color,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '16px',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <h2 style={sectionTitle}>Upcoming Work</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>What needs to get done next</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {displayStudent.upcomingAssignments.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '12px',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 700 }}>{item.title}</div>
-                      <div style={{ ...muted, fontSize: '12px', marginTop: '4px' }}>{item.course}</div>
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          ...pillBase,
-                          background: item.status === 'due-soon' ? 'rgba(240,74,74,0.14)' : theme.soft,
-                          color: item.status === 'due-soon' ? '#f04a4a' : theme.primary,
-                        }}
-                      >
-                        {item.due}
-                      </span>
-                      <button
-                        style={{
-                          background: theme.primary,
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '12px',
-                          padding: '10px 14px',
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Open
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '16px',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <h2 style={sectionTitle}>Recent Grades</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Latest scored work</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {displayStudent.recentGrades.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '12px',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 700 }}>{item.title}</div>
-                      <div style={{ ...muted, fontSize: '12px', marginTop: '4px' }}>{item.course}</div>
-                    </div>
-
-                    <div
-                      style={{
-                        ...pillBase,
-                        background:
-                          item.trend === 'up'
-                            ? 'rgba(34,197,94,0.14)'
-                            : item.trend === 'steady'
-                            ? 'rgba(245,158,11,0.14)'
-                            : 'rgba(240,74,74,0.14)',
-                        color: item.trend === 'up' ? '#22c55e' : item.trend === 'steady' ? '#f59e0b' : '#f04a4a',
-                      }}
-                    >
-                      {item.score}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <section style={card}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '14px',
-                    gap: '12px',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <h2 style={sectionTitle}>Messenger</h2>
-                  <span style={{ ...muted, fontSize: '13px' }}>Recent chats</span>
-                </div>
-
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {displayStudent.messages.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        background: '#1e2231',
-                        borderRadius: '16px',
-                        padding: '14px',
-                        border: item.unread ? `1px solid ${theme.primary}` : '1px solid transparent',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-                        <div style={{ fontSize: '13px', fontWeight: 800 }}>{item.sender}</div>
-                        <div style={{ ...muted, fontSize: '11px' }}>{item.time}</div>
-                      </div>
-                      <div style={{ ...muted, fontSize: '13px', marginTop: '8px', lineHeight: 1.45 }}>
-                        {item.preview}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  style={{
-                    marginTop: '14px',
-                    width: '100%',
-                    background: theme.soft,
-                    color: theme.primary,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: '14px',
-                    padding: '12px 14px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                >
-                  Open Messenger
-                </button>
-              </section>
-
-              <section style={card}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    marginBottom: '14px',
-                    gap: '12px',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <h2 style={sectionTitle}>Class Feed</h2>
-                  <span style={{ ...muted, fontSize: '13px' }}>Latest updates</span>
-                </div>
-
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  {displayStudent.feed.map((item) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        background: '#1e2231',
-                        borderRadius: '16px',
-                        padding: '14px',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
-                        <div style={{ fontSize: '12px', color: theme.accent, fontWeight: 800 }}>{item.author}</div>
-                        <div style={{ ...muted, fontSize: '11px' }}>{item.time}</div>
-                      </div>
-                      <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '8px' }}>{item.title}</div>
-                      <div style={{ ...muted, fontSize: '13px', marginTop: '8px', lineHeight: 1.45 }}>
-                        {item.detail}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  style={{
-                    marginTop: '14px',
-                    width: '100%',
-                    background: theme.soft,
-                    color: theme.primary,
-                    border: `1px solid ${theme.border}`,
-                    borderRadius: '14px',
-                    padding: '12px 14px',
-                    fontWeight: 800,
-                    cursor: 'pointer',
-                  }}
-                >
-                  View Full Feed
-                </button>
-              </section>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <section style={{ ...card, border: '1px solid rgba(240,74,74,0.18)' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '14px',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <h2 style={sectionTitle}>Needs Attention</h2>
-                <span style={{ ...pillBase, background: 'rgba(240,74,74,0.14)', color: '#f04a4a' }}>
-                  {displayStudent.needsAttention.length} alerts
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {displayStudent.needsAttention.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1c1012',
-                      borderRadius: '16px',
-                      padding: '14px',
-                    }}
-                  >
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#fca5a5' }}>{item.label}</div>
-                    <div style={{ ...muted, fontSize: '12px', marginTop: '6px' }}>{item.detail}</div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  marginBottom: '14px',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <h2 style={sectionTitle}>Teacher Feedback</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Recent notes</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {displayStudent.feedback.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                    }}
-                  >
-                    <div style={{ fontSize: '13px', fontWeight: 700 }}>{item.teacher}</div>
-                    <div style={{ ...muted, fontSize: '13px', marginTop: '8px', lineHeight: 1.45 }}>
-                      {item.message}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <h2 style={{ ...sectionTitle, marginBottom: '14px' }}>Quick Actions</h2>
-
-              <div style={{ display: 'grid', gap: '10px' }}>
-                {['View all assignments', 'Check missing work', 'Message teacher', 'Open class feed'].map((label) => (
-                  <button
-                    key={label}
-                    style={{
-                      background: '#1e2231',
-                      color: '#eef0f8',
-                      border: '1px solid #2b3145',
-                      borderRadius: '14px',
-                      padding: '12px 14px',
-                      textAlign: 'left',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
-        </div>
+        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🎒</div>
       </div>
 
-      <div
-        style={{
-          position: 'fixed',
-          left: '50%',
-          bottom: '18px',
-          transform: 'translateX(-50%)',
-          width: 'min(760px, calc(100% - 24px))',
-          background: 'rgba(14,18,30,0.94)',
-          backdropFilter: 'blur(14px)',
-          border: `1px solid ${theme.border}`,
-          borderRadius: '24px',
-          padding: '10px',
-          boxShadow: '0 16px 35px rgba(0,0,0,0.35)',
-          zIndex: 30,
-        }}
-      >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(5, 1fr)',
-            gap: '10px',
-          }}
-        >
-          {[
-            { icon: '🏠', label: 'Home', active: true },
-            { icon: '📝', label: 'Work' },
-            { icon: '💬', label: 'Messages' },
-            { icon: '📣', label: 'Feed' },
-            { icon: '👤', label: 'Profile' },
-          ].map((item) => (
-            <button
-              key={item.label}
-              style={{
-                background: item.active ? theme.soft : 'transparent',
-                color: item.active ? theme.primary : '#d6dbeb',
-                border: item.active ? `1px solid ${theme.border}` : '1px solid transparent',
-                borderRadius: '16px',
-                padding: '12px 8px',
-                cursor: 'pointer',
-                fontWeight: 700,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-            >
-              <span style={{ fontSize: '18px' }}>{item.icon}</span>
-              <span style={{ fontSize: '12px' }}>{item.label}</span>
-            </button>
-          ))}
-        </div>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', marginBottom: 4 }}>Good Morning! 🌟</div>
+      <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Hi, Marcus! 👋</div>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>3rd Grade · Lincoln Elementary</div>
+      <div style={{ fontSize: 9, color: C.hint }}>Hold widget or tap ✏ to customize · Saved to account</div>
+    </div>
+  )
+}
+
+// ── SW1: Daily Overview ───────────────────────────────────────────────────────
+function SW1_DailyOverview() {
+  const tiles = [
+    { icon: '📊', value: '87.4', label: 'GPA' },
+    { icon: '📚', value: '4',    label: 'Classes' },
+    { icon: '📋', value: '3',    label: 'Assignments' },
+    { icon: '🔔', value: '2',    label: 'Updates' },
+  ]
+  return (
+    <div style={{ background: C.ovGrad, borderRadius: 18, padding: '14px 16px 18px', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>DAILY OVERVIEW</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+        {tiles.map(t => (
+          <div key={t.label} style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 13, padding: '10px 6px', textAlign: 'center' }}>
+            <div style={{ fontSize: 16, marginBottom: 4 }}>{t.icon}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{t.value}</div>
+            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{t.label}</div>
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
-export default StudentDashboard
+// ── SW2: Today's Lessons ──────────────────────────────────────────────────────
+function SW2_TodaysLessons() {
+  return (
+    <div style={{ background: C.lGrad, border: '1px solid #1a3a2a', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>TODAY'S LESSONS 📖</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>Ch.4 · Fractions &amp; Decimals</div>
+      <div style={{ fontSize: 10, color: C.muted, marginBottom: 10 }}>Math · Pages 84–91 · Ms. Johnson · Based on teacher plan</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'rgba(59,126,244,0.12)', borderRadius: 9, padding: '4px 12px', fontSize: 10, color: C.blue, fontWeight: 700 }}>
+          View Worksheet 📄
+        </div>
+        <div style={{ fontSize: 9, color: C.teal }}>+3 more today</div>
+      </div>
+    </div>
+  )
+}
+
+// ── SW3: My Classes ───────────────────────────────────────────────────────────
+function SW3_MyClasses() {
+  const classes = [
+    { name: 'Math',    teacher: 'Ms. Johnson', gpa: '95.0', gpaColor: '#fff',  gpaSuffix: 'GPA ⭐', suffixColor: C.green, border: C.blue   },
+    { name: 'Reading', teacher: 'Ms. Johnson', gpa: '82.0', gpaColor: '#fff',  gpaSuffix: 'GPA',    suffixColor: C.amber, border: C.purple },
+    { name: 'Science', teacher: 'Ms. Johnson', gpa: '61.0', gpaColor: '#fff',  gpaSuffix: 'GPA ⚑',  suffixColor: C.red,   border: C.teal   },
+    { name: 'Writing', teacher: 'Ms. Johnson', gpa: '88.0', gpaColor: '#fff',  gpaSuffix: 'GPA',    suffixColor: C.green, border: C.pink   },
+  ]
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 12 }}>My Classes</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {classes.map(c => (
+          <div key={c.name} style={{ background: C.inner, borderRadius: 14, padding: '10px 12px', borderLeft: `4px solid ${c.border}` }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: C.text }}>{c.name}</div>
+            <div style={{ fontSize: 9, color: C.muted, marginBottom: 6 }}>{c.teacher}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: 20, fontWeight: 800, color: c.gpaColor }}>{c.gpa}</span>
+              <span style={{ fontSize: 9, color: c.suffixColor }}>{c.gpaSuffix}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 9, color: '#3b7494', marginTop: 8 }}>Tap class → see assignments · GPA as number</div>
+    </div>
+  )
+}
+
+// ── SW4: Needs Attention ──────────────────────────────────────────────────────
+function SW4_NeedsAttention() {
+  return (
+    <div style={{ background: C.card, border: 'rgba(240,74,74,0.12) 1px solid', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>Needs Attention ⚑</div>
+      <div style={{ background: '#1c1012', borderRadius: 10, padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: 10, color: C.red }}>Science below 70% · Study tips available</span>
+        <span style={{ fontSize: 9, color: C.blue, cursor: 'pointer' }}>View →</span>
+      </div>
+    </div>
+  )
+}
+
+// ── SW5: Messages ─────────────────────────────────────────────────────────────
+function SW5_Messages() {
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Messages 💬</div>
+        <div style={{ fontSize: 10, color: C.blue, cursor: 'pointer' }}>+ New</div>
+      </div>
+      <div style={{ background: C.inner, borderRadius: 12, padding: '10px 12px', marginBottom: 6 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, color: C.text }}>Ms. Johnson</span>
+          <span style={{ fontSize: 9, color: C.blue, cursor: 'pointer' }}>Reply →</span>
+        </div>
+        <div style={{ fontSize: 10, color: C.muted, marginBottom: 6 }}>Don't forget worksheet due Friday!</div>
+        <div style={{ fontSize: 10 }}>👍 ❤️ 😂  · reactions on all messages</div>
+      </div>
+      <div style={{ fontSize: 9, color: C.purple }}>✨ AI polishes reply · you approve</div>
+    </div>
+  )
+}
+
+// ── SW6: Class Feed ───────────────────────────────────────────────────────────
+function SW6_ClassFeed() {
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>Class Feed 📢</div>
+        <div style={{ fontSize: 10, color: C.blue, cursor: 'pointer' }}>+ Post</div>
+      </div>
+      <div style={{ background: C.inner, borderRadius: 12, padding: '10px 12px', marginBottom: 6 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 4 }}>📅 Test Friday — Ch. 4 &amp; 5!</div>
+        <div style={{ fontSize: 10, color: C.muted, marginBottom: 6 }}>Ms. Johnson · 1hr ago · Read: 18/24</div>
+        <div style={{ fontSize: 11 }}>👍 12  ❤️ 5  😂 2  ·  😕 3 confused  ·  ❓ 5 questions</div>
+      </div>
+      <div style={{ fontSize: 9, color: C.muted }}>Public links need approval · direct msgs unrestricted · 👍 ❤️ 😂 everywhere</div>
+    </div>
+  )
+}
+
+// ── SW7: AI Study Tips ────────────────────────────────────────────────────────
+function SW7_AIStudyTips() {
+  return (
+    <div style={{ background: '#1a1230', border: '1px solid #3b2a5a', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: C.purple, marginBottom: 8 }}>✨ AI STUDY TIPS</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 6 }}>Science needs your focus! 📚</div>
+      <div style={{ fontSize: 10, color: '#b090d0', marginBottom: 6 }}>10 min flashcards tonight · same strategy that boosted Reading +8pts</div>
+      <div style={{ fontSize: 9, fontWeight: 600, color: C.purple, cursor: 'pointer' }}>Tap for full personalized study plan →</div>
+    </div>
+  )
+}
+
+// ── SW8: Upload Assignment ────────────────────────────────────────────────────
+function SW8_UploadAssignment() {
+  return (
+    <div style={{ background: C.card, border: '1px solid rgba(34,201,122,0.18)', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>Upload Assignment 📤</div>
+      <div style={{ fontSize: 9, color: C.muted, marginBottom: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Photo · File · Link · Note to teacher</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {[['📷 Photo', C.green], ['📄 File', C.blue], ['🔗 Link', C.purple]].map(([label, color]) => (
+          <button key={label} style={{ background: `${color}20`, color, border: 'none', borderRadius: 10, padding: '5px 12px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Bottom Nav ────────────────────────────────────────────────────────────────
+function BottomNav({ active, onSelect }) {
+  const items = [
+    { id: 'home',     icon: '⊞', label: 'Home' },
+    { id: 'grades',   icon: '📚', label: 'Grades' },
+    { id: 'feed',     icon: '📢', label: 'Feed' },
+    { id: 'messages', icon: '💬', label: 'Messages' },
+    { id: 'calendar', icon: '📅', label: 'Calendar' },
+  ]
+  return (
+    <div style={{ background: '#0d1117', borderTop: `1px solid ${C.inner}`, padding: '6px 8px 16px', position: 'sticky', bottom: 0 }}>
+      <div style={{ fontSize: 8, color: C.hint, marginBottom: 4, paddingLeft: 4 }}>✏ EDITABLE NAV</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)' }}>
+        {items.map(item => (
+          <button key={item.id} onClick={() => onSelect(item.id)} style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 2px',
+          }}>
+            <span style={{ fontSize: 15 }}>{item.icon}</span>
+            <span style={{ fontSize: 8, color: item.id === active ? '#f97316' : C.muted, fontWeight: item.id === active ? 700 : 400 }}>
+              {item.label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+export default function StudentDashboard() {
+  const [activeNav, setActiveNav] = useState('home')
+
+  return (
+    <div style={{ minHeight: '100dvh', width: '100%', background: C.bg, fontFamily: 'Inter, -apple-system, Arial, sans-serif', boxSizing: 'border-box', overflowX: 'hidden', color: C.text, display: 'flex', flexDirection: 'column' }}>
+      <Header />
+      <div style={{ flex: 1, padding: '10px 10px 0' }}>
+        <SW1_DailyOverview />
+        <SW2_TodaysLessons />
+        <SW3_MyClasses />
+        <SW4_NeedsAttention />
+        <SW5_Messages />
+        <SW6_ClassFeed />
+        <SW7_AIStudyTips />
+        <SW8_UploadAssignment />
+      </div>
+      <BottomNav active={activeNav} onSelect={setActiveNav} />
+    </div>
+  )
+}
