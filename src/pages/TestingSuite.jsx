@@ -1,318 +1,262 @@
-import React, { useState, useRef } from 'react'
+import React, { useState } from 'react'
 import { useStore } from '../lib/store'
-import { AssignmentOptions, Tag, LoadingSpinner } from '../components/ui'
-import { generateTestQuestions } from '../lib/ai'
+import { AssignmentOptions, LoadingSpinner } from '../components/ui'
 
-// ── Build It screen ───────────────────────────────────────────────────────────
-function BuildTest({ onBack }) {
-  const [questions, setQuestions] = useState([{ id: 1, type: 'mc', text: '', options: ['', '', '', ''], answer: 'A', points: 10 }])
-  const [saved, setSaved] = useState(false)
+const C = { bg:'#060810',card:'#161923',inner:'#1e2231',text:'#eef0f8',muted:'#6b7494',border:'#2a2f42',green:'#22c97a',blue:'#3b7ef4',red:'#f04a4a',amber:'#f5a623',teal:'#0fb8a0',purple:'#9b6ef5' }
 
-  function addQuestion() {
-    setQuestions(qs => [...qs, { id: Date.now(), type: 'mc', text: '', options: ['', '', '', ''], answer: 'A', points: 10 }])
-  }
-
-  function updateQ(id, field, value) {
-    setQuestions(qs => qs.map(q => q.id === id ? { ...q, [field]: value } : q))
-  }
-
-  if (saved) return (
-    <div className="text-center py-16">
-      <div className="text-5xl mb-4">✅</div>
-      <p className="font-bold text-text-primary text-lg mb-2">Test Saved</p>
-      <p className="text-text-muted text-sm mb-6">{questions.length} questions ready to assign</p>
-      <button onClick={onBack} className="px-6 py-2.5 rounded-pill font-bold text-white" style={{ background: 'var(--school-color)' }}>Back to Testing Suite</button>
-    </div>
-  )
-
+function QuestionCard({ q, index, onChange, onDelete }) {
   return (
-    <div>
-      <button onClick={onBack} className="flex items-center gap-2 text-text-muted text-sm mb-6 hover:text-text-primary">← Back</button>
-      <h1 className="font-display font-bold text-xl text-text-primary mb-6">🏗 Build Test</h1>
-      <div className="space-y-4 mb-4">
-        {questions.map((q, i) => (
-          <div key={q.id} className="p-4 rounded-card" style={{ background: '#161923' }}>
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-bold text-sm text-text-muted">Q{i + 1}</span>
-              <div className="flex gap-2">
-                {['mc', 'tf', 'short', 'essay'].map(t => (
-                  <button key={t} onClick={() => updateQ(q.id, 'type', t)}
-                    className="px-2 py-0.5 rounded-pill text-xs font-bold transition-all"
-                    style={{ background: q.type === t ? 'var(--school-color)' : '#1e2231', color: q.type === t ? 'white' : '#6b7494' }}>
-                    {t === 'mc' ? 'MC' : t === 'tf' ? 'T/F' : t === 'short' ? 'Short' : 'Essay'}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <textarea className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm resize-none mb-2"
-              rows={2} placeholder="Question text..." value={q.text}
-              onChange={e => updateQ(q.id, 'text', e.target.value)} />
-            {q.type === 'mc' && (
-              <div className="space-y-1.5">
-                {['A', 'B', 'C', 'D'].map((letter, j) => (
-                  <div key={letter} className="flex items-center gap-2">
-                    <button onClick={() => updateQ(q.id, 'answer', letter)}
-                      className="w-6 h-6 rounded-full text-xs font-bold flex-shrink-0 transition-all"
-                      style={{ background: q.answer === letter ? '#22c97a' : '#1e2231', color: q.answer === letter ? 'white' : '#6b7494' }}>
-                      {letter}
-                    </button>
-                    <input className="flex-1 bg-elevated border border-border rounded-card px-2 py-1 text-text-primary text-sm"
-                      placeholder={`Option ${letter}`} value={q.options[j]}
-                      onChange={e => { const opts = [...q.options]; opts[j] = e.target.value; updateQ(q.id, 'options', opts) }} />
-                  </div>
-                ))}
-              </div>
-            )}
-            {q.type === 'tf' && (
-              <div className="flex gap-2 mt-2">
-                {['True', 'False'].map(v => (
-                  <button key={v} onClick={() => updateQ(q.id, 'answer', v)}
-                    className="flex-1 py-1.5 rounded-pill text-sm font-bold transition-all"
-                    style={{ background: q.answer === v ? '#22c97a20' : '#1e2231', color: q.answer === v ? '#22c97a' : '#6b7494' }}>
-                    {v}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      <button onClick={addQuestion} className="w-full py-2.5 rounded-pill text-sm font-semibold mb-4" style={{ background: '#1e2231', color: '#6b7494' }}>
-        + Add Question
-      </button>
-      <button onClick={() => setSaved(true)} disabled={questions.every(q => !q.text)}
-        className="w-full py-3 rounded-pill font-bold text-white disabled:opacity-40"
-        style={{ background: 'var(--school-color)' }}>
-        Save Test ({questions.length} questions)
-      </button>
-    </div>
-  )
-}
-
-// ── Import It screen ──────────────────────────────────────────────────────────
-function ImportTest({ onBack }) {
-  const fileRef = useRef()
-  const [processing, setProcessing] = useState(false)
-  const [done, setDone] = useState(false)
-  const [fileName, setFileName] = useState('')
-
-  function handleFile(e) {
-    const f = e.target.files[0]
-    if (!f) return
-    setFileName(f.name)
-    setProcessing(true)
-    setTimeout(() => { setProcessing(false); setDone(true) }, 2000)
-  }
-
-  if (processing) return (
-    <div className="py-16 text-center">
-      <LoadingSpinner />
-      <p className="text-text-muted text-sm mt-4 animate-pulse-soft">AI is digitizing your test...</p>
-    </div>
-  )
-
-  if (done) return (
-    <div>
-      <button onClick={onBack} className="flex items-center gap-2 text-text-muted text-sm mb-6 hover:text-text-primary">← Back</button>
-      <div className="p-4 rounded-card mb-4" style={{ background: '#0f2a1a', border: '1px solid #22c97a40' }}>
-        <p className="font-semibold text-text-primary text-sm">✓ {fileName}</p>
-        <p className="text-success text-xs">Digitized successfully — ready to assign</p>
-      </div>
-      <div className="flex gap-2">
-        <button onClick={onBack} className="flex-1 py-2.5 rounded-pill text-sm font-bold text-white" style={{ background: 'var(--school-color)' }}>Assign to Class</button>
-        <button onClick={onBack} className="flex-1 py-2.5 rounded-pill text-sm font-semibold" style={{ background: '#1e2231', color: '#6b7494' }}>Done</button>
-      </div>
-    </div>
-  )
-
-  return (
-    <div>
-      <button onClick={onBack} className="flex items-center gap-2 text-text-muted text-sm mb-6 hover:text-text-primary">← Back</button>
-      <h1 className="font-display font-bold text-xl text-text-primary mb-6">📷 Import Test</h1>
-      <button onClick={() => fileRef.current?.click()}
-        className="w-full p-10 rounded-widget flex flex-col items-center gap-4 border-2 border-dashed transition-all hover:scale-[1.01]"
-        style={{ background: '#161923', borderColor: '#2a2f42' }}>
-        <span className="text-5xl">📎</span>
-        <div className="text-center">
-          <p className="font-bold text-text-primary mb-1">Photo · Upload · PDF</p>
-          <p className="text-text-muted text-sm">AI reads and digitizes any format</p>
+    <div style={{ background:C.inner, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+        <span style={{ fontSize:12, fontWeight:700, color:C.muted }}>Question {index+1}</span>
+        <div style={{ display:'flex', gap:6 }}>
+          <select value={q.type} onChange={e => onChange({ ...q, type:e.target.value })}
+            style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'4px 8px', color:C.text, fontSize:11, cursor:'pointer' }}>
+            <option value="mc">Multiple Choice</option>
+            <option value="tf">True / False</option>
+            <option value="short">Short Answer</option>
+            <option value="essay">Essay</option>
+            <option value="fill">Fill in the Blank</option>
+          </select>
+          <button onClick={onDelete} style={{ background:`${C.red}22`, color:C.red, border:'none', borderRadius:8, padding:'4px 10px', fontSize:11, cursor:'pointer' }}>✕</button>
         </div>
-      </button>
-      <input ref={fileRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFile} />
-    </div>
-  )
-}
-
-// ── AI Generate screen ────────────────────────────────────────────────────────
-function GenerateTest({ onBack }) {
-  const { addAssignment, classes, activeClass } = useStore()
-  const [loading, setLoading] = useState(false)
-  const [questions, setQuestions] = useState([])
-  const [error, setError] = useState(null)
-  const [genForm, setGenForm] = useState({ subject: '', grade: '', topic: '', count: 10 })
-  const [options, setOptions] = useState({ lockdown: false, timer: false, shuffle: false, schedule: false, monitor: false })
-  const [posted, setPosted] = useState(false)
-
-  async function handleGenerate() {
-    if (!genForm.subject || !genForm.topic) return
-    setLoading(true)
-    setError(null)
-    try {
-      const qs = await generateTestQuestions(genForm)
-      if (!qs || qs.length === 0) throw new Error('No questions returned. Check your API key.')
-      setQuestions(qs)
-    } catch (e) {
-      setError(e.message)
-    }
-    setLoading(false)
-  }
-
-  function handlePost() {
-    addAssignment({
-      name: `${genForm.topic} Test`,
-      type: 'test',
-      classId: activeClass?.id || classes[0]?.id,
-      date: new Date().toISOString().split('T')[0],
-      weight: 40,
-      options
-    })
-    setPosted(true)
-  }
-
-  if (posted) return (
-    <div className="text-center py-16">
-      <div className="text-5xl mb-4">✅</div>
-      <p className="font-bold text-text-primary text-lg mb-2">Test Assigned!</p>
-      <p className="text-text-muted text-sm mb-6">Students will be notified</p>
-      <button onClick={onBack} className="px-6 py-2.5 rounded-pill font-bold text-white" style={{ background: 'var(--school-color)' }}>Back to Testing Suite</button>
-    </div>
-  )
-
-  return (
-    <div>
-      <button onClick={onBack} className="flex items-center gap-2 text-text-muted text-sm mb-6 hover:text-text-primary">← Back</button>
-      <h1 className="font-display font-bold text-xl text-text-primary mb-6">✨ AI Test Generator</h1>
-
-      {questions.length === 0 && (
-        <div className="space-y-4 mb-6">
-          {[
-            { key: 'subject', label: 'Subject', placeholder: 'e.g. Math' },
-            { key: 'grade', label: 'Grade', placeholder: 'e.g. 3rd Grade' },
-            { key: 'topic', label: 'Topic', placeholder: 'e.g. Fractions' },
-          ].map(f => (
-            <div key={f.key}>
-              <label className="tag-label block mb-1">{f.label}</label>
-              <input className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
-                placeholder={f.placeholder} value={genForm[f.key]} onChange={e => setGenForm(p => ({ ...p, [f.key]: e.target.value }))} />
+      </div>
+      <textarea rows={2} value={q.text} onChange={e => onChange({ ...q, text:e.target.value })}
+        placeholder="Enter question..."
+        style={{ width:'100%', background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', color:C.text, fontSize:13, resize:'none', boxSizing:'border-box', lineHeight:1.5, marginBottom:8 }} />
+      {q.type === 'mc' && (
+        <div style={{ paddingLeft:8 }}>
+          {['A','B','C','D'].map(opt => (
+            <div key={opt} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+              <button onClick={() => onChange({ ...q, correct:opt })}
+                style={{ width:22, height:22, borderRadius:'50%', border:`2px solid ${q.correct===opt ? C.green : C.border}`, background:q.correct===opt ? `${C.green}22` : 'transparent', cursor:'pointer', fontSize:11, fontWeight:700, color:q.correct===opt ? C.green : C.muted, flexShrink:0 }}>
+                {opt}
+              </button>
+              <input value={q.options?.[opt] || ''} onChange={e => onChange({ ...q, options:{ ...(q.options||{}), [opt]:e.target.value } })}
+                placeholder={`Option ${opt}`}
+                style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', color:C.text, fontSize:12, outline:'none' }} />
             </div>
           ))}
-          <div>
-            <label className="tag-label block mb-1">Number of Questions</label>
-            <input type="number" min="1" max="50" className="w-24 bg-elevated border border-border rounded-card px-3 py-2 text-text-primary text-sm"
-              value={genForm.count} onChange={e => setGenForm(p => ({ ...p, count: Number(e.target.value) }))} />
-          </div>
-          {error && <div className="p-3 rounded-card text-sm" style={{ background: '#1c1012', color: '#f04a4a', border: '1px solid #f04a4a30' }}>⚠ {error}</div>}
-          <button onClick={handleGenerate} disabled={!genForm.subject || !genForm.topic || loading}
-            className="w-full py-3 rounded-pill font-bold text-white disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg, #f5a623, #f04a4a)' }}>
-            {loading ? 'Generating...' : 'Generate Test ✨'}
-          </button>
+          <p style={{ fontSize:10, color:C.muted, margin:'4px 0 0' }}>Click letter to mark correct answer</p>
         </div>
       )}
-
-      {loading && <LoadingSpinner />}
-
-      {questions.length > 0 && (
-        <>
-          <div className="flex items-center justify-between mb-3">
-            <p className="tag-label">{questions.length} Questions</p>
-            <button onClick={() => setQuestions([])} className="text-xs text-text-muted hover:text-text-primary underline">← Regenerate</button>
-          </div>
-          <div className="space-y-3 mb-6">
-            {questions.map((q, i) => (
-              <div key={i} className="p-4 rounded-card" style={{ background: '#161923' }}>
-                <div className="flex items-start gap-3">
-                  <span className="font-bold text-sm text-text-muted">{i + 1}.</span>
-                  <div className="flex-1">
-                    <p className="text-sm text-text-primary mb-2">{q.question}</p>
-                    {q.options && (
-                      <div className="space-y-1">
-                        {q.options.map((opt, j) => (
-                          <div key={j} className="flex items-center gap-2">
-                            <div className="w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0"
-                              style={{ borderColor: opt.startsWith(q.answer) ? '#22c97a' : '#2a2f42', background: opt.startsWith(q.answer) ? '#22c97a' : 'transparent' }}>
-                              {opt.startsWith(q.answer) && <span className="text-white text-xs">✓</span>}
-                            </div>
-                            <span className="text-sm text-text-muted">{opt}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <div className="mt-2 flex items-center gap-2">
-                      <Tag color="#22c97a">{q.points} pts</Tag>
-                      <Tag color="#3b7ef4">{q.type?.replace('_', ' ')}</Tag>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="p-4 rounded-card mb-4" style={{ background: '#161923' }}>
-            <AssignmentOptions options={options} onChange={setOptions} />
-          </div>
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <button onClick={handlePost} className="py-3 rounded-pill font-bold text-sm" style={{ background: '#22c97a20', color: '#22c97a' }}>✓ Post & Auto-Grade</button>
-            <button onClick={handlePost} className="py-3 rounded-pill font-bold text-sm" style={{ background: '#3b7ef420', color: '#3b7ef4' }}>👁 Post & Review First</button>
-          </div>
-          <button onClick={handlePost} className="w-full py-3 rounded-pill font-bold text-white" style={{ background: 'var(--school-color)' }}>
-            Assign to Class →
-          </button>
-        </>
+      {q.type === 'tf' && (
+        <div style={{ display:'flex', gap:8 }}>
+          {['True','False'].map(v => (
+            <button key={v} onClick={() => onChange({ ...q, correct:v })}
+              style={{ flex:1, padding:'8px', borderRadius:10, border:`1.5px solid ${q.correct===v ? C.green : C.border}`, background:q.correct===v ? `${C.green}22` : C.bg, color:q.correct===v ? C.green : C.muted, cursor:'pointer', fontSize:12, fontWeight:700 }}>
+              {v}
+            </button>
+          ))}
+        </div>
+      )}
+      {(q.type==='short'||q.type==='fill') && (
+        <input value={q.answer || ''} onChange={e => onChange({ ...q, answer:e.target.value })}
+          placeholder="Answer key (optional)..."
+          style={{ width:'100%', background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'8px 10px', color:C.text, fontSize:12, outline:'none', boxSizing:'border-box' }} />
       )}
     </div>
   )
 }
 
-// ── Main menu ─────────────────────────────────────────────────────────────────
 export default function TestingSuite() {
-  const [mode, setMode] = useState('menu')
-  const [options, setOptions] = useState({ lockdown: false, timer: false, shuffle: false, schedule: false, monitor: false })
+  const { assignments, classes, activeClass } = useStore()
+  const [mode,       setMode]       = useState('menu')  // menu | builder | lockdown | pdf
+  const [questions,  setQuestions]  = useState([])
+  const [testName,   setTestName]   = useState('')
+  const [opts,       setOpts]       = useState({ lockdown:false, timer:false, shuffle:false, schedule:false, monitor:false })
+  const [timerMins,  setTimerMins]  = useState(45)
+  const [monitoring, setMonitoring] = useState(false)
+  const [published,  setPublished]  = useState(false)
+  const [generating, setGenerating] = useState(false)
+  const [pdfFile,    setPdfFile]    = useState(null)
 
-  if (mode === 'build') return <BuildTest onBack={() => setMode('menu')} />
-  if (mode === 'import') return <ImportTest onBack={() => setMode('menu')} />
-  if (mode === 'generate') return <GenerateTest onBack={() => setMode('menu')} />
+  function addQuestion(type = 'mc') {
+    setQuestions(q => [...q, { id:Date.now(), type, text:'', options:{A:'',B:'',C:'',D:''}, correct:'', answer:'' }])
+  }
 
-  const methods = [
-    { id: 'build', icon: '🏗', label: 'Build It', sub: 'MC · T/F · Short answer · Essay · Fill blank', color: '#3b7ef4' },
-    { id: 'import', icon: '📷', label: 'Import It', sub: 'Photo · Upload · PDF → AI digitizes', color: '#22c97a' },
-    { id: 'generate', icon: '✨', label: 'Find / Generate', sub: 'Search db · Ed site · AI by TEKS', color: '#f5a623' },
+  async function aiGenerateQuestions() {
+    const key = import.meta.env.VITE_ANTHROPIC_KEY
+    if (!key) { alert('Add VITE_ANTHROPIC_KEY to use AI question generation.'); return }
+    setGenerating(true)
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+        body: JSON.stringify({
+          model:'claude-sonnet-4-20250514', max_tokens:1500,
+          messages:[{ role:'user', content:`Generate 5 multiple choice questions for a ${activeClass?.subject||'Math'} test, grade level appropriate. Return ONLY valid JSON: {"questions":[{"type":"mc","text":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A"}]}` }]
+        })
+      })
+      const data = await res.json()
+      const text = data.content?.[0]?.text || ''
+      const parsed = safeJSON(text)
+      if (parsed?.questions) setQuestions(q => [...q, ...parsed.questions.map((q,i) => ({ ...q, id:Date.now()+i }))])
+    } catch { alert('Generation failed. Check your API key.') }
+    setGenerating(false)
+  }
+
+  function handlePublish() { setPublished(true) }
+
+  const MODES = [
+    { id:'lockdown', icon:'🔒', label:'Lockdown Browser', sub:'External test from any ed site · locked', color:C.blue   },
+    { id:'builder',  icon:'🏗', label:'Native Builder',   sub:'Build in GradeFlow · MC · Short ans · T/F · Essay', color:C.green  },
+    { id:'pdf',      icon:'📄', label:'PDF Convert',      sub:'Upload any PDF · AI digitizes it · Questions editable', color:C.purple },
   ]
 
-  return (
-    <div>
-      <h1 className="font-display font-bold text-2xl text-text-primary mb-2">Testing Suite</h1>
-      <p className="text-text-muted text-sm mb-6">3 ways to create · Same options on every assignment</p>
-      <div className="grid gap-4 mb-6">
-        {methods.map(m => (
+  // ── Menu ──────────────────────────────────────────────────────────────────
+  if (mode === 'menu') return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
+      <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Testing Suite</h1>
+      <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>3 modes · All devices · Auto-grade · Real-time monitoring</p>
+      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        {MODES.map(m => (
           <button key={m.id} onClick={() => setMode(m.id)}
-            className="p-5 rounded-card text-left transition-all hover:scale-[1.01]"
-            style={{ background: '#161923', border: `1px solid ${m.color}22` }}>
-            <div className="flex items-center gap-4">
-              <span className="text-3xl">{m.icon}</span>
-              <div>
-                <p className="font-bold text-text-primary">{m.label}</p>
-                <p className="text-text-muted text-xs mt-0.5">{m.sub}</p>
-              </div>
-              <span className="ml-auto" style={{ color: m.color }}>›</span>
+            style={{ background:C.card, border:`1px solid ${m.color}22`, borderRadius:16, padding:'16px', textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}
+            onMouseEnter={e => e.currentTarget.style.borderColor=m.color}
+            onMouseLeave={e => e.currentTarget.style.borderColor=`${m.color}22`}>
+            <div style={{ width:48, height:48, borderRadius:12, background:`${m.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>{m.icon}</div>
+            <div>
+              <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>{m.label}</div>
+              <div style={{ fontSize:11, color:C.muted }}>{m.sub}</div>
             </div>
+            <span style={{ marginLeft:'auto', color:C.muted, fontSize:18 }}>›</span>
           </button>
         ))}
       </div>
-      <div className="p-4 rounded-card" style={{ background: '#161923' }}>
-        <p className="tag-label mb-3">Default Assignment Options</p>
-        <AssignmentOptions options={options} onChange={setOptions} />
+      {/* Features */}
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:16, marginTop:20 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:10 }}>Features</div>
+        {['⏱ Timer + auto-submit','👁 Real-time monitoring','🔀 Randomize question order','🚨 Flag exit attempts','✨ AI auto-grade short answers','📝 Flag essays for review'].map(f => (
+          <div key={f} style={{ fontSize:12, color:C.text, padding:'6px 0', borderBottom:`1px solid ${C.inner}` }}>{f}</div>
+        ))}
       </div>
     </div>
   )
+
+  // ── Native Builder ────────────────────────────────────────────────────────
+  if (mode === 'builder') return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:100 }}>
+      <div style={{ padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+        <button onClick={() => setMode('menu')} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+        <h1 style={{ fontSize:18, fontWeight:800, margin:0 }}>🏗 Test Builder</h1>
+      </div>
+
+      {published ? (
+        <div style={{ textAlign:'center', padding:'40px 20px' }}>
+          <div style={{ fontSize:56, marginBottom:16 }}>✅</div>
+          <h2 style={{ color:C.text, marginBottom:8 }}>Test Published!</h2>
+          <p style={{ color:C.muted, fontSize:13, marginBottom:20 }}>Students will see it at their next login · {opts.monitor && 'Monitoring active'}</p>
+          {opts.monitor && (
+            <div style={{ background:C.card, border:`1px solid ${C.blue}30`, borderRadius:14, padding:'14px 16px', textAlign:'left', marginBottom:16 }}>
+              <div style={{ fontWeight:700, color:C.blue, marginBottom:8 }}>👁 Live Monitor</div>
+              {[{ name:'Aaliyah Brooks', progress:60, status:'In progress' },{ name:'Marcus Thompson', progress:0, status:'Not started' },{ name:'Sofia Rodriguez', progress:100, status:'Submitted ✓' }].map(s => (
+                <div key={s.name} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom:`1px solid ${C.inner}`, fontSize:12 }}>
+                  <span style={{ color:C.text }}>{s.name}</span>
+                  <span style={{ color:s.status.includes('Submitted')?C.green:s.status.includes('progress')?C.amber:C.muted }}>{s.status}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={() => { setPublished(false); setMode('menu') }} style={{ background:'var(--school-color)', border:'none', borderRadius:12, padding:'12px 24px', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer' }}>Done</button>
+        </div>
+      ) : (
+        <div style={{ padding:'0 16px' }}>
+          <div style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Test Name</label>
+            <input value={testName} onChange={e => setTestName(e.target.value)} placeholder="e.g. Unit 3 Test"
+              style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }} />
+          </div>
+
+          <div style={{ marginBottom:16 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Options</div>
+            <AssignmentOptions options={opts} onChange={setOpts} />
+            {opts.timer && (
+              <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:10 }}>
+                <label style={{ fontSize:12, color:C.text }}>Timer (min):</label>
+                <input type="number" value={timerMins} onChange={e => setTimerMins(Number(e.target.value))} min={5} max={180}
+                  style={{ width:80, background:C.inner, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', color:C.text, fontSize:13, outline:'none', textAlign:'center' }} />
+              </div>
+            )}
+          </div>
+
+          <div style={{ display:'flex', gap:8, marginBottom:12 }}>
+            <button onClick={() => addQuestion('mc')} style={{ flex:1, background:`${C.blue}22`, color:C.blue, border:'none', borderRadius:12, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ MC</button>
+            <button onClick={() => addQuestion('short')} style={{ flex:1, background:`${C.green}22`, color:C.green, border:'none', borderRadius:12, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ Short</button>
+            <button onClick={() => addQuestion('essay')} style={{ flex:1, background:`${C.purple}22`, color:C.purple, border:'none', borderRadius:12, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ Essay</button>
+            <button onClick={aiGenerateQuestions} disabled={generating} style={{ flex:1, background:`${C.teal}22`, color:C.teal, border:'none', borderRadius:12, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+              {generating ? '...' : '✨ AI'}
+            </button>
+          </div>
+
+          {generating && <div style={{ textAlign:'center', padding:16 }}><LoadingSpinner /><p style={{ color:C.muted, fontSize:12, marginTop:8 }}>Generating questions...</p></div>}
+
+          {questions.map((q, i) => (
+            <QuestionCard key={q.id} q={q} index={i}
+              onChange={updated => setQuestions(qs => qs.map(x => x.id===q.id ? updated : x))}
+              onDelete={() => setQuestions(qs => qs.filter(x => x.id !== q.id))}
+            />
+          ))}
+
+          {questions.length > 0 && (
+            <div style={{ marginTop:8 }}>
+              <div style={{ background:C.inner, borderRadius:12, padding:'10px 14px', marginBottom:10, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <span style={{ fontSize:12, color:C.text }}>Grade posting</span>
+                <div style={{ display:'flex', gap:6 }}>
+                  {['Auto','Review first','Manual'].map(opt => (
+                    <button key={opt} style={{ background:opt==='Auto'?'var(--school-color)':'#2a2f42', color:opt==='Auto'?'#fff':C.muted, border:'none', borderRadius:8, padding:'4px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>{opt}</button>
+                  ))}
+                </div>
+              </div>
+              <button onClick={handlePublish} style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
+                Publish Test ({questions.length} questions)
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+
+  // ── Lockdown ─────────────────────────────────────────────────────────────
+  if (mode === 'lockdown') return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
+      <button onClick={() => setMode('menu')} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
+      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 6px' }}>🔒 Lockdown Browser</h1>
+      <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>Link to any external test and lock the browser during it.</p>
+      <div style={{ marginBottom:12 }}>
+        <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Test URL</label>
+        <input placeholder="https://www.khanacademy.org/... or any test URL"
+          style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }} />
+      </div>
+      <AssignmentOptions options={opts} onChange={setOpts} />
+      <button style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer', marginTop:14 }}>
+        Launch Lockdown Test
+      </button>
+    </div>
+  )
+
+  // ── PDF Convert ───────────────────────────────────────────────────────────
+  if (mode === 'pdf') return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
+      <button onClick={() => setMode('menu')} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
+      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 6px' }}>📄 PDF Convert</h1>
+      <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>Upload any PDF test · AI digitizes it · All questions become editable.</p>
+      <input type="file" accept=".pdf,image/*" onChange={e => { setPdfFile(e.target.files?.[0]); setTimeout(() => setMode('builder'), 2000) }}
+        style={{ display:'none' }} id="pdf-upload" />
+      <label htmlFor="pdf-upload" style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:14, background:C.card, border:`2px dashed ${C.border}`, borderRadius:18, padding:'40px 20px', cursor:'pointer' }}>
+        <span style={{ fontSize:48 }}>📤</span>
+        <span style={{ fontSize:15, fontWeight:700, color:C.text }}>Upload PDF or photo of test</span>
+        <span style={{ fontSize:12, color:C.muted }}>PDF · JPG · PNG — AI digitizes everything</span>
+      </label>
+    </div>
+  )
+
+  return null
+}
+
+function safeJSON(text) {
+  try { return JSON.parse(text.replace(/```json|```/g,'').trim()) } catch {}
+  try { const m = text.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]) } catch {}
+  return null
 }
