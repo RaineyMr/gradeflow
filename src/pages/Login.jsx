@@ -268,16 +268,6 @@ function Login({ onLogin, onDemoLogin }) {
               </div>
             </div>
 
-            <div style={{ marginTop: '18px', background: '#0d1220', border: `1px solid ${activeTheme.border}`, borderRadius: '18px', padding: '16px' }}>
-              <div style={{ fontWeight: 800, marginBottom: '10px' }}>Demo credentials</div>
-              <div style={{ display: 'grid', gap: '8px', fontSize: '12px', color: '#cbd5e1' }}>
-                <div>Teacher — teacher@kippneworleans.org / demo123</div>
-                <div>Student — student@houstonisd.org / demo123</div>
-                <div>Parent — parent@bellaire.org / demo123</div>
-                <div>Admin — admin@lamarhs.org / demo123</div>
-              </div>
-            </div>
-
             <p style={{ color: activeTheme.muted, marginTop: '18px', textAlign: 'center', fontSize: '13px' }}>
               These are fake demo accounts for UI preview only.
             </p>
