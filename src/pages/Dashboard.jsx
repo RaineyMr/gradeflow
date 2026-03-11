@@ -204,35 +204,6 @@ function BottomNav({ active, onSelect }) {
   )
 }
 
-// ─── Settings page ────────────────────────────────────────────────────────────
-function SettingsPage({ onBack }) {
-  return (
-    <SubPage>
-      <div style={{ padding: '20px 16px 0', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-        <button onClick={onBack} style={{ background: C.inner, border: 'none', borderRadius: 10, padding: '8px 14px', color: C.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>← Back</button>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>⚙ Settings</h1>
-      </div>
-      {[
-        { icon: '👤', label: 'Profile & Account', desc: 'Name, email, password' },
-        { icon: '🎨', label: 'School Branding',   desc: 'Colors, logo, school name' },
-        { icon: '🔔', label: 'Notifications',      desc: 'Alerts, email, push' },
-        { icon: '📊', label: 'Grade Weights',      desc: 'Test, quiz, homework, participation' },
-        { icon: '🔗', label: 'Integrations',       desc: 'PowerSchool, Infinite Campus' },
-        { icon: '🔒', label: 'Privacy & Security', desc: 'Data, permissions' },
-      ].map(s => (
-        <div key={s.label} style={{ margin: '0 10px 8px', background: C.card, border: `1px solid ${C.inner}`, borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}
-          onClick={() => alert(`${s.label} — coming soon`)}>
-          <span style={{ fontSize: 22 }}>{s.icon}</span>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: C.text }}>{s.label}</div>
-            <div style={{ fontSize: 11, color: C.muted, marginTop: 2 }}>{s.desc}</div>
-          </div>
-        </div>
-      ))}
-    </SubPage>
-  )
-}
-
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function Dashboard({ currentUser, onCameraClick }) {
   const store = useStore()
@@ -259,18 +230,20 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     if (id === 'dashboard') { goHome(); return }
     setSubPage(id)
   }
-  if (subPage === 'gradebook')      return <><SubPage><Gradebook /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
-  if (subPage === 'parentMessages') return <><SubPage><ParentMessages /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
-  if (subPage === 'lessonPlan')     return <><SubPage><LessonPlan /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
-  if (subPage === 'reports')        return <><SubPage><Reports /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
-  if (subPage === 'testingSuite')   return <><SubPage><TestingSuite /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
-  if (subPage === 'classFeed')      return <><SubPage><ClassFeed /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
-  if (subPage === 'studentProfile') return <><SubPage><StudentProfile /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
+
+  // ── Sub-page routing ─────────────────────────────────────────────────────────
+  if (subPage === 'gradebook')      return <><SubPage><Gradebook onBack={goHome} /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
+  if (subPage === 'parentMessages') return <><SubPage><ParentMessages onBack={goHome} /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
+  if (subPage === 'lessonPlan')     return <><SubPage><LessonPlan onBack={goHome} /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
+  if (subPage === 'reports')        return <><SubPage><Reports onBack={goHome} /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
+  if (subPage === 'testingSuite')   return <><SubPage><TestingSuite onBack={goHome} /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
+  if (subPage === 'classFeed')      return <><SubPage><ClassFeed onBack={goHome} /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
+  if (subPage === 'studentProfile') return <><SubPage><StudentProfile onBack={goHome} /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
   if (subPage === 'reminders')      return <><RemindersPage onBack={goHome} /><BottomNav active={activeNav} onSelect={navSelect} /></>
   if (subPage === 'attention')      return <><NeedsAttentionPage onBack={goHome} /><BottomNav active={activeNav} onSelect={navSelect} /></>
   if (subPage === 'classes')        return <><ClassesPage onBack={goHome} navigate={setSubPage} /><BottomNav active={activeNav} onSelect={navSelect} /></>
-  if (subPage === 'settings')       return <><SubPage><SettingsPage onBack={goHome} /></SubPage><BottomNav active={activeNav} onSelect={navSelect} /></>
 
+  // ── Home feed ─────────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: 'Inter, Arial, sans-serif', paddingBottom: 80 }}>
 
