@@ -428,7 +428,7 @@ function OverviewScreen({ section, onBack }) {
     messages:  { title: 'Pending Messages',         items: ['Parent follow-up from Marcus T.', 'Question from Sofia D.', 'Schedule change request'] },
     attention: { title: 'Students Needing Attention', items: ['Marcus T. – failed recent assessment', 'Sofia D. – dropped 11 points', '3 more students flagged by AI'] },
     classes:   { title: 'Classes Overview',          items: ['Math – 24 students', 'Reading – 21 students', 'Science – 26 students', 'Writing – 18 students'] },
-    reminders: { title: 'Today's Reminders',         items: ['Grade exit tickets', 'Call parent at 2:30 PM', 'Upload tomorrow's lesson resources'] },
+    reminders: { title: "Today's Reminders",         items: ['Grade exit tickets', 'Call parent at 2:30 PM', "Upload tomorrow's lesson resources"] },
   }[section] || { title: 'Overview', items: [] }
 
   return (
