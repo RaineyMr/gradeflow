@@ -1,926 +1,250 @@
-import React, { useRef, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
-import { GradeBadge, TrendBadge } from '../components/ui'
 
-function Popup({ onClose, title, children }) {
-  const modal = (
-    <div
-      className="fixed inset-0 flex items-end sm:items-center justify-center"
-      style={{ zIndex: 9999 }}
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-      <div
-        className="relative w-full max-w-lg mx-4 rounded-widget border border-elevated animate-slide-up overflow-hidden"
-        style={{ background: '#161923', maxHeight: '85vh', zIndex: 10000 }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-elevated">
-          <h3 className="font-bold text-text-primary">{title}</h3>
-          <button
-            onClick={onClose}
-            className="text-text-muted hover:text-text-primary text-xl leading-none"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+// Inject mobile viewport meta if not already present
+if (typeof document !== 'undefined') {
+  let vp = document.querySelector('meta[name="viewport"]')
+  if (!vp) {
+    vp = document.createElement('meta')
+    vp.name = 'viewport'
+    document.head.appendChild(vp)
+  }
+  vp.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no'
+}
+
+const C = {
+  bg: '#060810',
+  card: '#161923',
+  inner: '#1e2231',
+  text: '#eef0f8',
+  muted: '#6b7494',
+  hint: '#3d4460',
+  green: '#22c97a',
+  blue: '#3b7ef4',
+  purple: '#9b6ef5',
+  amber: '#f5a623',
+  red: '#f04a4a',
+  teal: '#0fb8a0',
+  pink: '#f54a7a',
+  tGrad: 'linear-gradient(135deg, #1e3a8a 0%, #4c1d95 100%)',
+  ovGrad: 'linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%)',
+  lGrad: 'linear-gradient(135deg, #064e3b 0%, #1e3a5f 100%)',
+  eGrad: 'linear-gradient(135deg, #78350f 0%, #1e3a5f 100%)',
+}
+
+function PhoneShell({ children }) {
+  return (
+    <div style={{
+      minHeight: '100dvh',
+      width: '100%',
+      background: C.bg,
+      fontFamily: 'Inter, -apple-system, Arial, sans-serif',
+      boxSizing: 'border-box',
+      overflowX: 'hidden',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function Header() {
+  return (
+    <div style={{ background: C.tGrad, padding: '12px 18px 18px', position: 'relative' }}>
+      {/* Status bar */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <span style={{ fontSize: 9, color: '#8899cc' }}>9:41</span>
+        {/* Bell */}
+        <div style={{ position: 'relative' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#161923', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔔</div>
+          <div style={{ position: 'absolute', top: -3, right: -3, width: 14, height: 14, borderRadius: '50%', background: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#fff', fontWeight: 700 }}>3</div>
         </div>
-        <div className="overflow-y-auto" style={{ maxHeight: 'calc(85vh - 64px)' }}>
-          {children}
-        </div>
+      </div>
+      {/* School pill */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', background: '#1a3a6a', borderRadius: 9, padding: '3px 10px', fontSize: 9, color: 'rgba(255,255,255,0.8)', marginBottom: 8 }}>
+        🦅 Lincoln Elementary
+      </div>
+      {/* Greeting + Camera */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: 19, color: C.text, fontWeight: 700 }}>Ms. Johnson 👋</div>
+        <div style={{ width: 28, height: 28, borderRadius: '50%', background: C.tGrad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>📷</div>
+      </div>
+      {/* Hint */}
+      <div style={{ fontSize: 9, color: C.hint, marginTop: 6 }}>Hold widget or tap ✏ to customize · Drag to rearrange · Pinch to resize · Saved to account</div>
+    </div>
+  )
+}
+
+function W1_DailyOverview() {
+  const tiles = [
+    { icon: '💬', value: 3, label: 'Pending Msgs' },
+    { icon: '⚑', value: 5, label: 'Need Attention' },
+    { icon: '📚', value: 4, label: 'Classes' },
+    { icon: '🔔', value: 2, label: 'Reminders' },
+  ]
+  return (
+    <div style={{ background: C.ovGrad, borderRadius: 20, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>DAILY OVERVIEW</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+        {tiles.map(t => (
+          <div key={t.label} style={{ background: 'rgba(255,255,255,0.11)', borderRadius: 13, padding: '10px 6px', textAlign: 'center' }}>
+            <div style={{ fontSize: 16, marginBottom: 4 }}>{t.icon}</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{t.value}</div>
+            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{t.label}</div>
+          </div>
+        ))}
       </div>
     </div>
   )
-
-  return ReactDOM.createPortal(modal, document.body)
 }
 
-function NeedsAttentionModal({ onClose }) {
-  const {
-    students,
-    messages,
-    assignments,
-    keyAlertsDismissed,
-    dismissKeyAlert,
-  } = useStore()
-
-  const belowPassing = students.filter((student) => student.grade < 70)
-  const ungraded = students.filter((student) => student.submitUngraded)
-  const dayOldMessages = messages.filter(
-    (message) => message.status === 'pending' && message.dayOld
-  )
-  const missingKeys = assignments.filter(
-    (assignment) => !assignment.hasKey && !keyAlertsDismissed.includes(assignment.id)
-  )
-
-  const totalCount =
-    belowPassing.length +
-    ungraded.length +
-    dayOldMessages.length +
-    missingKeys.length
-
-  function goToStudent(student) {
-    onClose()
-    useStore.getState().setActiveStudent(student)
-  }
-
+function W2_TodaysLessons() {
+  const [done, setDone] = useState(false)
   return (
-    <Popup onClose={onClose} title={`⚑ Needs Attention — ${totalCount} items`}>
-      <div className="p-5 space-y-5">
-        {belowPassing.length > 0 && (
-          <section>
-            <p className="tag-label mb-2">📉 Below Passing ({belowPassing.length})</p>
-            <div className="space-y-2">
-              {belowPassing.map((student) => (
-                <button
-                  key={student.id}
-                  onClick={() => goToStudent(student)}
-                  className="w-full flex items-center justify-between p-3 rounded-card text-left transition-all hover:bg-elevated"
-                  style={{ background: '#1c1012', border: '1px solid #f04a4a20' }}
-                >
-                  <div>
-                    <p className="font-semibold text-sm text-text-primary">{student.name}</p>
-                    <p className="text-danger" style={{ fontSize: '10px' }}>
-                      {student.grade}% — below passing · tap to view
-                    </p>
-                  </div>
-                  <GradeBadge score={student.grade} />
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {ungraded.length > 0 && (
-          <section>
-            <p className="tag-label mb-2">
-              📬 Submitted — Awaiting Grade ({ungraded.length})
-            </p>
-            <div className="space-y-2">
-              {ungraded.map((student) => (
-                <button
-                  key={student.id}
-                  onClick={() => goToStudent(student)}
-                  className="w-full flex items-center justify-between p-3 rounded-card text-left transition-all hover:bg-elevated"
-                  style={{ background: '#1a1a0a', border: '1px solid #f5a62320' }}
-                >
-                  <div>
-                    <p className="font-semibold text-sm text-text-primary">{student.name}</p>
-                    <p style={{ fontSize: '10px', color: '#f5a623' }}>
-                      Submitted — ungraded · tap to grade
-                    </p>
-                  </div>
-                  <GradeBadge score={student.grade} />
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {dayOldMessages.length > 0 && (
-          <section>
-            <p className="tag-label mb-2">
-              💬 Unsent Parent Messages ({dayOldMessages.length})
-            </p>
-            <div className="space-y-2">
-              {dayOldMessages.map((message) => (
-                <button
-                  key={message.id}
-                  onClick={() => {
-                    onClose()
-                    useStore.getState().setScreen('parentMessages')
-                  }}
-                  className="w-full flex items-center justify-between p-3 rounded-card text-left transition-all hover:bg-elevated"
-                  style={{ background: '#0f1a2e', border: '1px solid #3b7ef430' }}
-                >
-                  <div>
-                    <p className="font-semibold text-sm text-text-primary">
-                      {message.studentName}
-                    </p>
-                    <p style={{ fontSize: '10px', color: '#3b7ef4' }}>
-                      Triggered: {message.trigger} · tap to send
-                    </p>
-                  </div>
-                  <span className="text-xl">💬</span>
-                </button>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {missingKeys.length > 0 && (
-          <section>
-            <p className="tag-label mb-2">
-              🔑 Missing Answer Keys ({missingKeys.length})
-            </p>
-            <div className="space-y-2">
-              {missingKeys.map((assignment) => (
-                <div
-                  key={assignment.id}
-                  className="p-3 rounded-card"
-                  style={{ background: '#1a1a0a', border: '1px solid #f5a62330' }}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <p className="font-semibold text-sm text-text-primary">
-                        {assignment.name}
-                      </p>
-                      <p style={{ fontSize: '10px', color: '#f5a623' }}>
-                        {assignment.type} · {assignment.date} · no key uploaded
-                      </p>
-                    </div>
-                    <span className="text-xl">🔑</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        onClose()
-                        useStore.getState().setScreen('camera')
-                      }}
-                      className="flex-1 py-1.5 rounded-pill text-xs font-bold"
-                      style={{ background: '#f5a62320', color: '#f5a623' }}
-                    >
-                      📷 Scan / Upload Key
-                    </button>
-                    <button
-                      onClick={() => dismissKeyAlert(assignment.id)}
-                      className="flex-1 py-1.5 rounded-pill text-xs font-semibold"
-                      style={{ background: '#1e2231', color: '#6b7494' }}
-                    >
-                      ✕ No key needed
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {totalCount === 0 && (
-          <div className="py-8 text-center">
-            <div className="text-4xl mb-3">✅</div>
-            <p className="text-text-muted">Nothing needs attention.</p>
-          </div>
-        )}
+    <div style={{ background: C.lGrad, border: '1px solid #1a3a2a', borderRadius: 20, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>TODAY'S LESSONS</div>
+      {/* Period pill */}
+      <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(15,184,160,0.12)', borderRadius: 9, padding: '3px 10px', fontSize: 10, color: C.teal, fontWeight: 700, marginBottom: 8 }}>
+        3rd Period · Math
       </div>
-    </Popup>
+      <div style={{ fontSize: 13, color: C.text, fontWeight: 700, marginBottom: 4 }}>Ch.4 · Fractions &amp; Decimals</div>
+      <div style={{ fontSize: 10, color: C.muted, marginBottom: 10 }}>Pages 84–91 · 45 min · Tap to expand</div>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <button onClick={() => setDone(true)} style={{ background: 'rgba(34,201,122,0.13)', color: C.green, border: 'none', borderRadius: 9, padding: '5px 14px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>✓ Done</button>
+        <button style={{ background: 'rgba(245,166,35,0.13)', color: C.amber, border: 'none', borderRadius: 9, padding: '5px 12px', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>TBC</button>
+        <span style={{ fontSize: 9, color: '#3b7494', marginLeft: 'auto' }}>→ cycles to next period on Done/TBC</span>
+      </div>
+    </div>
   )
 }
 
-function DailyOverview() {
-  const { messages, getNeedsAttention, classes } = useStore()
-  const pending = messages.filter((message) => message.status === 'pending').length
-  const attention = getNeedsAttention().length
-  const [showReminders, setShowReminders] = useState(false)
-  const [showAttention, setShowAttention] = useState(false)
-
-  const reminders = [
-    { text: 'Parent-teacher conferences Friday 3pm', icon: '📅' },
-    { text: 'Submit grades by end of week', icon: '📝' },
+function W3_MyClasses() {
+  const classes = [
+    { period: '3rd', subject: 'Math', students: 24, periodLabel: '1st Period', gpa: 87.4, trend: '↑', trendColor: C.green, attention: 3, attColor: C.red, color: C.blue },
+    { period: '5th', subject: 'Reading', students: 21, periodLabel: '5th Period', gpa: 91.2, trend: '↑', trendColor: C.green, attention: 1, attColor: C.muted, color: C.purple },
+    { period: '2nd', subject: 'Science', students: 26, periodLabel: '2nd Period', gpa: 63.8, trend: '↓', trendColor: C.red, attention: 8, attColor: C.red, color: C.teal },
+    { period: '4th', subject: 'Writing', students: 18, periodLabel: '4th Period', gpa: 84.0, trend: '→', trendColor: C.green, attention: 0, attColor: C.muted, color: C.pink },
   ]
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 20, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: C.text, fontWeight: 700 }}>My Classes</div>
+        <div style={{ fontSize: 11, color: C.blue, cursor: 'pointer' }}>+ Add</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        {classes.map(c => (
+          <div key={c.period + c.subject} style={{ background: C.inner, borderRadius: 14, padding: '10px 12px', borderLeft: `4px solid ${c.color}` }}>
+            <div style={{ fontSize: 11, color: C.text, fontWeight: 700 }}>{c.period} · {c.subject}</div>
+            <div style={{ fontSize: 9, color: C.muted, marginBottom: 6 }}>{c.students} students · {c.periodLabel}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+              <span style={{ fontSize: 22, color: c.gpa < 70 ? C.red : '#fff', fontWeight: 800 }}>{c.gpa}</span>
+              <span style={{ fontSize: 10, color: c.trendColor }}>GPA {c.trend}</span>
+            </div>
+            <div style={{ fontSize: 9, color: c.attColor, marginTop: 2 }}>⚑ {c.attention > 0 ? `${c.attention} need attention` : '0'}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-  const stats = [
-    {
-      icon: '💬',
-      value: pending,
-      label: 'Pending Msgs',
-      action: () => useStore.getState().setScreen('parentMessages'),
-    },
-    {
-      icon: '⚑',
-      value: attention,
-      label: 'Need Attention',
-      action: () => setShowAttention(true),
-    },
-    {
-      icon: '📚',
-      value: classes.length,
-      label: 'Classes',
-      action: () => useStore.getState().setScreen('gradebook'),
-    },
-    {
-      icon: '🔔',
-      value: reminders.length,
-      label: 'Reminders',
-      action: () => setShowReminders(true),
-    },
+function W4_NeedsAttention() {
+  return (
+    <div style={{ background: C.card, border: `1px solid rgba(240,74,74,0.12)`, borderRadius: 20, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, color: C.text, fontWeight: 700 }}>Needs Attention ⚑</div>
+        <div style={{ background: 'rgba(240,74,74,0.1)', borderRadius: 10, padding: '3px 10px', fontSize: 9, color: C.red, fontWeight: 700 }}>5 students</div>
+      </div>
+      <div style={{ background: '#1c1012', borderRadius: 12, padding: '10px 12px', marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: C.text, fontWeight: 600 }}>Marcus T. · Math 58% Failed · Sofia D. dropped 11pts</div>
+        <div style={{ fontSize: 10, color: C.red, marginTop: 4 }}>+ 3 more · Tap to view all · Message individually or as group</div>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <button style={{ background: 'rgba(92,110,245,0.12)', color: '#5c6ef5', border: 'none', borderRadius: 11, padding: '5px 14px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>📩 Message all</button>
+      </div>
+    </div>
+  )
+}
+
+function W5_ParentMessages() {
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 20, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, color: C.text, fontWeight: 700 }}>Parent Messages</div>
+        <div style={{ fontSize: 10, color: C.blue, cursor: 'pointer' }}>See all →</div>
+      </div>
+      {/* Row 1 – concern */}
+      <div style={{ background: '#1c1012', borderRadius: 12, padding: '10px 12px', marginBottom: 6 }}>
+        <div style={{ fontSize: 11, color: C.text, fontWeight: 600 }}>⚑ Marcus T. · Math · Failed 58% · Pending</div>
+        <div style={{ fontSize: 9, color: C.muted, marginTop: 3 }}>AI drafted · Warm &amp; Friendly · English · 👍 ❤️ 😂</div>
+      </div>
+      {/* Row 2 – positive */}
+      <div style={{ background: '#0f1c12', borderRadius: 12, padding: '10px 12px' }}>
+        <div style={{ fontSize: 11, color: C.text, fontWeight: 600 }}>🌟 Aaliyah B. · Reading · Improved +12pts · Sent ✓</div>
+        <div style={{ fontSize: 9, color: C.muted, marginTop: 3 }}>Auto-sent · Celebrating progress · 👍 ❤️ 😂</div>
+      </div>
+      <div style={{ fontSize: 9, color: '#3b7494', marginTop: 8 }}>Every negative trigger has a positive version · AI writes both</div>
+    </div>
+  )
+}
+
+function W6_Reports() {
+  return (
+    <div style={{ background: C.card, border: `1px solid rgba(34,201,122,0.12)`, borderRadius: 20, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ fontSize: 13, color: C.text, fontWeight: 700 }}>Reports 📊</div>
+        <div style={{ fontSize: 10, color: C.blue, cursor: 'pointer' }}>See all →</div>
+      </div>
+      <div style={{ fontSize: 10, color: C.muted, marginBottom: 10 }}>Class Mastery · Student Report · Grade Distribution · Needs Attention · Comm. Log · Progress</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button style={{ background: 'rgba(34,201,122,0.12)', color: C.green, border: 'none', borderRadius: 10, padding: '5px 14px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>🖨 Print</button>
+        <button style={{ background: 'rgba(59,126,244,0.12)', color: C.blue, border: 'none', borderRadius: 10, padding: '5px 14px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>⬇ PDF</button>
+        <button style={{ background: 'rgba(155,110,245,0.12)', color: C.purple, border: 'none', borderRadius: 10, padding: '5px 14px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>📋 Spreadsheet</button>
+      </div>
+    </div>
+  )
+}
+
+function W7_Grading() {
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 20, padding: '14px 16px', marginBottom: 10, position: 'relative' }}>
+      <div style={{ fontSize: 13, color: C.text, fontWeight: 700, marginBottom: 6 }}>Grading</div>
+      <div style={{ fontSize: 10, color: C.muted, marginBottom: 6, paddingRight: 60 }}>Tap 📷 · Synced: PowerSchool ✓ · Last: Today 8:42am · 24 grades</div>
+      <div style={{ fontSize: 9, color: C.green, fontWeight: 600 }}>Weights: Test 40% · Quiz 30% · Other 20% · Part. 10% · Edit in Settings</div>
+      {/* Camera circle */}
+      <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', width: 44, height: 44, borderRadius: '50%', background: C.tGrad, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📷</div>
+    </div>
+  )
+}
+
+function EditModeBanner() {
+  return (
+    <div style={{ background: C.eGrad, border: '1px solid rgba(245,166,35,0.25)', borderRadius: 16, padding: '12px 16px', marginBottom: 10, textAlign: 'center' }}>
+      <div style={{ fontSize: 11, color: '#fff', fontWeight: 700, marginBottom: 4 }}>✏ Hold any widget → Edit Mode</div>
+      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.7)', marginBottom: 2 }}>Drag to rearrange · Pinch to resize · + to add · All widgets available</div>
+      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.5)' }}>Saved to your account · Same layout on all devices</div>
+    </div>
+  )
+}
+
+function BottomNav({ active, onSelect }) {
+  const items = [
+    { id: 'home', icon: '⊞', label: 'Home' },
+    { id: 'grades', icon: '📋', label: 'Grades' },
+    { id: 'scan', icon: '📷', label: 'Scan' },
+    { id: 'messages', icon: '💬', label: 'Messages' },
+    { id: 'settings', icon: '⚙', label: 'Settings' },
   ]
-
   return (
-    <>
-      <div
-        className="rounded-widget p-4"
-        style={{ background: 'linear-gradient(135deg, #1a2a4a 0%, #0f1a2e 100%)' }}
-      >
-        <p className="tag-label mb-3">Daily Overview</p>
-        <div className="grid grid-cols-4 gap-2">
-          {stats.map((stat) => (
-            <button
-              key={stat.label}
-              className="stat-box hover:scale-[1.04] transition-transform"
-              onClick={stat.action}
-            >
-              <span className="text-xl mb-1">{stat.icon}</span>
-              <span className="font-display font-bold text-2xl text-white">
-                {stat.value}
-              </span>
-              <span
-                className="text-xs mt-1 text-center leading-tight"
-                style={{ color: 'rgba(255,255,255,0.6)', fontSize: '8px' }}
-              >
-                {stat.label}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {showReminders && (
-        <Popup onClose={() => setShowReminders(false)} title="🔔 Reminders">
-          <div className="p-5 space-y-3">
-            {reminders.map((reminder, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-3 p-3 rounded-card"
-                style={{ background: '#1e2231' }}
-              >
-                <span className="text-xl">{reminder.icon}</span>
-                <p className="text-sm text-text-primary">{reminder.text}</p>
-              </div>
-            ))}
-            <button
-              onClick={() => setShowReminders(false)}
-              className="w-full py-2.5 rounded-pill text-sm font-bold text-white mt-2"
-              style={{ background: 'var(--school-color)' }}
-            >
-              Got it
-            </button>
-          </div>
-        </Popup>
-      )}
-
-      {showAttention && <NeedsAttentionModal onClose={() => setShowAttention(false)} />}
-    </>
-  )
-}
-
-function LessonCalendarModal({ onClose, onSelectDay }) {
-  const { lessons } = useStore()
-  const [calView, setCalView] = useState('week')
-
-  const today = new Date()
-  const todayStr = today.toDateString()
-
-  function getWeekDays() {
-    const days = []
-    const start = new Date(today)
-    start.setDate(today.getDate() - today.getDay())
-
-    for (let i = 0; i < 7; i += 1) {
-      const day = new Date(start)
-      day.setDate(start.getDate() + i)
-      days.push(day)
-    }
-
-    return days
-  }
-
-  function getMonthDays() {
-    const year = today.getFullYear()
-    const month = today.getMonth()
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const days = []
-
-    for (let i = 0; i < firstDay.getDay(); i += 1) {
-      days.push(null)
-    }
-
-    for (let day = 1; day <= lastDay.getDate(); day += 1) {
-      days.push(new Date(year, month, day))
-    }
-
-    return days
-  }
-
-  const weekDays = getWeekDays()
-  const monthDays = getMonthDays()
-
-  const lessonDays = new Set([
-    todayStr,
-    new Date(today.getTime() - 86400000).toDateString(),
-    new Date(today.getTime() + 86400000).toDateString(),
-    new Date(today.getTime() + 2 * 86400000).toDateString(),
-  ])
-
-  function getDayOffset(date) {
-    const selected = new Date(date)
-    selected.setHours(0, 0, 0, 0)
-
-    const base = new Date()
-    base.setHours(0, 0, 0, 0)
-
-    const diff = selected.getTime() - base.getTime()
-    return Math.round(diff / 86400000)
-  }
-
-  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const monthNames = [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ]
-
-  return (
-    <Popup onClose={onClose} title="📅 Lesson Calendar">
-      <div className="p-4">
-        <div className="flex gap-2 mb-4">
-          {['day', 'week', 'month'].map((view) => (
-            <button
-              key={view}
-              onClick={() => setCalView(view)}
-              className="flex-1 py-1.5 rounded-pill text-xs font-bold capitalize transition-all"
-              style={{
-                background: calView === view ? 'var(--school-color)' : '#1e2231',
-                color: calView === view ? 'white' : '#6b7494',
-              }}
-            >
-              {view}
-            </button>
-          ))}
-        </div>
-
-        {calView === 'day' && (
-          <div className="space-y-2">
-            <p className="tag-label mb-3">
-              Today —{' '}
-              {today.toLocaleDateString('en-US', {
-                weekday: 'long',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </p>
-            {lessons.map((lesson) => (
-              <button
-                key={lesson.id}
-                onClick={() => {
-                  onSelectDay(0)
-                  onClose()
-                }}
-                className="w-full p-3 rounded-card text-left hover:bg-elevated transition-colors"
-                style={{ background: '#1e2231', borderLeft: '3px solid #0fb8a0' }}
-              >
-                <p className="font-bold text-sm text-text-primary">{lesson.title}</p>
-                <p className="text-text-muted" style={{ fontSize: '10px' }}>
-                  {lesson.period} Period · {lesson.subject} · {lesson.duration} min
-                </p>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {calView === 'week' && (
-          <div>
-            <p className="tag-label mb-3">
-              {monthNames[today.getMonth()]} {today.getFullYear()}
-            </p>
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {dayNames.map((dayName) => (
-                <div
-                  key={dayName}
-                  className="text-center"
-                  style={{ fontSize: '9px', color: '#6b7494', fontWeight: 700 }}
-                >
-                  {dayName}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {weekDays.map((day, index) => {
-                const isToday = day.toDateString() === todayStr
-                const hasLesson = lessonDays.has(day.toDateString())
-                const offset = getDayOffset(day)
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      onSelectDay(offset)
-                      onClose()
-                    }}
-                    className="aspect-square rounded-card flex flex-col items-center justify-center transition-all hover:bg-elevated"
-                    style={{
-                      background: isToday ? 'var(--school-color)' : '#1e2231',
-                      border:
-                        hasLesson && !isToday
-                          ? '1px solid #0fb8a040'
-                          : '1px solid transparent',
-                    }}
-                  >
-                    <span
-                      className="font-bold text-sm"
-                      style={{ color: isToday ? 'white' : '#eef0f8' }}
-                    >
-                      {day.getDate()}
-                    </span>
-                    {hasLesson && (
-                      <div
-                        className="w-1 h-1 rounded-full mt-0.5"
-                        style={{ background: isToday ? 'white' : '#0fb8a0' }}
-                      />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-            <p className="text-text-muted mt-3 text-center" style={{ fontSize: '10px' }}>
-              ● = lesson planned
-            </p>
-          </div>
-        )}
-
-        {calView === 'month' && (
-          <div>
-            <p className="tag-label mb-3">
-              {monthNames[today.getMonth()]} {today.getFullYear()}
-            </p>
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {dayNames.map((dayName) => (
-                <div
-                  key={dayName}
-                  className="text-center"
-                  style={{ fontSize: '9px', color: '#6b7494', fontWeight: 700 }}
-                >
-                  {dayName}
-                </div>
-              ))}
-            </div>
-            <div className="grid grid-cols-7 gap-1">
-              {monthDays.map((day, index) => {
-                if (!day) return <div key={index} />
-
-                const isToday = day.toDateString() === todayStr
-                const hasLesson = lessonDays.has(day.toDateString())
-                const offset = getDayOffset(day)
-
-                return (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      onSelectDay(offset)
-                      onClose()
-                    }}
-                    className="aspect-square rounded flex flex-col items-center justify-center transition-all hover:bg-elevated"
-                    style={{
-                      background: isToday ? 'var(--school-color)' : 'transparent',
-                      fontSize: '11px',
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: isToday ? 'white' : '#eef0f8',
-                        fontWeight: isToday ? 700 : 400,
-                      }}
-                    >
-                      {day.getDate()}
-                    </span>
-                    {hasLesson && (
-                      <div
-                        className="w-1 h-1 rounded-full"
-                        style={{ background: isToday ? 'white' : '#0fb8a0' }}
-                      />
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-            <p className="text-text-muted mt-3 text-center" style={{ fontSize: '10px' }}>
-              ● = lesson planned
-            </p>
-          </div>
-        )}
-      </div>
-    </Popup>
-  )
-}
-
-function TodaysLessons() {
-  const { lessons } = useStore()
-  const [doneIndex, setDoneIndex] = useState(0)
-  const [dayOffset, setDayOffset] = useState(0)
-  const [showCalendar, setShowCalendar] = useState(false)
-  const touchStartX = useRef(null)
-
-  const displayDate = new Date()
-  displayDate.setDate(displayDate.getDate() + dayOffset)
-
-  const isToday = dayOffset === 0
-  const dayLabel = isToday
-    ? "Today's Lessons"
-    : dayOffset === -1
-      ? "Yesterday's Lessons"
-      : dayOffset === 1
-        ? "Tomorrow's Lessons"
-        : displayDate.toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'short',
-            day: 'numeric',
-          })
-
-  const mockLessonsByOffset = {
-    '-1': [
-      {
-        id: 'prev1',
-        period: '1st',
-        subject: 'Math',
-        title: 'Ch.3 · Multiplication Review',
-        pages: '70-83',
-        duration: 45,
-      },
-    ],
-    '0': lessons,
-    '1': [
-      {
-        id: 'next1',
-        period: '1st',
-        subject: 'Math',
-        title: 'Ch.5 · Problem Solving',
-        pages: '92-99',
-        duration: 45,
-      },
-      {
-        id: 'next2',
-        period: '2nd',
-        subject: 'Reading',
-        title: 'Ch.8 · Main Idea & Details',
-        pages: '116-128',
-        duration: 50,
-      },
-    ],
-    '2': [
-      {
-        id: 'day2',
-        period: '3rd',
-        subject: 'Science',
-        title: 'Lab: Ecosystems Introduction',
-        pages: '44-51',
-        duration: 55,
-      },
-    ],
-  }
-
-  const dayLessons = mockLessonsByOffset[String(dayOffset)] || []
-  const current = dayLessons[doneIndex] || null
-
-  function handleTouchStart(event) {
-    touchStartX.current = event.touches[0].clientX
-  }
-
-  function handleTouchEnd(event) {
-    if (touchStartX.current === null) return
-
-    const deltaX = event.changedTouches[0].clientX - touchStartX.current
-
-    if (Math.abs(deltaX) > 50) {
-      if (deltaX < 0) {
-        setDayOffset((value) => value + 1)
-      } else {
-        setDayOffset((value) => value - 1)
-      }
-      setDoneIndex(0)
-    }
-
-    touchStartX.current = null
-  }
-
-  function openLessonPlan() {
-    useStore.getState().setLessonPlanMode('menu')
-    useStore.getState().setScreen('lessonPlan')
-  }
-
-  function goToPreviousDay(event) {
-    event.stopPropagation()
-    setDayOffset((value) => value - 1)
-    setDoneIndex(0)
-  }
-
-  function goToNextDay(event) {
-    event.stopPropagation()
-    setDayOffset((value) => value + 1)
-    setDoneIndex(0)
-  }
-
-  function markDone() {
-    setDoneIndex((index) => Math.min(index + 1, Math.max(dayLessons.length - 1, 0)))
-  }
-
-  return (
-    <>
-      <div
-        className="rounded-widget p-4 cursor-pointer transition-all hover:brightness-110 select-none"
-        style={{
-          background: 'linear-gradient(135deg, #0f2a1a 0%, #0a1a10 100%)',
-          border: '1px solid #1a3a2a',
-        }}
-        onClick={openLessonPlan}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <p className="tag-label">{dayLabel}</p>
-          <div className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
-            <button
-              className="hidden md:flex w-7 h-7 items-center justify-center rounded-full transition-colors hover:bg-elevated text-text-muted"
-              onClick={goToPreviousDay}
-              title="Previous day"
-              aria-label="Previous day"
-            >
-              ‹
-            </button>
-            <button
-              className="hidden md:flex w-7 h-7 items-center justify-center rounded-full transition-colors hover:bg-elevated text-text-muted"
-              onClick={goToNextDay}
-              title="Next day"
-              aria-label="Next day"
-            >
-              ›
-            </button>
-            <button
-              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors hover:bg-elevated"
-              onClick={(event) => {
-                event.stopPropagation()
-                setShowCalendar(true)
-              }}
-              title="View calendar"
-              aria-label="View calendar"
-            >
-              <span style={{ fontSize: '16px' }}>📅</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-1 mb-2 md:hidden">
-          {[-1, 0, 1, 2].map((offset) => (
-            <div
-              key={offset}
-              className="w-1.5 h-1.5 rounded-full transition-all"
-              style={{ background: dayOffset === offset ? '#0fb8a0' : '#1e3a2a' }}
-            />
-          ))}
-          <span className="text-text-muted ml-1" style={{ fontSize: '9px' }}>
-            swipe to navigate
-          </span>
-        </div>
-
-        {current ? (
-          <>
-            <div
-              className="inline-flex items-center px-2 py-0.5 rounded-pill mb-2"
-              style={{
-                background: '#0fb8a020',
-                color: '#0fb8a0',
-                fontSize: '10px',
-                fontWeight: 700,
-              }}
-            >
-              {current.period} Period · {current.subject}
-            </div>
-            <p className="font-display font-bold text-base text-text-primary mb-1">
-              {current.title}
-            </p>
-            <p className="text-text-muted mb-3" style={{ fontSize: '11px' }}>
-              Pages {current.pages} · {current.duration} min
-            </p>
-            <div className="flex gap-2" onClick={(event) => event.stopPropagation()}>
-              <button
-                onClick={markDone}
-                className="flex-1 py-1.5 rounded-pill text-xs font-bold transition-all hover:opacity-90"
-                style={{
-                  background: '#22c97a22',
-                  color: '#22c97a',
-                  border: '1px solid #22c97a40',
-                }}
-              >
-                ✓ Done
-              </button>
-              <button
-                onClick={openLessonPlan}
-                className="px-4 py-1.5 rounded-pill text-xs font-bold transition-all hover:opacity-90"
-                style={{
-                  background: '#3b7ef422',
-                  color: '#3b7ef4',
-                  border: '1px solid #3b7ef440',
-                }}
-              >
-                View Plan →
-              </button>
-            </div>
-            {doneIndex < dayLessons.length - 1 && (
-              <p className="text-text-muted mt-2" style={{ fontSize: '9px' }}>
-                → {dayLessons.length - doneIndex - 1} more lesson
-                {dayLessons.length - doneIndex - 1 !== 1 ? 's' : ''} {isToday ? 'today' : 'this day'}
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="text-text-muted text-sm">
-            {isToday ? 'All lessons complete for today 🎉' : 'No lessons planned for this day'}
-          </p>
-        )}
-
-        <p className="text-text-muted mt-2" style={{ fontSize: '9px', opacity: 0.6 }}>
-          tap anywhere to open full lesson plan
-        </p>
-      </div>
-
-      {showCalendar && (
-        <LessonCalendarModal
-          onClose={() => setShowCalendar(false)}
-          onSelectDay={(offset) => {
-            setDayOffset(offset)
-            setDoneIndex(0)
-          }}
-        />
-      )}
-    </>
-  )
-}
-
-function NeedsAttentionWidget() {
-  const { getNeedsAttention } = useStore()
-  const students = getNeedsAttention()
-  const [showModal, setShowModal] = useState(false)
-
-  function goToStudent(event, student) {
-    event.stopPropagation()
-    useStore.getState().setActiveStudent(student)
-  }
-
-  return (
-    <>
-      <div
-        className="widget cursor-pointer transition-colors hover:bg-elevated/40"
-        onClick={() => setShowModal(true)}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <p className="widget-title">
-            ⚑ Needs Attention
-            {students.length > 0 && (
-              <span
-                className="ml-1.5 px-1.5 py-0.5 rounded-pill font-bold"
-                style={{ background: '#f04a4a20', color: '#f04a4a', fontSize: '10px' }}
-              >
-                {students.length}
-              </span>
-            )}
-          </p>
-          <button
-            onClick={(event) => {
-              event.stopPropagation()
-              setShowModal(true)
-            }}
-            className="text-xs font-semibold px-2 py-1 rounded-pill transition-opacity hover:opacity-70"
-            style={{ background: '#f04a4a20', color: '#f04a4a' }}
-          >
-            View all →
-          </button>
-        </div>
-
-        {students.length === 0 ? (
-          <p className="text-text-muted text-sm">All students on track 🎉</p>
-        ) : (
-          <div className="space-y-2">
-            {students.slice(0, 3).map((student) => (
-              <button
-                key={student.id}
-                onClick={(event) => goToStudent(event, student)}
-                className="w-full flex items-center justify-between p-2.5 rounded-card text-left hover:bg-elevated transition-colors"
-                style={{ background: '#1c1012', border: '1px solid #f04a4a15' }}
-              >
-                <div>
-                  <p className="font-semibold text-sm text-text-primary">{student.name}</p>
-                  <p className="text-danger" style={{ fontSize: '10px' }}>
-                    {student.grade < 70
-                      ? `${student.grade}% — below passing`
-                      : student.submitUngraded
-                        ? 'Submitted — ungraded'
-                        : 'Flagged for review'}
-                  </p>
-                </div>
-                <GradeBadge score={student.grade} />
-              </button>
-            ))}
-
-            {students.length > 3 && (
-              <button
-                onClick={(event) => {
-                  event.stopPropagation()
-                  setShowModal(true)
-                }}
-                className="w-full text-center text-xs font-semibold py-2 rounded-card transition-opacity hover:opacity-70"
-                style={{ background: '#1e2231', color: '#f04a4a' }}
-              >
-                +{students.length - 3} more · view all
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {showModal && <NeedsAttentionModal onClose={() => setShowModal(false)} />}
-    </>
-  )
-}
-
-function MyClasses() {
-  const { classes } = useStore()
-
-  return (
-    <div className="widget">
-      <div className="flex items-center justify-between mb-3">
-        <p className="widget-title">My Classes</p>
-        <button
-          onClick={() => useStore.getState().setScreen('gradebook')}
-          className="text-accent text-xs font-semibold"
-        >
-          + Add
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {classes.map((classItem) => (
-          <button
-            key={classItem.id}
-            onClick={() => useStore.getState().setActiveClass(classItem)}
-            className="p-3 rounded-card text-left transition-all hover:scale-[1.02]"
-            style={{ background: '#1e2231', borderLeft: `3px solid ${classItem.color}` }}
-          >
-            <p className="font-bold text-sm text-text-primary">
-              {classItem.period} · {classItem.subject}
-            </p>
-            <p className="text-text-muted mb-2" style={{ fontSize: '10px' }}>
-              {classItem.students} students
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="font-display font-bold text-xl text-white">
-                {classItem.gpa}
-              </span>
-              <TrendBadge trend={classItem.trend} />
-            </div>
-            {classItem.gpa < 70 && (
-              <span className="text-danger" style={{ fontSize: '9px' }}>
-                ⚑ Needs attention
-              </span>
-            )}
+    <div style={{ background: '#0a0c12', borderTop: `1px solid ${C.inner}`, padding: '6px 8px 16px', position: 'sticky', bottom: 0 }}>
+      <div style={{ fontSize: 8, color: C.hint, marginBottom: 4, paddingLeft: 4 }}>✏ EDITABLE NAV — hold icon or tap + to swap</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)' }}>
+        {items.map(item => (
+          <button key={item.id} onClick={() => onSelect(item.id)} style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 2px',
+          }}>
+            <span style={{ fontSize: 15 }}>{item.icon}</span>
+            <span style={{ fontSize: 8, color: item.id === active ? C.blue : C.muted, fontWeight: item.id === active ? 700 : 400 }}>{item.label}</span>
           </button>
         ))}
       </div>
@@ -928,78 +252,25 @@ function MyClasses() {
   )
 }
 
-function ParentMessagesWidget() {
-  const { messages } = useStore()
-  const pending = messages.filter((message) => message.status === 'pending')
-
-  return (
-    <div className="widget">
-      <div className="flex items-center justify-between mb-3">
-        <p className="widget-title">Parent Messages</p>
-        <button
-          onClick={() => useStore.getState().setScreen('parentMessages')}
-          className="text-accent text-xs font-semibold"
-        >
-          View all →
-        </button>
-      </div>
-
-      {pending.length === 0 ? (
-        <p className="text-text-muted text-sm">No pending messages 📭</p>
-      ) : (
-        <div className="space-y-2">
-          {pending.slice(0, 2).map((message) => (
-            <div
-              key={message.id}
-              className="p-3 rounded-card"
-              style={{ background: '#0f1a2e', border: '1px solid #3b7ef420' }}
-            >
-              <p className="font-semibold text-sm text-text-primary mb-0.5">
-                {message.studentName}
-              </p>
-              <p style={{ fontSize: '10px', color: '#3b7ef4' }}>
-                {message.trigger}
-              </p>
-            </div>
-          ))}
-
-          {pending.length > 2 && (
-            <button
-              onClick={() => useStore.getState().setScreen('parentMessages')}
-              className="w-full text-center text-xs font-semibold py-2 rounded-card"
-              style={{ background: '#1e2231', color: '#6b7494' }}
-            >
-              +{pending.length - 2} more →
-            </button>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function Dashboard() {
-  const { teacher } = useStore()
-  const hour = new Date().getHours()
-  const greeting =
-    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
-
-  const teacherFirstName = teacher?.name?.split(' ')[0] || teacher?.name || 'Teacher'
+  const [activeNav, setActiveNav] = useState('home')
 
   return (
-    <div className="space-y-4 pb-6">
-      <div className="pt-2 pb-1">
-        <h1 className="font-display font-bold text-2xl text-text-primary">
-          {greeting}, {teacherFirstName} 👋
-        </h1>
-        <p className="text-text-muted text-sm">{teacher.school}</p>
+    <PhoneShell>
+      <div style={{ background: C.bg, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+        <Header />
+        <div style={{ flex: 1, padding: '12px 10px 0' }}>
+          <W1_DailyOverview />
+          <W2_TodaysLessons />
+          <W3_MyClasses />
+          <W4_NeedsAttention />
+          <W5_ParentMessages />
+          <W6_Reports />
+          <W7_Grading />
+          <EditModeBanner />
+        </div>
+        <BottomNav active={activeNav} onSelect={setActiveNav} />
       </div>
-
-      <DailyOverview />
-      <TodaysLessons />
-      <NeedsAttentionWidget />
-      <MyClasses />
-      <ParentMessagesWidget />
-    </div>
+    </PhoneShell>
   )
 }
