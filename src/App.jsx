@@ -1,10 +1,19 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Login from './pages/Login'
 import Tutorials from './pages/Tutorials'
 import Dashboard from './pages/Dashboard'
 import StudentDashboard from './pages/StudentDashboard'
 import ParentDashboard from './pages/ParentDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+
+const defaultTheme = {
+  primary: '#f97316',
+  heroGradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
+  border: '#1e2231',
+  card: '#161923',
+  muted: '#6b7494',
+  soft: 'rgba(249,115,22,0.14)',
+}
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
@@ -16,8 +25,10 @@ function App() {
 
     try {
       const parsed = JSON.parse(savedUser)
-      setCurrentUser(parsed)
-      setActivePage(parsed.role || 'login')
+      if (parsed?.role) {
+        setCurrentUser(parsed)
+        setActivePage(parsed.role)
+      }
     } catch (error) {
       localStorage.removeItem('gradeflow_user')
     }
@@ -29,6 +40,12 @@ function App() {
   }, [currentUser])
 
   const handleLogin = (account) => {
+    if (!account?.role) {
+      setCurrentUser(null)
+      setActivePage('login')
+      return
+    }
+
     setCurrentUser(account)
     setActivePage(account.role)
     localStorage.setItem('gradeflow_user', JSON.stringify(account))
@@ -45,7 +62,7 @@ function App() {
   }
 
   const goToDashboard = () => {
-    if (!currentUser) {
+    if (!currentUser?.role) {
       setActivePage('login')
       return
     }
@@ -57,14 +74,7 @@ function App() {
     return <Login onLogin={handleLogin} onDemoLogin={handleLogin} />
   }
 
-  const theme = currentUser?.theme || {
-    primary: '#f97316',
-    heroGradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-    border: '#1e2231',
-    card: '#161923',
-    muted: '#6b7494',
-    soft: 'rgba(249,115,22,0.14)',
-  }
+  const theme = currentUser?.theme || defaultTheme
 
   return (
     <div style={{ minHeight: '100vh', background: '#060810', color: '#eef0f8' }}>
@@ -105,9 +115,9 @@ function App() {
             </div>
 
             <div>
-              <div style={{ fontWeight: 800 }}>{currentUser.schoolName}</div>
+              <div style={{ fontWeight: 800 }}>{currentUser.schoolName || 'GradeFlow Demo School'}</div>
               <div style={{ fontSize: '12px', color: theme.muted }}>
-                {currentUser.userName} · {roleTitle}
+                {currentUser.userName || 'Demo User'} · {roleTitle}
               </div>
             </div>
           </div>
@@ -173,6 +183,41 @@ function App() {
       {activePage === 'parent' && <ParentDashboard currentUser={currentUser} />}
 
       {activePage === 'admin' && <AdminDashboard currentUser={currentUser} />}
+
+      {!['tutorials', 'teacher', 'student', 'parent', 'admin'].includes(activePage) && (
+        <div style={{ padding: '40px 24px', fontFamily: 'Inter, Arial, sans-serif' }}>
+          <div
+            style={{
+              maxWidth: '900px',
+              margin: '0 auto',
+              background: '#161923',
+              border: `1px solid ${theme.border}`,
+              borderRadius: '20px',
+              padding: '24px',
+            }}
+          >
+            <h2 style={{ marginTop: 0 }}>Dashboard route not found</h2>
+            <p style={{ color: theme.muted }}>
+              The selected demo account did not map to a valid dashboard. Returning to login will fix it.
+            </p>
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                background: theme.primary,
+                color: '#fff',
+                border: 'none',
+                borderRadius: '12px',
+                padding: '10px 14px',
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              Return to Login
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
