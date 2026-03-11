@@ -356,7 +356,9 @@ function Section({ title, items }) {
 }
 
 // ─── Main Menu ────────────────────────────────────────────────────────────────
-export default function LessonPlan({ initialMode }) {
+export default function LessonPlan({ initialMode, onBack }) {
+  const { goBack } = useStore()
+  const handleBack = onBack || goBack
   const [mode, setMode] = useState(initialMode || 'menu')
 
   if (mode === 'build') return <BuildFromScratch onBack={() => setMode('menu')} />
@@ -373,6 +375,7 @@ export default function LessonPlan({ initialMode }) {
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
+      {handleBack && <button onClick={handleBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:16 }}>← Back</button>}
       <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Lesson Plan Builder</h1>
       <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>5 ways to create · AI generates full package</p>
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
