@@ -41,13 +41,59 @@ const defaultStudent = {
     { id: 3, name: 'English', average: 84, color: '#f59e0b' },
     { id: 4, name: 'History', average: 89, color: '#a855f7' },
   ],
+  messages: [
+    {
+      id: 1,
+      sender: 'Ms. Johnson',
+      preview: 'Please make sure you turn in the missing exit ticket tonight.',
+      time: '10m ago',
+      unread: true,
+    },
+    {
+      id: 2,
+      sender: 'Ava R.',
+      preview: 'Did you finish the chemistry practice yet?',
+      time: '32m ago',
+      unread: false,
+    },
+    {
+      id: 3,
+      sender: 'Math Group',
+      preview: 'Reminder: quiz corrections are due tomorrow.',
+      time: '1h ago',
+      unread: true,
+    },
+  ],
+  feed: [
+    {
+      id: 1,
+      author: 'Chemistry',
+      title: 'Lab materials posted',
+      detail: 'Today’s lab sheet and safety checklist are now available in class resources.',
+      time: '18m ago',
+    },
+    {
+      id: 2,
+      author: 'School Feed',
+      title: 'Pep rally schedule updated',
+      detail: 'Friday dismissal times have been adjusted for the afternoon assembly.',
+      time: '1h ago',
+    },
+    {
+      id: 3,
+      author: 'English',
+      title: 'Vocabulary list uploaded',
+      detail: 'New practice set added for next week’s reading check.',
+      time: '3h ago',
+    },
+  ],
 }
 
 const shell = {
   minHeight: '100vh',
   background: '#060810',
   color: '#eef0f8',
-  padding: '24px',
+  padding: '24px 24px 110px',
   fontFamily: 'Inter, Arial, sans-serif',
 }
 
@@ -56,17 +102,14 @@ const container = {
   margin: '0 auto',
 }
 
-const hero = {
-  background: 'linear-gradient(135deg, #ea580c 0%, #db2777 100%)',
+const heroBase = {
   borderRadius: '24px',
   padding: '24px',
   boxShadow: '0 18px 50px rgba(0,0,0,0.28)',
   marginBottom: '20px',
 }
 
-const card = {
-  background: '#161923',
-  border: '1px solid #1e2231',
+const cardBase = {
   borderRadius: '20px',
   padding: '18px',
   boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
@@ -76,10 +119,6 @@ const sectionTitle = {
   fontSize: '16px',
   fontWeight: 700,
   margin: 0,
-}
-
-const muted = {
-  color: '#6b7494',
 }
 
 const pillBase = {
@@ -98,8 +137,40 @@ function tone(score) {
   return { color: '#f04a4a', bg: 'rgba(240,74,74,0.14)' }
 }
 
-function StudentDashboard({ student = defaultStudent }) {
-  const overallTone = tone(student.currentAverage)
+function StudentDashboard({ currentUser, student = defaultStudent }) {
+  const theme = currentUser?.theme || {
+    primary: '#3b82f6',
+    secondary: '#1d4ed8',
+    accent: '#60a5fa',
+    heroGradient: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+    card: '#161923',
+    border: '#1d2940',
+    muted: '#6f7fa7',
+    soft: 'rgba(37,99,235,0.14)',
+  }
+
+  const displayStudent = {
+    ...student,
+    name: currentUser?.userName || student.name,
+    school: currentUser?.schoolName || student.school,
+  }
+
+  const overallTone = tone(displayStudent.currentAverage)
+
+  const card = {
+    ...cardBase,
+    background: theme.card,
+    border: `1px solid ${theme.border}`,
+  }
+
+  const muted = {
+    color: theme.muted,
+  }
+
+  const hero = {
+    ...heroBase,
+    background: theme.heroGradient,
+  }
 
   return (
     <div style={shell}>
@@ -110,24 +181,32 @@ function StudentDashboard({ student = defaultStudent }) {
               <div style={{ ...pillBase, background: 'rgba(255,255,255,0.14)', color: '#fff', marginBottom: '12px' }}>
                 🎓 Student Dashboard
               </div>
-              <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 800 }}>{student.name}</h1>
+              <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 800 }}>{displayStudent.name}</h1>
               <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.82)' }}>
-                {student.gradeLevel} · {student.school} · Homeroom: {student.homeroom}
+                {displayStudent.gradeLevel} · {displayStudent.school} · Homeroom: {displayStudent.homeroom}
               </p>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(120px, 1fr))', gap: '12px', minWidth: '320px', flex: 1 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, minmax(120px, 1fr))',
+                gap: '12px',
+                minWidth: '320px',
+                flex: 1,
+              }}
+            >
               <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
                 <div style={{ fontSize: '12px', opacity: 0.75 }}>Current Average</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{student.currentAverage}%</div>
+                <div style={{ fontSize: '30px', fontWeight: 800 }}>{displayStudent.currentAverage}%</div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
                 <div style={{ fontSize: '12px', opacity: 0.75 }}>Attendance</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{student.attendance}%</div>
+                <div style={{ fontSize: '30px', fontWeight: 800 }}>{displayStudent.attendance}%</div>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
                 <div style={{ fontSize: '12px', opacity: 0.75 }}>Streak</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{student.streak} days</div>
+                <div style={{ fontSize: '30px', fontWeight: 800 }}>{displayStudent.streak} days</div>
               </div>
             </div>
           </div>
@@ -143,15 +222,24 @@ function StudentDashboard({ student = defaultStudent }) {
         >
           <div style={{ display: 'grid', gap: '20px' }}>
             <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '16px',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <h2 style={sectionTitle}>Class Snapshot</h2>
                 <span style={{ ...pillBase, background: overallTone.bg, color: overallTone.color }}>
-                  {student.currentAverage >= 85 ? 'On Track' : 'Watch Progress'}
+                  {displayStudent.currentAverage >= 85 ? 'On Track' : 'Watch Progress'}
                 </span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
-                {student.classBreakdown.map((course) => (
+                {displayStudent.classBreakdown.map((course) => (
                   <div
                     key={course.id}
                     style={{
@@ -187,13 +275,22 @@ function StudentDashboard({ student = defaultStudent }) {
             </section>
 
             <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '16px',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <h2 style={sectionTitle}>Upcoming Work</h2>
                 <span style={{ ...muted, fontSize: '13px' }}>What needs to get done next</span>
               </div>
 
               <div style={{ display: 'grid', gap: '12px' }}>
-                {student.upcomingAssignments.map((item) => (
+                {displayStudent.upcomingAssignments.map((item) => (
                   <div
                     key={item.id}
                     style={{
@@ -216,15 +313,15 @@ function StudentDashboard({ student = defaultStudent }) {
                       <span
                         style={{
                           ...pillBase,
-                          background: item.status === 'due-soon' ? 'rgba(240,74,74,0.14)' : 'rgba(59,126,244,0.14)',
-                          color: item.status === 'due-soon' ? '#f04a4a' : '#3b7ef4',
+                          background: item.status === 'due-soon' ? 'rgba(240,74,74,0.14)' : theme.soft,
+                          color: item.status === 'due-soon' ? '#f04a4a' : theme.primary,
                         }}
                       >
                         {item.due}
                       </span>
                       <button
                         style={{
-                          background: '#3b7ef4',
+                          background: theme.primary,
                           color: '#fff',
                           border: 'none',
                           borderRadius: '12px',
@@ -242,13 +339,22 @@ function StudentDashboard({ student = defaultStudent }) {
             </section>
 
             <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '16px',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <h2 style={sectionTitle}>Recent Grades</h2>
                 <span style={{ ...muted, fontSize: '13px' }}>Latest scored work</span>
               </div>
 
               <div style={{ display: 'grid', gap: '12px' }}>
-                {student.recentGrades.map((item) => (
+                {displayStudent.recentGrades.map((item) => (
                   <div
                     key={item.id}
                     style={{
@@ -285,19 +391,138 @@ function StudentDashboard({ student = defaultStudent }) {
                 ))}
               </div>
             </section>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              <section style={card}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '14px',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <h2 style={sectionTitle}>Messenger</h2>
+                  <span style={{ ...muted, fontSize: '13px' }}>Recent chats</span>
+                </div>
+
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {displayStudent.messages.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: '#1e2231',
+                        borderRadius: '16px',
+                        padding: '14px',
+                        border: item.unread ? `1px solid ${theme.primary}` : '1px solid transparent',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 800 }}>{item.sender}</div>
+                        <div style={{ ...muted, fontSize: '11px' }}>{item.time}</div>
+                      </div>
+                      <div style={{ ...muted, fontSize: '13px', marginTop: '8px', lineHeight: 1.45 }}>
+                        {item.preview}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  style={{
+                    marginTop: '14px',
+                    width: '100%',
+                    background: theme.soft,
+                    color: theme.primary,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '14px',
+                    padding: '12px 14px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Open Messenger
+                </button>
+              </section>
+
+              <section style={card}>
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '14px',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <h2 style={sectionTitle}>Class Feed</h2>
+                  <span style={{ ...muted, fontSize: '13px' }}>Latest updates</span>
+                </div>
+
+                <div style={{ display: 'grid', gap: '12px' }}>
+                  {displayStudent.feed.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        background: '#1e2231',
+                        borderRadius: '16px',
+                        padding: '14px',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px', alignItems: 'center' }}>
+                        <div style={{ fontSize: '12px', color: theme.accent, fontWeight: 800 }}>{item.author}</div>
+                        <div style={{ ...muted, fontSize: '11px' }}>{item.time}</div>
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 800, marginTop: '8px' }}>{item.title}</div>
+                      <div style={{ ...muted, fontSize: '13px', marginTop: '8px', lineHeight: 1.45 }}>
+                        {item.detail}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  style={{
+                    marginTop: '14px',
+                    width: '100%',
+                    background: theme.soft,
+                    color: theme.primary,
+                    border: `1px solid ${theme.border}`,
+                    borderRadius: '14px',
+                    padding: '12px 14px',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  View Full Feed
+                </button>
+              </section>
+            </div>
           </div>
 
           <div style={{ display: 'grid', gap: '20px' }}>
             <section style={{ ...card, border: '1px solid rgba(240,74,74,0.18)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '12px', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '14px',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <h2 style={sectionTitle}>Needs Attention</h2>
                 <span style={{ ...pillBase, background: 'rgba(240,74,74,0.14)', color: '#f04a4a' }}>
-                  {student.needsAttention.length} alerts
+                  {displayStudent.needsAttention.length} alerts
                 </span>
               </div>
 
               <div style={{ display: 'grid', gap: '12px' }}>
-                {student.needsAttention.map((item) => (
+                {displayStudent.needsAttention.map((item) => (
                   <div
                     key={item.id}
                     style={{
@@ -314,13 +539,22 @@ function StudentDashboard({ student = defaultStudent }) {
             </section>
 
             <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '12px', flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '14px',
+                  gap: '12px',
+                  flexWrap: 'wrap',
+                }}
+              >
                 <h2 style={sectionTitle}>Teacher Feedback</h2>
                 <span style={{ ...muted, fontSize: '13px' }}>Recent notes</span>
               </div>
 
               <div style={{ display: 'grid', gap: '12px' }}>
-                {student.feedback.map((item) => (
+                {displayStudent.feedback.map((item) => (
                   <div
                     key={item.id}
                     style={{
@@ -362,6 +596,59 @@ function StudentDashboard({ student = defaultStudent }) {
               </div>
             </section>
           </div>
+        </div>
+      </div>
+
+      <div
+        style={{
+          position: 'fixed',
+          left: '50%',
+          bottom: '18px',
+          transform: 'translateX(-50%)',
+          width: 'min(760px, calc(100% - 24px))',
+          background: 'rgba(14,18,30,0.94)',
+          backdropFilter: 'blur(14px)',
+          border: `1px solid ${theme.border}`,
+          borderRadius: '24px',
+          padding: '10px',
+          boxShadow: '0 16px 35px rgba(0,0,0,0.35)',
+          zIndex: 30,
+        }}
+      >
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: '10px',
+          }}
+        >
+          {[
+            { icon: '🏠', label: 'Home', active: true },
+            { icon: '📝', label: 'Work' },
+            { icon: '💬', label: 'Messages' },
+            { icon: '📣', label: 'Feed' },
+            { icon: '👤', label: 'Profile' },
+          ].map((item) => (
+            <button
+              key={item.label}
+              style={{
+                background: item.active ? theme.soft : 'transparent',
+                color: item.active ? theme.primary : '#d6dbeb',
+                border: item.active ? `1px solid ${theme.border}` : '1px solid transparent',
+                borderRadius: '16px',
+                padding: '12px 8px',
+                cursor: 'pointer',
+                fontWeight: 700,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span style={{ fontSize: '18px' }}>{item.icon}</span>
+              <span style={{ fontSize: '12px' }}>{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>
