@@ -1,283 +1,176 @@
-import React, { useMemo, useState } from 'react'
-import { demoAccounts, getDemoAccountByCredentials } from '../lib/demoAccounts'
+import React, { useState } from 'react'
+import { demoLoginList, getDemoAccountByCredentials } from '../lib/demoAccounts'
 
-const roleOptions = [
-  { id: 'teacher', label: 'Teacher', icon: '🧑‍🏫', description: 'Manage classes, assignments, grades, and parent communication.' },
-  { id: 'student', label: 'Student', icon: '🎓', description: 'Track grades, upcoming work, and class feedback.' },
-  { id: 'parent', label: 'Parent', icon: '👨‍👩‍👧', description: 'Monitor progress, attendance, and teacher updates.' },
-  { id: 'admin', label: 'Admin', icon: '🏫', description: 'View school-wide performance, staffing, and alerts.' },
+const ROLES = [
+  { id: 'teacher', label: 'Teacher',  icon: '🧑‍🏫' },
+  { id: 'student', label: 'Student',  icon: '🎓'   },
+  { id: 'parent',  label: 'Parent',   icon: '👨‍👩‍👧' },
+  { id: 'admin',   label: 'Admin',    icon: '🏫'   },
 ]
 
-// Inject responsive CSS once
-if (typeof document !== 'undefined' && !document.getElementById('login-responsive-styles')) {
-  const style = document.createElement('style')
-  style.id = 'login-responsive-styles'
-  style.textContent = `
-    .login-shell {
-      min-height: 100dvh;
-      background: #060810;
-      color: #eef0f8;
-      font-family: Inter, Arial, sans-serif;
-      padding: 24px;
-      box-sizing: border-box;
-    }
-    .login-container {
-      max-width: 1360px;
-      margin: 0 auto;
-      min-height: calc(100dvh - 48px);
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 22px;
-      align-items: stretch;
-    }
-    .login-hero { display: flex; }
-    @media (max-width: 768px) {
-      .login-shell { padding: 16px; }
-      .login-container { grid-template-columns: 1fr; min-height: unset; }
-      .login-hero { display: none !important; }
-    }
-  `
-  document.head.appendChild(style)
+// GradeFlow brand colors — login screen ONLY uses these, never school colors
+const BRAND = {
+  primary:  '#f97316',
+  blue:     '#2563EB',
+  bg:       '#060810',
+  card:     '#0c0e14',
+  inner:    '#1e2231',
+  text:     '#eef0f8',
+  muted:    '#6b7494',
+  border:   '#2a2f42',
+  gradient: 'linear-gradient(135deg, #f97316 0%, #2563EB 100%)',
 }
 
-function Login({ onLogin, onDemoLogin }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+export default function Login({ onLogin, onDemoLogin }) {
   const [selectedRole, setSelectedRole] = useState('teacher')
-  const [rememberMe, setRememberMe] = useState(true)
-  const [error, setError] = useState('')
+  const [email,    setEmail]    = useState('')
+  const [password, setPassword] = useState('')
+  const [error,    setError]    = useState('')
+  const [loading,  setLoading]  = useState(false)
 
-  const activeRole = useMemo(
-    () => roleOptions.find((role) => role.id === selectedRole) || roleOptions[0],
-    [selectedRole]
-  )
-
-  const activeTheme = demoAccounts[selectedRole]?.theme || demoAccounts.teacher.theme
-
-  const panel = {
-    background: '#161923',
-    border: `1px solid ${activeTheme.border}`,
-    borderRadius: '28px',
-    boxShadow: '0 16px 40px rgba(0,0,0,0.28)',
-    overflow: 'hidden',
-  }
-
-  const heroPanel = {
-    ...panel,
-    background: activeTheme.heroGradient,
-    position: 'relative',
-    padding: '32px',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  }
-
-  const formPanel = {
-    ...panel,
-    background: activeTheme.card,
-    padding: '32px',
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-  }
-
-  const badge = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    borderRadius: '999px',
-    padding: '8px 12px',
-    background: 'rgba(255,255,255,0.14)',
-    color: '#fff',
-    fontSize: '12px',
-    fontWeight: 700,
-  }
-
-  const labelStyle = {
-    display: 'block',
-    fontSize: '13px',
-    fontWeight: 700,
-    marginBottom: '8px',
-    color: '#c9d0e3',
-  }
-
-  const inputStyle = {
-    width: '100%',
-    background: '#0d1220',
-    color: '#eef0f8',
-    border: `1px solid ${activeTheme.border}`,
-    borderRadius: '14px',
-    padding: '14px 16px',
-    outline: 'none',
-    fontSize: '14px',
-    boxSizing: 'border-box',
-  }
-
-  const subText = {
-    color: 'rgba(255,255,255,0.82)',
-    fontSize: '13px',
-    lineHeight: 1.5,
-  }
-
-  const completeLogin = (account) => {
-    if (!account?.role) { setError('Demo account is missing a valid role.'); return }
-    setError('')
-    if (rememberMe) localStorage.setItem('gradeflow_user', JSON.stringify(account))
-    else localStorage.removeItem('gradeflow_user')
-    if (onDemoLogin) { onDemoLogin(account); return }
-    if (onLogin) onLogin(account)
-  }
-
-  const handleSubmit = (e) => {
+  function handleSubmit(e) {
     e.preventDefault()
     setError('')
-    const matchedDemo = getDemoAccountByCredentials(email.trim(), password.trim(), selectedRole)
-    if (!matchedDemo) {
-      setError(`No demo account matched for ${activeRole.label}. Use one of the demo logins below.`)
-      return
-    }
-    completeLogin(matchedDemo)
+    setLoading(true)
+    setTimeout(() => {
+      const account = getDemoAccountByCredentials(email.trim(), password.trim(), selectedRole)
+      if (!account) {
+        setError(`No demo account for this ${selectedRole}. Use the quick-login buttons below.`)
+        setLoading(false)
+        return
+      }
+      setLoading(false)
+      window.scrollTo(0, 0)
+      onLogin?.(account)
+    }, 400)
   }
 
-  const handleRoleSelect = (roleId) => { setSelectedRole(roleId); setError('') }
+  function handleDemoClick(demo) {
+    const account = getDemoAccountByCredentials(demo.email, demo.password, demo.role)
+    if (account) { window.scrollTo(0, 0); onDemoLogin?.(account) }
+  }
 
   return (
-    <div className="login-shell">
-      <div className="login-container">
+    <div style={{ minHeight: '100vh', background: BRAND.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '24px 16px', fontFamily: 'Inter, Arial, sans-serif', color: BRAND.text }}>
 
-        {/* ── HERO PANEL (hidden on mobile) ── */}
-        <section className="login-hero" style={heroPanel}>
-          <div>
-            <div style={badge}>⚡ GradeFlow</div>
-            <div style={{ marginTop: '28px' }}>
-              <h1 style={{ margin: 0, fontSize: '38px', lineHeight: 1.08, fontWeight: 800 }}>
-                Teach.<br />GradeFlow handles<br />the rest.
-              </h1>
-              <p style={{ ...subText, marginTop: '16px', maxWidth: '560px', fontSize: '15px' }}>
-                GradeFlow brings grading, assignments, communication, testing, and analytics into one seamless system. Everything—from grading to lesson planning—lives in one platform designed to help teachers spend less time managing systems and more time teaching.
-              </p>
-            </div>
-
-            <div style={{ marginTop: '28px', display: 'grid', gridTemplateColumns: 'repeat(2, minmax(180px, 1fr))', gap: '14px' }}>
-              {[
-                { icon: '📷', title: 'Auto-grade with camera', body: 'Capture student work and GradeFlow grades it and updates your gradebook instantly.' },
-                { icon: '📋', title: 'All assignments in one place', body: 'Upload spreadsheets, collect digital work, proctor tests, and generate reports.' },
-                { icon: '🔔', title: 'Automatic alerts', body: 'When performance changes, GradeFlow notifies teachers, students, and parents automatically.' },
-                { icon: '🎨', title: 'Built for your school', body: 'Customized for each school\'s branding and workflows so teachers can focus on teaching.' },
-              ].map((item) => (
-                <div key={item.title} style={{ background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '18px', padding: '16px' }}>
-                  <div style={{ fontSize: '22px' }}>{item.icon}</div>
-                  <div style={{ marginTop: '10px', fontWeight: 800, fontSize: '14px' }}>{item.title}</div>
-                  <div style={{ marginTop: '6px', fontSize: '12px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.5 }}>{item.body}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div style={{ marginTop: '24px', background: 'rgba(255,255,255,0.10)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: '22px', padding: '20px' }}>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.82)', fontWeight: 700 }}>Identify struggling students early · Communicate with families instantly · Keep everyone informed</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(100px, 1fr))', gap: '12px', marginTop: '14px' }}>
-              {[['Assignments', '1.2k'], ['Students', '8.4k'], ['Alerts', '94']].map(([label, value]) => (
-                <div key={label} style={{ background: 'rgba(0,0,0,0.16)', borderRadius: '16px', padding: '14px' }}>
-                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>{label}</div>
-                  <div style={{ marginTop: '6px', fontSize: '24px', fontWeight: 800 }}>{value}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ── FORM PANEL ── */}
-        <section style={formPanel}>
-          <div style={{ maxWidth: '560px', width: '100%', margin: '0 auto' }}>
-            <div>
-              <div style={{ color: activeTheme.accent, fontSize: '12px', fontWeight: 700, letterSpacing: '0.04em' }}>DEMO LOGIN</div>
-              <h2 style={{ margin: '10px 0 0', fontSize: '32px', fontWeight: 800 }}>Sign in to GradeFlow</h2>
-              <p style={{ color: activeTheme.muted, marginTop: '10px', lineHeight: 1.55 }}>
-                Each role is mapped to a different real school so you can preview scheme changes and branding direction.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} style={{ marginTop: '24px' }}>
-              <div>
-                <label style={labelStyle}>Select Role</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(140px, 1fr))', gap: '12px' }}>
-                  {roleOptions.map((role) => {
-                    const active = role.id === selectedRole
-                    const account = demoAccounts[role.id]
-                    return (
-                      <button key={role.id} type="button" onClick={() => handleRoleSelect(role.id)}
-                        style={{
-                          background: active ? account.theme.soft : '#0d1220',
-                          color: '#eef0f8',
-                          border: active ? `1px solid ${account.theme.primary}` : `1px solid ${activeTheme.border}`,
-                          borderRadius: '16px', padding: '14px', textAlign: 'left', cursor: 'pointer',
-                        }}>
-                        <div style={{ fontSize: '18px' }}>{role.icon}</div>
-                        <div style={{ marginTop: '8px', fontWeight: 800 }}>{role.label}</div>
-                        <div style={{ marginTop: '4px', color: '#7d87a8', fontSize: '12px' }}>{account.schoolName}</div>
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div style={{ marginTop: '18px' }}>
-                <label style={labelStyle}>Email Address</label>
-                <input style={inputStyle} type="email" placeholder="name@school.org" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </div>
-
-              <div style={{ marginTop: '16px' }}>
-                <label style={labelStyle}>Password</label>
-                <input style={inputStyle} type="password" placeholder="Enter your password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-
-              <div style={{ marginTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#aab3cb', cursor: 'pointer' }}>
-                  <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
-                  Remember me
-                </label>
-                <button type="button" style={{ background: 'transparent', border: 'none', color: '#9fb4ff', cursor: 'pointer', fontSize: '13px', fontWeight: 700 }}>
-                  Forgot password?
-                </button>
-              </div>
-
-              {error && (
-                <div style={{ marginTop: '14px', background: 'rgba(240,74,74,0.12)', color: '#fca5a5', border: '1px solid rgba(240,74,74,0.25)', borderRadius: '14px', padding: '12px 14px', fontSize: '13px' }}>
-                  {error}
-                </div>
-              )}
-
-              <button type="submit" style={{ width: '100%', marginTop: '18px', background: activeTheme.primary, color: '#fff', border: 'none', borderRadius: '16px', padding: '15px 18px', fontWeight: 800, fontSize: '15px', cursor: 'pointer', boxShadow: `0 10px 28px ${activeTheme.primary}33` }}>
-                Sign in as {activeRole.label}
-              </button>
-            </form>
-
-            <div style={{ marginTop: '22px', background: '#0d1220', border: `1px solid ${activeTheme.border}`, borderRadius: '18px', padding: '16px' }}>
-              <div style={{ fontWeight: 800, marginBottom: '12px' }}>Try a demo account</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(140px, 1fr))', gap: '10px' }}>
-                {[
-                  { label: '🧑‍🏫 Continue as Teacher', fn: () => completeLogin(demoAccounts.teacher) },
-                  { label: '🎓 Continue as Student',  fn: () => completeLogin(demoAccounts.student) },
-                  { label: '👨‍👩‍👧 Continue as Parent',   fn: () => completeLogin(demoAccounts.parent) },
-                  { label: '🏫 Continue as Admin',    fn: () => completeLogin(demoAccounts.admin) },
-                ].map(({ label, fn }) => (
-                  <button key={label} type="button" onClick={fn}
-                    style={{ background: 'rgba(255,255,255,0.04)', color: '#eef0f8', border: '1px solid #2a3145', borderRadius: '14px', padding: '12px 14px', textAlign: 'left', cursor: 'pointer', fontWeight: 700 }}>
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <p style={{ color: activeTheme.muted, marginTop: '18px', textAlign: 'center', fontSize: '13px' }}>
-              These are fake demo accounts for UI preview only.
-            </p>
-          </div>
-        </section>
-
+      {/* Logo */}
+      <div style={{ marginBottom: 32, textAlign: 'center' }}>
+        <div style={{ display: 'inline-block', background: BRAND.gradient, borderRadius: 16, padding: '8px 20px', marginBottom: 12 }}>
+          <span style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>⚡ GradeFlow</span>
+        </div>
+        <h1 style={{ fontSize: 30, fontWeight: 900, margin: '0 0 6px', background: BRAND.gradient, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          Teach. GradeFlow handles the rest.
+        </h1>
+        <p style={{ color: BRAND.muted, fontSize: 13, margin: 0, maxWidth: 360 }}>
+          Your school. Your way. All roles. One platform.
+        </p>
       </div>
+
+      {/* Main card */}
+      <div style={{ width: '100%', maxWidth: 420, background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 22, padding: '28px 24px' }}>
+
+        <div style={{ fontSize: 10, color: BRAND.primary, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>DEMO LOGIN</div>
+        <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 20px' }}>Sign in to GradeFlow</h2>
+
+        {/* Role selector */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 6, marginBottom: 20 }}>
+          {ROLES.map(r => (
+            <button key={r.id} onClick={() => { setSelectedRole(r.id); setError('') }}
+              style={{
+                padding: '8px 4px',
+                borderRadius: 12,
+                border: `1.5px solid ${selectedRole === r.id ? BRAND.primary : BRAND.border}`,
+                background: selectedRole === r.id ? `rgba(249,115,22,0.12)` : BRAND.inner,
+                color: selectedRole === r.id ? BRAND.primary : BRAND.muted,
+                cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+              }}>
+              <span style={{ fontSize: 18 }}>{r.icon}</span>
+              {r.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: BRAND.muted, marginBottom: 6 }}>Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              style={{ width: '100%', background: BRAND.inner, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: '12px 14px', color: BRAND.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: BRAND.muted, marginBottom: 6 }}>Password</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              style={{ width: '100%', background: BRAND.inner, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: '12px 14px', color: BRAND.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+            />
+          </div>
+
+          {error && (
+            <div style={{ background: '#1c1012', border: '1px solid rgba(240,74,74,0.3)', borderRadius: 10, padding: '10px 12px', color: '#f04a4a', fontSize: 12, marginBottom: 14 }}>
+              {error}
+            </div>
+          )}
+
+          <button type="submit" disabled={loading}
+            style={{ width: '100%', background: BRAND.gradient, color: '#fff', border: 'none', borderRadius: 999, padding: '14px', fontSize: 15, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, marginBottom: 10 }}>
+            {loading ? 'Signing in...' : 'Sign In →'}
+          </button>
+        </form>
+
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <span style={{ fontSize: 12, color: BRAND.muted }}>or</span>
+        </div>
+
+        {/* Quick demo logins */}
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: BRAND.muted, marginBottom: 10 }}>Quick Demo Access</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          {demoLoginList.map(demo => (
+            <button key={demo.role} onClick={() => handleDemoClick(demo)}
+              style={{
+                background: BRAND.inner, border: `1px solid ${BRAND.border}`, borderRadius: 14,
+                padding: '12px 10px', cursor: 'pointer', textAlign: 'left',
+                transition: 'border-color 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = BRAND.primary}
+              onMouseLeave={e => e.currentTarget.style.borderColor = BRAND.border}
+            >
+              <div style={{ fontSize: 15, marginBottom: 4 }}>{demo.label.split(' ')[0]}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: BRAND.text }}>{demo.label.split(' ').slice(1).join(' ')}</div>
+              <div style={{ fontSize: 10, color: BRAND.muted, marginTop: 2 }}>{demo.school}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Feature tiles */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginTop: 24, width: '100%', maxWidth: 420 }}>
+        {[
+          { icon: '📷', title: 'Auto-grade with camera', body: 'Snap a photo — GradeFlow grades & updates your gradebook.' },
+          { icon: '📋', title: 'All assignments in one place', body: 'Upload, collect, proctor, and generate reports.' },
+          { icon: '🔔', title: 'Automatic alerts', body: 'GradeFlow notifies teachers, students & parents automatically.' },
+          { icon: '🎨', title: 'Built for your school', body: 'Your school colors and branding throughout.' },
+        ].map(f => (
+          <div key={f.title} style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 16, padding: 14 }}>
+            <div style={{ fontSize: 22, marginBottom: 6 }}>{f.icon}</div>
+            <div style={{ fontSize: 11, fontWeight: 700, marginBottom: 4 }}>{f.title}</div>
+            <div style={{ fontSize: 11, color: BRAND.muted, lineHeight: 1.5 }}>{f.body}</div>
+          </div>
+        ))}
+      </div>
+
+      <p style={{ marginTop: 24, fontSize: 11, color: BRAND.muted, textAlign: 'center' }}>
+        Each demo uses a real school's branding & colors when signed in.
+      </p>
     </div>
   )
 }
 
-export default Login
