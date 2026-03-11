@@ -9,12 +9,22 @@ import TestingSuite from './TestingSuite'
 import ClassFeed from './ClassFeed'
 import StudentProfile from './StudentProfile'
 
-// ─── Color palette ────────────────────────────────────────────────────────────
+// ─── Color palette — KIPP New Orleans (black base, red accent) ────────────────
 const C = {
-  bg: '#060810', card: '#161923', inner: '#1e2231',
-  text: '#eef0f8', muted: '#6b7494', hint: '#3d4460',
-  green: '#22c97a', blue: '#3b7ef4', purple: '#9b6ef5',
-  amber: '#f5a623', red: '#f04a4a', teal: '#0fb8a0',
+  bg:     '#0a0000',
+  card:   '#1a0005',
+  inner:  '#280008',
+  border: '#4a0018',
+  text:   '#f5e8ea',
+  muted:  '#9a6070',
+  hint:   '#5a2030',
+  green:  '#22c97a',
+  blue:   '#3b7ef4',
+  purple: '#9b6ef5',
+  amber:  '#f5a623',
+  red:    '#f04a4a',
+  teal:   '#0fb8a0',
+  primary:'#BA0C2F',
 }
 
 // ─── Scroll helper ────────────────────────────────────────────────────────────
@@ -188,7 +198,7 @@ function BottomNav({ active, onSelect }) {
   return (
     <div style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
-      background: 'rgba(10,12,18,0.97)', borderTop: `1px solid ${C.inner}`,
+      background: 'rgba(10,0,0,0.97)', borderTop: `1px solid ${C.border}`,
       padding: '6px 0 max(16px, env(safe-area-inset-bottom))',
       display: 'grid', gridTemplateColumns: `repeat(${items.length}, 1fr)`,
     }}>
@@ -256,7 +266,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
       </div>
 
       {/* W1: Daily Overview */}
-      <Widget onClick={() => {}} style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%)', border: 'none' }}>
+      <Widget onClick={() => {}} style={{ background: 'linear-gradient(135deg, #BA0C2F 0%, #7a0820 100%)', border: 'none' }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>DAILY OVERVIEW</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6 }}>
           {[
@@ -277,7 +287,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
       </Widget>
 
       {/* W2: Today's Lessons */}
-      <Widget onClick={() => setSubPage('lessonPlan')} style={{ background: 'linear-gradient(135deg, #064e3b 0%, #1e3a5f 100%)', border: '1px solid #1a3a2a' }}>
+      <Widget onClick={() => setSubPage('lessonPlan')} style={{ background: 'linear-gradient(135deg, #3a0010 0%, #1a0005 100%)', border: '1px solid #4a0018' }}>
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>TODAY'S LESSONS</div>
         <div style={{ display: 'inline-block', background: 'rgba(15,184,160,0.2)', borderRadius: 999, padding: '3px 10px', fontSize: 10, color: C.teal, fontWeight: 700, marginBottom: 8 }}>
           {lesson?.classLabel}
@@ -354,7 +364,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
           <div style={{ fontSize: 10, color: C.green, fontWeight: 600 }}>Weights: Test 40% · Quiz 30% · HW 20% · Part. 10%</div>
         </div>
         <button onClick={e => { e.stopPropagation(); onCameraClick?.() }}
-          style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #1e3a8a, #4c1d95)', border: 'none', cursor: 'pointer', fontSize: 24, flexShrink: 0 }}>
+          style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #BA0C2F, #7a0820)', border: 'none', cursor: 'pointer', fontSize: 24, flexShrink: 0 }}>
           📷
         </button>
       </Widget>
