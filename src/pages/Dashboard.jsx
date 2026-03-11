@@ -11,20 +11,21 @@ import StudentProfile from './StudentProfile'
 
 // ─── Color palette — KIPP New Orleans (black base, red accent) ────────────────
 const C = {
-  bg:     '#0a0000',
-  card:   '#1a0005',
-  inner:  '#280008',
-  border: '#4a0018',
-  text:   '#f5e8ea',
-  muted:  '#9a6070',
-  hint:   '#5a2030',
-  green:  '#22c97a',
-  blue:   '#3b7ef4',
-  purple: '#9b6ef5',
-  amber:  '#f5a623',
-  red:    '#f04a4a',
-  teal:   '#0fb8a0',
-  primary:'#BA0C2F',
+  bg:      '#0a0000',
+  card:    '#1a0005',
+  inner:   '#280008',
+  border:  '#4a0018',
+  text:    '#f5e8ea',
+  muted:   '#9a6070',
+  hint:    '#5a2030',
+  green:   '#22c97a',
+  blue:    '#3b7ef4',
+  purple:  '#9b6ef5',
+  amber:   '#f5a623',
+  red:     '#f04a4a',
+  teal:    '#0fb8a0',
+  primary: '#BA0C2F',
+  light:   '#f5e8ea',   // lightest KIPP — warm white for Daily Overview
 }
 
 // ─── Scroll helper ────────────────────────────────────────────────────────────
@@ -141,7 +142,7 @@ function NeedsAttentionPage({ onBack }) {
         </div>
       ) : students.map(s => (
         <div key={s.id} onClick={() => { setActiveStudent(s); setScreen('studentProfile') }}
-          style={{ margin: '0 10px 10px', background: '#1c1012', border: '1px solid #f04a4a20', borderRadius: 14, padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          style={{ margin: '0 10px 10px', background: C.inner, border: '1px solid #f04a4a20', borderRadius: 14, padding: '14px 16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <div style={{ fontWeight: 700, fontSize: 14, color: C.text, marginBottom: 4 }}>{s.name}</div>
             <div style={{ fontSize: 11, color: C.red }}>
@@ -257,17 +258,18 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: 'Inter, Arial, sans-serif', paddingBottom: 80 }}>
 
-      {/* Greeting */}
-      <div style={{ padding: '20px 16px 8px' }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 2px' }}>Good morning, {teacher.name} 👋</h1>
-        <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>
+      {/* Greeting header */}
+      <div style={{ background: 'linear-gradient(135deg, #BA0C2F 0%, #7a0820 100%)', padding: '22px 16px 20px', marginBottom: 4 }}>
+        <div style={{ fontSize: 11, color: 'rgba(245,232,234,0.65)', marginBottom: 3, fontWeight: 600, letterSpacing: '0.04em' }}>KIPP NEW ORLEANS SCHOOLS</div>
+        <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 2px', color: C.light }}>Good morning, {teacher.name} 👋</h1>
+        <p style={{ fontSize: 11, color: 'rgba(245,232,234,0.65)', margin: 0 }}>
           {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
         </p>
       </div>
 
       {/* W1: Daily Overview */}
-      <Widget onClick={() => {}} style={{ background: 'linear-gradient(135deg, #BA0C2F 0%, #7a0820 100%)', border: 'none' }}>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>DAILY OVERVIEW</div>
+      <Widget onClick={() => {}} style={{ background: C.light, border: 'none' }}>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.primary, marginBottom: 10 }}>DAILY OVERVIEW</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6 }}>
           {[
             { icon: '💬', val: pending.length, label: 'Pending Msgs', page: 'parentMessages' },
@@ -277,10 +279,10 @@ export default function Dashboard({ currentUser, onCameraClick }) {
             { icon: '📋', val: store.assignments?.length || 0, label: 'Assignments', page: 'gradebook' },
           ].map(tile => (
             <button key={tile.label} onClick={e => { e.stopPropagation(); setSubPage(tile.page) }}
-              style={{ background: 'rgba(255,255,255,0.11)', borderRadius: 13, padding: '10px 4px', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              style={{ background: C.primary, borderRadius: 13, padding: '10px 4px', border: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
               <span style={{ fontSize: 16 }}>{tile.icon}</span>
-              <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{tile.val}</span>
-              <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>{tile.label}</span>
+              <span style={{ fontSize: 18, fontWeight: 800, color: C.light, lineHeight: 1 }}>{tile.val}</span>
+              <span style={{ fontSize: 8, color: 'rgba(245,232,234,0.75)', textAlign: 'center' }}>{tile.label}</span>
             </button>
           ))}
         </div>
@@ -324,7 +326,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
       <Widget onClick={() => setSubPage('attention')} style={{ border: '1px solid rgba(240,74,74,0.2)' }}
         title="Needs Attention ⚑"
         titleRight={<span style={{ background: '#f04a4a18', color: C.red, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 999 }}>{atRisk.length} students</span>}>
-        <div style={{ background: '#1c1012', borderRadius: 12, padding: '10px 12px', marginBottom: 6 }}>
+        <div style={{ background: C.inner, borderRadius: 12, padding: '10px 12px', marginBottom: 6 }}>
           <div style={{ fontSize: 12, color: C.text, fontWeight: 600 }}>
             {atRisk.slice(0,2).map(s => s.name.split(' ')[0]).join(' · ')} {atRisk.length > 2 ? `+ ${atRisk.length-2} more` : ''}
           </div>
@@ -337,7 +339,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
       <Widget onClick={() => setSubPage('parentMessages')} title="Parent Messages"
         titleRight={<ActionBtn label="See all →" color={C.blue} onClick={() => setSubPage('parentMessages')} />}>
         {pending.slice(0,2).map(m => (
-          <div key={m.id} style={{ background: '#1c1012', borderRadius: 12, padding: '10px 12px', marginBottom: 8, border: '1px solid rgba(240,74,74,0.1)' }}>
+          <div key={m.id} style={{ background: C.inner, borderRadius: 12, padding: '10px 12px', marginBottom: 8, border: '1px solid rgba(240,74,74,0.1)' }}>
             <div style={{ fontSize: 12, color: C.text, fontWeight: 600 }}>⚑ {m.studentName} · {m.subject} · {m.trigger}</div>
             <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>AI drafted · {m.tone}</div>
           </div>
@@ -356,7 +358,18 @@ export default function Dashboard({ currentUser, onCameraClick }) {
         </div>
       </Widget>
 
-      {/* W7: Grading */}
+      {/* W7: Class Feed */}
+      <Widget onClick={() => setSubPage('classFeed')} title="Class Feed 📢"
+        titleRight={<ActionBtn label="+ Post" color={C.teal} onClick={() => setSubPage('classFeed')} />}>
+        {store.feed?.slice(0,1).map(f => (
+          <div key={f.id} style={{ background: C.inner, borderRadius: 12, padding: '10px 12px' }}>
+            <div style={{ fontSize: 12, color: C.text, marginBottom: 4 }}>{f.content.substring(0,60)}...</div>
+            <div style={{ fontSize: 10, color: C.muted }}>{f.time}</div>
+          </div>
+        ))}
+      </Widget>
+
+      {/* W8: Grading — last */}
       <Widget onClick={() => onCameraClick?.()} title="Grading 📷"
         style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
         <div style={{ flex: 1 }}>
@@ -367,17 +380,6 @@ export default function Dashboard({ currentUser, onCameraClick }) {
           style={{ width: 52, height: 52, borderRadius: '50%', background: 'linear-gradient(135deg, #BA0C2F, #7a0820)', border: 'none', cursor: 'pointer', fontSize: 24, flexShrink: 0 }}>
           📷
         </button>
-      </Widget>
-
-      {/* W8: Class Feed */}
-      <Widget onClick={() => setSubPage('classFeed')} title="Class Feed 📢"
-        titleRight={<ActionBtn label="+ Post" color={C.teal} onClick={() => setSubPage('classFeed')} />}>
-        {store.feed?.slice(0,1).map(f => (
-          <div key={f.id} style={{ background: C.inner, borderRadius: 12, padding: '10px 12px' }}>
-            <div style={{ fontSize: 12, color: C.text, marginBottom: 4 }}>{f.content.substring(0,60)}...</div>
-            <div style={{ fontSize: 10, color: C.muted }}>{f.time}</div>
-          </div>
-        ))}
       </Widget>
 
       <BottomNav active={activeNav} onSelect={navSelect} />
