@@ -1,7 +1,6 @@
 // ─── GradeFlow Demo Accounts ──────────────────────────────────────────────────
-// Each role maps to a real school with its actual brand colors.
+// Each role uses shades of their school colors throughout — no generic dark bg.
 // Login page uses GradeFlow orange/blue only.
-// Authenticated views use ONLY their school palette.
 
 export const demoAccounts = {
   teacher: {
@@ -15,17 +14,24 @@ export const demoAccounts = {
     avatar: '👩‍🏫',
     logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9b/KIPP_Foundation_logo.svg/200px-KIPP_Foundation_logo.svg.png',
     theme: {
-      primary: '#BA0C2F',
-      secondary: '#000000',
-      accent: '#BA0C2F',
-      heroGradient: 'linear-gradient(135deg, #BA0C2F 0%, #7a0820 100%)',
-      headerGradient: 'linear-gradient(135deg, #BA0C2F 0%, #000000 100%)',
-      sidebar: '#1a0005',
-      card: '#161923',
-      border: '#3a0010',
-      muted: '#907080',
-      soft: 'rgba(186,12,47,0.15)',
-      navActive: '#BA0C2F',
+      // KIPP: black base, red accent, white text
+      primary:        '#BA0C2F',
+      secondary:      '#ffffff',
+      accent:         '#BA0C2F',
+      bg:             '#0a0000',       // near-black with red tint
+      card:           '#1a0005',       // dark red-black
+      inner:          '#280008',       // slightly lighter card
+      border:         '#4a0018',       // visible red-tinted border
+      text:           '#f5e8ea',       // warm white
+      muted:          '#9a6070',       // muted pink-grey
+      heroGradient:   'linear-gradient(135deg,#BA0C2F,#7a0820)',
+      headerGradient: 'linear-gradient(135deg,#BA0C2F,#000000)',
+      soft:           'rgba(186,12,47,0.18)',
+      navActive:      '#BA0C2F',
+      green:          '#22c97a',
+      blue:           '#3b7ef4',
+      amber:          '#f5a623',
+      red:            '#f04a4a',
     },
   },
 
@@ -40,17 +46,24 @@ export const demoAccounts = {
     avatar: '🎓',
     logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
     theme: {
-      primary: '#003057',
-      secondary: '#B3A369',
-      accent: '#B3A369',
-      heroGradient: 'linear-gradient(135deg, #003057 0%, #B3A369 100%)',
-      headerGradient: 'linear-gradient(135deg, #003057 0%, #002040 100%)',
-      sidebar: '#000d1a',
-      card: '#161923',
-      border: '#002040',
-      muted: '#7090a0',
-      soft: 'rgba(0,48,87,0.20)',
-      navActive: '#B3A369',
+      // HISD: deep navy base, gold accent, light text
+      primary:        '#003057',
+      secondary:      '#B3A369',
+      accent:         '#B3A369',
+      bg:             '#000d1f',       // deep navy-black
+      card:           '#001830',       // dark navy card
+      inner:          '#002040',       // slightly lighter navy
+      border:         '#003a6a',       // navy border
+      text:           '#e8edf5',       // cool white
+      muted:          '#6080a0',       // muted navy-grey
+      heroGradient:   'linear-gradient(135deg,#003057,#001830)',
+      headerGradient: 'linear-gradient(135deg,#003057,#001020)',
+      soft:           'rgba(179,163,105,0.18)',
+      navActive:      '#B3A369',
+      green:          '#22c97a',
+      blue:           '#B3A369',      // gold plays the "blue" role here
+      amber:          '#f5a623',
+      red:            '#f04a4a',
     },
   },
 
@@ -65,17 +78,24 @@ export const demoAccounts = {
     avatar: '👨‍👩‍👧',
     logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
     theme: {
-      primary: '#C8102E',
-      secondary: '#ffffff',
-      accent: '#C8102E',
-      heroGradient: 'linear-gradient(135deg, #C8102E 0%, #8b0a1f 100%)',
-      headerGradient: 'linear-gradient(135deg, #C8102E 0%, #8b0a1f 100%)',
-      sidebar: '#1a0408',
-      card: '#161923',
-      border: '#2a0a10',
-      muted: '#907080',
-      soft: 'rgba(200,16,46,0.15)',
-      navActive: '#C8102E',
+      // Bellaire: deep crimson base, white accent, warm text
+      primary:        '#C8102E',
+      secondary:      '#ffffff',
+      accent:         '#ffffff',
+      bg:             '#0f0003',       // near-black with crimson tint
+      card:           '#1e0008',       // dark crimson card
+      inner:          '#2c000e',       // slightly lighter
+      border:         '#5a001a',       // crimson border
+      text:           '#f8eaec',       // warm white
+      muted:          '#a06070',       // muted rose-grey
+      heroGradient:   'linear-gradient(135deg,#C8102E,#8b0a1f)',
+      headerGradient: 'linear-gradient(135deg,#C8102E,#5a0010)',
+      soft:           'rgba(200,16,46,0.18)',
+      navActive:      '#C8102E',
+      green:          '#22c97a',
+      blue:           '#3b7ef4',
+      amber:          '#f5a623',
+      red:            '#f04a4a',
     },
   },
 
@@ -90,17 +110,24 @@ export const demoAccounts = {
     avatar: '🏫',
     logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
     theme: {
-      primary: '#461D7C',
-      secondary: '#FDD023',
-      accent: '#FDD023',
-      heroGradient: 'linear-gradient(135deg, #461D7C 0%, #2d1254 100%)',
-      headerGradient: 'linear-gradient(135deg, #461D7C 0%, #2d1254 100%)',
-      sidebar: '#0e0518',
-      card: '#161923',
-      border: '#1e0f35',
-      muted: '#7060a0',
-      soft: 'rgba(70,29,124,0.18)',
-      navActive: '#FDD023',
+      // Lamar: deep purple base, gold accent, light text
+      primary:        '#461D7C',
+      secondary:      '#FDD023',
+      accent:         '#FDD023',
+      bg:             '#080012',       // near-black with purple tint
+      card:           '#120520',       // dark purple card
+      inner:          '#1c0830',       // slightly lighter purple
+      border:         '#3a1560',       // purple border
+      text:           '#ede8f5',       // cool white with purple tint
+      muted:          '#7060a0',       // muted purple-grey
+      heroGradient:   'linear-gradient(135deg,#461D7C,#2d1254)',
+      headerGradient: 'linear-gradient(135deg,#461D7C,#1a0840)',
+      soft:           'rgba(70,29,124,0.20)',
+      navActive:      '#FDD023',
+      green:          '#22c97a',
+      blue:           '#FDD023',      // gold plays the "blue" role here
+      amber:          '#FDD023',
+      red:            '#f04a4a',
     },
   },
 }
