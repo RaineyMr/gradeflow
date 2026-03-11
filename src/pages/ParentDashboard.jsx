@@ -1,338 +1,219 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-const defaultParentView = {
-  parentName: 'Mrs. Smith',
-  studentName: 'Jordan Smith',
-  gradeLevel: '10th Grade',
-  school: 'Lincoln High School',
-  currentAverage: 87,
-  attendance: 95,
-  behavior: 'Good',
-  needsAttention: [
-    { id: 1, label: 'Missed assignment', detail: 'Gas Laws Exit Ticket was not submitted' },
-    { id: 2, label: 'Score dip', detail: 'Unit 4 Quiz came in 8 points below the previous average' },
-    { id: 3, label: 'Late submission', detail: 'Lab Safety Reflection is still outstanding' },
-  ],
-  classSummary: [
-    { id: 1, name: 'Chemistry', average: 87, teacher: 'Ms. Johnson', color: '#3b82f6' },
-    { id: 2, name: 'Math', average: 92, teacher: 'Mr. Patel', color: '#22c55e' },
-    { id: 3, name: 'English', average: 84, teacher: 'Ms. Green', color: '#f59e0b' },
-    { id: 4, name: 'History', average: 89, teacher: 'Coach Williams', color: '#a855f7' },
-  ],
-  gradeWeights: [
-    { id: 1, label: 'Tests', weight: '40%', avg: '85%' },
-    { id: 2, label: 'Quizzes', weight: '30%', avg: '90%' },
-    { id: 3, label: 'Homework', weight: '20%', avg: '88%' },
-    { id: 4, label: 'Participation', weight: '10%', avg: '100%' },
-  ],
-  upcomingDeadlines: [
-    { id: 1, title: 'Stoichiometry Practice', due: 'Tomorrow', course: 'Chemistry' },
-    { id: 2, title: 'Lab Safety Reflection', due: 'Friday', course: 'Chemistry' },
-    { id: 3, title: 'Vocabulary Check', due: 'Next Monday', course: 'English' },
-  ],
-  messages: [
-    {
-      id: 1,
-      from: 'Ms. Johnson',
-      subject: 'Chemistry update',
-      body: 'Jordan is improving in class discussion. Please remind him to submit the missed exit ticket tonight.',
-    },
-    {
-      id: 2,
-      from: 'Mr. Patel',
-      subject: 'Math progress',
-      body: 'Strong performance this week. Homework completion has been excellent.',
-    },
-  ],
+const C = {
+  bg: '#0c0e14',
+  card: '#161923',
+  inner: '#1e2231',
+  text: '#eef0f8',
+  muted: '#6b7494',
+  hint: '#3d4460',
+  green: '#22c97a',
+  blue: '#3b7ef4',
+  purple: '#9b6ef5',
+  amber: '#f5a623',
+  red: '#f04a4a',
+  teal: '#0fb8a0',
+  pink: '#f54a7a',
+  pGrad: 'linear-gradient(135deg, #0f766e 0%, #1d4ed8 100%)',
+  ovGrad: 'linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%)',
+  lGrad: 'linear-gradient(135deg, #064e3b 0%, #1e3a5f 100%)',
 }
 
-const shell = {
-  minHeight: '100vh',
-  background: '#060810',
-  color: '#eef0f8',
-  padding: '24px',
-  fontFamily: 'Inter, Arial, sans-serif',
-}
-
-const container = {
-  maxWidth: '1400px',
-  margin: '0 auto',
-}
-
-const hero = {
-  background: 'linear-gradient(135deg, #0f766e 0%, #1d4ed8 100%)',
-  borderRadius: '24px',
-  padding: '24px',
-  boxShadow: '0 18px 50px rgba(0,0,0,0.28)',
-  marginBottom: '20px',
-}
-
-const card = {
-  background: '#161923',
-  border: '1px solid #1e2231',
-  borderRadius: '20px',
-  padding: '18px',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
-}
-
-const sectionTitle = {
-  fontSize: '16px',
-  fontWeight: 700,
-  margin: 0,
-}
-
-const muted = {
-  color: '#6b7494',
-}
-
-const pillBase = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '6px',
-  borderRadius: '999px',
-  padding: '6px 10px',
-  fontSize: '12px',
-  fontWeight: 700,
-}
-
-function ParentDashboard({ parentView = defaultParentView }) {
+// ── Header ────────────────────────────────────────────────────────────────────
+function Header() {
   return (
-    <div style={shell}>
-      <div style={container}>
-        <div style={hero}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ ...pillBase, background: 'rgba(255,255,255,0.14)', color: '#fff', marginBottom: '12px' }}>
-                👨‍👩‍👧 Parent Dashboard
-              </div>
-              <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 800 }}>{parentView.studentName}</h1>
-              <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.82)' }}>
-                Viewed by {parentView.parentName} · {parentView.gradeLevel} · {parentView.school}
-              </p>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(120px, 1fr))', gap: '12px', minWidth: '320px', flex: 1 }}>
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Current Grade</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{parentView.currentAverage}%</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Attendance</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{parentView.attendance}%</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Behavior</div>
-                <div style={{ fontSize: '30px', fontWeight: 800 }}>{parentView.behavior}</div>
-              </div>
-            </div>
-          </div>
+    <div style={{ background: C.pGrad, padding: '14px 18px 18px', position: 'relative' }}>
+      {/* Bell */}
+      <div style={{ position: 'absolute', top: 14, right: 18 }}>
+        <div style={{ position: 'relative', width: 32, height: 32 }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔔</div>
+          <div style={{ position: 'absolute', top: -3, right: -3, width: 14, height: 14, borderRadius: '50%', background: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#fff', fontWeight: 700 }}>2</div>
         </div>
+      </div>
+      {/* Name */}
+      <div style={{ fontSize: 19, color: '#fff', fontWeight: 800, marginBottom: 4 }}>Ms. Thompson 👋</div>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>Viewing: Marcus · 3rd Grade · Lincoln Elementary</div>
+      <div style={{ fontSize: 9, color: C.hint }}>Same order as student · Hold to customize · Saved to account</div>
+    </div>
+  )
+}
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1.15fr 0.95fr',
-            gap: '20px',
-            alignItems: 'start',
-          }}
-        >
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-                <h2 style={sectionTitle}>Class Performance</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>By course</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {parentView.classSummary.map((course) => (
-                  <div
-                    key={course.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                      borderLeft: `4px solid ${course.color}`,
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '12px',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 700 }}>{course.name}</div>
-                      <div style={{ ...muted, fontSize: '12px', marginTop: '4px' }}>{course.teacher}</div>
-                    </div>
-
-                    <div style={{ minWidth: '140px' }}>
-                      <div style={{ fontSize: '24px', fontWeight: 800, textAlign: 'right' }}>{course.average}%</div>
-                      <div
-                        style={{
-                          marginTop: '8px',
-                          height: '8px',
-                          background: '#11141d',
-                          borderRadius: '999px',
-                          overflow: 'hidden',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: `${course.average}%`,
-                            height: '100%',
-                            borderRadius: '999px',
-                            background: course.color,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-                <h2 style={sectionTitle}>Grade Breakdown</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Category weights</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '10px' }}>
-                {parentView.gradeWeights.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '14px',
-                      padding: '14px',
-                      display: 'grid',
-                      gridTemplateColumns: '1.2fr 0.8fr 0.6fr',
-                      gap: '10px',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div style={{ fontWeight: 700 }}>{item.label}</div>
-                    <div style={{ ...muted, fontSize: '13px' }}>Weight: {item.weight}</div>
-                    <div style={{ textAlign: 'right', fontWeight: 800 }}>{item.avg}</div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-                <h2 style={sectionTitle}>Teacher Messages</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Latest communication</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {parentView.messages.map((message) => (
-                  <div
-                    key={message.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                    }}
-                  >
-                    <div style={{ fontSize: '14px', fontWeight: 700 }}>{message.subject}</div>
-                    <div style={{ ...muted, fontSize: '12px', marginTop: '4px' }}>From {message.from}</div>
-                    <div style={{ ...muted, fontSize: '13px', marginTop: '10px', lineHeight: 1.45 }}>
-                      {message.body}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+// ── PW1: Daily Overview ───────────────────────────────────────────────────────
+function PW1_DailyOverview() {
+  const tiles = [
+    { icon: '📊', value: '87.4', label: 'GPA' },
+    { icon: '📚', value: '4',    label: 'Classes' },
+    { icon: '⚑',  value: '1',    label: 'Attention' },
+    { icon: '🔔', value: '2',    label: 'Updates' },
+  ]
+  return (
+    <div style={{ background: C.ovGrad, borderRadius: 18, padding: '14px 16px 18px', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>MARCUS'S DAILY OVERVIEW</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+        {tiles.map(t => (
+          <div key={t.label} style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 13, padding: '10px 6px', textAlign: 'center' }}>
+            <div style={{ fontSize: 16, marginBottom: 4 }}>{t.icon}</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{t.value}</div>
+            <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{t.label}</div>
           </div>
-
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <section style={{ ...card, border: '1px solid rgba(240,74,74,0.18)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '12px', flexWrap: 'wrap' }}>
-                <h2 style={sectionTitle}>Needs Attention</h2>
-                <span style={{ ...pillBase, background: 'rgba(240,74,74,0.14)', color: '#f04a4a' }}>
-                  {parentView.needsAttention.length} alerts
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {parentView.needsAttention.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1c1012',
-                      borderRadius: '16px',
-                      padding: '14px',
-                    }}
-                  >
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#fca5a5' }}>{item.label}</div>
-                    <div style={{ ...muted, fontSize: '12px', marginTop: '6px' }}>{item.detail}</div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', gap: '12px', flexWrap: 'wrap' }}>
-                <h2 style={sectionTitle}>Upcoming Deadlines</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Important due dates</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {parentView.upcomingDeadlines.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '10px',
-                      flexWrap: 'wrap',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 700 }}>{item.title}</div>
-                      <div style={{ ...muted, fontSize: '12px', marginTop: '4px' }}>{item.course}</div>
-                    </div>
-
-                    <span style={{ ...pillBase, background: 'rgba(59,126,244,0.14)', color: '#3b7ef4' }}>
-                      {item.due}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <h2 style={{ ...sectionTitle, marginBottom: '14px' }}>Quick Actions</h2>
-
-              <div style={{ display: 'grid', gap: '10px' }}>
-                {['Message teacher', 'View missing work', 'Open full gradebook', 'See attendance details'].map((label) => (
-                  <button
-                    key={label}
-                    style={{
-                      background: '#1e2231',
-                      color: '#eef0f8',
-                      border: '1px solid #2b3145',
-                      borderRadius: '14px',
-                      padding: '12px 14px',
-                      textAlign: 'left',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   )
 }
 
-export default ParentDashboard
+// ── PW2: Today's Lessons ──────────────────────────────────────────────────────
+function PW2_TodaysLessons() {
+  return (
+    <div style={{ background: C.lGrad, border: '1px solid #1a3a2a', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>TODAY'S LESSONS 📖</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>Ch.4 · Fractions &amp; Decimals · Math</div>
+      <div style={{ fontSize: 10, color: C.muted }}>Pages 84–91 · Ms. Johnson · Parent view of Marcus's lessons</div>
+    </div>
+  )
+}
+
+// ── PW3: Marcus's Classes ─────────────────────────────────────────────────────
+function PW3_MarcusClasses() {
+  const classes = [
+    { name: 'Math',    gpa: '95.0', gpaCo: C.text },
+    { name: 'Reading', gpa: '82.0', gpaCo: C.text },
+    { name: 'Science', gpa: '61.0', gpaCo: C.red  },
+    { name: 'Writing', gpa: '88.0', gpaCo: C.text },
+  ]
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>Marcus's Classes</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
+        {classes.map(c => (
+          <div key={c.name} style={{ background: C.inner, borderRadius: 12, padding: '10px 8px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.text, marginBottom: 6 }}>{c.name}</div>
+            <div style={{ fontSize: 19, fontWeight: 800, color: c.gpaCo }}>{c.gpa}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── PW4: Needs Attention ──────────────────────────────────────────────────────
+function PW4_NeedsAttention() {
+  return (
+    <div style={{ background: C.card, border: '1px solid rgba(240,74,74,0.12)', borderRadius: 14, padding: '12px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 4 }}>Needs Attention ⚑</div>
+      <div style={{ fontSize: 10, color: C.red }}>Science 61% · Study tips available for Marcus</div>
+    </div>
+  )
+}
+
+// ── PW5: Messages (with Student/Private toggle) ───────────────────────────────
+function PW5_Messages() {
+  const [mode, setMode] = useState('student')
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 }}>Messages 💬</div>
+
+      {/* Toggle */}
+      <div style={{ background: '#1a1d2e', borderRadius: 15, padding: 3, display: 'flex', marginBottom: 10 }}>
+        <button onClick={() => setMode('student')} style={{
+          flex: 1, padding: '7px 0', borderRadius: 13, border: 'none', cursor: 'pointer',
+          fontWeight: 700, fontSize: 10,
+          background: mode === 'student' ? C.pGrad : 'transparent',
+          color: mode === 'student' ? '#fff' : C.muted,
+        }}>👁 Student View</button>
+        <button onClick={() => setMode('private')} style={{
+          flex: 1, padding: '7px 0', borderRadius: 13, border: 'none', cursor: 'pointer',
+          fontWeight: 700, fontSize: 10,
+          background: mode === 'private' ? 'linear-gradient(135deg,#7c1d1d,#1d2040)' : 'transparent',
+          color: mode === 'private' ? C.red : C.muted,
+        }}>🔒 Private w/ Teacher</button>
+      </div>
+
+      {/* Private indicator */}
+      <div style={{ background: '#1a0a0a', border: '1px solid rgba(240,74,74,0.3)', borderRadius: 9, padding: '5px 12px', marginBottom: 8, textAlign: 'center' }}>
+        <span style={{ fontSize: 9, color: C.red, fontWeight: 700 }}>🔒 PRIVATE — Only you and Ms. Johnson see these</span>
+      </div>
+
+      {/* Message row */}
+      <div style={{ background: '#120808', border: '1px solid rgba(240,74,74,0.18)', borderRadius: 10, padding: '10px 12px' }}>
+        <div style={{ fontSize: 10, color: '#c0c8e0', marginBottom: 4 }}>Hi Ms. Thompson, Marcus is struggling with fractions...</div>
+        <div style={{ fontSize: 9, textAlign: 'right' }}>👍 ❤️ 😂</div>
+      </div>
+
+      {mode === 'private' && (
+        <input
+          style={{ width: '100%', background: C.inner, border: `1px solid #2a2f42`, borderRadius: 10, padding: '8px 12px', color: C.text, fontSize: 12, boxSizing: 'border-box', outline: 'none', marginTop: 8 }}
+          placeholder="Message Ms. Johnson privately..."
+        />
+      )}
+    </div>
+  )
+}
+
+// ── PW6: Class Feed ───────────────────────────────────────────────────────────
+function PW6_ClassFeed() {
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 14, padding: '12px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 4 }}>Class Feed 📢</div>
+      <div style={{ fontSize: 10, color: C.muted }}>📅 Test Friday! · 👍 12 ❤️ 5 😂 2 · Parent can react + respond</div>
+    </div>
+  )
+}
+
+// ── PW7: AI Tips for Marcus ───────────────────────────────────────────────────
+function PW7_AITips() {
+  return (
+    <div style={{ background: '#1a1230', border: '1px solid #3b2a5a', borderRadius: 14, padding: '12px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.purple, marginBottom: 4 }}>✨ AI Tips for Marcus</div>
+      <div style={{ fontSize: 10, color: '#b090d0' }}>Science needs focus · 10 min flashcards tonight recommended</div>
+    </div>
+  )
+}
+
+// ── Bottom Nav ────────────────────────────────────────────────────────────────
+function BottomNav({ active, onSelect }) {
+  const items = [
+    { id: 'home',     icon: '⊞', label: 'Home' },
+    { id: 'grades',   icon: '📚', label: 'Grades' },
+    { id: 'feed',     icon: '📢', label: 'Feed' },
+    { id: 'messages', icon: '💬', label: 'Messages' },
+    { id: 'calendar', icon: '📅', label: 'Calendar' },
+  ]
+  return (
+    <div style={{ background: '#0a0c12', borderTop: `1px solid ${C.inner}`, padding: '6px 8px 16px', position: 'sticky', bottom: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)' }}>
+        {items.map(item => (
+          <button key={item.id} onClick={() => onSelect(item.id)} style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 2px',
+          }}>
+            <span style={{ fontSize: 15 }}>{item.icon}</span>
+            <span style={{ fontSize: 8, color: item.id === active ? C.teal : C.muted, fontWeight: item.id === active ? 700 : 400 }}>{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+export default function ParentDashboard() {
+  const [activeNav, setActiveNav] = useState('home')
+
+  return (
+    <div style={{ minHeight: '100dvh', width: '100%', background: C.bg, fontFamily: 'Inter, -apple-system, Arial, sans-serif', boxSizing: 'border-box', overflowX: 'hidden', color: C.text, display: 'flex', flexDirection: 'column' }}>
+      <Header />
+      <div style={{ flex: 1, padding: '10px 10px 0' }}>
+        <PW1_DailyOverview />
+        <PW2_TodaysLessons />
+        <PW3_MarcusClasses />
+        <PW4_NeedsAttention />
+        <PW5_Messages />
+        <PW6_ClassFeed />
+        <PW7_AITips />
+      </div>
+      <BottomNav active={activeNav} onSelect={setActiveNav} />
+    </div>
+  )
+}
