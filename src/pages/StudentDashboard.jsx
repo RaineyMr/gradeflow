@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { GradeBar, GradeBadge } from '../components/ui'
 
-const THEME = { primary:'#003057', secondary:'#B3A369', bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8', muted:'#6b7494', border:'#2a2f42', green:'#22c97a', blue:'#3b7ef4', red:'#f04a4a', amber:'#f5a623', header:'linear-gradient(135deg,#003057 0%,#B3A369 100%)' }
+const THEME = { primary:'#003057', secondary:'#B3A369', bg:'#000d1f', card:'#001830', inner:'#002040', text:'#e8edf5', muted:'#6080a0', border:'#003a6a', green:'#22c97a', blue:'#B3A369', red:'#f04a4a', amber:'#f5a623', header:'linear-gradient(135deg,#003057 0%,#001830 100%)' }
 
 const STUDENT = { name:'Marcus', fullName:'Marcus Thompson', grade:'3rd Grade', school:'Lincoln Elementary', gpa:87.4, classes:[
   { id:1, subject:'Math',    teacher:'Ms. Johnson', grade:87, letter:'B', period:'1st' },
@@ -127,54 +127,7 @@ export default function StudentDashboard({ currentUser }) {
     </>
   )
 
-  if (page === 'feed') return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
-        <div style={{ background:THEME.header, padding:'20px 16px 24px' }}>
-          <button onClick={() => S('home')} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:12 }}>← Back</button>
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📢 Class Feed</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          {[
-            { id:1, author:'Ms. Johnson', content:'📅 Unit Test Friday! Review chapters 3-4. Study guide posted below.', time:'2 hours ago' },
-            { id:2, author:'Ms. Johnson', content:'🎉 Great work on yesterday\'s homework! Class average was 87%.', time:'Yesterday' },
-          ].map(post => (
-            <div key={post.id} style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10 }}>
-              <div style={{ fontWeight:700, fontSize:13, color:THEME.text, marginBottom:4 }}>{post.author}</div>
-              <p style={{ fontSize:13, color:'#c0c8e0', lineHeight:1.6, margin:'0 0 6px' }}>{post.content}</p>
-              <div style={{ fontSize:10, color:THEME.muted }}>{post.time}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <BottomNav items={navItems} active={activeNav} onSelect={S} theme={THEME} />
-    </>
-  )
-
-  if (page === 'calendar') return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
-        <div style={{ background:THEME.header, padding:'20px 16px 24px' }}>
-          <button onClick={() => S('home')} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:12 }}>← Back</button>
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📅 Calendar</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          {[
-            { id:1, title:'Ch.4 Worksheet Due',  subject:'Math',    due:'Today',     color:THEME.amber },
-            { id:2, title:'Book Report Due',       subject:'Reading', due:'Tomorrow',  color:THEME.amber },
-            { id:3, title:'Unit Test',             subject:'Math',    due:'Friday',    color:THEME.red   },
-            { id:4, title:'Science Fair Project',  subject:'Science', due:'Next Week', color:THEME.blue  },
-          ].map(event => (
-            <div key={event.id} style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderLeft:`3px solid ${event.color}`, borderRadius:16, padding:'14px 16px', marginBottom:10 }}>
-              <div style={{ fontWeight:700, fontSize:13, color:THEME.text, marginBottom:2 }}>{event.title}</div>
-              <div style={{ fontSize:11, color:THEME.muted }}>{event.subject} · Due: {event.due}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <BottomNav items={navItems} active={activeNav} onSelect={S} theme={THEME} />
-    </>
-  )
+  // ── Home ──────────────────────────────────────────────────────────────────
   return (
     <>
       <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
@@ -186,7 +139,7 @@ export default function StudentDashboard({ currentUser }) {
         </div>
 
         {/* SW1: Daily Overview */}
-        <Widget onClick={() => S('grades')} style={{ background:'linear-gradient(135deg,#1d4ed8,#6d28d9)', border:'none' }}>
+        <Widget onClick={() => S('grades')} style={{ background:'linear-gradient(135deg,#003057,#001830)', border:'none' }}>
           <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.5)', marginBottom:10 }}>DAILY OVERVIEW</div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6 }}>
             {[{ icon:'📊', val:STUDENT.gpa, label:'GPA', page:'grades' },{ icon:'📚', val:STUDENT.classes.length, label:'Classes', page:'grades' },{ icon:'📋', val:STUDENT.assignments.filter(a=>a.status==='pending').length, label:'Assignments', page:'assignments' },{ icon:'🔔', val:2, label:'Updates', page:'messages' }].map(t => (
@@ -201,7 +154,7 @@ export default function StudentDashboard({ currentUser }) {
         </Widget>
 
         {/* SW2: Today's Lessons */}
-        <Widget onClick={() => S('grades')} style={{ background:'linear-gradient(135deg,#064e3b,#1e3a5f)', border:'1px solid #1a3a2a' }}>
+        <Widget onClick={() => S('grades')} style={{ background:'linear-gradient(135deg,#002040,#001020)', border:'1px solid #003a6a' }}>
           <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.5)', marginBottom:8 }}>TODAY'S LESSONS 📖</div>
           <div style={{ fontSize:15, fontWeight:700, color:THEME.text, marginBottom:4 }}>Ch.4 · Fractions & Decimals</div>
           <div style={{ fontSize:11, color:THEME.muted, marginBottom:10 }}>Math · Pages 84–91 · Ms. Johnson · Based on teacher plan</div>
@@ -284,7 +237,7 @@ function Widget({ onClick, children, style, title, titleRight }) {
 
 function BottomNav({ items, active, onSelect, theme }) {
   return (
-    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:100, background:'rgba(10,12,18,0.97)', borderTop:`1px solid ${theme.border}`, padding:'6px 0 max(16px, env(safe-area-inset-bottom))', display:'grid', gridTemplateColumns:`repeat(${items.length},1fr)` }}>
+    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:100, background:'rgba(0,13,31,0.97)', borderTop:`1px solid ${theme.border}`, padding:'6px 0 max(16px, env(safe-area-inset-bottom))', display:'grid', gridTemplateColumns:`repeat(${items.length},1fr)` }}>
       {items.map(item => (
         <button key={item.id} onClick={() => onSelect(item.id)}
           style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'6px 2px' }}>
