@@ -3,8 +3,9 @@ import { useStore } from '../lib/store'
 
 const C = { bg:'#060810',card:'#161923',inner:'#1e2231',text:'#eef0f8',muted:'#6b7494',border:'#2a2f42',green:'#22c97a',blue:'#3b7ef4',red:'#f04a4a',amber:'#f5a623',purple:'#9b6ef5' }
 
-export default function ParentMessages() {
-  const { messages, updateMessage, sendMessage, dismissMessage } = useStore()
+export default function ParentMessages({ onBack }) {
+  const { messages, updateMessage, sendMessage, dismissMessage, goBack } = useStore()
+  const handleBack = onBack || goBack
   const [tab,      setTab]      = useState('pending')
   const [selected, setSelected] = useState(null)
   const [editing,  setEditing]  = useState(false)
@@ -131,9 +132,12 @@ export default function ParentMessages() {
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
       <div style={{ padding:'20px 16px 0', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-        <div>
-          <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Parent Messages</h1>
-          <p style={{ fontSize:12, color:C.muted, margin:0 }}>Every negative has a positive version · AI writes both</p>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {handleBack && <button onClick={handleBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>}
+          <div>
+            <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Parent Messages</h1>
+            <p style={{ fontSize:12, color:C.muted, margin:0 }}>Every negative has a positive version · AI writes both</p>
+          </div>
         </div>
         <button onClick={() => setComposing(true)} style={{ background:'var(--school-color)', border:'none', borderRadius:12, padding:'10px 16px', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>+ New</button>
       </div>
