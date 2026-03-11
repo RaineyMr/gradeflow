@@ -1,558 +1,117 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 
-const roleTabs = [
-  { id: 'teacher', label: 'Teacher', icon: '🧑‍🏫', accent: '#f97316' },
-  { id: 'student', label: 'Student', icon: '🎓', accent: '#3b82f6' },
-  { id: 'parent', label: 'Parent', icon: '👨‍👩‍👧', accent: '#14b8a6' },
-  { id: 'admin', label: 'Admin', icon: '🏫', accent: '#8b5cf6' },
+const C = { bg:'#060810',card:'#161923',inner:'#1e2231',text:'#eef0f8',muted:'#6b7494',border:'#2a2f42',green:'#22c97a',blue:'#3b7ef4',amber:'#f5a623',purple:'#9b6ef5',teal:'#0fb8a0' }
+
+const ROLES = [
+  { id:'teacher', label:'Teacher', icon:'🧑‍🏫', color:C.blue   },
+  { id:'student', label:'Student', icon:'🎓',   color:C.teal   },
+  { id:'parent',  label:'Parent',  icon:'👨‍👩‍👧', color:C.green  },
+  { id:'admin',   label:'Admin',   icon:'🏫',   color:C.purple },
 ]
 
-const tutorialData = {
+const CONTENT = {
   teacher: {
-    intro:
-      'Learn how to create assignments, review student progress, communicate with families, and manage your classroom dashboard.',
-    quickStart: [
-      'Create your first class and import your roster.',
-      'Build an assignment and set grading weights.',
-      'Review the needs-attention panel for missed work.',
-      'Open parent communication tools and send updates.',
+    steps: [
+      { icon:'📷', title:'Scan & Grade',       desc:'Tap the camera icon in the top bar, choose "Grade Student Work," snap a photo of any paper. AI reads the score, calculates the percentage, and posts it to your gradebook.' },
+      { icon:'📚', title:'Gradebook',           desc:'Tap any class card on your dashboard to open the gradebook. View all students, tap any grade to edit it. Add assignments with the + button.' },
+      { icon:'✨', title:'AI Lesson Plans',     desc:'Open Lesson Plan Builder, choose "AI Generate from Standard/TEKS," fill in subject/grade/topic and tap Generate. You get a full lesson package including objectives, steps, worksheet, and exit ticket.' },
+      { icon:'💬', title:'Parent Messages',    desc:'GradeFlow auto-drafts parent messages when students fail or improve. Go to Parent Messages, review AI drafts, edit if needed, then send. Every alert has a positive version too.' },
+      { icon:'📊', title:'Reports',            desc:'Tap Reports on your dashboard to run Class Mastery, At-Risk, Grade Distribution, and more. Print, export as PDF, or download as CSV.' },
+      { icon:'🧪', title:'Testing Suite',      desc:'Create tests from scratch with the question builder, lock any external test URL in the browser, or upload a PDF and let AI digitize it. Monitor live during tests.' },
     ],
-    tutorials: [
-      {
-        id: 1,
-        title: 'Set up your class dashboard',
-        length: '4 min',
-        level: 'Beginner',
-        description: 'Add classes, customize cards, and organize your main teaching workspace.',
-      },
-      {
-        id: 2,
-        title: 'Create assignments and grade faster',
-        length: '6 min',
-        level: 'Beginner',
-        description: 'Build quizzes, tests, and labs, then use streamlined grading tools.',
-      },
-      {
-        id: 3,
-        title: 'Spot risk early with alerts',
-        length: '5 min',
-        level: 'Intermediate',
-        description: 'Track missed assignments, attendance dips, and low assessment trends.',
-      },
-    ],
-    resources: [
-      'Teacher dashboard overview',
-      'Gradebook walkthrough',
-      'Parent messaging guide',
-      'Assignment templates',
-    ],
+    resources: ['Getting started guide (PDF)','Sample lesson plan templates','Grading rubric examples','Parent communication scripts'],
   },
   student: {
-    intro:
-      'Learn how to track grades, stay ahead of deadlines, review feedback, and use your dashboard to stay organized.',
-    quickStart: [
-      'Open your dashboard and review current averages.',
-      'Check the upcoming work card every day.',
-      'Use the needs-attention panel to fix missed assignments.',
-      'Read teacher feedback after each graded task.',
+    steps: [
+      { icon:'📊', title:'My Dashboard',       desc:'Your dashboard shows your GPA, today\'s lessons, upcoming assignments, and messages from your teacher — all in one place.' },
+      { icon:'📋', title:'Assignments',        desc:'Tap the Assignments widget to see what\'s due. Submit your work using the camera or file upload. Your teacher gets notified immediately.' },
+      { icon:'✨', title:'AI Study Tips',      desc:'Tap the AI Study Tips widget to get personalized advice based on your grades. The AI suggests study strategies and action steps specific to each subject.' },
+      { icon:'💬', title:'Messages',           desc:'Messages from your teacher appear here. You can read updates, reminders, and feedback. Reply through the message thread.' },
+      { icon:'📚', title:'View Grades',        desc:'Tap any class card to see your detailed grades. Each assignment shows your score and class average. Tap a grade for more details.' },
     ],
-    tutorials: [
-      {
-        id: 1,
-        title: 'Understand your dashboard',
-        length: '3 min',
-        level: 'Beginner',
-        description: 'See where your grades, alerts, and upcoming work live.',
-      },
-      {
-        id: 2,
-        title: 'Fix missing work fast',
-        length: '4 min',
-        level: 'Beginner',
-        description: 'Use the alerts panel to find missed assignments and late submissions.',
-      },
-      {
-        id: 3,
-        title: 'Use feedback to improve',
-        length: '5 min',
-        level: 'Intermediate',
-        description: 'Review teacher notes and turn them into next steps.',
-      },
-    ],
-    resources: [
-      'Student dashboard overview',
-      'Upcoming work guide',
-      'Feedback center walkthrough',
-      'Study planning checklist',
-    ],
+    resources: ['Student handbook','Assignment submission guide','Study tips library'],
   },
   parent: {
-    intro:
-      'Learn how to monitor progress, watch for missed assignments, follow attendance, and message teachers when support is needed.',
-    quickStart: [
-      'Open the dashboard and review the current grade card.',
-      'Check needs-attention alerts for missed assignments.',
-      'Review upcoming deadlines with your student.',
-      'Use teacher messages to stay informed and respond quickly.',
+    steps: [
+      { icon:'📊', title:"Your Child's Progress", desc:"Your dashboard tracks your child's grades across all classes in real time. Green is good, red means they may need extra support." },
+      { icon:'🔔', title:'Alerts',               desc:"GradeFlow sends you a notification whenever your child's grade changes significantly. Tap any alert to see details and teacher contact info." },
+      { icon:'💬', title:'Teacher Messages',     desc:"Messages from teachers appear in your Messages tab. You can read and reply directly. Teachers are notified when you've read a message." },
+      { icon:'✨', title:'AI Parenting Tips',    desc:"The AI Tips widget gives you personalized suggestions on how to support your child's learning at home based on their current grades and subjects." },
     ],
-    tutorials: [
-      {
-        id: 1,
-        title: 'Read the parent dashboard',
-        length: '3 min',
-        level: 'Beginner',
-        description: 'Understand grades, attendance, and recent updates at a glance.',
-      },
-      {
-        id: 2,
-        title: 'Support your student with alerts',
-        length: '5 min',
-        level: 'Beginner',
-        description: 'Use needs-attention cards to catch missing work and score drops.',
-      },
-      {
-        id: 3,
-        title: 'Communicate with teachers clearly',
-        length: '4 min',
-        level: 'Intermediate',
-        description: 'Find the right place to read messages and follow up.',
-      },
-    ],
-    resources: [
-      'Parent dashboard overview',
-      'Attendance guide',
-      'Messaging tutorial',
-      'Family support checklist',
-    ],
+    resources: ['Parent involvement guide','How to read report cards','Supporting learning at home'],
   },
   admin: {
-    intro:
-      'Learn how to monitor school-wide performance, staffing, attendance trends, and intervention alerts across your organization.',
-    quickStart: [
-      'Open the school snapshot and review key metrics.',
-      'Check the needs-attention panel for attendance and assignment spikes.',
-      'Use staffing cards to identify coverage gaps.',
-      'Review grade-level and teacher performance summaries.',
+    steps: [
+      { icon:'🏫', title:'School Overview',    desc:'Your dashboard shows school-wide GPA, total students and teachers, at-risk counts, and trend data — all updated in real time.' },
+      { icon:'👩‍🏫', title:'Teacher Support',   desc:'The Teachers panel shows each teacher\'s class averages and at-risk student counts. Tap any teacher to view details and send a direct message.' },
+      { icon:'📊', title:'School Reports',     desc:'Run school-wide reports including GPA trends, grade distribution, communication logs, and at-risk summaries. Export as PDF or CSV.' },
+      { icon:'📢', title:'Announcements',      desc:'Use the Comm Hub to send school-wide announcements to all teachers, students, and parents at once.' },
     ],
-    tutorials: [
-      {
-        id: 1,
-        title: 'Navigate the admin dashboard',
-        length: '4 min',
-        level: 'Beginner',
-        description: 'Find your school metrics, alerts, staffing view, and activity feed.',
-      },
-      {
-        id: 2,
-        title: 'Monitor intervention signals',
-        length: '6 min',
-        level: 'Intermediate',
-        description: 'Track attendance dips, missed assignment spikes, and at-risk groups.',
-      },
-      {
-        id: 3,
-        title: 'Use staffing and performance data',
-        length: '5 min',
-        level: 'Intermediate',
-        description: 'Review departmental coverage, teacher performance, and action priorities.',
-      },
-    ],
-    resources: [
-      'Admin dashboard overview',
-      'Intervention workflow',
-      'Staffing report guide',
-      'District analytics summary',
-    ],
+    resources: ['Admin setup guide','Data privacy overview','School branding customization'],
   },
 }
 
-const shell = {
-  minHeight: '100vh',
-  background: '#060810',
-  color: '#eef0f8',
-  padding: '24px',
-  fontFamily: 'Inter, Arial, sans-serif',
-}
-
-const container = {
-  maxWidth: '1440px',
-  margin: '0 auto',
-}
-
-const hero = {
-  background: 'linear-gradient(135deg, #1d4ed8 0%, #7c3aed 100%)',
-  borderRadius: '26px',
-  padding: '28px',
-  boxShadow: '0 16px 40px rgba(0,0,0,0.28)',
-  marginBottom: '22px',
-}
-
-const card = {
-  background: '#161923',
-  border: '1px solid #1e2231',
-  borderRadius: '22px',
-  padding: '18px',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
-}
-
-const muted = {
-  color: '#6b7494',
-}
-
-const sectionTitle = {
-  fontSize: '16px',
-  fontWeight: 800,
-  margin: 0,
-}
-
-function Tutorials() {
-  const [activeRole, setActiveRole] = useState('teacher')
-
-  const currentTab = useMemo(
-    () => roleTabs.find((tab) => tab.id === activeRole) || roleTabs[0],
-    [activeRole]
-  )
-
-  const current = tutorialData[activeRole]
+export default function Tutorials() {
+  const [role, setRole] = useState('teacher')
+  const content = CONTENT[role]
 
   return (
-    <div style={shell}>
-      <div style={container}>
-        <section style={hero}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              gap: '18px',
-              alignItems: 'flex-start',
-              flexWrap: 'wrap',
-            }}
-          >
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
+      <div style={{ padding:'24px 16px 0', marginBottom:20 }}>
+        <h1 style={{ fontSize:24, fontWeight:800, margin:'0 0 6px' }}>Tutorials & Help</h1>
+        <p style={{ fontSize:13, color:C.muted, margin:0 }}>Getting started guides for every role</p>
+      </div>
+
+      {/* Role tabs */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, padding:'0 16px', marginBottom:24 }}>
+        {ROLES.map(r => (
+          <button key={r.id} onClick={() => setRole(r.id)}
+            style={{ padding:'10px 6px', borderRadius:14, border:`1.5px solid ${role===r.id ? r.color : C.border}`, background:role===r.id ? `${r.color}18` : C.card, cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+            <span style={{ fontSize:20 }}>{r.icon}</span>
+            <span style={{ fontSize:11, fontWeight:700, color:role===r.id ? r.color : C.muted }}>{r.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Steps */}
+      <div style={{ padding:'0 16px', marginBottom:24 }}>
+        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 14px' }}>
+          {ROLES.find(r => r.id===role)?.icon} {ROLES.find(r => r.id===role)?.label} Guide
+        </h2>
+        {content.steps.map((step, i) => (
+          <div key={i} style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:10, display:'flex', gap:14 }}>
+            <div style={{ width:44, height:44, borderRadius:12, background:C.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>{step.icon}</div>
             <div>
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  borderRadius: '999px',
-                  padding: '8px 12px',
-                  background: 'rgba(255,255,255,0.12)',
-                  fontSize: '12px',
-                  fontWeight: 800,
-                }}
-              >
-                🎥 GradeFlow Tutorials
-              </div>
-
-              <h1 style={{ margin: '16px 0 0', fontSize: '34px', fontWeight: 800 }}>
-                Learn your dashboard by role
-              </h1>
-
-              <p style={{ margin: '12px 0 0', maxWidth: '760px', color: 'rgba(255,255,255,0.84)', lineHeight: 1.55 }}>
-                Choose a role to see the most important walkthroughs, quick-start steps, and support
-                resources for getting productive fast in GradeFlow.
-              </p>
-            </div>
-
-            <div
-              style={{
-                minWidth: '260px',
-                background: 'rgba(255,255,255,0.09)',
-                borderRadius: '20px',
-                padding: '18px',
-              }}
-            >
-              <div style={{ fontSize: '12px', opacity: 0.8 }}>Now viewing</div>
-              <div style={{ marginTop: '8px', fontSize: '24px', fontWeight: 800 }}>
-                {currentTab.icon} {currentTab.label}
-              </div>
-              <div style={{ marginTop: '10px', fontSize: '13px', color: 'rgba(255,255,255,0.78)' }}>
-                Focused onboarding for the {currentTab.label.toLowerCase()} experience.
-              </div>
+              <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>{step.title}</div>
+              <p style={{ fontSize:13, color:'#c0c8e0', lineHeight:1.65, margin:0 }}>{step.desc}</p>
             </div>
           </div>
-        </section>
+        ))}
+      </div>
 
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '280px 1fr',
-            gap: '20px',
-            alignItems: 'start',
-          }}
-        >
-          <aside style={card}>
-            <h2 style={{ ...sectionTitle, marginBottom: '14px' }}>Tutorial Tracks</h2>
-
-            <div style={{ display: 'grid', gap: '10px' }}>
-              {roleTabs.map((tab) => {
-                const active = tab.id === activeRole
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveRole(tab.id)}
-                    style={{
-                      background: active ? 'rgba(255,255,255,0.08)' : '#0d1220',
-                      color: '#eef0f8',
-                      border: active ? `1px solid ${tab.accent}` : '1px solid #232a3b',
-                      borderRadius: '16px',
-                      padding: '14px',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ fontSize: '18px' }}>
-                      {tab.icon} {tab.label}
-                    </div>
-                    <div style={{ marginTop: '6px', fontSize: '12px', color: '#7d87a8' }}>
-                      {tab.label} onboarding and walkthroughs
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-
-            <div
-              style={{
-                marginTop: '18px',
-                background: '#0d1220',
-                border: '1px solid #232a3b',
-                borderRadius: '18px',
-                padding: '16px',
-              }}
-            >
-              <div style={{ fontWeight: 800 }}>Need a guided setup?</div>
-              <p style={{ ...muted, margin: '8px 0 0', fontSize: '13px', lineHeight: 1.5 }}>
-                Start with the quick-start checklist, then move into the featured tutorials for your role.
-              </p>
-            </div>
-          </aside>
-
-          <main style={{ display: 'grid', gap: '20px' }}>
-            <section style={card}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                  marginBottom: '12px',
-                }}
-              >
-                <h2 style={sectionTitle}>{currentTab.icon} {currentTab.label} Overview</h2>
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    borderRadius: '999px',
-                    padding: '7px 12px',
-                    background: `${currentTab.accent}22`,
-                    color: currentTab.accent,
-                    fontSize: '12px',
-                    fontWeight: 800,
-                  }}
-                >
-                  Role-based learning path
-                </span>
-              </div>
-
-              <p style={{ ...muted, fontSize: '14px', lineHeight: 1.6, margin: 0 }}>
-                {current.intro}
-              </p>
-            </section>
-
-            <section style={card}>
-              <h2 style={{ ...sectionTitle, marginBottom: '14px' }}>Quick Start Checklist</h2>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {current.quickStart.map((step, index) => (
-                  <div
-                    key={step}
-                    style={{
-                      display: 'flex',
-                      gap: '14px',
-                      alignItems: 'flex-start',
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        minWidth: '34px',
-                        height: '34px',
-                        borderRadius: '50%',
-                        background: `${currentTab.accent}22`,
-                        color: currentTab.accent,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 800,
-                      }}
-                    >
-                      {index + 1}
-                    </div>
-
-                    <div style={{ fontSize: '14px', lineHeight: 1.5 }}>{step}</div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  gap: '12px',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                  marginBottom: '14px',
-                }}
-              >
-                <h2 style={sectionTitle}>Featured Tutorials</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Start here first</span>
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                  gap: '14px',
-                }}
-              >
-                {current.tutorials.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '18px',
-                      padding: '16px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        borderRadius: '999px',
-                        padding: '6px 10px',
-                        background: `${currentTab.accent}22`,
-                        color: currentTab.accent,
-                        fontSize: '12px',
-                        fontWeight: 800,
-                      }}
-                    >
-                      {item.level}
-                    </div>
-
-                    <h3 style={{ margin: '14px 0 0', fontSize: '18px', fontWeight: 800 }}>
-                      {item.title}
-                    </h3>
-
-                    <p style={{ ...muted, marginTop: '10px', fontSize: '13px', lineHeight: 1.55 }}>
-                      {item.description}
-                    </p>
-
-                    <div
-                      style={{
-                        marginTop: '14px',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: '10px',
-                      }}
-                    >
-                      <span style={{ fontSize: '12px', color: '#9aa4c3', fontWeight: 700 }}>
-                        ⏱ {item.length}
-                      </span>
-
-                      <button
-                        type="button"
-                        style={{
-                          background: currentTab.accent,
-                          color: '#fff',
-                          border: 'none',
-                          borderRadius: '12px',
-                          padding: '10px 14px',
-                          fontWeight: 800,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Start tutorial
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '20px',
-                alignItems: 'start',
-              }}
-            >
-              <div style={card}>
-                <h2 style={{ ...sectionTitle, marginBottom: '14px' }}>Resources</h2>
-
-                <div style={{ display: 'grid', gap: '10px' }}>
-                  {current.resources.map((resource) => (
-                    <button
-                      key={resource}
-                      type="button"
-                      style={{
-                        background: '#1e2231',
-                        color: '#eef0f8',
-                        border: '1px solid #2a3145',
-                        borderRadius: '14px',
-                        padding: '12px 14px',
-                        textAlign: 'left',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {resource}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div style={card}>
-                <h2 style={{ ...sectionTitle, marginBottom: '14px' }}>Support</h2>
-
-                <div style={{ display: 'grid', gap: '12px' }}>
-                  <div style={{ background: '#1e2231', borderRadius: '16px', padding: '14px' }}>
-                    <div style={{ fontWeight: 800 }}>Live walkthrough request</div>
-                    <div style={{ ...muted, marginTop: '6px', fontSize: '13px', lineHeight: 1.5 }}>
-                      Request a guided onboarding session for new teachers, families, or school leaders.
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#1e2231', borderRadius: '16px', padding: '14px' }}>
-                    <div style={{ fontWeight: 800 }}>Help center articles</div>
-                    <div style={{ ...muted, marginTop: '6px', fontSize: '13px', lineHeight: 1.5 }}>
-                      Search role-specific documentation, FAQs, and setup instructions.
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#1e2231', borderRadius: '16px', padding: '14px' }}>
-                    <div style={{ fontWeight: 800 }}>Release notes</div>
-                    <div style={{ ...muted, marginTop: '6px', fontSize: '13px', lineHeight: 1.5 }}>
-                      Review product changes, dashboard improvements, and new onboarding tools.
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </section>
-          </main>
+      {/* Resources */}
+      <div style={{ padding:'0 16px', marginBottom:24 }}>
+        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 14px' }}>Resources</h2>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          {content.resources.map(r => (
+            <button key={r} style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 14px', textAlign:'left', cursor:'pointer', color:C.text, fontSize:12, fontWeight:600 }}
+              onClick={() => alert(`${r} — available in your school's resource library`)}>
+              {r}
+            </button>
+          ))}
         </div>
+      </div>
+
+      {/* Support */}
+      <div style={{ padding:'0 16px' }}>
+        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 14px' }}>Support</h2>
+        {[{ icon:'🎥', title:'Live Walkthrough',    desc:'Request a guided onboarding session for your school.' },{ icon:'📖', title:'Help Center Articles',  desc:'Search role-specific docs, FAQs, and setup guides.' },{ icon:'📝', title:'Release Notes',         desc:'See product changes and new feature announcements.' }].map(s => (
+          <div key={s.title} style={{ background:C.inner, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
+            <div style={{ fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>{s.icon} {s.title}</div>
+            <p style={{ fontSize:12, color:C.muted, margin:0, lineHeight:1.5 }}>{s.desc}</p>
+          </div>
+        ))}
       </div>
     </div>
   )
 }
-
-export default Tutorials
