@@ -1,322 +1,183 @@
 import React, { useState } from 'react'
 import { useStore } from '../lib/store'
-import { Tag, LoadingSpinner } from '../components/ui'
-import { generateParentMessage } from '../lib/ai'
+
+const C = { bg:'#060810',card:'#161923',inner:'#1e2231',text:'#eef0f8',muted:'#6b7494',border:'#2a2f42',green:'#22c97a',blue:'#3b7ef4',red:'#f04a4a',amber:'#f5a623',purple:'#9b6ef5' }
 
 export default function ParentMessages() {
-  const { messages, dismissMessage, updateMessage, teacher } = useStore()
-  const [tab, setTab] = useState('pending')
-  const [generating, setGenerating] = useState(null)
-  const [showPositive, setShowPositive] = useState({})
-  const [editing, setEditing] = useState({}) // { [msgId]: true/false }
-  const [editText, setEditText] = useState({}) // { [msgId]: string }
-  const [templateOpen, setTemplateOpen] = useState(false)
-  const [autoSend, setAutoSend] = useState({})
-  const [headerReactions, setHeaderReactions] = useState({})
-  const [composeOpen, setComposeOpen] = useState(false)
-  const [composeForm, setComposeForm] = useState({ to: '', subject: '', body: '' })
+  const { messages, updateMessage, sendMessage, dismissMessage } = useStore()
+  const [tab,      setTab]      = useState('pending')
+  const [selected, setSelected] = useState(null)
+  const [editing,  setEditing]  = useState(false)
+  const [draftText, setDraftText] = useState('')
+  const [showPositive, setShowPositive] = useState(false)
+  const [composing, setComposing] = useState(false)
+  const [newMsg, setNewMsg]     = useState({ to: '', subject: '', body: '' })
+  const [sent, setSent]         = useState(false)
 
-  function sendComposed() {
-    if (!composeForm.to || !composeForm.body) return
-    const newMsg = {
-      id: Date.now(),
-      studentName: composeForm.to,
-      subject: composeForm.subject || 'General',
-      trigger: 'Teacher initiated',
-      status: 'pending',
-      tone: 'Custom',
-      dayOld: false,
-      draft: composeForm.body,
-      positiveDraft: composeForm.body,
-    }
-    const { messages } = useStore.getState()
-    useStore.setState({ messages: [...messages, newMsg] })
-    setComposeForm({ to: '', subject: '', body: '' })
-    setComposeOpen(false)
-  }
-  function reactHeader(msgId, emoji) {
-    setHeaderReactions(r => ({ ...r, [`${msgId}-${emoji}`]: (r[`${msgId}-${emoji}`] || 0) + 1 }))
+  const filtered = messages.filter(m => {
+    if (tab === 'pending') return m.status === 'pending'
+    if (tab === 'sent')    return m.status === 'sent'
+    return m.status !== 'dismissed'
+  })
+
+  function openMessage(m) {
+    setSelected(m)
+    setDraftText(m.draft)
+    setEditing(false)
+    setShowPositive(false)
+    setSent(false)
   }
 
-  const filtered = tab === 'pending' ? messages.filter(m => m.status === 'pending')
-    : tab === 'sent' ? messages.filter(m => m.status === 'sent')
-    : messages
-
-  async function handleRegenerate(msg) {
-    setGenerating(msg.id)
-    const result = await generateParentMessage({
-      studentName: msg.studentName,
-      subject: msg.subject,
-      score: msg.trigger,
-      trigger: msg.trigger,
-      teacherName: teacher.name,
-    })
-    if (result) {
-      updateMessage(msg.id, {
-        draft: result.negative,
-        positiveDraft: result.positive,
-        tone: result.toneLabel
-      })
-    }
-    setGenerating(null)
+  function handleSend() {
+    sendMessage(selected.id)
+    setSent(true)
+    setSelected(null)
   }
 
-  function startEditing(msg) {
-    const isPositive = showPositive[msg.id]
-    const currentText = isPositive ? msg.positiveDraft : msg.draft
-    setEditText(t => ({ ...t, [msg.id]: currentText }))
-    setEditing(e => ({ ...e, [msg.id]: true }))
+  function handleEdit() {
+    if (editing) updateMessage(selected.id, { draft: draftText })
+    setEditing(e => !e)
   }
 
-  function saveEdit(msg) {
-    const isPositive = showPositive[msg.id]
-    if (isPositive) {
-      updateMessage(msg.id, { positiveDraft: editText[msg.id] })
-    } else {
-      updateMessage(msg.id, { draft: editText[msg.id] })
-    }
-    setEditing(e => ({ ...e, [msg.id]: false }))
-  }
+  const REACTIONS = ['👍','❤️','😂','🙌','😮']
 
-  function handleSend(msg) {
-    dismissMessage(msg.id)
-    setEditing(e => ({ ...e, [msg.id]: false }))
-  }
+  if (selected && !composing) return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
+      <div style={{ padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
+        <button onClick={() => setSelected(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+        <h1 style={{ fontSize:18, fontWeight:800, margin:0 }}>📩 {selected.studentName}</h1>
+      </div>
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-6">
+      {/* Status banner */}
+      <div style={{ margin:'0 16px 14px', padding:'10px 14px', borderRadius:14, background: selected.status==='sent' ? '#0f2a1a' : '#1c1012', border:`1px solid ${selected.status==='sent' ? C.green : C.red}30`, display:'flex', alignItems:'center', gap:8 }}>
+        <span style={{ fontSize:16 }}>{selected.status==='sent' ? '✅' : '⚑'}</span>
         <div>
-          <h1 className="font-display font-bold text-2xl text-text-primary">Parent Messages</h1>
-          <p className="text-text-muted text-sm">AI drafts · Edit before sending · Multilingual</p>
-        </div>
-        <div className="flex gap-2">
-          <button onClick={() => setComposeOpen(true)} className="px-3 py-2 rounded-pill text-xs font-semibold" style={{ background: 'var(--school-color)', color: 'white' }}>
-            ✏ New Message
-          </button>
-          <button onClick={() => setTemplateOpen(true)} className="px-3 py-2 rounded-pill text-xs font-semibold" style={{ background: '#1e2231', color: '#6b7494' }}>
-            Templates
-          </button>
+          <div style={{ fontWeight:700, fontSize:13, color:C.text }}>{selected.studentName} · {selected.subject}</div>
+          <div style={{ fontSize:11, color:C.muted }}>{selected.trigger} · AI drafted · {selected.tone}</div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-6">
-        {['pending', 'sent', 'all'].map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            className="px-4 py-1.5 rounded-pill text-sm font-semibold capitalize transition-all"
-            style={{ background: tab === t ? 'var(--school-color)' : '#1e2231', color: tab === t ? 'white' : '#6b7494' }}>
-            {t}
-            {t === 'pending' && messages.filter(m => m.status === 'pending').length > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 rounded-full text-xs font-bold" style={{ background: '#f04a4a', color: 'white' }}>
-                {messages.filter(m => m.status === 'pending').length}
-              </span>
+      {/* Positive/Negative toggle */}
+      <div style={{ margin:'0 16px 10px', display:'flex', gap:6 }}>
+        <button onClick={() => setShowPositive(false)} style={{ flex:1, padding:'8px', borderRadius:12, border:`1.5px solid ${!showPositive ? C.red : C.border}`, background:!showPositive ? 'rgba(240,74,74,0.12)' : C.inner, color:!showPositive ? C.red : C.muted, fontSize:12, fontWeight:700, cursor:'pointer' }}>⚑ Concern</button>
+        <button onClick={() => setShowPositive(true)}  style={{ flex:1, padding:'8px', borderRadius:12, border:`1.5px solid ${showPositive ? C.green : C.border}`, background:showPositive ? 'rgba(34,201,122,0.12)' : C.inner, color:showPositive ? C.green : C.muted, fontSize:12, fontWeight:700, cursor:'pointer' }}>🌟 Positive</button>
+      </div>
+
+      {/* Draft */}
+      <div style={{ margin:'0 16px 14px', background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:16 }}>
+        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
+          <span style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em' }}>Message Draft</span>
+          <button onClick={handleEdit} style={{ background:`${C.blue}22`, color:C.blue, border:'none', borderRadius:8, padding:'4px 10px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+            {editing ? '💾 Save' : '✏ Edit'}
+          </button>
+        </div>
+        {editing ? (
+          <textarea
+            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', color:C.text, fontSize:13, resize:'none', boxSizing:'border-box', lineHeight:1.6 }}
+            rows={5} value={draftText} onChange={e => setDraftText(e.target.value)}
+          />
+        ) : (
+          <p style={{ fontSize:13, color:'#c0c8e0', lineHeight:1.7, margin:0 }}>
+            {showPositive ? selected.positiveDraft : (editing ? draftText : selected.draft)}
+          </p>
+        )}
+        <div style={{ display:'flex', gap:6, marginTop:10, flexWrap:'wrap' }}>
+          {REACTIONS.map(r => <button key={r} style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:8, padding:'4px 8px', cursor:'pointer', fontSize:14 }}>{r}</button>)}
+        </div>
+      </div>
+
+      {/* Actions */}
+      {selected.status === 'pending' ? (
+        <div style={{ padding:'0 16px', display:'flex', gap:8 }}>
+          <button onClick={handleSend}                      style={{ flex:1, background:`${C.green}22`, color:C.green, border:'none', borderRadius:12, padding:'12px', fontSize:13, fontWeight:700, cursor:'pointer' }}>Send ✓</button>
+          <button onClick={() => { dismissMessage(selected.id); setSelected(null) }} style={{ flex:1, background:`${C.red}22`,   color:C.red,   border:'none', borderRadius:12, padding:'12px', fontSize:13, fontWeight:700, cursor:'pointer' }}>✕ Skip</button>
+        </div>
+      ) : (
+        <div style={{ margin:'0 16px', padding:'12px 14px', background:C.inner, borderRadius:12, textAlign:'center', color:C.muted, fontSize:13 }}>
+          ✅ Message sent
+        </div>
+      )}
+    </div>
+  )
+
+  if (composing) return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
+      <div style={{ padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
+        <button onClick={() => setComposing(false)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+        <h1 style={{ fontSize:18, fontWeight:800, margin:0 }}>✉ New Message</h1>
+      </div>
+      <div style={{ padding:'0 16px' }}>
+        {[['to','To (Parent name or email)','text'],['subject','Subject','text'],['body','Message body','textarea']].map(([key, label, type]) => (
+          <div key={key} style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:C.muted, marginBottom:6 }}>{label}</label>
+            {type === 'textarea' ? (
+              <textarea rows={6} style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 14px', color:C.text, fontSize:13, resize:'none', boxSizing:'border-box' }}
+                value={newMsg[key]} onChange={e => setNewMsg(m => ({ ...m, [key]: e.target.value }))} />
+            ) : (
+              <input type="text" style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'12px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
+                value={newMsg[key]} onChange={e => setNewMsg(m => ({ ...m, [key]: e.target.value }))} />
             )}
+          </div>
+        ))}
+        {sent && <div style={{ background:'#0f2a1a', border:`1px solid ${C.green}40`, borderRadius:10, padding:'10px 14px', color:C.green, fontSize:13, marginBottom:12 }}>✅ Message sent!</div>}
+        <button onClick={() => { setSent(true); setTimeout(() => { setComposing(false); setSent(false) }, 1500) }}
+          style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
+          Send Message
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
+      <div style={{ padding:'20px 16px 0', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+        <div>
+          <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Parent Messages</h1>
+          <p style={{ fontSize:12, color:C.muted, margin:0 }}>Every negative has a positive version · AI writes both</p>
+        </div>
+        <button onClick={() => setComposing(true)} style={{ background:'var(--school-color)', border:'none', borderRadius:12, padding:'10px 16px', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>+ New</button>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display:'flex', gap:6, padding:'0 16px', marginBottom:16 }}>
+        {['pending','sent','all'].map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{ padding:'7px 16px', borderRadius:999, border:'none', cursor:'pointer', fontSize:12, fontWeight:700,
+              background: tab===t ? 'var(--school-color)' : C.inner,
+              color:       tab===t ? '#fff' : C.muted }}>
+            {t.charAt(0).toUpperCase()+t.slice(1)}
+            {t==='pending' && <span style={{ marginLeft:6, background:'rgba(240,74,74,0.3)', color:'#f04a4a', borderRadius:999, padding:'1px 6px', fontSize:10 }}>{messages.filter(m=>m.status==='pending').length}</span>}
           </button>
         ))}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-5xl mb-4">📭</div>
-          <p className="text-text-muted">No {tab} messages</p>
+        <div style={{ textAlign:'center', padding:40, color:C.muted }}>
+          <div style={{ fontSize:48, marginBottom:12 }}>✅</div>
+          <p>No {tab} messages.</p>
         </div>
-      ) : (
-        <div className="space-y-4">
-          {filtered.map(msg => {
-            const isPositive = showPositive[msg.id]
-            const currentDraft = isPositive ? msg.positiveDraft : msg.draft
-            const isEditing = editing[msg.id]
-
-            return (
-              <div key={msg.id} className="rounded-card overflow-hidden" style={{ background: '#161923', border: '1px solid #2a2f42' }}>
-                {/* Header */}
-                <div className="p-4 border-b border-elevated">
-                  <div className="flex items-start justify-between mb-1">
-                    <div>
-                      <p className="font-bold text-text-primary">{msg.studentName}</p>
-                      <p className="text-text-muted text-xs">{msg.subject} · {msg.trigger}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Tag color={msg.status === 'pending' ? '#f5a623' : '#22c97a'}>{msg.status}</Tag>
-                      <div className="flex gap-1">
-                        {['👍', '❤️', '😂'].map(r => (
-                          <button key={r} onClick={() => reactHeader(msg.id, r)}
-                            className="flex items-center gap-0.5 hover:scale-125 transition-transform text-sm" title="React">
-                            {r}{headerReactions[`${msg.id}-${r}`] > 0 && <span style={{fontSize:'9px',color:'#6b7494'}}>{headerReactions[`${msg.id}-${r}`]}</span>}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-text-muted" style={{ fontSize: '10px' }}>AI tone: {msg.tone}</p>
-                </div>
-
-                {/* Positive/Negative toggle */}
-                <div className="px-4 pt-3">
-                  <div className="flex rounded-pill overflow-hidden mb-3" style={{ background: '#1e2231' }}>
-                    <button
-                      onClick={() => { setShowPositive(p => ({ ...p, [msg.id]: false })); setEditing(e => ({ ...e, [msg.id]: false })) }}
-                      className="flex-1 py-1.5 text-xs font-bold transition-all"
-                      style={{ background: !isPositive ? '#f04a4a' : 'transparent', color: !isPositive ? 'white' : '#6b7494', borderRadius: '999px 0 0 999px' }}
-                    >
-                      ⚑ Concern
-                    </button>
-                    <button
-                      onClick={() => { setShowPositive(p => ({ ...p, [msg.id]: true })); setEditing(e => ({ ...e, [msg.id]: false })) }}
-                      className="flex-1 py-1.5 text-xs font-bold transition-all"
-                      style={{ background: isPositive ? '#22c97a' : 'transparent', color: isPositive ? 'white' : '#6b7494', borderRadius: '0 999px 999px 0' }}
-                    >
-                      🌟 Positive
-                    </button>
-                  </div>
-                </div>
-
-                {/* Message body */}
-                <div className="px-4 pb-3">
-                  {generating === msg.id ? (
-                    <LoadingSpinner />
-                  ) : isEditing ? (
-                    <div className="mb-3">
-                      <textarea
-                        className="w-full p-3 rounded-card text-sm text-text-primary resize-none border border-accent"
-                        style={{ background: '#1e2231', minHeight: 80 }}
-                        value={editText[msg.id] ?? currentDraft}
-                        onChange={e => setEditText(t => ({ ...t, [msg.id]: e.target.value }))}
-                        autoFocus
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button onClick={() => saveEdit(msg)} className="flex-1 py-1.5 rounded-pill text-xs font-bold" style={{ background: '#3b7ef4', color: 'white' }}>
-                          💾 Save Changes
-                        </button>
-                        <button onClick={() => setEditing(e => ({ ...e, [msg.id]: false }))} className="px-4 py-1.5 rounded-pill text-xs" style={{ background: '#1e2231', color: '#6b7494' }}>
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-3 rounded-card mb-3" style={{ background: '#1e2231' }}>
-                      <p className="text-sm text-text-primary leading-relaxed">{currentDraft}</p>
-                    </div>
-                  )}
-
-                  {/* Action buttons */}
-                  {msg.status === 'pending' && !isEditing && (
-                    <div className="flex gap-2">
-                      <button onClick={() => handleSend(msg)} className="flex-1 py-2 rounded-pill text-xs font-bold" style={{ background: '#22c97a20', color: '#22c97a' }}>
-                        Send ✓
-                      </button>
-                      <button onClick={() => startEditing(msg)} className="flex-1 py-2 rounded-pill text-xs font-bold" style={{ background: '#3b7ef420', color: '#3b7ef4' }}>
-                        ✏ Edit
-                      </button>
-                      <button onClick={() => handleRegenerate(msg)} className="flex-1 py-2 rounded-pill text-xs font-bold" style={{ background: '#9b6ef520', color: '#9b6ef5' }}>
-                        ✨ AI
-                      </button>
-                      <button onClick={() => dismissMessage(msg.id)} className="px-3 py-2 rounded-pill text-xs font-bold" style={{ background: '#f04a4a20', color: '#f04a4a' }}>
-                        ✕
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Auto-send toggle */}
-                <div className="px-4 pb-4">
-                  <button onClick={() => setAutoSend(a => ({ ...a, [msg.id]: !a[msg.id] }))} className="w-full flex items-center justify-between p-2 rounded-card transition-all" style={{ background: '#1e2231' }}>
-                    <span className="text-xs text-text-muted">Auto-send "{msg.trigger}" messages</span>
-                    <div className="w-9 h-5 rounded-full flex items-center px-0.5 transition-all" style={{ background: autoSend[msg.id] ? 'var(--school-color)' : '#2a2f42' }}>
-                      <div className="w-4 h-4 rounded-full bg-white transition-all" style={{ marginLeft: autoSend[msg.id] ? 'auto' : 0 }} />
-                    </div>
-                  </button>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Compose new message modal */}
-      {composeOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center" onClick={() => setComposeOpen(false)}>
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative bg-card border border-elevated rounded-t-widget p-6 w-full max-w-lg animate-slide-up" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <p className="font-bold text-text-primary">✏ New Message to Parent</p>
-              <button onClick={() => setComposeOpen(false)} className="text-text-muted hover:text-text-primary text-xl">✕</button>
+      ) : filtered.map(m => (
+        <div key={m.id} onClick={() => openMessage(m)}
+          style={{ margin:'0 16px 10px', background: m.status==='pending' ? '#1c1012' : C.card, border:`1px solid ${m.status==='pending' ? C.red : C.border}30`, borderRadius:16, padding:'14px 16px', cursor:'pointer' }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--school-color)'}
+          onMouseLeave={e => e.currentTarget.style.borderColor = m.status==='pending' ? 'rgba(240,74,74,0.3)' : C.border}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
+            <div>
+              <span style={{ fontWeight:700, fontSize:14, color:C.text }}>{m.status==='pending' ? '⚑' : '🌟'} {m.studentName}</span>
+              <span style={{ color:C.muted, fontSize:12, marginLeft:8 }}>{m.subject} · {m.trigger}</span>
             </div>
-            <div className="space-y-3 mb-4">
-              <div>
-                <label className="tag-label block mb-1">Student Name</label>
-                <input
-                  className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-sm text-text-primary"
-                  placeholder="e.g. Marcus Thompson"
-                  value={composeForm.to}
-                  onChange={e => setComposeForm(f => ({ ...f, to: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="tag-label block mb-1">Subject (optional)</label>
-                <input
-                  className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-sm text-text-primary"
-                  placeholder="e.g. Homework, Behavior, Great work"
-                  value={composeForm.subject}
-                  onChange={e => setComposeForm(f => ({ ...f, subject: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="tag-label block mb-1">Message</label>
-                <textarea
-                  className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-sm text-text-primary resize-none"
-                  rows={5}
-                  placeholder="Write your message to the parent..."
-                  value={composeForm.body}
-                  onChange={e => setComposeForm(f => ({ ...f, body: e.target.value }))}
-                  autoFocus
-                />
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={sendComposed}
-                disabled={!composeForm.to || !composeForm.body}
-                className="flex-1 py-2.5 rounded-pill text-sm font-bold disabled:opacity-40"
-                style={{ background: 'var(--school-color)', color: 'white' }}
-              >
-                Add to Queue →
-              </button>
-              <button onClick={() => setComposeOpen(false)} className="px-4 py-2.5 rounded-pill text-sm" style={{ background: '#1e2231', color: '#6b7494' }}>
-                Cancel
-              </button>
-            </div>
+            <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:999,
+              background: m.status==='pending' ? 'rgba(245,166,35,0.15)' : 'rgba(34,201,122,0.15)',
+              color:      m.status==='pending' ? C.amber : C.green }}>
+              {m.status==='pending' ? 'Pending' : 'Sent ✓'}
+            </span>
           </div>
+          <p style={{ fontSize:12, color:'#8090a8', margin:'0 0 8px', lineHeight:1.5, overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
+            {m.draft}
+          </p>
+          <div style={{ fontSize:10, color:C.muted }}>AI drafted · {m.tone}</div>
         </div>
-      )}
-
-      {/* Template editor */}
-      {templateOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center animate-fade" onClick={() => setTemplateOpen(false)}>
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
-          <div className="relative bg-card border border-elevated rounded-t-widget p-6 w-full max-w-lg animate-slide-up" onClick={e => e.stopPropagation()}>
-            <p className="font-bold text-text-primary mb-4">Template Editor</p>
-            <p className="tag-label mb-2">Message Template</p>
-            <textarea
-              className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-sm text-text-primary resize-none"
-              rows={4}
-              defaultValue="Dear Parent of [Student Name], [Student Name] scored [Score] on [Subject] in [Class] — [Teacher Name]"
-            />
-            <p className="text-text-muted mt-2 mb-4" style={{ fontSize: '10px' }}>
-              Tags: [Student Name] [Score] [Subject] [Class] [Teacher Name] [Drop Amount] [Letter Grade]
-            </p>
-            <div className="flex gap-2">
-              <button onClick={() => setTemplateOpen(false)} className="flex-1 py-2.5 rounded-pill text-sm font-bold" style={{ background: 'var(--school-color)', color: 'white' }}>
-                Save as Default
-              </button>
-              <button onClick={() => setTemplateOpen(false)} className="px-4 py-2.5 rounded-pill text-sm" style={{ background: '#1e2231', color: '#6b7494' }}>
-                Reset to AI
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      ))}
     </div>
   )
 }
