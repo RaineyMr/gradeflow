@@ -4,8 +4,9 @@ import { GradeBar, Modal } from '../components/ui'
 
 const C = { bg:'#060810',card:'#161923',inner:'#1e2231',text:'#eef0f8',muted:'#6b7494',border:'#2a2f42',green:'#22c97a',blue:'#3b7ef4',red:'#f04a4a',amber:'#f5a623',purple:'#9b6ef5' }
 
-export default function Gradebook() {
-  const { classes, students, assignments, grades, getStudentsForClass, getAssignmentsForClass, getGradeForStudentAssignment, updateGrade, addAssignment, activeClass, setActiveClass, setActiveStudent, setScreen } = useStore()
+export default function Gradebook({ onBack }) {
+  const { classes, students, assignments, grades, getStudentsForClass, getAssignmentsForClass, getGradeForStudentAssignment, updateGrade, addAssignment, activeClass, setActiveClass, setActiveStudent, setScreen, goBack } = useStore()
+  const handleBack = onBack || goBack
 
   const [editModal,    setEditModal]    = useState(null)  // { student, assignment, grade }
   const [newAssignModal, setNewAssignModal] = useState(false)
@@ -45,9 +46,12 @@ export default function Gradebook() {
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
       <div style={{ padding:'20px 16px 0', display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-        <div>
-          <h1 style={{ fontSize:20, fontWeight:800, margin:'0 0 2px' }}>Gradebook</h1>
-          <p style={{ fontSize:12, color:C.muted, margin:0 }}>{cls?.period} · {cls?.subject} · {clsStudents.length} students</p>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          {handleBack && <button onClick={handleBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>}
+          <div>
+            <h1 style={{ fontSize:20, fontWeight:800, margin:'0 0 2px' }}>Gradebook</h1>
+            <p style={{ fontSize:12, color:C.muted, margin:0 }}>{cls?.period} · {cls?.subject} · {clsStudents.length} students</p>
+          </div>
         </div>
         <button onClick={() => setNewAssignModal(true)} style={{ background:'var(--school-color)', border:'none', borderRadius:12, padding:'8px 14px', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ Assignment</button>
       </div>
