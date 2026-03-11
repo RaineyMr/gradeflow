@@ -1,374 +1,219 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-const defaultAdminData = {
-  schoolName: 'Lincoln High School',
-  districtName: 'GradeFlow District',
-  adminName: 'Principal Carter',
-  totalStudents: 1248,
-  totalTeachers: 78,
-  attendanceRate: 94,
-  graduationTrack: 91,
-  needsAttention: [
-    { id: 1, label: 'Missed assignments spike', detail: '124 students have 3 or more missed assignments this week.' },
-    { id: 2, label: 'Attendance drop', detail: '10th grade attendance fell 4% compared to last week.' },
-    { id: 3, label: 'Unfilled class coverage', detail: '2 classes need substitute coverage for tomorrow.' },
-    { id: 4, label: 'At-risk students', detail: '36 students are flagged for grade and attendance intervention.' },
-  ],
-  schoolMetrics: [
-    { id: 1, label: 'Students', value: '1,248', change: '+18 this month', tone: 'neutral' },
-    { id: 2, label: 'Teachers', value: '78', change: '+2 hired', tone: 'positive' },
-    { id: 3, label: 'Attendance', value: '94%', change: '-1.2% this week', tone: 'negative' },
-    { id: 4, label: 'On-Track to Graduate', value: '91%', change: '+2.4% this quarter', tone: 'positive' },
-  ],
-  gradeLevelPerformance: [
-    { id: 1, level: '9th Grade', average: 82, attendance: 93, behavior: 'Stable', color: '#3b82f6' },
-    { id: 2, level: '10th Grade', average: 79, attendance: 90, behavior: 'Watchlist', color: '#f59e0b' },
-    { id: 3, level: '11th Grade', average: 85, attendance: 95, behavior: 'Good', color: '#22c55e' },
-    { id: 4, level: '12th Grade', average: 88, attendance: 96, behavior: 'Strong', color: '#a855f7' },
-  ],
-  teacherOverview: [
-    { id: 1, name: 'Ms. Johnson', department: 'Science', classes: 5, avgGrade: 86, flaggedStudents: 8 },
-    { id: 2, name: 'Mr. Patel', department: 'Math', classes: 4, avgGrade: 89, flaggedStudents: 4 },
-    { id: 3, name: 'Ms. Green', department: 'English', classes: 5, avgGrade: 83, flaggedStudents: 11 },
-    { id: 4, name: 'Coach Williams', department: 'History', classes: 4, avgGrade: 85, flaggedStudents: 6 },
-  ],
-  staffing: [
-    { id: 1, area: 'Science', filled: 12, needed: 12 },
-    { id: 2, area: 'Math', filled: 10, needed: 11 },
-    { id: 3, area: 'English', filled: 11, needed: 11 },
-    { id: 4, area: 'Support Staff', filled: 7, needed: 9 },
-  ],
-  recentActivity: [
-    { id: 1, title: 'Attendance intervention created', detail: 'Counseling team assigned 8 new student outreach cases.', time: '2 hours ago' },
-    { id: 2, title: 'Parent communication sent', detail: 'Progress alerts were delivered to 94 families.', time: '4 hours ago' },
-    { id: 3, title: 'Teacher submitted grade updates', detail: 'Chemistry and Algebra departments posted new gradebook data.', time: 'Today' },
-    { id: 4, title: 'Behavior review logged', detail: 'Assistant principal reviewed 6 classroom referrals.', time: 'Today' },
-  ],
+const C = {
+  bg: '#0c0e14',
+  card: '#161923',
+  inner: '#1e2231',
+  text: '#eef0f8',
+  muted: '#6b7494',
+  hint: '#3d4460',
+  green: '#22c97a',
+  blue: '#3b7ef4',
+  purple: '#9b6ef5',
+  amber: '#f5a623',
+  red: '#f04a4a',
+  teal: '#0fb8a0',
+  aGrad: 'linear-gradient(135deg, #1e3a2a 0%, #1a1230 100%)',
+  ovGrad: 'linear-gradient(135deg, #1d4ed8 0%, #6d28d9 100%)',
 }
 
-const shell = {
-  minHeight: '100vh',
-  background: '#060810',
-  color: '#eef0f8',
-  padding: '24px',
-  fontFamily: 'Inter, Arial, sans-serif',
-}
-
-const container = {
-  maxWidth: '1450px',
-  margin: '0 auto',
-}
-
-const hero = {
-  background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
-  borderRadius: '24px',
-  padding: '24px',
-  boxShadow: '0 18px 50px rgba(0,0,0,0.28)',
-  marginBottom: '20px',
-}
-
-const card = {
-  background: '#161923',
-  border: '1px solid #1e2231',
-  borderRadius: '20px',
-  padding: '18px',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.18)',
-}
-
-const sectionTitle = {
-  fontSize: '16px',
-  fontWeight: 700,
-  margin: 0,
-}
-
-const muted = {
-  color: '#6b7494',
-}
-
-const pillBase = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '6px',
-  borderRadius: '999px',
-  padding: '6px 10px',
-  fontSize: '12px',
-  fontWeight: 700,
-}
-
-function getToneStyles(tone) {
-  if (tone === 'positive') {
-    return { color: '#22c55e', background: 'rgba(34,197,94,0.14)' }
-  }
-  if (tone === 'negative') {
-    return { color: '#f04a4a', background: 'rgba(240,74,74,0.14)' }
-  }
-  return { color: '#3b82f6', background: 'rgba(59,130,246,0.14)' }
-}
-
-function AdminDashboard({ adminData = defaultAdminData }) {
+// ── Header ────────────────────────────────────────────────────────────────────
+function Header() {
   return (
-    <div style={shell}>
-      <div style={container}>
-        <div style={hero}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-            <div>
-              <div style={{ ...pillBase, background: 'rgba(255,255,255,0.14)', color: '#fff', marginBottom: '12px' }}>
-                🏫 Admin Dashboard
-              </div>
-              <h1 style={{ margin: 0, fontSize: '32px', fontWeight: 800 }}>{adminData.schoolName}</h1>
-              <p style={{ margin: '8px 0 0', color: 'rgba(255,255,255,0.82)' }}>
-                {adminData.districtName} · Viewed by {adminData.adminName}
-              </p>
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(4, minmax(140px, 1fr))',
-                gap: '12px',
-                minWidth: '420px',
-                flex: 1,
-              }}
-            >
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Students</div>
-                <div style={{ fontSize: '28px', fontWeight: 800 }}>{adminData.totalStudents}</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Teachers</div>
-                <div style={{ fontSize: '28px', fontWeight: 800 }}>{adminData.totalTeachers}</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Attendance</div>
-                <div style={{ fontSize: '28px', fontWeight: 800 }}>{adminData.attendanceRate}%</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.11)', borderRadius: '18px', padding: '16px' }}>
-                <div style={{ fontSize: '12px', opacity: 0.75 }}>Grad Track</div>
-                <div style={{ fontSize: '28px', fontWeight: 800 }}>{adminData.graduationTrack}%</div>
-              </div>
-            </div>
-          </div>
+    <div style={{ background: C.aGrad, padding: '14px 18px 18px', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: 14, right: 18 }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔔</div>
+          <div style={{ position: 'absolute', top: -3, right: -3, width: 14, height: 14, borderRadius: '50%', background: C.red, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#fff', fontWeight: 700 }}>5</div>
         </div>
+      </div>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>Lincoln Elementary · Houston ISD</div>
+      <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 4 }}>Admin Dashboard 🏫</div>
+      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>School-level analytics · No individual grades · Manage teachers + parents</div>
+      <div style={{ fontSize: 9, color: C.hint }}>Hold widget to customize · Saved to account</div>
+    </div>
+  )
+}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 0.9fr', gap: '20px', alignItems: 'start' }}>
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                <h2 style={sectionTitle}>School Snapshot</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Live overview</span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '14px' }}>
-                {adminData.schoolMetrics.map((item) => {
-                  const tone = getToneStyles(item.tone)
-                  return (
-                    <div key={item.id} style={{ background: '#1e2231', borderRadius: '16px', padding: '14px' }}>
-                      <div style={{ fontSize: '13px', color: '#eef0f8', fontWeight: 700 }}>{item.label}</div>
-                      <div style={{ fontSize: '30px', fontWeight: 800, marginTop: '8px' }}>{item.value}</div>
-                      <div style={{ marginTop: '10px' }}>
-                        <span style={{ ...pillBase, color: tone.color, background: tone.background }}>{item.change}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                <h2 style={sectionTitle}>Grade Level Performance</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Academic + attendance view</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {adminData.gradeLevelPerformance.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                      borderLeft: `4px solid ${item.color}`,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: 700 }}>{item.level}</div>
-                        <div style={{ ...muted, fontSize: '12px', marginTop: '4px' }}>Behavior: {item.behavior}</div>
-                      </div>
-
-                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                        <span style={{ ...pillBase, background: 'rgba(59,130,246,0.14)', color: '#60a5fa' }}>
-                          Avg {item.average}%
-                        </span>
-                        <span style={{ ...pillBase, background: 'rgba(34,197,94,0.14)', color: '#4ade80' }}>
-                          Attendance {item.attendance}%
-                        </span>
-                      </div>
-                    </div>
-
-                    <div style={{ marginTop: '12px', height: '8px', background: '#11141d', borderRadius: '999px', overflow: 'hidden' }}>
-                      <div
-                        style={{
-                          width: `${item.average}%`,
-                          height: '100%',
-                          borderRadius: '999px',
-                          background: item.color,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                <h2 style={sectionTitle}>Teacher Overview</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Class performance by teacher</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {adminData.teacherOverview.map((teacher) => (
-                  <div
-                    key={teacher.id}
-                    style={{
-                      background: '#1e2231',
-                      borderRadius: '16px',
-                      padding: '14px',
-                      display: 'grid',
-                      gridTemplateColumns: '1.2fr 0.8fr 0.7fr 0.7fr',
-                      gap: '12px',
-                      alignItems: 'center',
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontSize: '14px', fontWeight: 700 }}>{teacher.name}</div>
-                      <div style={{ ...muted, fontSize: '12px', marginTop: '4px' }}>{teacher.department}</div>
-                    </div>
-                    <div style={{ fontSize: '13px' }}>Classes: <strong>{teacher.classes}</strong></div>
-                    <div style={{ fontSize: '13px' }}>Avg: <strong>{teacher.avgGrade}%</strong></div>
-                    <div style={{ fontSize: '13px', color: teacher.flaggedStudents > 8 ? '#fca5a5' : '#eef0f8' }}>
-                      Flagged: <strong>{teacher.flaggedStudents}</strong>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+// ── AW1: School Overview ──────────────────────────────────────────────────────
+function AW1_SchoolOverview() {
+  const tiles = [
+    { icon: '👩‍🏫', value: '24',   label: 'Teachers' },
+    { icon: '🎒',  value: '612',  label: 'Students' },
+    { icon: '📊',  value: '78.4', label: 'School GPA' },
+    { icon: '⚑',   value: '42',   label: 'Need Attention' },
+    { icon: '💬',  value: '18',   label: 'Pending Msgs' },
+  ]
+  return (
+    <div style={{ background: C.ovGrad, borderRadius: 18, padding: '14px 16px 18px', marginBottom: 10 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>SCHOOL OVERVIEW</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6 }}>
+        {tiles.map(t => (
+          <div key={t.label} style={{ background: 'rgba(255,255,255,0.12)', borderRadius: 13, padding: '10px 4px', textAlign: 'center' }}>
+            <div style={{ fontSize: 15, marginBottom: 4 }}>{t.icon}</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{t.value}</div>
+            <div style={{ fontSize: 7, color: 'rgba(255,255,255,0.6)', marginTop: 3 }}>{t.label}</div>
           </div>
-
-          <div style={{ display: 'grid', gap: '20px' }}>
-            <section style={{ ...card, border: '1px solid rgba(240,74,74,0.18)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
-                <h2 style={sectionTitle}>Needs Attention</h2>
-                <span style={{ ...pillBase, background: 'rgba(240,74,74,0.14)', color: '#f04a4a' }}>
-                  {adminData.needsAttention.length} alerts
-                </span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {adminData.needsAttention.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      background: '#1c1012',
-                      borderRadius: '16px',
-                      padding: '14px',
-                    }}
-                  >
-                    <div style={{ fontSize: '13px', fontWeight: 800, color: '#fca5a5' }}>{item.label}</div>
-                    <div style={{ ...muted, fontSize: '12px', marginTop: '6px', lineHeight: 1.45 }}>{item.detail}</div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
-                <h2 style={sectionTitle}>Staffing & Coverage</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Department fill rates</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {adminData.staffing.map((item) => {
-                  const percent = Math.round((item.filled / item.needed) * 100)
-                  const alert = item.filled < item.needed
-                  return (
-                    <div key={item.id} style={{ background: '#1e2231', borderRadius: '16px', padding: '14px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 700 }}>{item.area}</div>
-                        <div style={{ fontSize: '13px', color: alert ? '#fca5a5' : '#eef0f8' }}>
-                          {item.filled}/{item.needed} filled
-                        </div>
-                      </div>
-
-                      <div style={{ marginTop: '10px', height: '8px', background: '#11141d', borderRadius: '999px', overflow: 'hidden' }}>
-                        <div
-                          style={{
-                            width: `${percent}%`,
-                            height: '100%',
-                            borderRadius: '999px',
-                            background: alert ? '#f59e0b' : '#22c55e',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </section>
-
-            <section style={card}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '12px' }}>
-                <h2 style={sectionTitle}>Recent Activity</h2>
-                <span style={{ ...muted, fontSize: '13px' }}>Admin-facing updates</span>
-              </div>
-
-              <div style={{ display: 'grid', gap: '12px' }}>
-                {adminData.recentActivity.map((item) => (
-                  <div key={item.id} style={{ background: '#1e2231', borderRadius: '16px', padding: '14px' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 700 }}>{item.title}</div>
-                    <div style={{ ...muted, fontSize: '13px', marginTop: '8px', lineHeight: 1.45 }}>{item.detail}</div>
-                    <div style={{ ...muted, fontSize: '12px', marginTop: '10px' }}>{item.time}</div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section style={card}>
-              <h2 style={{ ...sectionTitle, marginBottom: '14px' }}>Quick Actions</h2>
-
-              <div style={{ display: 'grid', gap: '10px' }}>
-                {[
-                  'Review flagged students',
-                  'Open staffing report',
-                  'Message department heads',
-                  'View district analytics',
-                  'Check attendance interventions',
-                ].map((label) => (
-                  <button
-                    key={label}
-                    style={{
-                      background: '#1e2231',
-                      color: '#eef0f8',
-                      border: '1px solid #2b3145',
-                      borderRadius: '14px',
-                      padding: '12px 14px',
-                      textAlign: 'left',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </section>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   )
 }
 
-export default AdminDashboard
+// ── AW2: School-wide Analytics ────────────────────────────────────────────────
+function AW2_Analytics() {
+  const subjects = [
+    { name: 'Math',    score: 77.8, pct: 78, color: C.blue  },
+    { name: 'Reading', score: 86.4, pct: 86, color: C.green },
+    { name: 'Science', score: 60.0, pct: 60, color: C.red   },
+  ]
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>School-wide Analytics</div>
+      <div style={{ fontSize: 9, color: C.muted, marginBottom: 14 }}>No individual grades · Class-level and school-level only</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {subjects.map(s => (
+          <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ width: 52, fontSize: 10, color: C.muted, flexShrink: 0 }}>{s.name}</div>
+            <div style={{ flex: 1, height: 12, background: C.inner, borderRadius: 6, overflow: 'hidden' }}>
+              <div style={{ width: `${s.pct}%`, height: '100%', background: s.color, borderRadius: 6 }} />
+            </div>
+            <div style={{ width: 36, fontSize: 10, fontWeight: 700, color: s.color, textAlign: 'right', flexShrink: 0 }}>{s.score}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 9, color: C.red, marginTop: 10 }}>⚑ Science needs school-wide attention</div>
+    </div>
+  )
+}
+
+// ── AW3: Teachers — Low Class GPA ─────────────────────────────────────────────
+function AW3_TeachersLowGPA() {
+  const flagged = [
+    { name: 'Mr. Rivera', subject: 'Science · 3rd Period', gpa: '64.2 ↓', gpaColor: C.red,   avg: '(school avg 81.0)', border: 'rgba(240,74,74,0.12)' },
+    { name: 'Ms. Patel',  subject: 'Writing · 5th Period', gpa: '71.8 ↓', gpaColor: C.amber, avg: '(school avg 81.0)', border: 'rgba(245,166,35,0.12)' },
+  ]
+  return (
+    <div style={{ background: C.card, border: '1px solid rgba(240,74,74,0.12)', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.text }}>⚑ Teachers — Low Class GPA</div>
+        <div style={{ fontSize: 10, color: C.blue, cursor: 'pointer' }}>All Teachers →</div>
+      </div>
+      <div style={{ fontSize: 9, color: C.muted, marginBottom: 12 }}>Classes below school GPA threshold · Tap row to message</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {flagged.map(t => (
+          <div key={t.name} style={{ background: C.inner, border: `1px solid ${t.border}`, borderRadius: 10, padding: '10px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: C.text }}>{t.name}</span>
+                <span style={{ fontSize: 10, color: C.muted }}>{t.subject}</span>
+              </div>
+              <div style={{ fontSize: 9, color: t.gpaColor }}>Class GPA: {t.gpa}  {t.avg}</div>
+            </div>
+            <button style={{ background: 'rgba(59,126,244,0.12)', color: C.blue, border: 'none', borderRadius: 9, padding: '5px 12px', fontSize: 9, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              📩 Message
+            </button>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 9, color: C.muted, marginTop: 10 }}>2 of 24 teachers flagged · Admin sees class-level data only, never individual grades</div>
+    </div>
+  )
+}
+
+// ── AW4: School Reports ───────────────────────────────────────────────────────
+function AW4_SchoolReports() {
+  const filters = [
+    { label: '📊 GPA by Subject',   color: C.green  },
+    { label: '📈 Progress Trends',  color: C.blue   },
+    { label: '⚑ Needs Attention',   color: C.red    },
+    { label: '💬 Comm. Summary',    color: C.purple },
+  ]
+  return (
+    <div style={{ background: C.card, border: '1px solid rgba(34,201,122,0.12)', borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>School Reports 📊</div>
+      <div style={{ fontSize: 9, color: C.muted, marginBottom: 12 }}>School-level only · No individual student data · Filter by grade level / subject</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+        {filters.map(f => (
+          <button key={f.label} style={{ background: `${f.color}20`, color: f.color, border: 'none', borderRadius: 10, padding: '5px 10px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>
+            {f.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button style={{ background: 'rgba(59,126,244,0.12)', color: C.blue, border: 'none', borderRadius: 9, padding: '5px 14px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>🖨 Print</button>
+        <button style={{ background: 'rgba(34,201,122,0.12)', color: C.green, border: 'none', borderRadius: 9, padding: '5px 14px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>⬇ PDF</button>
+      </div>
+    </div>
+  )
+}
+
+// ── AW5: Communication Hub ────────────────────────────────────────────────────
+function AW5_CommHub() {
+  const actions = [
+    { label: '📩 Message All Teachers',  color: C.blue   },
+    { label: '📩 Message All Parents',   color: C.purple },
+    { label: '📢 School Announcement',   color: C.green  },
+  ]
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.inner}`, borderRadius: 18, padding: '14px 16px', marginBottom: 10 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>Communication Hub 💬</div>
+      <div style={{ fontSize: 9, color: C.muted, marginBottom: 12 }}>Message all teachers · Message all parents · School-wide announcements</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {actions.map(a => (
+          <button key={a.label} style={{ background: `${a.color}20`, color: a.color, border: 'none', borderRadius: 11, padding: '10px 14px', fontSize: 10, fontWeight: 700, cursor: 'pointer', textAlign: 'left' }}>
+            {a.label}
+          </button>
+        ))}
+      </div>
+      <div style={{ fontSize: 9, color: C.muted, marginTop: 10 }}>Admin sees class-level data only · No individual student grades ever</div>
+    </div>
+  )
+}
+
+// ── Bottom Nav ────────────────────────────────────────────────────────────────
+function BottomNav({ active, onSelect }) {
+  const items = [
+    { id: 'home',     icon: '⊞',   label: 'Home' },
+    { id: 'teachers', icon: '👩‍🏫', label: 'Teachers' },
+    { id: 'reports',  icon: '📊',  label: 'Reports' },
+    { id: 'messages', icon: '💬',  label: 'Messages' },
+    { id: 'settings', icon: '⚙',  label: 'Settings' },
+  ]
+  return (
+    <div style={{ background: '#0a0c12', borderTop: `1px solid ${C.inner}`, padding: '6px 8px 16px', position: 'sticky', bottom: 0 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)' }}>
+        {items.map(item => (
+          <button key={item.id} onClick={() => onSelect(item.id)} style={{
+            background: 'transparent', border: 'none', cursor: 'pointer',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '6px 2px',
+          }}>
+            <span style={{ fontSize: 15 }}>{item.icon}</span>
+            <span style={{ fontSize: 8, color: item.id === active ? C.teal : C.muted, fontWeight: item.id === active ? 700 : 400 }}>
+              {item.label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Main ──────────────────────────────────────────────────────────────────────
+export default function AdminDashboard() {
+  const [activeNav, setActiveNav] = useState('home')
+
+  return (
+    <div style={{ minHeight: '100dvh', width: '100%', background: C.bg, fontFamily: 'Inter, -apple-system, Arial, sans-serif', boxSizing: 'border-box', overflowX: 'hidden', color: C.text, display: 'flex', flexDirection: 'column' }}>
+      <Header />
+      <div style={{ flex: 1, padding: '10px 10px 0' }}>
+        <AW1_SchoolOverview />
+        <AW2_Analytics />
+        <AW3_TeachersLowGPA />
+        <AW4_SchoolReports />
+        <AW5_CommHub />
+      </div>
+      <BottomNav active={activeNav} onSelect={setActiveNav} />
+    </div>
+  )
+}
