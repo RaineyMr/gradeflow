@@ -13,8 +13,9 @@ const REPORT_TYPES = [
   { id:'progress',     icon:'📈', label:'Progress',         color:C.green  },
 ]
 
-export default function Reports() {
-  const { classes, students, assignments, grades, messages, getNeedsAttention } = useStore()
+export default function Reports({ onBack }) {
+  const { classes, students, assignments, grades, messages, getNeedsAttention, goBack } = useStore()
+  const handleBack = onBack || goBack
   const [reportType,   setReportType]   = useState('mastery')
   const [classFilter,  setClassFilter]  = useState('all')
   const [dateFilter,   setDateFilter]   = useState('month')
@@ -49,6 +50,7 @@ export default function Reports() {
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:80 }}>
       <div style={{ padding:'20px 16px 0', marginBottom:16 }}>
+        {handleBack && <button onClick={handleBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>}
         <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Reports 📊</h1>
         <p style={{ fontSize:12, color:C.muted, margin:0 }}>Filter by class · subject · date range</p>
       </div>
