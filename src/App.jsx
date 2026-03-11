@@ -1,225 +1,360 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import Login from './pages/Login'
 import Tutorials from './pages/Tutorials'
 import Dashboard from './pages/Dashboard'
 import StudentDashboard from './pages/StudentDashboard'
 import ParentDashboard from './pages/ParentDashboard'
 import AdminDashboard from './pages/AdminDashboard'
+import Camera from './pages/Camera'
+import { demoAccounts } from './lib/demoAccounts'
+import { useStore } from './lib/store'
 
-const defaultTheme = {
-  primary: '#f97316',
-  heroGradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)',
-  border: '#1e2231',
-  card: '#161923',
-  muted: '#6b7494',
-  soft: 'rgba(249,115,22,0.14)',
-}
-
-function App() {
+// ─── App Shell ────────────────────────────────────────────────────────────────
+export default function App() {
   const [currentUser, setCurrentUser] = useState(null)
-  const [activePage, setActivePage] = useState('login')
+  const [activePage, setActivePage]   = useState('login')
+  const [menuOpen, setMenuOpen]       = useState(false)
+  const menuRef = useRef(null)
+  const scrollRef = useRef(null)
+  const storeSetCurrentUser = useStore(s => s.setCurrentUser)
 
+  // Restore session
   useEffect(() => {
-    const savedUser = localStorage.getItem('gradeflow_user')
-    if (!savedUser) return
-
     try {
-      const parsed = JSON.parse(savedUser)
-      if (parsed?.role) {
-        setCurrentUser(parsed)
-        setActivePage(parsed.role)
+      const saved = localStorage.getItem('gradeflow_user')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed?.role) {
+          setCurrentUser(parsed)
+          setActivePage(parsed.role)
+          storeSetCurrentUser(parsed)
+        }
       }
-    } catch (error) {
-      localStorage.removeItem('gradeflow_user')
-    }
+    } catch { localStorage.removeItem('gradeflow_user') }
   }, [])
 
-  const roleTitle = useMemo(() => {
-    if (!currentUser?.role) return 'Guest'
-    return currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)
-  }, [currentUser])
+  // Scroll-to-top on every page/user change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    if (scrollRef.current) scrollRef.current.scrollTo(0, 0)
+  }, [activePage, currentUser])
 
-  const handleLogin = (account) => {
-    if (!account?.role) {
-      setCurrentUser(null)
-      setActivePage('login')
-      return
+  // Close menu on outside click
+  useEffect(() => {
+    function handler(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
     }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
 
+  // ── Auth handlers ────────────────────────────────────────────────────────────
+  const handleLogin = (account) => {
+    if (!account?.role) return
     setCurrentUser(account)
     setActivePage(account.role)
+    storeSetCurrentUser(account)
     localStorage.setItem('gradeflow_user', JSON.stringify(account))
   }
 
   const handleLogout = () => {
     localStorage.removeItem('gradeflow_user')
     setCurrentUser(null)
+    storeSetCurrentUser(null)
     setActivePage('login')
+    setMenuOpen(false)
   }
 
-  const openTutorials = () => {
-    setActivePage('tutorials')
-  }
-
-  const goToDashboard = () => {
-    if (!currentUser?.role) {
-      setActivePage('login')
-      return
+  // ── Theme from current user ──────────────────────────────────────────────────
+  const theme = useMemo(() => {
+    if (!currentUser?.theme) return {
+      primary: '#f97316', secondary: '#2563EB', heroGradient: 'linear-gradient(135deg,#f97316,#2563EB)',
+      headerGradient: 'linear-gradient(135deg,#f97316,#2563EB)', border: '#1e2231', card: '#161923',
+      muted: '#6b7494', soft: 'rgba(249,115,22,0.14)', navActive: '#f97316',
     }
+    return currentUser.theme
+  }, [currentUser])
 
-    setActivePage(currentUser.role)
-  }
+  // Apply school color CSS var
+  useEffect(() => {
+    document.documentElement.style.setProperty('--school-color', theme.primary)
+    document.documentElement.style.setProperty('--school-secondary', theme.secondary || theme.primary)
+  }, [theme])
 
+  // ── Login screen ─────────────────────────────────────────────────────────────
   if (!currentUser || activePage === 'login') {
     return <Login onLogin={handleLogin} onDemoLogin={handleLogin} />
   }
 
-  const theme = currentUser?.theme || defaultTheme
+  // ── Nav items for dropdown ───────────────────────────────────────────────────
+  const dropdownSections = [
+    {
+      label: 'Account',
+      items: [
+        { icon: '👤', label: 'Profile & Settings', action: () => { setMenuOpen(false); alert('Profile settings — coming soon') } },
+        { icon: '🔄', label: 'Switch Account',     action: handleLogout },
+      ],
+    },
+    {
+      label: 'App',
+      items: [
+        { icon: '🎥', label: 'Tutorials',           action: () => { setActivePage('tutorials'); setMenuOpen(false) } },
+        { icon: '🏠', label: 'Dashboard',           action: () => { setActivePage(currentUser.role); setMenuOpen(false) } },
+      ],
+    },
+    {
+      label: 'Pages',
+      items: currentUser.role === 'teacher' ? [
+        { icon: '📚', label: 'Gradebook',       action: () => { setMenuOpen(false) } },
+        { icon: '📋', label: 'Lesson Plans',    action: () => { setMenuOpen(false) } },
+        { icon: '💬', label: 'Messages',        action: () => { setMenuOpen(false) } },
+        { icon: '📊', label: 'Reports',         action: () => { setMenuOpen(false) } },
+        { icon: '🧪', label: 'Testing Suite',   action: () => { setMenuOpen(false) } },
+        { icon: '📢', label: 'Class Feed',      action: () => { setMenuOpen(false) } },
+      ] : [],
+    },
+    {
+      label: '',
+      items: [
+        { icon: '🚪', label: 'Sign Out', action: handleLogout, danger: true },
+      ],
+    },
+  ]
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#060810', color: '#eef0f8' }}>
-      <div
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 20,
-          background: 'rgba(6,8,16,0.92)',
-          backdropFilter: 'blur(10px)',
-          borderBottom: `1px solid ${theme.border}`,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '1440px',
-            margin: '0 auto',
-            padding: '14px 24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '16px',
-            flexWrap: 'wrap',
-            fontFamily: 'Inter, Arial, sans-serif',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-            <div
-              style={{
-                padding: '10px 14px',
-                borderRadius: '14px',
-                background: theme.soft,
-                color: theme.primary,
-                fontWeight: 800,
-              }}
-            >
-              GradeFlow
-            </div>
+  // ── Role label ───────────────────────────────────────────────────────────────
+  const roleLabel = { teacher: 'Teacher', student: 'Student', parent: 'Parent', admin: 'Admin' }[currentUser.role] || 'User'
 
-            <div>
-              <div style={{ fontWeight: 800 }}>{currentUser.schoolName || 'GradeFlow Demo School'}</div>
-              <div style={{ fontSize: '12px', color: theme.muted }}>
-                {currentUser.userName || 'Demo User'} · {roleTitle}
-              </div>
-            </div>
-          </div>
+  // ── Camera icon click ────────────────────────────────────────────────────────
+  const handleCameraClick = () => {
+    setActivePage('camera')
+    setMenuOpen(false)
+  }
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={goToDashboard}
-              style={{
-                background: theme.soft,
-                color: theme.primary,
-                border: `1px solid ${theme.border}`,
-                borderRadius: '12px',
-                padding: '10px 14px',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              Dashboard
-            </button>
-
-            <button
-              type="button"
-              onClick={openTutorials}
-              style={{
-                background: '#161923',
-                color: '#eef0f8',
-                border: `1px solid ${theme.border}`,
-                borderRadius: '12px',
-                padding: '10px 14px',
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
-            >
-              Tutorials
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={{
-                background: theme.primary,
-                color: '#fff',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '10px 14px',
-                fontWeight: 800,
-                cursor: 'pointer',
-              }}
-            >
-              Sign Out
-            </button>
-          </div>
+  // ── Tutorials ────────────────────────────────────────────────────────────────
+  if (activePage === 'tutorials') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#060810' }}>
+        <StickyHeader
+          currentUser={currentUser}
+          theme={theme}
+          roleLabel={roleLabel}
+          menuOpen={menuOpen}
+          setMenuOpen={setMenuOpen}
+          menuRef={menuRef}
+          dropdownSections={dropdownSections}
+          onCameraClick={handleCameraClick}
+        />
+        <div style={{ paddingTop: 64 }}>
+          <Tutorials />
         </div>
       </div>
+    )
+  }
 
-      {activePage === 'tutorials' && <Tutorials />}
+  // ── Camera ───────────────────────────────────────────────────────────────────
+  if (activePage === 'camera') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#060810' }}>
+        <StickyHeader
+          currentUser={currentUser}
+          theme={theme}
+          roleLabel={roleLabel}
+          menuOpen={menuOpen}
+          setMenuOpen={setMenuOpen}
+          menuRef={menuRef}
+          dropdownSections={dropdownSections}
+          onCameraClick={handleCameraClick}
+        />
+        <div style={{ paddingTop: 64 }}>
+          <Camera onBack={() => setActivePage(currentUser.role)} />
+        </div>
+      </div>
+    )
+  }
 
-      {activePage === 'teacher' && <Dashboard currentUser={currentUser} />}
+  // ── Role dashboards ──────────────────────────────────────────────────────────
+  const dashboardMap = {
+    teacher: <Dashboard currentUser={currentUser} onCameraClick={handleCameraClick} />,
+    student: <StudentDashboard currentUser={currentUser} />,
+    parent:  <ParentDashboard currentUser={currentUser} />,
+    admin:   <AdminDashboard currentUser={currentUser} />,
+  }
 
-      {activePage === 'student' && <StudentDashboard currentUser={currentUser} />}
+  const DashboardComponent = dashboardMap[currentUser.role]
 
-      {activePage === 'parent' && <ParentDashboard currentUser={currentUser} />}
-
-      {activePage === 'admin' && <AdminDashboard currentUser={currentUser} />}
-
-      {!['tutorials', 'teacher', 'student', 'parent', 'admin'].includes(activePage) && (
-        <div style={{ padding: '40px 24px', fontFamily: 'Inter, Arial, sans-serif' }}>
-          <div
-            style={{
-              maxWidth: '900px',
-              margin: '0 auto',
-              background: '#161923',
-              border: `1px solid ${theme.border}`,
-              borderRadius: '20px',
-              padding: '24px',
-            }}
-          >
-            <h2 style={{ marginTop: 0 }}>Dashboard route not found</h2>
-            <p style={{ color: theme.muted }}>
-              The selected demo account did not map to a valid dashboard. Returning to login will fix it.
-            </p>
-            <button
-              type="button"
-              onClick={handleLogout}
-              style={{
-                background: theme.primary,
-                color: '#fff',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '10px 14px',
-                fontWeight: 800,
-                cursor: 'pointer',
-              }}
-            >
+  return (
+    <div
+      data-app-scroll
+      ref={scrollRef}
+      style={{
+        minHeight: '100vh',
+        background: '#060810',
+        color: '#eef0f8',
+        overflowX: 'hidden',
+      }}
+    >
+      <StickyHeader
+        currentUser={currentUser}
+        theme={theme}
+        roleLabel={roleLabel}
+        menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen}
+        menuRef={menuRef}
+        dropdownSections={dropdownSections}
+        onCameraClick={handleCameraClick}
+      />
+      <div style={{ paddingTop: 64 }}>
+        {DashboardComponent || (
+          <div style={{ padding: '40px 24px', textAlign: 'center', color: '#6b7494' }}>
+            <p>No dashboard found for role: {currentUser.role}</p>
+            <button onClick={handleLogout} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: theme.primary, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
               Return to Login
             </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
 
-export default App
+// ─── Sticky Header ────────────────────────────────────────────────────────────
+function StickyHeader({ currentUser, theme, roleLabel, menuOpen, setMenuOpen, menuRef, dropdownSections, onCameraClick }) {
+  return (
+    <header
+      style={{
+        position: 'fixed',
+        top: 0, left: 0, right: 0,
+        zIndex: 1000,
+        height: 64,
+        background: `rgba(6,8,16,0.96)`,
+        borderBottom: `1px solid ${theme.border || '#1e2231'}`,
+        backdropFilter: 'blur(12px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 16px',
+        fontFamily: 'Inter, Arial, sans-serif',
+      }}
+    >
+      {/* Left: school badge + name */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{
+          padding: '6px 12px',
+          borderRadius: 12,
+          background: theme.soft || 'rgba(249,115,22,0.14)',
+          color: theme.primary,
+          fontWeight: 800,
+          fontSize: 14,
+        }}>
+          ⚡ GradeFlow
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <span style={{ fontWeight: 800, fontSize: 13, color: '#eef0f8', lineHeight: 1.2 }}>
+            {currentUser.schoolName}
+          </span>
+          <span style={{ fontSize: 10, color: theme.muted || '#6b7494' }}>
+            {currentUser.userName} · {roleLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* Right: camera + hamburger */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Camera icon */}
+        <button
+          onClick={onCameraClick}
+          style={{
+            width: 38, height: 38, borderRadius: '50%',
+            background: theme.soft || 'rgba(249,115,22,0.14)',
+            border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18,
+          }}
+          title="Camera"
+        >
+          📷
+        </button>
+
+        {/* Hamburger */}
+        <div ref={menuRef} style={{ position: 'relative' }}>
+          <button
+            onClick={() => setMenuOpen(o => !o)}
+            style={{
+              width: 38, height: 38, borderRadius: 10,
+              background: menuOpen ? (theme.soft || 'rgba(249,115,22,0.14)') : '#1e2231',
+              border: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4,
+            }}
+            title="Menu"
+            aria-label="Open menu"
+          >
+            {[0,1,2].map(i => (
+              <span key={i} style={{ display: 'block', width: 16, height: 2, background: menuOpen ? theme.primary : '#eef0f8', borderRadius: 2 }} />
+            ))}
+          </button>
+
+          {/* Dropdown */}
+          {menuOpen && (
+            <>
+              <div
+                style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+                onClick={() => setMenuOpen(false)}
+              />
+              <div
+                style={{
+                  position: 'absolute', top: 44, right: 0,
+                  width: 220,
+                  background: '#161923',
+                  border: `1px solid ${theme.border || '#1e2231'}`,
+                  borderRadius: 16,
+                  boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
+                  zIndex: 999,
+                  overflow: 'hidden',
+                }}
+              >
+                {/* User info */}
+                <div style={{ padding: '14px 16px', borderBottom: `1px solid #1e2231`, background: theme.soft || '#1e2231' }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#eef0f8' }}>{currentUser.userName}</div>
+                  <div style={{ fontSize: 11, color: theme.muted || '#6b7494' }}>{currentUser.schoolName} · {roleLabel}</div>
+                </div>
+
+                {dropdownSections.map((section, si) => (
+                  <div key={si}>
+                    {section.label && (
+                      <div style={{ padding: '8px 16px 4px', fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#3d4460' }}>
+                        {section.label}
+                      </div>
+                    )}
+                    {section.items.map((item, ii) => (
+                      <button
+                        key={ii}
+                        onClick={item.action}
+                        style={{
+                          width: '100%', textAlign: 'left',
+                          padding: '10px 16px',
+                          background: 'transparent',
+                          border: 'none', cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          fontSize: 13, color: item.danger ? '#f04a4a' : '#eef0f8',
+                          fontFamily: 'Inter, Arial, sans-serif',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#1e2231'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <span>{item.icon}</span>
+                        <span>{item.label}</span>
+                      </button>
+                    ))}
+                    {si < dropdownSections.length - 1 && (
+                      <div style={{ height: 1, background: '#1e2231', margin: '4px 0' }} />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
+  )
+}
