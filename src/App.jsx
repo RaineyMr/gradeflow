@@ -7,7 +7,6 @@ import ParentDashboard from './pages/ParentDashboard'
 import AdminDashboard from './pages/AdminDashboard'
 import Camera from './pages/Camera'
 import { demoAccounts } from './lib/demoAccounts'
-import { useStore } from './lib/store'
 
 // ─── App Shell ────────────────────────────────────────────────────────────────
 export default function App() {
@@ -16,21 +15,11 @@ export default function App() {
   const [menuOpen, setMenuOpen]       = useState(false)
   const menuRef = useRef(null)
   const scrollRef = useRef(null)
-  const storeSetCurrentUser = useStore(s => s.setCurrentUser)
 
-  // Restore session
+  // Always start on login — no session restore
+  // (remove the saved session if one exists from a prior visit)
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('gradeflow_user')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (parsed?.role) {
-          setCurrentUser(parsed)
-          setActivePage(parsed.role)
-          storeSetCurrentUser(parsed)
-        }
-      }
-    } catch { localStorage.removeItem('gradeflow_user') }
+    localStorage.removeItem('gradeflow_user')
   }, [])
 
   // Scroll-to-top on every page/user change
@@ -53,14 +42,12 @@ export default function App() {
     if (!account?.role) return
     setCurrentUser(account)
     setActivePage(account.role)
-    storeSetCurrentUser(account)
     localStorage.setItem('gradeflow_user', JSON.stringify(account))
   }
 
   const handleLogout = () => {
     localStorage.removeItem('gradeflow_user')
     setCurrentUser(null)
-    storeSetCurrentUser(null)
     setActivePage('login')
     setMenuOpen(false)
   }
