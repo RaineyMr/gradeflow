@@ -1,122 +1,105 @@
-const KEY = () => import.meta.env.VITE_ANTHROPIC_KEY
-const MODEL = 'claude-sonnet-4-20250514'
+# GradeFlow Backend Setup Guide
 
-async function post(body) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': KEY(),
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify(body),
-  })
-  if (!res.ok) throw new Error(`Anthropic API error ${res.status}`)
-  return res.json()
-}
+## What changed and why
 
-export function parseJSON(text) {
-  try { return JSON.parse(text.replace(/```json|```/g, '').trim()) } catch {}
-  try { const m = text.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]) } catch {}
-  try { const m = text.match(/\[[\s\S]*\]/); if (m) return JSON.parse(m[0]) } catch {}
-  return null
-}
+Your Anthropic API key was **hardcoded directly in the JavaScript bundle** — visible to anyone
+who opens DevTools. This fix moves all AI calls to a secure backend proxy on Vercel.
 
-export async function callClaude(prompt, systemPrompt = '', maxTokens = 1000) {
-  const data = await post({ model: MODEL, max_tokens: maxTokens, system: systemPrompt, messages: [{ role: 'user', content: prompt }] })
-  return data.content?.filter(b => b.type === 'text').map(b => b.text).join('\n') || ''
-}
+---
 
-export async function callClaudeWithSearch(prompt, maxTokens = 1000) {
-  const data = await post({
-    model: MODEL, max_tokens: maxTokens,
-    tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-    messages: [{ role: 'user', content: prompt }],
-  })
-  return data.content?.filter(b => b.type === 'text').map(b => b.text).join('\n') || ''
-}
+## Step 1 — Add your API key to Vercel (2 minutes)
 
-export async function generateLessonPlan({ subject, grade, topic, standard, state = 'Texas', textbook }) {
-  const prompt = `Create a complete lesson plan:
-Subject: ${subject}, Grade: ${grade}, Topic: ${topic}
-Standard: ${standard || 'auto-select from TEKS'}, State: ${state}
-Textbook: ${textbook || 'generic'}
+1. Go to **vercel.com/hiremrrainey-7105s-projects/gradeflow/settings/environment-variables**
+2. Click **Add New**
+3. Set:
+   - **Name:** `ANTHROPIC_API_KEY`
+   - **Value:** your `sk-ant-...` key
+   - **Environments:** ✅ Production ✅ Preview ✅ Development
+4. Click **Save**
 
-Return ONLY valid JSON:
-{
-  "title":"","summary":"","objectives":[],"standards":[],"swbat":[],
-  "successCriteria":[],"supplies":[],"steps":[{"title":"","description":"","duration":""}],
-  "worksheet":{"title":"","questions":[]},"exitTicket":{"question":"","sampleAnswer":""},
-  "answerKey":[]
-}`
-  const text = await callClaudeWithSearch(prompt, 2500)
-  return parseJSON(text)
-}
+⚠️ Do NOT use `VITE_` prefix — that would make it public again.
 
-export async function suggestTextbooks(subject, grade) {
-  const text = await callClaudeWithSearch(`List 4 popular textbooks for ${subject} ${grade} grade. JSON: {"textbooks":["..."]}`, 400)
-  return parseJSON(text)?.textbooks || []
-}
+---
 
-export async function suggestTopics(subject, grade) {
-  const text = await callClaudeWithSearch(`List 6 important lesson topics for ${subject} ${grade} grade. JSON: {"topics":["..."]}`, 400)
-  return parseJSON(text)?.topics || []
-}
+## Step 2 — Add the two new files to your repo
 
-export async function suggestStandards(subject, grade, state = 'Texas') {
-  const text = await callClaudeWithSearch(`List 4 ${state} TEKS standards for ${subject} ${grade} grade. JSON: {"standards":["..."]}`, 400)
-  return parseJSON(text)?.standards || []
-}
+Drop these files in exactly these locations:
 
-export async function generateParentMessage({ studentName, subject, score, trigger, teacherName, tone = 'Warm & Friendly' }) {
-  const prompt = `Write two parent messages for ${studentName}:
-Subject: ${subject}, Score/Trigger: ${score || trigger}, Teacher: ${teacherName}
-Tone: ${tone}
-Return ONLY valid JSON:
-{"negative":"...message expressing concern...","positive":"...message celebrating progress...","toneLabel":"${tone}"}`
-  const text = await callClaude(prompt, 'You are a professional school communications assistant.', 600)
-  return parseJSON(text) || { negative: '', positive: '', toneLabel: tone }
-}
+```
+gradeflow/
+  api/
+    ai.js          ← NEW (the secure backend proxy)
+  src/
+    lib/
+      ai.js        ← REPLACE your existing ai.js
+```
 
-export async function gradeShortAnswer({ question, studentAnswer, rubric }) {
-  const prompt = `Grade this short answer:
-Question: ${question}
-Student answer: ${studentAnswer}
-Rubric: ${rubric || 'Standard accuracy-based rubric'}
-Return ONLY valid JSON: {"score":0,"maxScore":10,"feedback":"","confidence":"high|medium|low","needsReview":false}`
-  const text = await callClaude(prompt, 'You are an expert teacher grading student work.', 500)
-  return parseJSON(text) || { score: 0, maxScore: 10, feedback: 'Could not grade.', confidence: 'low', needsReview: true }
-}
+---
 
-export async function generateStudyTips({ studentName, subject, score, recentGrades = [] }) {
-  const prompt = `Generate 3 study tips for ${studentName}:
-Subject: ${subject}, Current score: ${score}%
-Recent grades: ${recentGrades.join(', ')}
-Return ONLY valid JSON: {"tips":[{"tip":"","actions":["",""],"timeEstimate":""}]}`
-  const text = await callClaude(prompt, 'You are a supportive academic coach.', 600)
-  return parseJSON(text)?.tips || []
-}
+## Step 3 — Update your existing files to use the new helper
 
-export async function generateTestQuestions({ subject, grade, topic, count = 5 }) {
-  const prompt = `Generate ${count} multiple choice questions for ${subject} ${grade} grade, topic: ${topic}.
-Return ONLY valid JSON: {"questions":[{"text":"","options":{"A":"","B":"","C":"","D":""},"correct":"A","explanation":""}]}`
-  const text = await callClaude(prompt, 'You are a curriculum expert.', 1500)
-  return parseJSON(text)?.questions || []
-}
+Find every file that currently imports from your old `ai.js` and update the imports.
 
-export async function scanGradedDocument(base64Image, mediaType = 'image/jpeg') {
-  const data = await post({
-    model: MODEL, max_tokens: 800,
-    system: 'You are an expert at reading graded school papers. Detect the scoring format and return valid JSON.',
-    messages: [{
-      role: 'user',
-      content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64Image } },
-        { type: 'text', text: 'Grade this paper. Return ONLY valid JSON: {"studentName":"","score":0,"maxScore":100,"percentage":0,"format":"","feedback":"","confidence":"high|medium|low"}' },
-      ],
-    }],
-  })
-  const text = data.content?.filter(b => b.type === 'text').map(b => b.text).join('') || ''
-  return parseJSON(text)
-}
+### Old pattern (remove this):
+```js
+import { callAI } from '../lib/ai'
+// or any direct fetch to api.anthropic.com
+```
+
+### New pattern (same import path, new functions):
+```js
+import { callAI, gradeWork, extractRoster, extractAnswers, generateLessonPlan } from '../lib/ai'
+```
+
+### Files most likely to update (based on bundle analysis):
+- `src/pages/Camera.jsx` — uses `gradeWork`, `extractRoster`, `extractAnswers`
+- `src/pages/LessonPlan.jsx` — uses `generateLessonPlan`
+- `src/pages/Dashboard.jsx` or similar — uses `callAI`
+- Any component using AI web search — switch to `callAIWithSearch`
+
+---
+
+## Step 4 — Delete the old API key from your code
+
+Search your entire repo for:
+```
+sk-ant-
+```
+
+If you find it anywhere, delete it immediately and rotate your key at:
+**console.anthropic.com → API Keys → Revoke → Create New**
+
+Then update the `ANTHROPIC_API_KEY` in Vercel with the new key.
+
+---
+
+## Step 5 — Push and verify
+
+```bash
+git add api/ai.js src/lib/ai.js
+git commit -m "security: move API key to backend proxy"
+git push
+```
+
+Vercel will redeploy automatically. The site will work exactly the same —
+but now the key is safe.
+
+---
+
+## What the proxy handles
+
+| Intent | Used by | Returns |
+|--------|---------|---------|
+| `general` | Dashboards, summaries | text string |
+| `search` | Web-search AI features | text string |
+| `grade` | Camera grading flow | `{score, grade, feedback, corrections}` |
+| `extractRoster` | Camera roster upload | `{students: [{name, id}]}` |
+| `extractAnswers` | Camera answer key upload | `{answers: [{question, answer}]}` |
+| `lessonPlan` | Lesson Plan page | structured lesson object |
+
+---
+
+## Adding more intents later
+
+Just add a new `case` to the `switch` in `api/ai.js` and a new exported function
+in `src/lib/ai.js`. No other files need to change.
