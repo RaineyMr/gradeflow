@@ -1,0 +1,303 @@
+import React, { useState } from 'react'
+import { useStore } from '../lib/store'
+
+const C = {
+  bg: '#060810', card: '#161923', inner: '#1e2231', text: '#eef0f8',
+  muted: '#6b7494', border: '#2a2f42', green: '#22c97a', blue: '#3b7ef4',
+  red: '#f04a4a', amber: '#f5a623', teal: '#0fb8a0', purple: '#9b6ef5',
+}
+
+// Subjects a teacher might pick on signup
+const COMMON_SUBJECTS = ['Math', 'Reading', 'ELA', 'Science', 'Writing', 'Social Studies', 'History', 'Art', 'Music', 'PE', 'Other']
+
+// Default category templates (teacher picks one on signup, can edit later)
+const GRADING_TEMPLATES = [
+  {
+    id: 'standard',
+    label: 'Standard Weighted',
+    desc: 'Tests 40% · Quizzes 30% · Homework 20% · Participation 10%',
+    categories: [
+      { id: 1, name: 'Tests',         weight: 40, color: '#f04a4a', icon: '📝' },
+      { id: 2, name: 'Quizzes',       weight: 30, color: '#f5a623', icon: '✏️' },
+      { id: 3, name: 'Homework',      weight: 20, color: '#3b7ef4', icon: '📚' },
+      { id: 4, name: 'Participation', weight: 10, color: '#22c97a', icon: '🙋' },
+    ],
+  },
+  {
+    id: 'balanced',
+    label: 'Balanced',
+    desc: 'Tests 35% · Quizzes 25% · Homework 25% · Participation 15%',
+    categories: [
+      { id: 1, name: 'Tests',         weight: 35, color: '#f04a4a', icon: '📝' },
+      { id: 2, name: 'Quizzes',       weight: 25, color: '#f5a623', icon: '✏️' },
+      { id: 3, name: 'Homework',      weight: 25, color: '#3b7ef4', icon: '📚' },
+      { id: 4, name: 'Participation', weight: 15, color: '#22c97a', icon: '🙋' },
+    ],
+  },
+  {
+    id: 'projects',
+    label: 'Project-Based',
+    desc: 'Projects 50% · Quizzes 20% · Homework 15% · Participation 15%',
+    categories: [
+      { id: 1, name: 'Projects',      weight: 50, color: '#9b6ef5', icon: '🏗' },
+      { id: 2, name: 'Quizzes',       weight: 20, color: '#f5a623', icon: '✏️' },
+      { id: 3, name: 'Homework',      weight: 15, color: '#3b7ef4', icon: '📚' },
+      { id: 4, name: 'Participation', weight: 15, color: '#22c97a', icon: '🙋' },
+    ],
+  },
+  {
+    id: 'total_points',
+    label: 'Total Points',
+    desc: 'All assignments are worth equal points — final grade = points earned ÷ total possible',
+    categories: [],
+    method: 'total_points',
+  },
+  {
+    id: 'custom',
+    label: 'Custom',
+    desc: 'I\'ll set up my own categories and weights',
+    categories: [],
+    custom: true,
+  },
+]
+
+// ─── Step: Subjects ────────────────────────────────────────────────────────────
+function StepSubjects({ subjects, setSubjects, onNext }) {
+  function toggle(s) {
+    setSubjects(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
+  }
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px' }}>What do you teach?</h2>
+      <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px' }}>Select all subjects you teach. You can change this later.</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+        {COMMON_SUBJECTS.map(s => (
+          <button key={s} onClick={() => toggle(s)}
+            style={{ padding: '9px 16px', borderRadius: 999, border: `2px solid ${subjects.includes(s) ? C.teal : C.border}`, cursor: 'pointer', fontSize: 13, fontWeight: 700, transition: 'all 0.15s',
+              background: subjects.includes(s) ? `${C.teal}18` : C.inner,
+              color:      subjects.includes(s) ? C.teal : C.muted }}>
+            {subjects.includes(s) ? '✓ ' : ''}{s}
+          </button>
+        ))}
+      </div>
+      <button onClick={onNext} disabled={!subjects.length}
+        style={{ width: '100%', background: subjects.length ? 'var(--school-color, #BA0C2F)' : '#2a2f42', color: subjects.length ? '#fff' : C.muted, border: 'none', borderRadius: 999, padding: '14px', fontSize: 15, fontWeight: 800, cursor: subjects.length ? 'pointer' : 'not-allowed' }}>
+        Next →
+      </button>
+    </div>
+  )
+}
+
+// ─── Step: Curriculum ──────────────────────────────────────────────────────────
+function StepCurriculum({ subjects, onNext, onSkip }) {
+  const { curriculumSources, connectedCurricula, setConnectedCurriculum } = useStore()
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px' }}>What curriculum do you use?</h2>
+      <p style={{ color: C.muted, fontSize: 13, margin: '0 0 4px' }}>GradeFlow will pull lesson plans from the internet so they're ready before you even create them.</p>
+      <p style={{ color: C.teal, fontSize: 11, fontWeight: 700, margin: '0 0 20px' }}>You can skip this and set it up later.</p>
+
+      {subjects.map(subject => {
+        const connected = connectedCurricula[subject]
+        const options   = curriculumSources.filter(s => s.subjects.includes(subject) || s.subjects.length === 0)
+
+        return (
+          <div key={subject} style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 8 }}>{subject}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {options.map(opt => (
+                <button key={opt.id} onClick={() => setConnectedCurriculum(subject, connected === opt.id ? null : opt.id)}
+                  style={{ background: connected === opt.id ? `${C.teal}18` : C.inner, border: `1px solid ${connected === opt.id ? C.teal : C.border}`, borderRadius: 12, padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', transition: 'all 0.15s' }}>
+                  <span style={{ fontSize: 18 }}>{opt.logo}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: connected === opt.id ? C.teal : C.text }}>{opt.name}</div>
+                    {opt.publisher && <div style={{ fontSize: 10, color: C.muted }}>{opt.publisher}</div>}
+                  </div>
+                  {connected === opt.id
+                    ? <span style={{ fontSize: 18, color: C.teal }}>✓</span>
+                    : <span style={{ fontSize: 18, color: C.muted }}>○</span>
+                  }
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+        <button onClick={onSkip}
+          style={{ flex: 1, background: C.inner, color: C.muted, border: 'none', borderRadius: 999, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+          Skip for now
+        </button>
+        <button onClick={onNext}
+          style={{ flex: 2, background: 'var(--school-color, #BA0C2F)', color: '#fff', border: 'none', borderRadius: 999, padding: '14px', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>
+          Next →
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Step: Gradebook setup ─────────────────────────────────────────────────────
+function StepGradebook({ onNext, onSkip }) {
+  const { setCategories, setGradingMethod } = useStore()
+  const [selectedTemplate, setSelectedTemplate] = useState('standard')
+  const [customCats, setCustomCats] = useState([
+    { id: 1, name: 'Tests',         weight: 40, color: '#f04a4a', icon: '📝' },
+    { id: 2, name: 'Quizzes',       weight: 30, color: '#f5a623', icon: '✏️' },
+    { id: 3, name: 'Homework',      weight: 20, color: '#3b7ef4', icon: '📚' },
+    { id: 4, name: 'Participation', weight: 10, color: '#22c97a', icon: '🙋' },
+  ])
+
+  const tpl       = GRADING_TEMPLATES.find(t => t.id === selectedTemplate)
+  const activeCats = selectedTemplate === 'custom' ? customCats : (tpl?.categories || [])
+  const total      = activeCats.reduce((s, c) => s + Number(c.weight || 0), 0)
+  const totalOk    = Math.abs(total - 100) < 0.01 || selectedTemplate === 'total_points'
+
+  function updateCustom(id, val) {
+    setCustomCats(d => d.map(c => c.id === id ? { ...c, weight: Number(val) } : c))
+  }
+
+  function handleSave() {
+    const method = tpl?.method || 'weighted'
+    setGradingMethod(method)
+    if (method === 'weighted') {
+      setCategories(activeCats)
+    }
+    onNext()
+  }
+
+  return (
+    <div>
+      <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px' }}>Set up your gradebook</h2>
+      <p style={{ color: C.muted, fontSize: 13, margin: '0 0 4px' }}>Choose how assignments are weighted. Teachers and admins can change this anytime.</p>
+      <p style={{ color: C.teal, fontSize: 11, fontWeight: 700, margin: '0 0 16px' }}>This becomes the default for your school.</p>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+        {GRADING_TEMPLATES.map(t => (
+          <button key={t.id} onClick={() => setSelectedTemplate(t.id)}
+            style={{ background: selectedTemplate === t.id ? `${C.teal}18` : C.inner, border: `1px solid ${selectedTemplate === t.id ? C.teal : C.border}`, borderRadius: 14, padding: '12px 16px', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', border: `2px solid ${selectedTemplate === t.id ? C.teal : C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {selectedTemplate === t.id && <div style={{ width: 10, height: 10, borderRadius: '50%', background: C.teal }} />}
+            </div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: selectedTemplate === t.id ? C.teal : C.text }}>{t.label}</div>
+              <div style={{ fontSize: 11, color: C.muted }}>{t.desc}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      {/* Custom weight editor */}
+      {selectedTemplate === 'custom' && (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: '14px', marginBottom: 16 }}>
+          {customCats.map(cat => (
+            <div key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <span style={{ fontSize: 16 }}>{cat.icon}</span>
+              <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: C.text }}>{cat.name}</div>
+              <input type="number" min="0" max="100" value={cat.weight} onChange={e => updateCustom(cat.id, e.target.value)}
+                style={{ width: 60, background: C.inner, border: `1px solid ${C.border}`, borderRadius: 8, padding: '6px 8px', color: C.text, fontSize: 13, fontWeight: 700, textAlign: 'center', outline: 'none' }} />
+              <span style={{ fontSize: 12, color: C.muted }}>%</span>
+            </div>
+          ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0 0', borderTop: `1px solid ${C.border}` }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: C.muted }}>Total</span>
+            <span style={{ fontSize: 16, fontWeight: 800, color: totalOk ? C.green : C.red }}>{total}%</span>
+          </div>
+        </div>
+      )}
+
+      {/* Visual weight bar */}
+      {activeCats.length > 0 && (
+        <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 16, gap: 1 }}>
+          {activeCats.map(c => (
+            <div key={c.id} style={{ flex: Number(c.weight) || 0, background: c.color, transition: 'flex 0.3s' }} title={`${c.name}: ${c.weight}%`} />
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button onClick={onSkip}
+          style={{ flex: 1, background: C.inner, color: C.muted, border: 'none', borderRadius: 999, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+          Skip
+        </button>
+        <button onClick={handleSave} disabled={!totalOk}
+          style={{ flex: 2, background: totalOk ? 'var(--school-color, #BA0C2F)' : '#2a2f42', color: totalOk ? '#fff' : C.muted, border: 'none', borderRadius: 999, padding: '14px', fontSize: 15, fontWeight: 800, cursor: totalOk ? 'pointer' : 'not-allowed' }}>
+          {totalOk ? 'Save & Continue →' : `Weights must = 100% (${total}% now)`}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── Done screen ───────────────────────────────────────────────────────────────
+function StepDone({ onFinish }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '20px 0' }}>
+      <div style={{ fontSize: 64, marginBottom: 16 }}>🎉</div>
+      <h2 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 10px' }}>You're all set!</h2>
+      <p style={{ color: C.muted, fontSize: 13, lineHeight: 1.7, marginBottom: 24 }}>
+        Your curriculum is linked and your gradebook is ready. GradeFlow will auto-pull lessons from your connected curriculum when you haven't created your own.
+      </p>
+      <div style={{ background: C.inner, borderRadius: 14, padding: '14px 16px', marginBottom: 20, textAlign: 'left' }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, textTransform: 'uppercase', marginBottom: 10 }}>What happens now</div>
+        {[
+          ['📅', 'Today\'s lessons will auto-load for each class'],
+          ['📚', 'AI can pull full lesson plans from your curriculum'],
+          ['⚖', 'Gradebook weights apply to every new assignment'],
+          ['🔗', 'Connect more tools anytime in Settings → Integrations'],
+        ].map(([icon, text]) => (
+          <div key={text} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+            <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+            <span style={{ fontSize: 12, color: C.text, lineHeight: 1.5 }}>{text}</span>
+          </div>
+        ))}
+      </div>
+      <button onClick={onFinish}
+        style={{ width: '100%', background: 'var(--school-color, #BA0C2F)', color: '#fff', border: 'none', borderRadius: 999, padding: '16px', fontSize: 16, fontWeight: 800, cursor: 'pointer' }}>
+        Go to Dashboard →
+      </button>
+    </div>
+  )
+}
+
+// ─── Main export ───────────────────────────────────────────────────────────────
+// Rendered after school registration and before first dashboard view.
+// Pass onComplete() to navigate to dashboard when done.
+export default function CurriculumOnboarding({ onComplete }) {
+  const { completeOnboarding } = useStore()
+  const [step,     setStep]     = useState(0)  // 0=subjects, 1=curriculum, 2=gradebook, 3=done
+  const [subjects, setSubjects] = useState([])
+
+  const STEPS = ['Subjects', 'Curriculum', 'Gradebook', 'Done']
+
+  function finish() {
+    completeOnboarding()
+    onComplete?.()
+  }
+
+  return (
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: 'Inter, Arial, sans-serif' }}>
+      {/* Progress header */}
+      <div style={{ background: 'linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, rgba(0,0,0,0.85) 100%)', padding: '20px 16px 16px' }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10, fontWeight: 600 }}>
+          Step {step + 1} of {STEPS.length} — {STEPS[step]}
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {STEPS.map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 4, borderRadius: 2, background: i <= step ? '#fff' : 'rgba(255,255,255,0.25)', transition: 'background 0.3s' }} />
+          ))}
+        </div>
+      </div>
+
+      {/* Step content */}
+      <div style={{ padding: '24px 16px' }}>
+        {step === 0 && <StepSubjects subjects={subjects} setSubjects={setSubjects} onNext={() => setStep(1)} />}
+        {step === 1 && <StepCurriculum subjects={subjects} onNext={() => setStep(2)} onSkip={() => setStep(2)} />}
+        {step === 2 && <StepGradebook  onNext={() => setStep(3)} onSkip={() => setStep(3)} />}
+        {step === 3 && <StepDone onFinish={finish} />}
+      </div>
+    </div>
+  )
+}
