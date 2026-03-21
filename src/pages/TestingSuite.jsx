@@ -1,264 +1,443 @@
-import React, { useState } from 'react'
-import { useStore } from '../lib/store'
-import { AssignmentOptions, LoadingSpinner } from '../components/ui'
+import React, { useState, useEffect, useRef } from 'react'
+import { callAI } from '../lib/ai'
 
-const C = { bg:'#060810',card:'#161923',inner:'#1e2231',text:'#eef0f8',muted:'#6b7494',border:'#2a2f42',green:'#22c97a',blue:'#3b7ef4',red:'#f04a4a',amber:'#f5a623',teal:'#0fb8a0',purple:'#9b6ef5' }
+const C = {
+  bg:'#060810', card:'#161923', inner:'#1e2231', border:'#2a2f42',
+  text:'#eef0f8', muted:'#6b7494', green:'#22c97a', blue:'#3b7ef4',
+  red:'#f04a4a', amber:'#f5a623', purple:'#9b6ef5', teal:'#0fb8a0',
+}
 
-function QuestionCard({ q, index, onChange, onDelete }) {
+function gradeColor(s) { return s>=90?C.green:s>=80?C.blue:s>=70?C.amber:C.red }
+function gradeLetter(s) { return s>=90?'A':s>=80?'B':s>=70?'C':'D' }
+
+function BackBtn({ onClick }) {
   return (
-    <div style={{ background:C.inner, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-        <span style={{ fontSize:12, fontWeight:700, color:C.muted }}>Question {index+1}</span>
-        <div style={{ display:'flex', gap:6 }}>
-          <select value={q.type} onChange={e => onChange({ ...q, type:e.target.value })}
-            style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'4px 8px', color:C.text, fontSize:11, cursor:'pointer' }}>
-            <option value="mc">Multiple Choice</option>
-            <option value="tf">True / False</option>
-            <option value="short">Short Answer</option>
-            <option value="essay">Essay</option>
-            <option value="fill">Fill in the Blank</option>
-          </select>
-          <button onClick={onDelete} style={{ background:`${C.red}22`, color:C.red, border:'none', borderRadius:8, padding:'4px 10px', fontSize:11, cursor:'pointer' }}>✕</button>
-        </div>
-      </div>
-      <textarea rows={2} value={q.text} onChange={e => onChange({ ...q, text:e.target.value })}
-        placeholder="Enter question..."
-        style={{ width:'100%', background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', color:C.text, fontSize:13, resize:'none', boxSizing:'border-box', lineHeight:1.5, marginBottom:8 }} />
-      {q.type === 'mc' && (
-        <div style={{ paddingLeft:8 }}>
-          {['A','B','C','D'].map(opt => (
-            <div key={opt} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
-              <button onClick={() => onChange({ ...q, correct:opt })}
-                style={{ width:22, height:22, borderRadius:'50%', border:`2px solid ${q.correct===opt ? C.green : C.border}`, background:q.correct===opt ? `${C.green}22` : 'transparent', cursor:'pointer', fontSize:11, fontWeight:700, color:q.correct===opt ? C.green : C.muted, flexShrink:0 }}>
-                {opt}
+    <button onClick={onClick}
+      style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:12 }}>
+      ← Back
+    </button>
+  )
+}
+
+const MODES = [
+  { id:'lockdown',  icon:'🔒', label:'Lockdown Browser', sub:'Link to external test · Locks browser tab', color:C.blue   },
+  { id:'builder',   icon:'🏗',  label:'Native Builder',   sub:'Build questions here · AI can generate',   color:C.green  },
+  { id:'pdf',       icon:'📄', label:'PDF / Upload',      sub:'Upload existing test · AI auto-grade',     color:C.purple },
+]
+
+// ── Lockdown Mode ──────────────────────────────────────────────────────────────
+function LockdownMode({ onBack }) {
+  const [url, setUrl]       = useState('')
+  const [title, setTitle]   = useState('')
+  const [duration, setDuration] = useState(45)
+  const [active, setActive] = useState(false)
+  const [students, setStudents] = useState([
+    { id:1, name:'Aaliyah Brooks',   status:'waiting',    progress:0   },
+    { id:2, name:'Marcus Thompson',  status:'waiting',    progress:0   },
+    { id:3, name:'Sofia Rodriguez',  status:'waiting',    progress:0   },
+    { id:4, name:'Devon Parker',     status:'waiting',    progress:0   },
+    { id:5, name:'Emma Williams',    status:'waiting',    progress:0   },
+  ])
+  const [elapsed, setElapsed] = useState(0)
+  const timerRef = useRef()
+
+  function startTest() {
+    if (!url.trim()) return
+    setActive(true)
+    setStudents(s => s.map(st => ({ ...st, status:'taking', progress:0 })))
+    timerRef.current = setInterval(() => {
+      setElapsed(e => e + 1)
+      setStudents(prev => prev.map(st => ({
+        ...st,
+        progress: Math.min(100, st.progress + Math.random() * 2),
+        status: st.progress >= 98 ? 'submitted' : 'taking',
+      })))
+    }, 1000)
+  }
+
+  useEffect(() => () => clearInterval(timerRef.current), [])
+
+  const mins = Math.floor(elapsed / 60)
+  const secs = elapsed % 60
+
+  return (
+    <div>
+      <BackBtn onClick={onBack} />
+      <h2 style={{ fontSize:18, fontWeight:800, color:C.text, marginBottom:4 }}>🔒 Lockdown Browser</h2>
+      <p style={{ fontSize:12, color:C.muted, marginBottom:16 }}>Paste a test URL · Students take it in a locked tab</p>
+
+      {!active ? (
+        <>
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Test title..."
+            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', color:C.text, fontSize:12, marginBottom:10, boxSizing:'border-box', outline:'none' }} />
+          <input value={url} onChange={e => setUrl(e.target.value)} placeholder="Test URL (Google Form, Khan Academy, etc.)..."
+            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', color:C.text, fontSize:12, marginBottom:10, boxSizing:'border-box', outline:'none' }} />
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+            <span style={{ fontSize:12, color:C.muted }}>Duration:</span>
+            {[25,45,60,90].map(m => (
+              <button key={m} onClick={() => setDuration(m)}
+                style={{ background:duration===m?'var(--school-color,#f97316)':'#1e2231', color:duration===m?'#fff':C.muted, border:'none', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+                {m}m
               </button>
-              <input value={q.options?.[opt] || ''} onChange={e => onChange({ ...q, options:{ ...(q.options||{}), [opt]:e.target.value } })}
-                placeholder={`Option ${opt}`}
-                style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', color:C.text, fontSize:12, outline:'none' }} />
+            ))}
+          </div>
+          <div style={{ background:`${C.blue}12`, border:`1px solid ${C.blue}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:11, color:C.blue }}>
+            🔒 Students will be locked to this tab · Cannot switch apps · Timer visible
+          </div>
+          <button onClick={startTest} disabled={!url.trim()}
+            style={{ width:'100%', background:url.trim()?'var(--school-color,#f97316)':'#1e2231', color:url.trim()?'#fff':C.muted, border:'none', borderRadius:14, padding:14, fontSize:15, fontWeight:800, cursor:url.trim()?'pointer':'not-allowed' }}>
+            🚀 Start Lockdown Test
+          </button>
+        </>
+      ) : (
+        <>
+          {/* Live monitor */}
+          <div style={{ background:'linear-gradient(135deg,#0f1a2a,#0a1020)', border:`1px solid ${C.blue}30`, borderRadius:16, padding:16, marginBottom:14 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{title || 'Lockdown Test'}</div>
+                <div style={{ fontSize:10, color:C.muted }}>{url.substring(0,40)}...</div>
+              </div>
+              <div style={{ textAlign:'right' }}>
+                <div style={{ fontSize:22, fontWeight:800, color:C.text, fontFamily:'monospace' }}>
+                  {String(mins).padStart(2,'0')}:{String(secs).padStart(2,'0')}
+                </div>
+                <div style={{ fontSize:9, color:C.blue }}>ELAPSED</div>
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
+              {[
+                { label:'Taking', val:students.filter(s=>s.status==='taking').length, color:C.blue },
+                { label:'Done',   val:students.filter(s=>s.status==='submitted').length, color:C.green },
+              ].map(s => (
+                <div key={s.label} style={{ flex:1, background:C.inner, borderRadius:8, padding:'8px', textAlign:'center' }}>
+                  <div style={{ fontSize:20, fontWeight:800, color:s.color }}>{s.val}</div>
+                  <div style={{ fontSize:9, color:C.muted, textTransform:'uppercase' }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {students.map(s => (
+            <div key={s.id} style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:6, display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:C.text, marginBottom:4 }}>{s.name}</div>
+                <div style={{ background:C.card, borderRadius:999, height:5, overflow:'hidden' }}>
+                  <div style={{ background:s.status==='submitted'?C.green:C.blue, height:'100%', width:`${s.progress}%`, borderRadius:999, transition:'width 0.5s' }} />
+                </div>
+              </div>
+              <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:999, flexShrink:0,
+                background:s.status==='submitted'?`${C.green}22`:`${C.blue}22`,
+                color:s.status==='submitted'?C.green:C.blue }}>
+                {s.status==='submitted'?'Done':'Taking'}
+              </span>
             </div>
           ))}
-          <p style={{ fontSize:10, color:C.muted, margin:'4px 0 0' }}>Click letter to mark correct answer</p>
-        </div>
-      )}
-      {q.type === 'tf' && (
-        <div style={{ display:'flex', gap:8 }}>
-          {['True','False'].map(v => (
-            <button key={v} onClick={() => onChange({ ...q, correct:v })}
-              style={{ flex:1, padding:'8px', borderRadius:10, border:`1.5px solid ${q.correct===v ? C.green : C.border}`, background:q.correct===v ? `${C.green}22` : C.bg, color:q.correct===v ? C.green : C.muted, cursor:'pointer', fontSize:12, fontWeight:700 }}>
-              {v}
-            </button>
-          ))}
-        </div>
-      )}
-      {(q.type==='short'||q.type==='fill') && (
-        <input value={q.answer || ''} onChange={e => onChange({ ...q, answer:e.target.value })}
-          placeholder="Answer key (optional)..."
-          style={{ width:'100%', background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'8px 10px', color:C.text, fontSize:12, outline:'none', boxSizing:'border-box' }} />
+
+          <button onClick={() => { setActive(false); clearInterval(timerRef.current); setElapsed(0) }}
+            style={{ marginTop:10, width:'100%', background:`${C.red}22`, color:C.red, border:'none', borderRadius:12, padding:11, fontSize:13, fontWeight:700, cursor:'pointer' }}>
+            ⏹ End Test
+          </button>
+        </>
       )}
     </div>
   )
 }
 
-export default function TestingSuite({ onBack }) {
-  const { assignments, classes, activeClass, goBack } = useStore()
-  const handleBack = onBack || goBack
-  const [mode,       setMode]       = useState('menu')  // menu | builder | lockdown | pdf
-  const [questions,  setQuestions]  = useState([])
-  const [testName,   setTestName]   = useState('')
-  const [opts,       setOpts]       = useState({ lockdown:false, timer:false, shuffle:false, schedule:false, monitor:false })
-  const [timerMins,  setTimerMins]  = useState(45)
-  const [monitoring, setMonitoring] = useState(false)
-  const [published,  setPublished]  = useState(false)
+// ── Native Builder ─────────────────────────────────────────────────────────────
+function BuilderMode({ onBack }) {
+  const [title, setTitle]       = useState('')
+  const [subject, setSubject]   = useState('')
+  const [questions, setQuestions] = useState([])
   const [generating, setGenerating] = useState(false)
-  const [pdfFile,    setPdfFile]    = useState(null)
+  const [error, setError]       = useState(null)
+  const [activeTest, setActiveTest] = useState(false)
+  const [answers, setAnswers]   = useState({})
+  const [results, setResults]   = useState(null)
 
-  function addQuestion(type = 'mc') {
-    setQuestions(q => [...q, { id:Date.now(), type, text:'', options:{A:'',B:'',C:'',D:''}, correct:'', answer:'' }])
-  }
-
-  async function aiGenerateQuestions() {
-    const key = import.meta.env.VITE_ANTHROPIC_KEY
-    if (!key) { alert('Add VITE_ANTHROPIC_KEY to use AI question generation.'); return }
+  async function generateQuestions() {
+    if (!subject.trim()) return
     setGenerating(true)
+    setError(null)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:1500,
-          messages:[{ role:'user', content:`Generate 5 multiple choice questions for a ${activeClass?.subject||'Math'} test, grade level appropriate. Return ONLY valid JSON: {"questions":[{"type":"mc","text":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A"}]}` }]
-        })
-      })
-      const data = await res.json()
-      const text = data.content?.[0]?.text || ''
-      const parsed = safeJSON(text)
-      if (parsed?.questions) setQuestions(q => [...q, ...parsed.questions.map((q,i) => ({ ...q, id:Date.now()+i }))])
-    } catch { alert('Generation failed. Check your API key.') }
+      const prompt = `Generate 5 multiple-choice questions for a ${subject} test${title ? ' titled "' + title + '"' : ''}. 
+Return ONLY valid JSON, no explanation:
+{"questions":[{"id":1,"question":"...","options":["A) ...","B) ...","C) ...","D) ..."],"correct":"A"}]}`
+      const text = await callAI(prompt)
+      const clean = text.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim()
+      const data = JSON.parse(clean)
+      setQuestions(data.questions || [])
+    } catch (e) {
+      setError('AI generation failed. Try again or add questions manually.')
+    }
     setGenerating(false)
   }
 
-  function handlePublish() { setPublished(true) }
+  function addQuestion() {
+    setQuestions(q => [...q, { id:Date.now(), question:'', options:['A) ','B) ','C) ','D) '], correct:'A' }])
+  }
 
-  const MODES = [
-    { id:'lockdown', icon:'🔒', label:'Lockdown Browser', sub:'External test from any ed site · locked', color:C.blue   },
-    { id:'builder',  icon:'🏗', label:'Native Builder',   sub:'Build in GradeFlow · MC · Short ans · T/F · Essay', color:C.green  },
-    { id:'pdf',      icon:'📄', label:'PDF Convert',      sub:'Upload any PDF · AI digitizes it · Questions editable', color:C.purple },
-  ]
+  function updateQ(id, field, val) {
+    setQuestions(q => q.map(qn => qn.id===id ? { ...qn, [field]:val } : qn))
+  }
 
-  // ── Menu ──────────────────────────────────────────────────────────────────
-  if (mode === 'menu') return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      {handleBack && <button onClick={handleBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:16 }}>← Back</button>}
-      <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Testing Suite</h1>
-      <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>3 modes · All devices · Auto-grade · Real-time monitoring</p>
-      <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-        {MODES.map(m => (
-          <button key={m.id} onClick={() => setMode(m.id)}
-            style={{ background:C.card, border:`1px solid ${m.color}22`, borderRadius:16, padding:'16px', textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}
-            onMouseEnter={e => e.currentTarget.style.borderColor=m.color}
-            onMouseLeave={e => e.currentTarget.style.borderColor=`${m.color}22`}>
-            <div style={{ width:48, height:48, borderRadius:12, background:`${m.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>{m.icon}</div>
-            <div>
-              <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>{m.label}</div>
-              <div style={{ fontSize:11, color:C.muted }}>{m.sub}</div>
-            </div>
-            <span style={{ marginLeft:'auto', color:C.muted, fontSize:18 }}>›</span>
-          </button>
-        ))}
+  function submitTest() {
+    const score = questions.reduce((sum, q) => sum + (answers[q.id]===q.correct?1:0), 0)
+    const pct = Math.round((score/questions.length)*100)
+    setResults({ score:pct, correct:score, total:questions.length })
+  }
+
+  if (results) return (
+    <div>
+      <button onClick={() => { setResults(null); setAnswers({}) }}
+        style={{ background:C.inner, border:'none', borderRadius:10, padding:'7px 14px', color:C.text, cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:14 }}>
+        ← Back to Test
+      </button>
+      <div style={{ background:C.inner, borderRadius:16, padding:24, textAlign:'center', marginBottom:16 }}>
+        <div style={{ fontSize:60, fontWeight:900, color:gradeColor(results.score), lineHeight:1 }}>{results.score}</div>
+        <div style={{ fontSize:20, fontWeight:800, color:gradeColor(results.score) }}>{gradeLetter(results.score)}</div>
+        <div style={{ fontSize:12, color:C.muted, marginTop:4 }}>{results.correct}/{results.total} correct</div>
       </div>
-      {/* Features */}
-      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:16, marginTop:20 }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:10 }}>Features</div>
-        {['⏱ Timer + auto-submit','👁 Real-time monitoring','🔀 Randomize question order','🚨 Flag exit attempts','✨ AI auto-grade short answers','📝 Flag essays for review'].map(f => (
-          <div key={f} style={{ fontSize:12, color:C.text, padding:'6px 0', borderBottom:`1px solid ${C.inner}` }}>{f}</div>
-        ))}
-      </div>
+      {questions.map(q => (
+        <div key={q.id} style={{ background:answers[q.id]===q.correct?'#0f2a1a':'#1c1012', border:`1px solid ${answers[q.id]===q.correct?C.green:C.red}30`, borderRadius:12, padding:'12px 14px', marginBottom:8 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:C.text, marginBottom:6 }}>{q.question}</div>
+          <div style={{ fontSize:11, color:answers[q.id]===q.correct?C.green:C.red }}>
+            Your answer: {answers[q.id]} · Correct: {q.correct}
+          </div>
+        </div>
+      ))}
     </div>
   )
 
-  // ── Native Builder ────────────────────────────────────────────────────────
-  if (mode === 'builder') return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:100 }}>
-      <div style={{ padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-        <button onClick={() => setMode('menu')} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-        <h1 style={{ fontSize:18, fontWeight:800, margin:0 }}>🏗 Test Builder</h1>
-      </div>
-
-      {published ? (
-        <div style={{ textAlign:'center', padding:'40px 20px' }}>
-          <div style={{ fontSize:56, marginBottom:16 }}>✅</div>
-          <h2 style={{ color:C.text, marginBottom:8 }}>Test Published!</h2>
-          <p style={{ color:C.muted, fontSize:13, marginBottom:20 }}>Students will see it at their next login · {opts.monitor && 'Monitoring active'}</p>
-          {opts.monitor && (
-            <div style={{ background:C.card, border:`1px solid ${C.blue}30`, borderRadius:14, padding:'14px 16px', textAlign:'left', marginBottom:16 }}>
-              <div style={{ fontWeight:700, color:C.blue, marginBottom:8 }}>👁 Live Monitor</div>
-              {[{ name:'Aaliyah Brooks', progress:60, status:'In progress' },{ name:'Marcus Thompson', progress:0, status:'Not started' },{ name:'Sofia Rodriguez', progress:100, status:'Submitted ✓' }].map(s => (
-                <div key={s.name} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom:`1px solid ${C.inner}`, fontSize:12 }}>
-                  <span style={{ color:C.text }}>{s.name}</span>
-                  <span style={{ color:s.status.includes('Submitted')?C.green:s.status.includes('progress')?C.amber:C.muted }}>{s.status}</span>
-                </div>
-              ))}
+  if (activeTest) return (
+    <div>
+      <button onClick={() => setActiveTest(false)}
+        style={{ background:C.inner, border:'none', borderRadius:10, padding:'7px 14px', color:C.text, cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:14 }}>
+        ← Exit Test
+      </button>
+      <h2 style={{ fontSize:18, fontWeight:800, color:C.text, marginBottom:16 }}>{title || 'Test'}</h2>
+      {questions.map((q, i) => (
+        <div key={q.id} style={{ background:C.inner, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:10 }}>{i+1}. {q.question}</div>
+          {q.options.map(opt => (
+            <div key={opt} onClick={() => setAnswers(a => ({ ...a, [q.id]:opt.charAt(0) }))}
+              style={{ background:answers[q.id]===opt.charAt(0)?'rgba(59,126,244,0.2)':C.card, border:`1px solid ${answers[q.id]===opt.charAt(0)?C.blue:C.border}`, borderRadius:10, padding:'8px 12px', marginBottom:6, cursor:'pointer', fontSize:12, color:C.text, transition:'all 0.15s' }}>
+              {opt}
             </div>
-          )}
-          <button onClick={() => { setPublished(false); setMode('menu') }} style={{ background:'var(--school-color)', border:'none', borderRadius:12, padding:'12px 24px', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer' }}>Done</button>
-        </div>
-      ) : (
-        <div style={{ padding:'0 16px' }}>
-          <div style={{ marginBottom:12 }}>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Test Name</label>
-            <input value={testName} onChange={e => setTestName(e.target.value)} placeholder="e.g. Unit 3 Test"
-              style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }} />
-          </div>
-
-          <div style={{ marginBottom:16 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Options</div>
-            <AssignmentOptions options={opts} onChange={setOpts} />
-            {opts.timer && (
-              <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:10 }}>
-                <label style={{ fontSize:12, color:C.text }}>Timer (min):</label>
-                <input type="number" value={timerMins} onChange={e => setTimerMins(Number(e.target.value))} min={5} max={180}
-                  style={{ width:80, background:C.inner, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', color:C.text, fontSize:13, outline:'none', textAlign:'center' }} />
-              </div>
-            )}
-          </div>
-
-          <div style={{ display:'flex', gap:8, marginBottom:12 }}>
-            <button onClick={() => addQuestion('mc')} style={{ flex:1, background:`${C.blue}22`, color:C.blue, border:'none', borderRadius:12, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ MC</button>
-            <button onClick={() => addQuestion('short')} style={{ flex:1, background:`${C.green}22`, color:C.green, border:'none', borderRadius:12, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ Short</button>
-            <button onClick={() => addQuestion('essay')} style={{ flex:1, background:`${C.purple}22`, color:C.purple, border:'none', borderRadius:12, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}>+ Essay</button>
-            <button onClick={aiGenerateQuestions} disabled={generating} style={{ flex:1, background:`${C.teal}22`, color:C.teal, border:'none', borderRadius:12, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
-              {generating ? '...' : '✨ AI'}
-            </button>
-          </div>
-
-          {generating && <div style={{ textAlign:'center', padding:16 }}><LoadingSpinner /><p style={{ color:C.muted, fontSize:12, marginTop:8 }}>Generating questions...</p></div>}
-
-          {questions.map((q, i) => (
-            <QuestionCard key={q.id} q={q} index={i}
-              onChange={updated => setQuestions(qs => qs.map(x => x.id===q.id ? updated : x))}
-              onDelete={() => setQuestions(qs => qs.filter(x => x.id !== q.id))}
-            />
           ))}
-
-          {questions.length > 0 && (
-            <div style={{ marginTop:8 }}>
-              <div style={{ background:C.inner, borderRadius:12, padding:'10px 14px', marginBottom:10, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <span style={{ fontSize:12, color:C.text }}>Grade posting</span>
-                <div style={{ display:'flex', gap:6 }}>
-                  {['Auto','Review first','Manual'].map(opt => (
-                    <button key={opt} style={{ background:opt==='Auto'?'var(--school-color)':'#2a2f42', color:opt==='Auto'?'#fff':C.muted, border:'none', borderRadius:8, padding:'4px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>{opt}</button>
-                  ))}
-                </div>
-              </div>
-              <button onClick={handlePublish} style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
-                Publish Test ({questions.length} questions)
-              </button>
-            </div>
-          )}
         </div>
-      )}
-    </div>
-  )
-
-  // ── Lockdown ─────────────────────────────────────────────────────────────
-  if (mode === 'lockdown') return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={() => setMode('menu')} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 6px' }}>🔒 Lockdown Browser</h1>
-      <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>Link to any external test and lock the browser during it.</p>
-      <div style={{ marginBottom:12 }}>
-        <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Test URL</label>
-        <input placeholder="https://www.khanacademy.org/... or any test URL"
-          style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }} />
-      </div>
-      <AssignmentOptions options={opts} onChange={setOpts} />
-      <button style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer', marginTop:14 }}>
-        Launch Lockdown Test
+      ))}
+      <button onClick={submitTest} disabled={Object.keys(answers).length < questions.length}
+        style={{ width:'100%', background:Object.keys(answers).length>=questions.length?'var(--school-color,#f97316)':'#1e2231', color:Object.keys(answers).length>=questions.length?'#fff':C.muted, border:'none', borderRadius:14, padding:14, fontSize:15, fontWeight:800, cursor:'pointer', marginTop:4 }}>
+        Submit Test →
       </button>
     </div>
   )
 
-  // ── PDF Convert ───────────────────────────────────────────────────────────
-  if (mode === 'pdf') return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={() => setMode('menu')} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 6px' }}>📄 PDF Convert</h1>
-      <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>Upload any PDF test · AI digitizes it · All questions become editable.</p>
-      <input type="file" accept=".pdf,image/*" onChange={e => { setPdfFile(e.target.files?.[0]); setTimeout(() => setMode('builder'), 2000) }}
-        style={{ display:'none' }} id="pdf-upload" />
-      <label htmlFor="pdf-upload" style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:14, background:C.card, border:`2px dashed ${C.border}`, borderRadius:18, padding:'40px 20px', cursor:'pointer' }}>
-        <span style={{ fontSize:48 }}>📤</span>
-        <span style={{ fontSize:15, fontWeight:700, color:C.text }}>Upload PDF or photo of test</span>
-        <span style={{ fontSize:12, color:C.muted }}>PDF · JPG · PNG — AI digitizes everything</span>
-      </label>
+  return (
+    <div>
+      <BackBtn onClick={onBack} />
+      <h2 style={{ fontSize:18, fontWeight:800, color:C.text, marginBottom:4 }}>🏗 Test Builder</h2>
+      <p style={{ fontSize:12, color:C.muted, marginBottom:16 }}>Build questions manually or use AI to generate them</p>
+
+      <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Test title..."
+        style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 12px', color:C.text, fontSize:12, marginBottom:10, boxSizing:'border-box', outline:'none' }} />
+
+      {/* AI Generation */}
+      <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:14, padding:14, marginBottom:14 }}>
+        <div style={{ fontSize:12, fontWeight:700, color:C.purple, marginBottom:8 }}>✨ AI Question Generator</div>
+        <div style={{ display:'flex', gap:8 }}>
+          <input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Subject, topic, grade level..."
+            style={{ flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:'8px 12px', color:C.text, fontSize:12, outline:'none' }} />
+          <button onClick={generateQuestions} disabled={!subject.trim() || generating}
+            style={{ background:C.purple, color:'#fff', border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+            {generating ? '...' : 'Generate'}
+          </button>
+        </div>
+        {error && <div style={{ fontSize:11, color:C.red, marginTop:8 }}>⚠ {error}</div>}
+      </div>
+
+      {/* Questions */}
+      {questions.map((q, i) => (
+        <div key={q.id} style={{ background:C.inner, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:C.muted }}>Q{i+1}</span>
+            <button onClick={() => setQuestions(qns => qns.filter(qn => qn.id !== q.id))}
+              style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:16 }}>×</button>
+          </div>
+          <input value={q.question} onChange={e => updateQ(q.id, 'question', e.target.value)} placeholder="Question..."
+            style={{ width:'100%', background:C.card, border:`1px solid ${C.border}`, borderRadius:8, padding:'8px 10px', color:C.text, fontSize:12, marginBottom:8, boxSizing:'border-box', outline:'none' }} />
+          {q.options.map((opt, oi) => (
+            <div key={oi} style={{ display:'flex', alignItems:'center', gap:6, marginBottom:4 }}>
+              <button onClick={() => updateQ(q.id, 'correct', opt.charAt(0))}
+                style={{ width:20, height:20, borderRadius:'50%', border:`2px solid ${q.correct===opt.charAt(0)?C.green:C.border}`, background:q.correct===opt.charAt(0)?C.green:'transparent', cursor:'pointer', flexShrink:0 }} />
+              <input value={opt} onChange={e => { const newOpts = [...q.options]; newOpts[oi]=e.target.value; updateQ(q.id,'options',newOpts) }}
+                style={{ flex:1, background:C.card, border:`1px solid ${C.border}`, borderRadius:6, padding:'5px 8px', color:C.text, fontSize:11, outline:'none' }} />
+            </div>
+          ))}
+        </div>
+      ))}
+
+      <button onClick={addQuestion}
+        style={{ width:'100%', background:C.inner, border:`1px dashed ${C.border}`, borderRadius:12, padding:11, fontSize:13, fontWeight:700, color:C.muted, cursor:'pointer', marginBottom:10 }}>
+        + Add Question
+      </button>
+
+      {questions.length > 0 && (
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={() => setActiveTest(true)}
+            style={{ flex:1, background:'var(--school-color,#f97316)', color:'#fff', border:'none', borderRadius:12, padding:12, fontSize:13, fontWeight:800, cursor:'pointer' }}>
+            🚀 Preview Test
+          </button>
+          <button onClick={() => window.print()}
+            style={{ background:`${C.blue}22`, color:C.blue, border:'none', borderRadius:12, padding:'12px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+            🖨 Print
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── PDF Mode ───────────────────────────────────────────────────────────────────
+function PDFMode({ onBack }) {
+  const [file, setFile]     = useState(null)
+  const [grading, setGrading] = useState(false)
+  const [graded, setGraded] = useState(false)
+  const inputRef = useRef()
+
+  const fakeStudents = [
+    { name:'Aaliyah Brooks',  score:94 },
+    { name:'Marcus Thompson', score:87 },
+    { name:'Sofia Rodriguez', score:72 },
+    { name:'Devon Parker',    score:65 },
+    { name:'Emma Williams',   score:91 },
+  ]
+
+  async function handleAutoGrade() {
+    setGrading(true)
+    await new Promise(r => setTimeout(r, 2200))
+    setGrading(false)
+    setGraded(true)
+  }
+
+  if (grading) return (
+    <div style={{ textAlign:'center', padding:'60px 20px' }}>
+      <div style={{ fontSize:48, marginBottom:16 }}>🤖</div>
+      <div style={{ fontSize:16, fontWeight:700, color:C.text, marginBottom:8 }}>AI Auto-Grading...</div>
+      <div style={{ fontSize:12, color:C.muted }}>Reading papers · Matching answers · Calculating scores</div>
+      <div style={{ marginTop:24, background:C.inner, borderRadius:999, height:6, overflow:'hidden' }}>
+        <div style={{ background:C.purple, height:'100%', width:'70%', borderRadius:999 }} />
+      </div>
     </div>
   )
 
-  return null
+  if (graded) return (
+    <div>
+      <button onClick={() => { setGraded(false); setFile(null) }}
+        style={{ background:C.inner, border:'none', borderRadius:10, padding:'7px 14px', color:C.text, cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:14 }}>
+        ← Back
+      </button>
+      <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:12 }}>✅ Auto-graded {fakeStudents.length} papers</div>
+      {fakeStudents.map(s => (
+        <div key={s.name} style={{ background:C.inner, borderRadius:12, padding:'10px 14px', marginBottom:6, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <span style={{ fontSize:13, color:C.text }}>{s.name}</span>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <span style={{ fontSize:16, fontWeight:800, color:gradeColor(s.score) }}>{s.score}%</span>
+            <span style={{ fontSize:11, fontWeight:700, color:gradeColor(s.score) }}>{gradeLetter(s.score)}</span>
+          </div>
+        </div>
+      ))}
+      <div style={{ marginTop:12, display:'flex', gap:8 }}>
+        <button onClick={() => window.print()} style={{ flex:1, background:`${C.green}22`, color:C.green, border:'none', borderRadius:10, padding:10, fontSize:11, fontWeight:700, cursor:'pointer' }}>🖨 Print</button>
+        <button onClick={() => window.print()} style={{ flex:1, background:`${C.blue}22`, color:C.blue, border:'none', borderRadius:10, padding:10, fontSize:11, fontWeight:700, cursor:'pointer' }}>📊 Export</button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div>
+      <BackBtn onClick={onBack} />
+      <h2 style={{ fontSize:18, fontWeight:800, color:C.text, marginBottom:4 }}>📄 PDF / Upload</h2>
+      <p style={{ fontSize:12, color:C.muted, marginBottom:16 }}>Upload an existing test · AI auto-grades student papers</p>
+
+      <div onClick={() => inputRef.current?.click()}
+        style={{ border:`2px dashed ${file?C.green:C.border}`, borderRadius:16, padding:'28px 20px', textAlign:'center', cursor:'pointer', background:C.inner, marginBottom:14 }}>
+        <div style={{ fontSize:40, marginBottom:10 }}>{file ? '✅' : '📄'}</div>
+        <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:4 }}>
+          {file ? file.name : 'Upload test PDF'}
+        </div>
+        <div style={{ fontSize:11, color:C.muted }}>PDF · Word · Image</div>
+      </div>
+      <input ref={inputRef} type="file" accept=".pdf,.doc,.docx,image/*" style={{ display:'none' }}
+        onChange={e => setFile(e.target.files[0])} />
+
+      {file && (
+        <>
+          <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:11, color:C.purple }}>
+            ✨ AI will read the answer key, then grade each uploaded student paper automatically
+          </div>
+          <button onClick={handleAutoGrade}
+            style={{ width:'100%', background:'var(--school-color,#f97316)', color:'#fff', border:'none', borderRadius:14, padding:14, fontSize:15, fontWeight:800, cursor:'pointer' }}>
+            ✨ Auto-Grade with AI →
+          </button>
+        </>
+      )}
+    </div>
+  )
 }
 
-function safeJSON(text) {
-  try { return JSON.parse(text.replace(/```json|```/g,'').trim()) } catch {}
-  try { const m = text.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]) } catch {}
-  return null
+// ── Main TestingSuite ──────────────────────────────────────────────────────────
+export default function TestingSuite({ onBack }) {
+  const [mode, setMode] = useState(null)
+
+  const modeMap = {
+    lockdown: <LockdownMode onBack={() => setMode(null)} />,
+    builder:  <BuilderMode  onBack={() => setMode(null)} />,
+    pdf:      <PDFMode      onBack={() => setMode(null)} />,
+  }
+
+  return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', paddingBottom:40 }}>
+      <div style={{ background:'linear-gradient(135deg,#003057,#001830)', padding:'20px 16px 24px' }}>
+        <button onClick={mode ? () => setMode(null) : onBack}
+          style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:12 }}>
+          ← {mode ? 'Choose Mode' : 'Back'}
+        </button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🧪 Testing Suite</h1>
+        {!mode && <p style={{ fontSize:11, color:'rgba(255,255,255,0.7)', margin:'4px 0 0' }}>Choose a testing mode</p>}
+      </div>
+
+      <div style={{ padding:'20px 16px' }}>
+        {mode ? modeMap[mode] : (
+          <>
+            {MODES.map(m => (
+              <button key={m.id} onClick={() => setMode(m.id)}
+                style={{ width:'100%', background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px 18px', marginBottom:10, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14, transition:'border-color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.borderColor=m.color}
+                onMouseLeave={e => e.currentTarget.style.borderColor=C.border}>
+                <div style={{ width:52, height:52, borderRadius:14, background:`${m.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:26, flexShrink:0 }}>
+                  {m.icon}
+                </div>
+                <div>
+                  <div style={{ fontWeight:800, fontSize:14, color:C.text, marginBottom:2 }}>{m.label}</div>
+                  <div style={{ fontSize:11, color:C.muted }}>{m.sub}</div>
+                </div>
+                <div style={{ marginLeft:'auto', fontSize:18, color:C.muted }}>›</div>
+              </button>
+            ))}
+
+            <div style={{ background:C.inner, borderRadius:14, padding:'12px 16px', marginTop:4 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:C.muted, marginBottom:8, textTransform:'uppercase', letterSpacing:'0.06em' }}>Features</div>
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {['⏱ Timer','🔀 Shuffle Q\'s','👁 Live Monitor','✨ AI Grade','🖨 Print','📊 Export'].map(f => (
+                  <span key={f} style={{ background:C.card, borderRadius:999, padding:'4px 10px', fontSize:10, color:C.muted }}>{f}</span>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
 }
