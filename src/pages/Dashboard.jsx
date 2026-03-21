@@ -280,7 +280,7 @@ function SettingsPage({ onBack, navigate }) {
 // ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
 function BottomNav({ active, onSelect }) {
   const items = [
-    { id: 'dashboard',      icon: '⊞',  label: 'Home'     },
+    { id: 'dashboard',      icon: '🏠',  label: 'Home'     },
     { id: 'gradebook',      icon: '📊',  label: 'Grades'   },
     { id: 'camera',         icon: '📷',  label: 'Scan'     },
     { id: 'parentMessages', icon: '💬',  label: 'Messages' },
@@ -550,12 +550,11 @@ function HomeFeed({ navigate }) {
   const atRisk  = getNeedsAttention()
   const dueRems = reminders.filter(r => !r.done)
 
-  // Daily overview mirrors bottom nav minus Home — in same order
+  // Daily overview mirrors bottom nav exactly, minus Home — Grades, Scan, Messages, Settings
   const overviewTiles = [
     { icon: '📊', val: (classes.reduce((s,c) => s+c.gpa,0)/classes.length).toFixed(1), label: 'Grades',   page: 'gradebook',      color: C.blue   },
     { icon: '📷', val: '',                                                               label: 'Scan',     page: 'camera',         color: C.green  },
     { icon: '💬', val: pending.length || '',                                             label: 'Messages', page: 'parentMessages', color: C.purple },
-    { icon: '🔔', val: atRisk.length || '',                                              label: 'Alerts',   page: 'attention',      color: C.red    },
     { icon: '⚙',  val: '',                                                               label: 'Settings', page: 'settings',       color: C.muted  },
   ]
 
@@ -567,7 +566,7 @@ function HomeFeed({ navigate }) {
         <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>
           DAILY OVERVIEW
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8 }}>
           {overviewTiles.map(tile => (
             <button
               key={tile.label}
