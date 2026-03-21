@@ -1,834 +1,507 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { useStore } from '../lib/store'
 
-const C = {
-  bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
-  text:'#eef0f8', soft:'#c8cce0', muted:'#6b7494', border:'#252b3d',
-  green:'#22c97a', blue:'#3b7ef4', red:'#f04a4a', amber:'#f5a623',
-  teal:'#0fb8a0', purple:'#9b6ef5',
+// ─── HISD Theme — IDENTICAL to StudentDashboard ──────────────────────────────
+const T = {
+  primary:   '#003057',
+  secondary: '#B3A369',
+  bg:        '#000d1f',
+  card:      '#001830',
+  inner:     '#002040',
+  raised:    '#002a52',
+  text:      '#e8f0ff',
+  soft:      '#b0c4e8',
+  muted:     '#5a7aa0',
+  border:    '#003a6a',
+  green:     '#22c97a',
+  blue:      '#B3A369',
+  red:       '#f04a4a',
+  amber:     '#f5a623',
+  teal:      '#0fb8a0',
+  purple:    '#9b6ef5',
+  header:    'linear-gradient(135deg, #003057 0%, #001830 100%)',
+  navActive: '#B3A369',
 }
 
-const REACTIONS = ['👍','❤️','😂','🙌','😮','🔥','❓','😕']
-
 // ─── Demo data ────────────────────────────────────────────────────────────────
-// role: 'teacher' | 'student' | 'parent' | 'admin'
-const VIEWER = { role:'teacher', name:'Ms. Johnson', avatar:'👩‍🏫' }
+const CHILD = {
+  name: 'Marcus', fullName: 'Marcus Thompson',
+  grade: '3rd Grade', school: 'Houston ISD · Lincoln Elementary',
+  gpa: 87.4,
+  classes: [
+    { id:1, subject:'Math',    teacher:'Ms. Johnson', grade:87, letter:'B', period:'1st', color:'#3b7ef4' },
+    { id:2, subject:'Reading', teacher:'Ms. Davis',   grade:95, letter:'A', period:'2nd', color:'#22c97a' },
+    { id:3, subject:'Science', teacher:'Mr. Lee',     grade:61, letter:'D', period:'3rd', color:'#f04a4a' },
+    { id:4, subject:'Writing', teacher:'Ms. Clark',   grade:88, letter:'B', period:'4th', color:'#f54a7a' },
+  ],
+  alerts: [
+    { id:1, msg:"Marcus's Science grade is 61% — below passing", color:'#f04a4a', icon:'⚑' },
+    { id:2, msg:"2 assignments due this week for Marcus",         color:'#f5a623', icon:'📋' },
+  ],
+  assignments: [
+    { id:1, name:'Ch.4 Worksheet', subject:'Math',   due:'Today',    status:'pending'   },
+    { id:2, name:'Book Report',    subject:'Reading', due:'Tomorrow', status:'pending'   },
+    { id:3, name:'Lab Report',     subject:'Science', due:'Friday',   status:'submitted' },
+  ],
+}
 
-const DEMO_STUDENTS = [
-  { id:1,  name:'Aaliyah Brooks',  avatar:'👧' },
-  { id:2,  name:'Marcus Thompson', avatar:'👦' },
-  { id:3,  name:'Sofia Rodriguez', avatar:'👧' },
-  { id:4,  name:'Jordan Williams', avatar:'👦' },
-  { id:5,  name:'Priya Patel',     avatar:'👧' },
-  { id:6,  name:'Noah Johnson',    avatar:'👦' },
-  { id:7,  name:'Emma Davis',      avatar:'👧' },
-  { id:8,  name:'Liam Martinez',   avatar:'👦' },
+const INITIAL_THREADS = [
+  {
+    id:1, from:'Ms. Johnson', subject:'Math · Private', avatar:'👩‍🏫', unread:true, private:true,
+    messages:[
+      { id:1, sender:'Ms. Johnson', text:"Hi Ms. Thompson, I wanted to reach out about Marcus's recent progress.", time:'1 hr ago', isMe:false },
+      { id:2, sender:'Me',          text:"Thank you for reaching out. I'll work with him on Science at home.", time:'45 min ago', isMe:true },
+      { id:3, sender:'Ms. Johnson', text:"That would be great! He has a test on Friday — chapters 3 & 4.", time:'30 min ago', isMe:false },
+    ],
+  },
+  {
+    id:2, from:'Mr. Lee', subject:'Science · Private', avatar:'🧑‍🔬', unread:false, private:true,
+    messages:[{ id:1, sender:'Mr. Lee', text:"Hi Ms. Thompson, Marcus's Science grade has dropped. I recommend additional practice this week.", time:'Yesterday', isMe:false }],
+  },
+  {
+    id:3, from:'Marcus', subject:"Student View — Marcus's Messages", avatar:'🎒', unread:false, private:false, readOnly:true,
+    messages:[
+      { id:1, sender:'Ms. Johnson', text:"Great work on yesterday's quiz, Marcus!", time:'1 hr ago', isMe:false },
+      { id:2, sender:'Marcus',      text:"Thank you, Ms. Johnson! I studied really hard.", time:'45 min ago', isMe:false },
+      { id:3, sender:'Ms. Johnson', text:"Don't forget the worksheet due Friday!", time:'30 min ago', isMe:false },
+    ],
+  },
 ]
 
-const INITIAL_POSTS = [
-  {
-    id: 1,
-    type: 'announcement',
-    author: 'Ms. Johnson', authorRole: 'teacher', authorAvatar: '👩‍🏫',
-    classId: 1, subject: '3rd Period · Math',
-    content: '📅 Unit Test Friday! Review chapters 3–4. Focus on fractions and decimals. Study guide is attached below. Let me know if you have questions!',
-    time: '2 hours ago', timestamp: Date.now() - 7200000,
-    reactions: { '👍':12, '❤️':5, '🔥':3 },
-    pinned: true,
-    permissions: 'open', // open | closed | teacher_only
-    comments: [
-      { id:1, author:'Marcus Thompson', authorRole:'student', avatar:'👦', text:'Will the test cover the worksheet from Tuesday?', time:'1hr 45min ago', reactions:{'👍':3}, replies:[] },
-      { id:2, author:'Ms. Johnson',     authorRole:'teacher', avatar:'👩‍🏫', text:'Yes, Marcus! The worksheet problems are great practice. Everything from pages 84–102 is fair game.', time:'1hr 30min ago', reactions:{'👍':8,'❤️':2}, replies:[] },
-      { id:3, author:'Aaliyah Brooks',  authorRole:'student', avatar:'👧', text:'Can we work in groups to study?', time:'1hr ago', reactions:{'👍':5}, replies:[
-        { id:31, author:'Ms. Johnson', authorRole:'teacher', avatar:'👩‍🏫', text:'Study groups are a great idea! I\'ll open the classroom Thursday after school.', time:'55min ago', reactions:{'❤️':6} },
-        { id:32, author:'Sofia Rodriguez', authorRole:'student', avatar:'👧', text:'I\'m in! @Aaliyah want to study together?', time:'50min ago', reactions:{'👍':2} },
-      ]},
-      { id:4, author:'Priya Patel', authorRole:'student', avatar:'👧', text:'Is there a review sheet we can print?', time:'45min ago', reactions:{}, replies:[] },
-    ],
-    readBy: [1,2,3,4,5,7],
-    engagement: null,
-  },
-  {
-    id: 2,
-    type: 'assignment',
-    author: 'Ms. Johnson', authorRole: 'teacher', authorAvatar: '👩‍🏫',
-    classId: 1, subject: '3rd Period · Math',
-    content: '🗣️ Discussion Assignment: In your own words, explain how you convert a fraction to a decimal. Reply with at least 2 sentences. Then reply to at least 2 classmates and add to their explanation or give an example.',
-    time: 'Yesterday',  timestamp: Date.now() - 86400000,
-    reactions: { '👍':8, '😮':2 },
-    pinned: false,
-    permissions: 'open',
-    dueDate: 'Friday, Mar 14',
-    pointValue: 10,
-    engagement: {
-      minWords: 20,
-      mustReplyToClassmates: 2,
-      trackWordCount: true,
-      trackReplies: true,
-      gradeCategory: 4, // Participation
-    },
-    // Per-student engagement data (teacher view)
-    studentProgress: [
-      { studentId:1, name:'Aaliyah Brooks',  avatar:'👧', viewed:true,  replied:true,  wordCount:34, classmateReplies:2, grade:10,  graded:true  },
-      { studentId:2, name:'Marcus Thompson', avatar:'👦', viewed:true,  replied:true,  wordCount:18, classmateReplies:1, grade:null, graded:false },
-      { studentId:3, name:'Sofia Rodriguez', avatar:'👧', viewed:true,  replied:true,  wordCount:41, classmateReplies:3, grade:10,  graded:true  },
-      { studentId:4, name:'Jordan Williams', avatar:'👦', viewed:true,  replied:false, wordCount:0,  classmateReplies:0, grade:null, graded:false },
-      { studentId:5, name:'Priya Patel',     avatar:'👧', viewed:true,  replied:true,  wordCount:27, classmateReplies:2, grade:10,  graded:true  },
-      { studentId:6, name:'Noah Johnson',    avatar:'👦', viewed:false, replied:false, wordCount:0,  classmateReplies:0, grade:null, graded:false },
-      { studentId:7, name:'Emma Davis',      avatar:'👧', viewed:true,  replied:true,  wordCount:31, classmateReplies:2, grade:10,  graded:true  },
-      { studentId:8, name:'Liam Martinez',   avatar:'👦', viewed:true,  replied:false, wordCount:0,  classmateReplies:0, grade:null, graded:false },
-    ],
-    comments: [
-      { id:10, author:'Aaliyah Brooks',  authorRole:'student', avatar:'👧', text:'To convert a fraction to a decimal, you divide the top number by the bottom number. So 3/4 means 3 divided by 4, which equals 0.75. I think of it like money — 3 quarters is 75 cents!', time:'Yesterday 4pm', reactions:{'👍':5,'❤️':2}, replies:[
-        { id:101, author:'Sofia Rodriguez', authorRole:'student', avatar:'👧', text:'I love the money example! That makes it so much easier to remember.', time:'Yesterday 4:15pm', reactions:{'👍':3} },
-        { id:102, author:'Marcus Thompson', authorRole:'student', avatar:'👦', text:'So for 1/2 it would be 0.50 which is like 50 cents. Cool!', time:'Yesterday 4:30pm', reactions:{'👍':2} },
-      ]},
-      { id:11, author:'Sofia Rodriguez', authorRole:'student', avatar:'👧', text:'When you convert a fraction to a decimal you are doing long division. The numerator gets divided by the denominator. Like 1/4 = 0.25 because 1 divided by 4 is 0.25. I also think you can remember common ones like 1/2=0.5 and 1/4=0.25.', time:'Yesterday 4:10pm', reactions:{'👍':4}, replies:[
-        { id:111, author:'Priya Patel', authorRole:'student', avatar:'👧', text:'I memorized those too! 1/5 = 0.2 is another easy one.', time:'Yesterday 5pm', reactions:{'👍':2} },
-      ]},
-      { id:12, author:'Priya Patel', authorRole:'student', avatar:'👧', text:'A fraction becomes a decimal when you divide the numerator by the denominator using long division. Example: 3/5. You do 3 divided by 5. 5 goes into 30 six times so 3/5 = 0.6. You can check by multiplying back.', time:'Yesterday 5pm', reactions:{'👍':3,'🔥':1}, replies:[] },
-      { id:13, author:'Emma Davis', authorRole:'student', avatar:'👧', text:'To change a fraction to a decimal, you divide the numerator (top number) by the denominator (bottom number). So for 7/8, you do 7 divided by 8 which gives 0.875. A calculator can help check your work but it is good to know how to do it by hand.', time:'Yesterday 6pm', reactions:{'👍':2}, replies:[] },
-    ],
-    readBy: [1,2,3,4,5,7],
-  },
-  {
-    id: 3,
-    type: 'post',
-    author: 'Ms. Johnson', authorRole: 'teacher', authorAvatar: '👩‍🏫',
-    classId: 1, subject: '3rd Period · Math',
-    content: '🎉 Great work on yesterday\'s homework! The class average was 87%. Special shoutout to everyone who turned it in early! Keep up the amazing effort.',
-    time: '2 days ago', timestamp: Date.now() - 172800000,
-    reactions: { '👍':18, '❤️':9, '🔥':6 },
-    pinned: false,
-    permissions: 'open',
-    comments: [
-      { id:20, author:'Marcus Thompson', authorRole:'student', avatar:'👦', text:'Thank you Ms. Johnson! 😊', time:'2 days ago', reactions:{'❤️':4}, replies:[] },
-      { id:21, author:'Aaliyah Brooks',  authorRole:'student', avatar:'👧', text:'Yay!! We worked hard 💪', time:'2 days ago', reactions:{'👍':6}, replies:[] },
-    ],
-    readBy: [1,2,3,4,5,6,7,8],
-    engagement: null,
-  },
+const CONTACTS = [
+  { name:'Ms. Johnson', role:'Math Teacher',    avatar:'👩‍🏫' },
+  { name:'Mr. Lee',     role:'Science Teacher', avatar:'🧑‍🔬' },
+  { name:'Ms. Davis',   role:'Reading Teacher', avatar:'👩‍💼' },
+  { name:'Ms. Clark',   role:'Writing Teacher', avatar:'✍️'  },
+  { name:'Principal',   role:'Administration',  avatar:'🏫'  },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function countWords(str) { return str.trim().split(/\s+/).filter(Boolean).length }
+function gradeColor(g) { return g>=90?T.green:g>=80?T.blue:g>=70?T.amber:T.red }
 
-function Chip({ label, color, size=10 }) {
-  return <span style={{ background:`${color}18`, color, borderRadius:999, padding:'3px 8px', fontSize:size, fontWeight:700 }}>{label}</span>
-}
-
-function Avatar({ emoji, size=32 }) {
-  return <div style={{ width:size, height:size, borderRadius:'50%', background:'var(--school-color,#BA0C2F)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:size*0.5, flexShrink:0 }}>{emoji}</div>
-}
-
-// ─── ENGAGEMENT ANALYTICS PANEL ──────────────────────────────────────────────
-function EngagementPanel({ post, onClose, onGrade }) {
-  const [filter, setFilter] = useState('all')
-  const progress = post.studentProgress || []
-
-  const replied    = progress.filter(s=>s.replied).length
-  const notReplied = progress.filter(s=>!s.replied).length
-  const notViewed  = progress.filter(s=>!s.viewed).length
-  const avgWords   = replied ? Math.round(progress.filter(s=>s.replied).reduce((sum,s)=>sum+s.wordCount,0)/replied) : 0
-  const graded     = progress.filter(s=>s.graded).length
-  const meetsReqs  = progress.filter(s=>s.replied && s.wordCount>=(post.engagement?.minWords||0) && s.classmateReplies>=(post.engagement?.mustReplyToClassmates||0))
-
-  const filtered = filter==='all' ? progress
-    : filter==='done'    ? progress.filter(s=>s.replied&&s.wordCount>=(post.engagement?.minWords||0)&&s.classmateReplies>=(post.engagement?.mustReplyToClassmates||0))
-    : filter==='partial' ? progress.filter(s=>s.replied&&(s.wordCount<(post.engagement?.minWords||0)||s.classmateReplies<(post.engagement?.mustReplyToClassmates||0)))
-    : progress.filter(s=>!s.replied)
-
+function Widget({ onClick, children, style={} }) {
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-end' }}
-      onClick={e=>{ if(e.target===e.currentTarget) onClose() }}>
-      <div style={{ background:C.card, borderRadius:'24px 24px 0 0', width:'100%', maxHeight:'90vh', overflow:'auto', padding:'20px 16px 40px' }}>
+    <div onClick={onClick} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:20, padding:16, marginBottom:12, cursor:onClick?'pointer':'default', transition:'border-color 0.15s', ...style }}
+      onMouseEnter={e=>{ if(onClick) e.currentTarget.style.borderColor=T.secondary }}
+      onMouseLeave={e=>{ e.currentTarget.style.borderColor = style.borderColor||T.border }}>
+      {children}
+    </div>
+  )
+}
 
-        {/* Header */}
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
-          <div>
-            <div style={{ fontSize:16, fontWeight:800, color:C.text, marginBottom:4 }}>📊 Engagement Analytics</div>
-            <div style={{ fontSize:11, color:C.muted }}>Due: {post.dueDate} · {post.pointValue} pts</div>
-          </div>
-          <button onClick={onClose} style={{ background:C.inner, border:'none', borderRadius:10, padding:'7px 12px', color:C.muted, cursor:'pointer', fontSize:14 }}>✕</button>
-        </div>
+function Btn({ label, color, onClick, style={} }) {
+  return (
+    <button onClick={e=>{e.stopPropagation();onClick?.()}}
+      style={{ background:`${color}22`, color, border:`1px solid ${color}40`, borderRadius:10, padding:'7px 13px', fontSize:11, fontWeight:700, cursor:'pointer', ...style }}>
+      {label}
+    </button>
+  )
+}
 
-        {/* Summary stats */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:16 }}>
-          {[
-            { label:'Replied',   val:replied,    total:progress.length, color:C.green  },
-            { label:'Pending',   val:notReplied, total:progress.length, color:C.amber  },
-            { label:'Not Seen',  val:notViewed,  total:progress.length, color:C.red    },
-            { label:'Avg Words', val:avgWords,   total:null,            color:C.teal   },
-          ].map(s=>(
-            <div key={s.label} style={{ background:C.inner, borderRadius:14, padding:'10px 8px', textAlign:'center' }}>
-              <div style={{ fontSize:20, fontWeight:900, color:s.color }}>{s.val}{s.total ? `/${s.total}` : ''}</div>
-              <div style={{ fontSize:9, color:C.muted, marginTop:2 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
+// ─── Bottom nav ───────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { id:'home',    icon:'🏠',  label:'Home'     },
+  { id:'grades',  icon:'📊', label:'Grades'   },
+  { id:'feed',    icon:'📢', label:'Feed'     },
+  { id:'messages',icon:'💬', label:'Messages' },
+  { id:'settings',icon:'⚙',  label:'Settings' },
+]
 
-        {/* Class progress bar */}
-        <div style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:16 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-            <span style={{ fontSize:11, color:C.muted }}>Class completion</span>
-            <span style={{ fontSize:11, fontWeight:700, color:C.text }}>{meetsReqs.length}/{progress.length} meet requirements</span>
-          </div>
-          <div style={{ height:8, background:C.raised, borderRadius:4, overflow:'hidden', display:'flex' }}>
-            <div style={{ flex:meetsReqs.length, background:C.green, transition:'flex 0.4s' }}/>
-            <div style={{ flex:progress.filter(s=>s.replied&&!meetsReqs.includes(s)).length, background:C.amber }}/>
-            <div style={{ flex:notReplied, background:C.raised }}/>
-          </div>
-          <div style={{ display:'flex', gap:12, marginTop:6 }}>
-            {[['■',C.green,'Complete'],['■',C.amber,'Partial'],['■',C.raised,'Not started']].map(([s,c,l])=>(
-              <span key={l} style={{ fontSize:9, color:C.muted }}><span style={{color:c}}>{s}</span> {l}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* Requirements reminder */}
-        {post.engagement && (
-          <div style={{ background:`${C.blue}12`, border:`1px solid ${C.blue}30`, borderRadius:12, padding:'10px 12px', marginBottom:14, fontSize:11, color:C.soft }}>
-            <strong>Requirements:</strong> Min {post.engagement.minWords} words · Reply to {post.engagement.mustReplyToClassmates}+ classmates
-          </div>
-        )}
-
-        {/* Filter tabs */}
-        <div style={{ display:'flex', gap:6, marginBottom:12, overflowX:'auto' }}>
-          {[['all','All'],['done','✓ Done'],['partial','⚠ Partial'],['missing','✕ Missing']].map(([v,l])=>(
-            <button key={v} onClick={()=>setFilter(v)}
-              style={{ padding:'6px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, whiteSpace:'nowrap',
-                background:filter===v?'var(--school-color,#BA0C2F)':C.inner,
-                color:filter===v?'#fff':C.muted }}>
-              {l}
-            </button>
-          ))}
-        </div>
-
-        {/* Per-student rows */}
-        {filtered.map(s=>{
-          const meetsMin   = s.wordCount >= (post.engagement?.minWords||0)
-          const meetsReplies = s.classmateReplies >= (post.engagement?.mustReplyToClassmates||0)
-          const complete   = s.replied && meetsMin && meetsReplies
-          const partial    = s.replied && (!meetsMin || !meetsReplies)
-          const statusColor = complete ? C.green : partial ? C.amber : C.red
-          const statusLabel = complete ? '✓ Complete' : partial ? '⚠ Partial' : s.viewed ? '✕ Viewed, not done' : '✕ Not seen'
-
-          return (
-            <div key={s.studentId} style={{ background:C.inner, border:`1px solid ${statusColor}20`, borderRadius:14, padding:'12px 14px', marginBottom:8 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:s.replied?8:0 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <Avatar emoji={s.avatar} size={32}/>
-                  <div>
-                    <div style={{ fontWeight:700, fontSize:13, color:C.text }}>{s.name}</div>
-                    <Chip label={statusLabel} color={statusColor} size={9}/>
-                  </div>
-                </div>
-                <div style={{ textAlign:'right' }}>
-                  {s.graded
-                    ? <div style={{ fontSize:14, fontWeight:800, color:C.green }}>{s.grade}/{post.pointValue}</div>
-                    : s.replied && (
-                      <button onClick={()=>onGrade(s)}
-                        style={{ background:`${C.blue}22`, color:C.blue, border:'none', borderRadius:8, padding:'5px 10px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-                        Grade
-                      </button>
-                    )
-                  }
-                </div>
-              </div>
-
-              {s.replied && (
-                <div style={{ display:'flex', gap:12, marginTop:6 }}>
-                  <div style={{ display:'flex', align:'center', gap:4 }}>
-                    <span style={{ fontSize:10, color:meetsMin?C.green:C.amber }}>📝 {s.wordCount} words</span>
-                    {post.engagement?.minWords && !meetsMin && <span style={{ fontSize:9, color:C.amber }}>({post.engagement.minWords} req)</span>}
-                  </div>
-                  <div>
-                    <span style={{ fontSize:10, color:meetsReplies?C.green:C.amber }}>💬 {s.classmateReplies} classmate replies</span>
-                    {post.engagement?.mustReplyToClassmates && !meetsReplies && <span style={{ fontSize:9, color:C.amber }}> ({post.engagement.mustReplyToClassmates} req)</span>}
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
-
-        {/* Quick grade all */}
-        {progress.some(s=>s.replied&&!s.graded) && (
-          <button onClick={()=>alert('Auto-grade by completion: assigns full points to students meeting all requirements')}
-            style={{ width:'100%', background:`${C.teal}20`, color:C.teal, border:`1px solid ${C.teal}40`, borderRadius:14, padding:12, fontSize:13, fontWeight:700, cursor:'pointer', marginTop:4 }}>
-            ⚡ Auto-grade all who meet requirements
+function BottomNav({ active, onSelect }) {
+  return (
+    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'rgba(0,13,31,0.97)', backdropFilter:'blur(20px)', borderTop:`1px solid ${T.border}`, padding:'8px 0 max(14px,env(safe-area-inset-bottom))', display:'grid', gridTemplateColumns:`repeat(${NAV_ITEMS.length},1fr)` }}>
+      {NAV_ITEMS.map(item=>{
+        const isActive = item.id===active
+        return (
+          <button key={item.id} onClick={()=>onSelect(item.id)}
+            style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'5px 2px', position:'relative' }}>
+            <span style={{ fontSize:18, transition:'transform 0.15s', transform:isActive?'scale(1.15)':'scale(1)' }}>{item.icon}</span>
+            <span style={{ fontSize:9, fontWeight:isActive?700:400, color:isActive?T.secondary:T.muted }}>{item.label}</span>
+            {isActive && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:2, background:T.secondary, borderRadius:1 }}/>}
           </button>
-        )}
-      </div>
+        )
+      })}
     </div>
   )
 }
 
-// ─── COMPOSE POST MODAL ───────────────────────────────────────────────────────
-function ComposePost({ onPost, onClose }) {
-  const { classes, categories } = useStore()
-  const [postType, setPostType]       = useState('post')
-  const [content,  setContent]        = useState('')
-  const [selectedClass, setSelectedClass] = useState(1)
-  const [permissions, setPermissions] = useState('open')
-  const [dueDate,  setDueDate]        = useState('')
-  const [points,   setPoints]         = useState(10)
-  const [minWords, setMinWords]       = useState(20)
-  const [minReplies, setMinReplies]   = useState(2)
-  const [gradeCategory, setGradeCategory] = useState(4)
+// ─── FULL MESSAGES PAGE (Parent version) ─────────────────────────────────────
+function MessagesPage({ onBack }) {
+  const [threads, setThreads]               = useState(INITIAL_THREADS)
+  const [selectedThread, setSelectedThread] = useState(null)
+  const [reply, setReply]                   = useState('')
+  const [showNewRecipient, setShowNewRecipient] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [newName, setNewName]   = useState('')
+  const bottomRef = useRef(null)
 
-  const typeMap = {
-    post:         { icon:'📢', label:'Announcement',  color:C.blue   },
-    assignment:   { icon:'🗣️', label:'Discussion Post', color:C.teal  },
-    announcement: { icon:'📌', label:'Pinned Notice',  color:C.amber  },
-  }
-
-  function handlePost() {
-    if (!content.trim()) return
-    const t = typeMap[postType]
-    const cls = classes.find(c=>c.id===selectedClass)
-    onPost({
-      id: Date.now(),
-      type: postType,
-      author: 'Ms. Johnson', authorRole:'teacher', authorAvatar:'👩‍🏫',
-      classId: selectedClass,
-      subject: cls ? `${cls.period} · ${cls.subject}` : 'Class',
-      content: content.trim(),
-      time: 'Just now', timestamp: Date.now(),
-      reactions: {},
-      pinned: postType==='announcement',
-      permissions,
-      comments: [],
-      readBy: [],
-      ...(postType==='assignment' ? {
-        dueDate, pointValue:points,
-        engagement:{ minWords, mustReplyToClassmates:minReplies, trackWordCount:true, trackReplies:true, gradeCategory },
-        studentProgress: DEMO_STUDENTS.map(s=>({ studentId:s.id, name:s.name, avatar:s.avatar, viewed:false, replied:false, wordCount:0, classmateReplies:0, grade:null, graded:false })),
-      } : { engagement:null }),
-    })
-    onClose()
-  }
-
-  return (
-    <div style={{ position:'fixed', inset:0, zIndex:400, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-end' }}
-      onClick={e=>{ if(e.target===e.currentTarget) onClose() }}>
-      <div style={{ background:C.card, borderRadius:'24px 24px 0 0', width:'100%', maxHeight:'90vh', overflow:'auto', padding:'20px 16px 40px' }}>
-
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-          <div style={{ fontSize:16, fontWeight:800, color:C.text }}>✏️ New Post</div>
-          <button onClick={onClose} style={{ background:C.inner, border:'none', borderRadius:10, padding:'7px 12px', color:C.muted, cursor:'pointer' }}>✕</button>
-        </div>
-
-        {/* Post type */}
-        <div style={{ display:'flex', gap:6, marginBottom:14 }}>
-          {Object.entries(typeMap).map(([k,v])=>(
-            <button key={k} onClick={()=>setPostType(k)}
-              style={{ flex:1, padding:'8px 6px', borderRadius:12, border:`1px solid ${postType===k?v.color:C.border}`, cursor:'pointer', background:postType===k?`${v.color}18`:C.inner, textAlign:'center' }}>
-              <div style={{ fontSize:16, marginBottom:2 }}>{v.icon}</div>
-              <div style={{ fontSize:10, fontWeight:700, color:postType===k?v.color:C.muted }}>{v.label}</div>
-            </button>
-          ))}
-        </div>
-
-        {/* Class selector */}
-        <div style={{ marginBottom:12 }}>
-          <label style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, display:'block', marginBottom:6 }}>Post to</label>
-          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-            {(classes||[]).map(c=>(
-              <button key={c.id} onClick={()=>setSelectedClass(c.id)}
-                style={{ padding:'6px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:11, fontWeight:700,
-                  background:selectedClass===c.id?'var(--school-color,#BA0C2F)':C.inner,
-                  color:selectedClass===c.id?'#fff':C.muted }}>
-                {c.period} · {c.subject}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Content */}
-        <textarea
-          autoFocus rows={4} value={content} onChange={e=>setContent(e.target.value)}
-          placeholder={postType==='assignment'
-            ? 'Write your discussion prompt... e.g. "In your own words, explain..."'
-            : postType==='announcement' ? 'Write an important notice...'
-            : 'Share an announcement with your class...'}
-          style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'12px 14px', color:C.text, fontSize:13, resize:'none', boxSizing:'border-box', lineHeight:1.6, outline:'none', marginBottom:12 }}
-        />
-
-        {/* Permissions */}
-        <div style={{ marginBottom:14 }}>
-          <label style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, display:'block', marginBottom:6 }}>Who can reply</label>
-          <div style={{ display:'flex', gap:6 }}>
-            {[['open','Everyone'],['teacher_only','Teacher only'],['closed','No replies']].map(([v,l])=>(
-              <button key={v} onClick={()=>setPermissions(v)}
-                style={{ flex:1, padding:'8px', borderRadius:10, border:'none', cursor:'pointer', fontSize:11, fontWeight:700,
-                  background:permissions===v?'var(--school-color,#BA0C2F)':C.inner,
-                  color:permissions===v?'#fff':C.muted }}>
-                {l}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Assignment-specific settings */}
-        {postType==='assignment' && (
-          <div style={{ background:C.inner, border:`1px solid ${C.teal}30`, borderRadius:16, padding:14, marginBottom:14 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:C.teal, marginBottom:12 }}>📊 Engagement Parameters</div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:10 }}>
-              <div>
-                <label style={{ fontSize:10, fontWeight:700, color:C.muted, display:'block', marginBottom:4 }}>Due Date</label>
-                <input type="date" value={dueDate} onChange={e=>setDueDate(e.target.value)}
-                  style={{ width:'100%', background:C.raised, border:`1px solid ${C.border}`, borderRadius:8, padding:'7px 10px', color:C.text, fontSize:12, outline:'none', boxSizing:'border-box' }}/>
-              </div>
-              <div>
-                <label style={{ fontSize:10, fontWeight:700, color:C.muted, display:'block', marginBottom:4 }}>Points</label>
-                <input type="number" value={points} onChange={e=>setPoints(Number(e.target.value))} min="1" max="100"
-                  style={{ width:'100%', background:C.raised, border:`1px solid ${C.border}`, borderRadius:8, padding:'7px 10px', color:C.text, fontSize:12, outline:'none', boxSizing:'border-box' }}/>
-              </div>
-              <div>
-                <label style={{ fontSize:10, fontWeight:700, color:C.muted, display:'block', marginBottom:4 }}>Min words</label>
-                <input type="number" value={minWords} onChange={e=>setMinWords(Number(e.target.value))} min="1"
-                  style={{ width:'100%', background:C.raised, border:`1px solid ${C.border}`, borderRadius:8, padding:'7px 10px', color:C.text, fontSize:12, outline:'none', boxSizing:'border-box' }}/>
-              </div>
-              <div>
-                <label style={{ fontSize:10, fontWeight:700, color:C.muted, display:'block', marginBottom:4 }}>Reply to classmates</label>
-                <input type="number" value={minReplies} onChange={e=>setMinReplies(Number(e.target.value))} min="0"
-                  style={{ width:'100%', background:C.raised, border:`1px solid ${C.border}`, borderRadius:8, padding:'7px 10px', color:C.text, fontSize:12, outline:'none', boxSizing:'border-box' }}/>
-              </div>
-            </div>
-            <div>
-              <label style={{ fontSize:10, fontWeight:700, color:C.muted, display:'block', marginBottom:6 }}>Grade category</label>
-              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                {(useStore.getState().categories||[]).map(cat=>(
-                  <button key={cat.id} onClick={()=>setGradeCategory(cat.id)}
-                    style={{ padding:'5px 10px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
-                      background:gradeCategory===cat.id?`${cat.color}22`:C.raised,
-                      color:gradeCategory===cat.id?cat.color:C.muted,
-                      outline: gradeCategory===cat.id?`1px solid ${cat.color}`:'none' }}>
-                    {cat.icon} {cat.name} {cat.weight}%
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        <button onClick={handlePost} disabled={!content.trim()}
-          style={{ width:'100%', background:content.trim()?'var(--school-color,#BA0C2F)':'#2a2f42', color:content.trim()?'#fff':C.muted, border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:content.trim()?'pointer':'not-allowed' }}>
-          {postType==='assignment' ? '📊 Post Discussion Assignment' : postType==='announcement' ? '📌 Post Announcement' : '📢 Post to Feed'}
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ─── COMMENT THREAD ───────────────────────────────────────────────────────────
-function CommentThread({ comment, viewer, canReply, depth=0 }) {
-  const [showReplyBox, setShowReplyBox] = useState(false)
-  const [replyText,    setReplyText]    = useState('')
-  const [reactions,    setReactions]    = useState(comment.reactions||{})
-  const [localReplies, setLocalReplies] = useState(comment.replies||[])
-  const [showReactions, setShowReactions] = useState(false)
+  useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) },[selectedThread])
 
   function sendReply() {
-    if (!replyText.trim()) return
-    const r = { id:Date.now(), author:viewer.name, authorRole:viewer.role, avatar:viewer.avatar, text:replyText.trim(), time:'Just now', reactions:{} }
-    setLocalReplies(rs=>[...rs,r])
-    setReplyText('')
-    setShowReplyBox(false)
+    if (!reply.trim() || !selectedThread) return
+    const msg = { id:Date.now(), sender:'Me', text:reply.trim(), time:'Just now', isMe:true }
+    setThreads(ts=>ts.map(t=>t.id===selectedThread.id ? { ...t, messages:[...t.messages,msg] } : t))
+    setSelectedThread(t=>({ ...t, messages:[...t.messages,msg] }))
+    setReply('')
   }
 
-  const isTeacher = comment.authorRole==='teacher'
-  const borderColor = isTeacher ? 'var(--school-color,#BA0C2F)' : C.border
+  function startThread(contact) {
+    const exists = threads.find(t=>t.from===contact.name && t.private)
+    if (exists) { setSelectedThread(exists); setShowNewRecipient(false); return }
+    const t = { id:Date.now(), from:contact.name, subject:`${contact.role} · Private`, avatar:contact.avatar, unread:false, private:true, messages:[] }
+    setThreads(ts=>[...ts,t])
+    setSelectedThread(t)
+    setShowNewRecipient(false)
+  }
+
+  function addByEmail() {
+    if (!newEmail.trim()) return
+    const t = { id:Date.now(), from:newName||newEmail, subject:'New Conversation', avatar:'📧', unread:false, private:true, messages:[] }
+    setThreads(ts=>[...ts,t])
+    setSelectedThread(t)
+    setNewEmail(''); setNewName(''); setShowNewRecipient(false)
+  }
+
+  if (selectedThread) {
+    const thread = threads.find(t=>t.id===selectedThread.id)||selectedThread
+    const isReadOnly = thread.readOnly
+    return (
+      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", display:'flex', flexDirection:'column' }}>
+        <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <button onClick={()=>setSelectedThread(null)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+            <span style={{ fontSize:24 }}>{thread.avatar}</span>
+            <div>
+              <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>{thread.from}</div>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>{thread.subject}</div>
+                {thread.private && <span style={{ fontSize:9, background:'rgba(240,74,74,0.25)', color:T.red, borderRadius:999, padding:'2px 6px', fontWeight:700 }}>🔒 Private</span>}
+                {isReadOnly && <span style={{ fontSize:9, background:'rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.5)', borderRadius:999, padding:'2px 6px', fontWeight:700 }}>👁 View only</span>}
+              </div>
+            </div>
+          </div>
+        </div>
+        {isReadOnly && (
+          <div style={{ margin:'10px 16px 0', background:'#1a1a2e', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'8px 12px', fontSize:11, color:'rgba(255,255,255,0.5)' }}>
+            👁 You're viewing Marcus's messages with his teacher. This is read-only.
+          </div>
+        )}
+        <div style={{ flex:1, padding:'16px 16px 120px', overflowY:'auto' }}>
+          {thread.messages.length===0 && (
+            <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>💬</div>
+              <div style={{ fontSize:13 }}>Start the conversation</div>
+            </div>
+          )}
+          {thread.messages.map(msg=>(
+            <div key={msg.id} style={{ display:'flex', justifyContent:msg.isMe?'flex-end':'flex-start', marginBottom:12 }}>
+              {!msg.isMe && <div style={{ width:30, height:30, borderRadius:'50%', background:T.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, marginRight:8, flexShrink:0 }}>{thread.avatar}</div>}
+              <div style={{ maxWidth:'75%' }}>
+                {!msg.isMe && <div style={{ fontSize:10, color:T.muted, marginBottom:3, marginLeft:2 }}>{msg.sender}</div>}
+                <div style={{ background:msg.isMe?T.secondary:T.inner, color:msg.isMe?T.primary:T.text, borderRadius:msg.isMe?'16px 16px 4px 16px':'16px 16px 16px 4px', padding:'10px 13px', fontSize:13, lineHeight:1.5 }}>{msg.text}</div>
+                <div style={{ fontSize:9, color:T.muted, marginTop:3, textAlign:msg.isMe?'right':'left' }}>{msg.time}</div>
+              </div>
+            </div>
+          ))}
+          <div ref={bottomRef}/>
+        </div>
+        {!isReadOnly && (
+          <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:`${T.bg}f0`, backdropFilter:'blur(16px)', borderTop:`1px solid ${T.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
+            <textarea value={reply} onChange={e=>setReply(e.target.value)}
+              onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}}
+              placeholder="Reply to teacher..." rows={1}
+              style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}/>
+            <button onClick={sendReply} disabled={!reply.trim()}
+              style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0 }}>Send</button>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
-    <div style={{ marginBottom:10, paddingLeft: depth>0 ? 16 : 0, borderLeft: depth>0 ? `2px solid ${C.border}` : 'none' }}>
-      <div style={{ display:'flex', gap:10 }}>
-        <Avatar emoji={comment.avatar} size={30}/>
-        <div style={{ flex:1 }}>
-          <div style={{ background:isTeacher?`${C.card}`:C.inner, border:`1px solid ${borderColor}30`, borderRadius:14, padding:'10px 12px' }}>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-              <div>
-                <span style={{ fontWeight:700, fontSize:12, color:C.text }}>{comment.author}</span>
-                {isTeacher && <span style={{ fontSize:9, color:'var(--school-color,#BA0C2F)', fontWeight:700, marginLeft:6, background:'rgba(186,12,47,0.12)', borderRadius:4, padding:'1px 5px' }}>Teacher</span>}
-              </div>
-              <span style={{ fontSize:10, color:C.muted }}>{comment.time}</span>
-            </div>
-            <p style={{ fontSize:13, color:C.text, lineHeight:1.6, margin:0 }}>{comment.text}</p>
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+            <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
           </div>
-
-          {/* Reactions + actions */}
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:6, flexWrap:'wrap' }}>
-            {Object.entries(reactions).filter(([,c])=>c>0).map(([emoji,count])=>(
-              <button key={emoji} onClick={()=>setReactions(r=>({...r,[emoji]:(r[emoji]||0)+1}))}
-                style={{ background:`${C.blue}15`, border:'none', borderRadius:999, padding:'3px 8px', cursor:'pointer', fontSize:12, display:'flex', alignItems:'center', gap:3 }}>
-                {emoji}<span style={{ fontSize:10, fontWeight:700, color:C.blue }}>{count}</span>
+          <button onClick={()=>setShowNewRecipient(true)}
+            style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>+ New</button>
+        </div>
+      </div>
+      {showNewRecipient && (
+        <div style={{ margin:'12px 16px', background:T.card, border:`1px solid ${T.secondary}40`, borderRadius:18, padding:16 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Message a teacher</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
+            {CONTACTS.map(c=>(
+              <button key={c.name} onClick={()=>startThread(c)}
+                style={{ background:T.inner, border:`1px solid ${T.border}`, borderRadius:12, padding:'10px 14px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', textAlign:'left' }}>
+                <span style={{ fontSize:22 }}>{c.avatar}</span>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
+                  <div style={{ fontSize:10, color:T.muted }}>{c.role}</div>
+                </div>
               </button>
             ))}
-            <button onClick={()=>setShowReactions(s=>!s)}
-              style={{ background:'none', border:'none', cursor:'pointer', fontSize:12, color:C.muted }}>😊</button>
-            {canReply && depth===0 && (
-              <button onClick={()=>setShowReplyBox(s=>!s)}
-                style={{ background:'none', border:'none', cursor:'pointer', fontSize:11, color:C.muted, fontWeight:600 }}>
-                Reply
-              </button>
-            )}
           </div>
-
-          {showReactions && (
-            <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:4, background:C.raised, borderRadius:10, padding:'6px 8px' }}>
-              {REACTIONS.map(e=>(
-                <button key={e} onClick={()=>{ setReactions(r=>({...r,[e]:(r[e]||0)+1})); setShowReactions(false) }}
-                  style={{ background:'none', border:'none', cursor:'pointer', fontSize:18 }}>{e}</button>
-              ))}
+          <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14 }}>
+            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>Or add by email</div>
+            <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Name (optional)"
+              style={{ width:'100%', background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
+            <div style={{ display:'flex', gap:8 }}>
+              <input value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="Email address or URL"
+                style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none' }}/>
+              <button onClick={addByEmail} style={{ background:T.secondary, color:T.primary, border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
             </div>
-          )}
-
-          {showReplyBox && (
-            <div style={{ display:'flex', gap:8, marginTop:8, alignItems:'flex-end' }}>
-              <input value={replyText} onChange={e=>setReplyText(e.target.value)}
-                onKeyDown={e=>e.key==='Enter'&&sendReply()}
-                placeholder={`Reply to ${comment.author}...`}
-                style={{ flex:1, background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:'8px 12px', color:C.text, fontSize:12, outline:'none' }}
-              />
-              <button onClick={sendReply} disabled={!replyText.trim()}
-                style={{ background:replyText.trim()?'var(--school-color,#BA0C2F)':'#2a2f42', color:'#fff', border:'none', borderRadius:10, padding:'8px 12px', fontSize:12, fontWeight:700, cursor:replyText.trim()?'pointer':'not-allowed' }}>
-                Send
-              </button>
-            </div>
-          )}
-
-          {/* Nested replies */}
-          {localReplies.length>0 && (
-            <div style={{ marginTop:8 }}>
-              {localReplies.map(r=>(
-                <CommentThread key={r.id} comment={r} viewer={viewer} canReply={false} depth={depth+1}/>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── POST CARD ────────────────────────────────────────────────────────────────
-function PostCard({ post, viewer, onOpenAnalytics }) {
-  const [expanded,     setExpanded]     = useState(false)
-  const [postReactions, setPostReactions] = useState(post.reactions||{})
-  const [comments,     setComments]     = useState(post.comments||[])
-  const [commentText,  setCommentText]  = useState('')
-  const [showReactions, setShowReactions] = useState(false)
-
-  const isTeacher  = viewer.role==='teacher'||viewer.role==='admin'
-  const canReply   = post.permissions==='open' || (post.permissions==='teacher_only' && isTeacher)
-  const isAssignment = post.type==='assignment'
-
-  // Student engagement tracking
-  const studentProgress = isAssignment && post.studentProgress?.find(s=>s.name===viewer.name)
-  const meetingReqs = studentProgress && post.engagement
-    ? studentProgress.wordCount>=(post.engagement.minWords||0) && studentProgress.classmateReplies>=(post.engagement.mustReplyToClassmates||0)
-    : false
-
-  function addComment() {
-    if (!commentText.trim()) return
-    const c = { id:Date.now(), author:viewer.name, authorRole:viewer.role, avatar:viewer.avatar, text:commentText.trim(), time:'Just now', reactions:{}, replies:[] }
-    setComments(cs=>[...cs,c])
-    setCommentText('')
-  }
-
-  const typeColors = { post:C.blue, assignment:C.teal, announcement:C.amber }
-  const typeIcons  = { post:'📢', assignment:'🗣️', announcement:'📌' }
-  const typeLabels = { post:'Post', assignment:'Discussion', announcement:'Pinned' }
-
-  return (
-    <div style={{ background:C.card, border:`1px solid ${post.pinned?C.amber+'40':C.border}`, borderRadius:20, padding:'16px', marginBottom:12 }}>
-
-      {/* Post type badge + class */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-          <Chip label={`${typeIcons[post.type]} ${typeLabels[post.type]}`} color={typeColors[post.type]||C.blue}/>
-          <span style={{ fontSize:10, color:C.muted }}>{post.subject}</span>
-        </div>
-        {isAssignment && (
-          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-            <Chip label={`${post.pointValue} pts`} color={C.teal}/>
-            {post.dueDate && <span style={{ fontSize:10, color:C.muted }}>Due {post.dueDate}</span>}
           </div>
-        )}
-      </div>
-
-      {/* Author */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <Avatar emoji={post.authorAvatar} size={36}/>
-          <div>
-            <div style={{ fontWeight:700, fontSize:13, color:C.text }}>{post.author}</div>
-            <div style={{ fontSize:10, color:C.muted }}>{post.time}</div>
-          </div>
-        </div>
-        {/* Analytics button for teacher on assignment posts */}
-        {isTeacher && isAssignment && (
-          <button onClick={()=>onOpenAnalytics(post)}
-            style={{ background:`${C.teal}18`, color:C.teal, border:'none', borderRadius:10, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-            📊 {post.studentProgress?.filter(s=>s.replied).length||0}/{post.studentProgress?.length||0} done
-          </button>
-        )}
-      </div>
-
-      {/* Content */}
-      <p style={{ fontSize:13, color:C.text, lineHeight:1.7, margin:'0 0 12px' }}>{post.content}</p>
-
-      {/* Student progress indicator (student view of their own) */}
-      {isAssignment && viewer.role==='student' && studentProgress && (
-        <div style={{ background: meetingReqs?`${C.green}12`:`${C.amber}12`, border:`1px solid ${meetingReqs?C.green:C.amber}30`, borderRadius:10, padding:'8px 12px', marginBottom:12 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:meetingReqs?C.green:C.amber, marginBottom:3 }}>
-            {meetingReqs ? '✓ Requirements met' : '⚠ Requirements not met yet'}
-          </div>
-          <div style={{ display:'flex', gap:12 }}>
-            <span style={{ fontSize:10, color:C.muted }}>
-              Words: <strong style={{ color:studentProgress.wordCount>=(post.engagement?.minWords||0)?C.green:C.amber }}>{studentProgress.wordCount}/{post.engagement?.minWords}</strong>
-            </span>
-            <span style={{ fontSize:10, color:C.muted }}>
-              Classmate replies: <strong style={{ color:studentProgress.classmateReplies>=(post.engagement?.mustReplyToClassmates||0)?C.green:C.amber }}>{studentProgress.classmateReplies}/{post.engagement?.mustReplyToClassmates}</strong>
-            </span>
-          </div>
+          <button onClick={()=>setShowNewRecipient(false)} style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
         </div>
       )}
-
-      {/* Reactions row */}
-      <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', borderTop:`1px solid ${C.border}`, paddingTop:10, marginBottom:10 }}>
-        {Object.entries(postReactions).filter(([,c])=>c>0).map(([emoji,count])=>(
-          <button key={emoji} onClick={()=>setPostReactions(r=>({...r,[emoji]:(r[emoji]||0)+1}))}
-            style={{ background:`${C.blue}15`, border:'none', borderRadius:999, padding:'4px 10px', cursor:'pointer', fontSize:13, display:'flex', alignItems:'center', gap:4 }}>
-            {emoji}<span style={{ fontSize:10, fontWeight:700, color:C.blue }}>{count}</span>
+      <div style={{ padding:'12px 16px 4px' }}>
+        <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>🔒 Private · Teacher Channel</div>
+        {threads.filter(t=>t.private).map(thread=>(
+          <button key={thread.id} onClick={()=>setSelectedThread(thread)}
+            style={{ width:'100%', background:thread.unread?T.inner:T.card, border:`1px solid ${thread.unread?T.secondary+'50':T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left' }}
+            onMouseEnter={e=>(e.currentTarget.style.background=T.raised)}
+            onMouseLeave={e=>(e.currentTarget.style.background=thread.unread?T.inner:T.card)}>
+            <div style={{ width:42, height:42, borderRadius:'50%', background:T.raised, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0, position:'relative' }}>
+              {thread.avatar}
+              {thread.unread && <div style={{ position:'absolute', top:0, right:0, width:10, height:10, borderRadius:'50%', background:T.red, border:`2px solid ${T.bg}` }}/>}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                <div style={{ fontWeight:700, fontSize:14, color:T.text }}>{thread.from}</div>
+                <div style={{ fontSize:10, color:T.muted }}>{thread.messages[thread.messages.length-1]?.time||''}</div>
+              </div>
+              <div style={{ fontSize:11, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {thread.messages[thread.messages.length-1]?.text||'No messages yet'}
+              </div>
+            </div>
+            <span style={{ color:T.muted, fontSize:16 }}>›</span>
           </button>
         ))}
-        <button onClick={()=>setShowReactions(s=>!s)}
-          style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:999, padding:'4px 10px', cursor:'pointer', fontSize:13 }}>
-          + 😊
-        </button>
-        {showReactions && (
-          <div style={{ display:'flex', gap:4, flexWrap:'wrap', background:C.raised, borderRadius:10, padding:'6px 8px', width:'100%' }}>
-            {REACTIONS.map(e=>(
-              <button key={e} onClick={()=>{ setPostReactions(r=>({...r,[e]:(r[e]||0)+1})); setShowReactions(false) }}
-                style={{ background:'none', border:'none', cursor:'pointer', fontSize:18 }}>{e}</button>
-            ))}
-          </div>
-        )}
-        <button onClick={()=>setExpanded(s=>!s)}
-          style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', fontSize:11, color:C.muted, fontWeight:600 }}>
-          {expanded ? '▲ Hide' : `▼ ${comments.length} comment${comments.length!==1?'s':''}`}
-        </button>
-      </div>
-
-      {/* Comments */}
-      {expanded && (
-        <div>
-          {comments.length===0 && (
-            <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:'12px 0' }}>
-              {canReply ? 'Be the first to respond!' : 'No comments yet.'}
-            </div>
-          )}
-          {comments.map(comment=>(
-            <CommentThread key={comment.id} comment={comment} viewer={viewer} canReply={canReply}/>
-          ))}
-
-          {/* Reply box */}
-          {canReply && (
-            <div style={{ display:'flex', gap:10, marginTop:10, alignItems:'flex-end' }}>
-              <Avatar emoji={viewer.avatar} size={30}/>
-              <div style={{ flex:1 }}>
-                <textarea
-                  value={commentText}
-                  onChange={e=>setCommentText(e.target.value)}
-                  onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); addComment() }}}
-                  placeholder={
-                    isAssignment
-                      ? `Write your response (min ${post.engagement?.minWords||0} words)...`
-                      : 'Add a comment...'
-                  }
-                  rows={2}
-                  style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'9px 12px', color:C.text, fontSize:13, resize:'none', outline:'none', boxSizing:'border-box', fontFamily:'inherit' }}
-                />
-                {isAssignment && commentText.trim().length>0 && (
-                  <div style={{ fontSize:10, color:countWords(commentText)>=(post.engagement?.minWords||0)?C.green:C.amber, marginTop:3 }}>
-                    {countWords(commentText)} words {post.engagement?.minWords ? `(${post.engagement.minWords} required)` : ''}
-                  </div>
-                )}
+        <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, margin:'12px 0 8px' }}>👁 Marcus's View</div>
+        {threads.filter(t=>!t.private).map(thread=>(
+          <button key={thread.id} onClick={()=>setSelectedThread(thread)}
+            style={{ width:'100%', background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left' }}
+            onMouseEnter={e=>(e.currentTarget.style.background=T.raised)}
+            onMouseLeave={e=>(e.currentTarget.style.background=T.card)}>
+            <div style={{ width:42, height:42, borderRadius:'50%', background:T.raised, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>{thread.avatar}</div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:700, fontSize:14, color:T.text, marginBottom:3 }}>{thread.from}</div>
+              <div style={{ fontSize:11, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {thread.messages[thread.messages.length-1]?.text||'No messages'}
               </div>
-              <button onClick={addComment} disabled={!commentText.trim()}
-                style={{ background:commentText.trim()?'var(--school-color,#BA0C2F)':'#2a2f42', color:'#fff', border:'none', borderRadius:12, padding:'9px 14px', fontSize:12, fontWeight:700, cursor:commentText.trim()?'pointer':'not-allowed', flexShrink:0 }}>
-                Post
-              </button>
             </div>
-          )}
-
-          {!canReply && post.permissions==='closed' && (
-            <div style={{ fontSize:11, color:C.muted, textAlign:'center', padding:'8px 0' }}>Comments are closed for this post.</div>
-          )}
-          {!canReply && post.permissions==='teacher_only' && viewer.role!=='teacher' && (
-            <div style={{ fontSize:11, color:C.muted, textAlign:'center', padding:'8px 0' }}>Only the teacher can reply to this post.</div>
-          )}
-        </div>
-      )}
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
+              <span style={{ fontSize:9, color:T.muted, background:T.inner, borderRadius:999, padding:'2px 6px', fontWeight:700 }}>👁 Read only</span>
+              <span style={{ color:T.muted, fontSize:16 }}>›</span>
+            </div>
+          </button>
+        ))}
+      </div>
     </div>
   )
 }
 
-// ─── MAIN CLASS FEED ──────────────────────────────────────────────────────────
-export default function ClassFeed({ onBack, viewerRole='teacher' }) {
-  const { feed, classes, activeClass, addFeedPost, teacher, goBack } = useStore()
-  const handleBack = onBack || goBack
-
-  // Viewer identity — adapt to role
-  const viewer = viewerRole==='student'
-    ? { role:'student', name:'Marcus Thompson', avatar:'👦' }
-    : viewerRole==='parent'
-    ? { role:'parent', name:'Ms. Thompson', avatar:'👩' }
-    : viewerRole==='admin'
-    ? { role:'admin', name:'Principal Davis', avatar:'🏫' }
-    : { role:'teacher', name:teacher?.name||'Ms. Johnson', avatar:'👩‍🏫' }
-
-  const [posts,          setPosts]          = useState(INITIAL_POSTS)
-  const [filterClass,    setFilterClass]    = useState('all')
-  const [filterType,     setFilterType]     = useState('all')
-  const [composing,      setComposing]      = useState(false)
-  const [analyticsPost,  setAnalyticsPost]  = useState(null)
-  const [pendingList,    setPendingList]    = useState([
-    { id:'p1', author:'Marcus T.',  authorRole:'student', content:'Can we get extra credit on the test?',         time:'10 min ago' },
-    { id:'p2', author:'Sofia R.',   authorRole:'student', content:'Worksheet question 3 is confusing — help?',   time:'5 min ago'  },
-  ])
-  const [modMode,  setModMode]  = useState(false)
-  const [cls] = useState(activeClass || classes[0])
-
-  const isTeacher = viewer.role==='teacher'||viewer.role==='admin'
-
-  const displayedPosts = posts.filter(p=>{
-    if (filterClass!=='all' && p.classId!==filterClass) return false
-    if (filterType!=='all' && p.type!==filterType) return false
-    return true
-  }).sort((a,b)=>{
-    if (a.pinned && !b.pinned) return -1
-    if (!a.pinned && b.pinned) return 1
-    return b.timestamp-a.timestamp
-  })
-
-  function handleNewPost(post) {
-    setPosts(ps=>[post,...ps])
-  }
-
-  function handleGradeStudent(student) {
-    // In production: open grade entry modal
-    alert(`Grade ${student.name} for this discussion post — opens grade entry modal`)
-  }
-
+// ─── Grades page ──────────────────────────────────────────────────────────────
+function GradesPage({ onBack }) {
   return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
-
-      {/* Header */}
-      <div style={{ background:'linear-gradient(135deg, var(--school-color,#BA0C2F) 0%, rgba(0,0,0,0.85) 100%)', padding:'16px 16px 20px', position:'sticky', top:0, zIndex:50 }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            {handleBack && <button onClick={handleBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>}
-            <div>
-              <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📢 Class Feed</h1>
-              <p style={{ fontSize:10, color:'rgba(255,255,255,0.55)', margin:0 }}>Announcements · Discussions · Assignments</p>
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
+        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📊 Marcus's Grades</h1>
+      </div>
+      <div style={{ padding:'16px' }}>
+        {CHILD.classes.map(c=>(
+          <div key={c.id} style={{ background:T.card, border:`1px solid ${T.border}`, borderLeft:`4px solid ${c.color}`, borderRadius:16, padding:'14px 16px', marginBottom:10 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div>
+                <div style={{ fontWeight:700, fontSize:14, color:T.text }}>{c.subject}</div>
+                <div style={{ fontSize:11, color:T.muted }}>{c.teacher} · {c.period} Period</div>
+              </div>
+              <div style={{ textAlign:'right' }}>
+                <div style={{ fontSize:20, fontWeight:900, color:gradeColor(c.grade) }}>{c.grade}%</div>
+                <div style={{ fontSize:11, fontWeight:700, color:gradeColor(c.grade) }}>{c.letter}</div>
+              </div>
             </div>
           </div>
-          <div style={{ display:'flex', gap:8 }}>
-            {isTeacher && (
-              <button onClick={()=>setModMode(m=>!m)}
-                style={{ background:modMode?`${C.amber}30`:'rgba(255,255,255,0.15)', color:modMode?C.amber:'#fff', border:'none', borderRadius:10, padding:'7px 10px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-                {modMode?'✕ Mod':'🛡 Mod'}
-              </button>
-            )}
-            {(isTeacher||viewer.role==='admin') && (
-              <button onClick={()=>setComposing(true)}
-                style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>
-                + Post
-              </button>
-            )}
-          </div>
-        </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-        {/* Filter tabs */}
-        <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:2 }}>
-          <button onClick={()=>setFilterClass('all')}
-            style={{ padding:'5px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700, whiteSpace:'nowrap',
-              background:filterClass==='all'?'rgba(255,255,255,0.25)':'rgba(255,255,255,0.1)', color:'#fff' }}>
-            All Classes
-          </button>
-          {(classes||[]).map(c=>(
-            <button key={c.id} onClick={()=>setFilterClass(c.id)}
-              style={{ padding:'5px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700, whiteSpace:'nowrap',
-                background:filterClass===c.id?'rgba(255,255,255,0.25)':'rgba(255,255,255,0.1)', color:'#fff' }}>
-              {c.period}·{c.subject}
+// ─── Alerts page ──────────────────────────────────────────────────────────────
+function AlertsPage({ onBack }) {
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
+        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🔔 Alerts</h1>
+      </div>
+      <div style={{ padding:'16px' }}>
+        {CHILD.alerts.map(a=>(
+          <div key={a.id} style={{ background:T.card, border:`1px solid ${a.color}30`, borderLeft:`4px solid ${a.color}`, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
+            <div style={{ fontSize:20, marginBottom:6 }}>{a.icon}</div>
+            <div style={{ fontSize:13, color:T.text }}>{a.msg}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Home page ────────────────────────────────────────────────────────────────
+function HomePage({ navigate, childName }) {
+  const unreadCount      = INITIAL_THREADS.filter(t=>t.unread&&t.private).length
+  const pendingCount     = CHILD.assignments.filter(a=>a.status==='pending').length
+
+  // ── Parent Daily Overview: GPA · Messages · Assignments · Alerts ─────────
+  // No Scan tile — scan is not relevant for parents
+  const overviewTiles = [
+    { icon:'📊', val:CHILD.gpa,          label:'GPA',         page:'grades',   color:T.secondary },
+    { icon:'💬', val:unreadCount||'',    label:'Messages',    page:'messages', color:T.purple    },
+    { icon:'📋', val:pendingCount||'',   label:'Assignments', page:'grades',   color:T.teal      },
+    { icon:'🔔', val:CHILD.alerts.length||'', label:'Alerts', page:'alerts',  color:T.red       },
+  ]
+
+  return (
+    <div style={{ padding:'12px 12px 0' }}>
+
+      {/* W1: Daily Overview — GPA · Messages · Assignments · Alerts */}
+      <Widget style={{ background:`linear-gradient(135deg,${T.primary} 0%,#001020 100%)`, border:'none' }}>
+        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>
+          {childName.toUpperCase()}'S DAILY OVERVIEW
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+          {overviewTiles.map(tile=>(
+            <button key={tile.label} onClick={e=>{e.stopPropagation();navigate(tile.page)}}
+              style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'12px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+              <span style={{ fontSize:18 }}>{tile.icon}</span>
+              {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
+              <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
             </button>
           ))}
         </div>
-      </div>
+      </Widget>
 
-      {/* Type filter */}
-      <div style={{ display:'flex', gap:6, padding:'12px 16px 0', overflowX:'auto' }}>
-        {[['all','All'],['post','📢 Posts'],['announcement','📌 Pinned'],['assignment','🗣️ Discussions']].map(([v,l])=>(
-          <button key={v} onClick={()=>setFilterType(v)}
-            style={{ padding:'6px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700, whiteSpace:'nowrap',
-              background:filterType===v?'var(--school-color,#BA0C2F)':C.inner, color:filterType===v?'#fff':C.muted }}>
-            {l}
-          </button>
-        ))}
-      </div>
-
-      {/* Pending approvals (mod mode) */}
-      {modMode && pendingList.length>0 && (
-        <div style={{ margin:'12px 16px 0', background:'#1a1800', border:`1px solid ${C.amber}30`, borderRadius:18, padding:16 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:12 }}>
-            ⚠ Pending Approval ({pendingList.length})
+      {/* W2: Alerts */}
+      {CHILD.alerts.length>0 && (
+        <Widget onClick={()=>navigate('alerts')} style={{ border:`1px solid ${T.red}25` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div style={{ fontSize:13, fontWeight:700 }}>🔔 Alerts</div>
+            <span style={{ background:`${T.red}18`, color:T.red, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999 }}>{CHILD.alerts.length}</span>
           </div>
-          {pendingList.map(p=>(
-            <div key={p.id} style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:8 }}>
-              <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:6 }}>
-                <span style={{ fontSize:12, fontWeight:700, color:C.text }}>{p.author}</span>
-                <span style={{ fontSize:9, color:C.muted }}>· {p.time}</span>
-              </div>
-              <div style={{ fontSize:12, color:C.soft, marginBottom:8 }}>{p.content}</div>
-              <div style={{ display:'flex', gap:6 }}>
-                <button onClick={()=>setPendingList(ps=>ps.filter(x=>x.id!==p.id))}
-                  style={{ background:`${C.green}22`, color:C.green, border:'none', borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>✓ Approve</button>
-                <button onClick={()=>setPendingList(ps=>ps.filter(x=>x.id!==p.id))}
-                  style={{ background:`${C.red}22`, color:C.red, border:'none', borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>✕ Remove</button>
-              </div>
+          {CHILD.alerts.map(a=>(
+            <div key={a.id} style={{ background:T.inner, borderLeft:`3px solid ${a.color}`, borderRadius:10, padding:'9px 12px', marginBottom:6, display:'flex', gap:8, alignItems:'flex-start' }}>
+              <span>{a.icon}</span><span style={{ fontSize:12, color:T.text }}>{a.msg}</span>
             </div>
           ))}
-        </div>
+        </Widget>
       )}
 
-      {/* Posts */}
-      <div style={{ padding:'12px 16px 0' }}>
-        {displayedPosts.length===0 ? (
-          <div style={{ textAlign:'center', padding:'60px 20px', color:C.muted }}>
-            <div style={{ fontSize:56, marginBottom:12 }}>📭</div>
-            <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No posts yet</div>
-            <div style={{ fontSize:13 }}>{isTeacher ? 'Create a post or discussion assignment to get started.' : 'Nothing posted for this class yet.'}</div>
+      {/* W3: Today's Lesson */}
+      <Widget onClick={()=>navigate('lessons')} style={{ background:'linear-gradient(135deg,#001830,#000d1f)', border:`1px solid #003a6a` }}>
+        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:8 }}>TODAY'S LESSONS 📖</div>
+        <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:4 }}>Ch.4 · Fractions & Decimals · Math</div>
+        <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Pages 84–91 · Ms. Johnson · Parent view of {childName}'s lessons</div>
+      </Widget>
+
+      {/* W4: Classes */}
+      <Widget onClick={()=>navigate('grades')}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>📚 {childName}'s Classes</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          {CHILD.classes.map(c=>(
+            <button key={c.id} onClick={e=>{e.stopPropagation();navigate('grades')}}
+              style={{ background:T.inner, borderLeft:`3px solid ${c.color}`, borderRadius:12, padding:'10px 12px', border:'none', cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontWeight:700, fontSize:12, color:T.text, marginBottom:2 }}>{c.subject}</div>
+              <div style={{ fontSize:10, color:T.muted, marginBottom:6 }}>{c.teacher}</div>
+              <div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}%</div>
+            </button>
+          ))}
+        </div>
+      </Widget>
+
+      {/* W5: Messages preview */}
+      <Widget onClick={()=>navigate('messages')}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+          <div style={{ fontSize:13, fontWeight:700 }}>💬 Messages</div>
+          <Btn label="+ New" color={T.secondary} onClick={()=>navigate('messages')}/>
+        </div>
+        {INITIAL_THREADS.filter(t=>t.unread&&t.private).slice(0,2).map(t=>(
+          <div key={t.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:20 }}>{t.avatar}</span>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:700, fontSize:12, color:T.text }}>{t.from}</div>
+              <div style={{ fontSize:10, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.messages[t.messages.length-1]?.text}</div>
+            </div>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:T.red, flexShrink:0 }}/>
           </div>
-        ) : (
-          displayedPosts.map(post=>(
-            <PostCard
-              key={post.id}
-              post={post}
-              viewer={viewer}
-              onOpenAnalytics={setAnalyticsPost}
-            />
-          ))
-        )}
+        ))}
+        {!INITIAL_THREADS.some(t=>t.unread&&t.private) && <div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}
+      </Widget>
+
+      {/* W6: AI Tips */}
+      <Widget style={{ background:'linear-gradient(135deg,#0d1a3a 0%,#000d1f 100%)', border:`1px solid ${T.purple}30` }}>
+        <div style={{ fontSize:11, fontWeight:700, color:T.purple, marginBottom:6 }}>✨ AI Tips for {childName}</div>
+        <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:4 }}>Science needs focus!</div>
+        <div style={{ fontSize:11, color:T.muted }}>10 min flashcards tonight · same strategy that boosted Reading +8pts</div>
+      </Widget>
+    </div>
+  )
+}
+
+// ─── MAIN PARENT DASHBOARD ────────────────────────────────────────────────────
+export default function ParentDashboard({ currentUser }) {
+  const [page, setPage]           = useState('home')
+  const [activeNav, setActiveNav] = useState('home')
+  const parentName = currentUser?.userName || 'Ms. Thompson'
+  const childName  = CHILD.name
+
+  useEffect(()=>{ window.scrollTo(0,0) },[page])
+
+  function navigate(id) {
+    setPage(id)
+    if(NAV_ITEMS.find(n=>n.id===id)) setActiveNav(id)
+    window.scrollTo(0,0)
+  }
+
+  function goHome() { navigate('home'); setActiveNav('home') }
+
+  if (page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navigate}/></>
+  if (page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages'   onSelect={navigate}/></>
+  if (page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navigate}/></>
+
+  const now = new Date()
+  const hour = now.getHours()
+  const greeting = hour<12?'Good morning':'Good afternoon'
+
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
+
+      {/* Sticky header — greeting only, no duplicate buttons */}
+      <div style={{ position:'sticky', top:0, zIndex:100, background:T.header, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2 }}>HOUSTON ISD · LINCOLN ELEMENTARY</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div>
+            <div style={{ fontSize:17, fontWeight:800, color:'#fff' }}>{greeting}, {parentName} 👋</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Viewing: {childName} · {CHILD.grade}</div>
+          </div>
+          {/* Unread badge only — no duplicate messages button */}
+          {INITIAL_THREADS.some(t=>t.unread&&t.private) && (
+            <button onClick={()=>navigate('messages')}
+              style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:16, position:'relative' }}>
+              💬
+              <div style={{ position:'absolute', top:-2, right:-2, width:8, height:8, borderRadius:'50%', background:T.red }}/>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Compose modal */}
-      {composing && <ComposePost onPost={handleNewPost} onClose={()=>setComposing(false)}/>}
-
-      {/* Analytics panel */}
-      {analyticsPost && <EngagementPanel post={analyticsPost} onClose={()=>setAnalyticsPost(null)} onGrade={handleGradeStudent}/>}
+      <HomePage navigate={navigate} childName={childName}/>
+      <BottomNav active={activeNav} onSelect={navigate}/>
     </div>
   )
 }
