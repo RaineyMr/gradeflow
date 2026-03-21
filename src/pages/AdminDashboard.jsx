@@ -1,6 +1,15 @@
 import React, { useState } from 'react'
-import { GradeBar } from '../components/ui'
+
 import BottomNav from '../components/ui/BottomNav'
+
+function GradeBar({ score }) {
+  const color = score >= 85 ? '#22c97a' : score >= 75 ? '#f5a623' : '#f04a4a'
+  return (
+    <div style={{ background:'#1e2231', borderRadius:999, height:6, overflow:'hidden' }}>
+      <div style={{ background:color, height:'100%', width:`${score}%`, borderRadius:999, transition:'width 0.4s' }} />
+    </div>
+  )
+}
 
 const T = {
   primary: '#461D7C', secondary: '#FDD023', bg: '#060810', card: '#161923',
