@@ -1,7 +1,24 @@
 import React, { useState, useEffect } from 'react'
-import { GradeBadge, TrendBadge } from '../components/ui'
+
 import BottomNav from '../components/ui/BottomNav'
 import { useStore } from '../lib/store'
+
+function GradeBadge({ score }) {
+  const color = score >= 90 ? '#22c97a' : score >= 80 ? '#3b7ef4' : score >= 70 ? '#f5a623' : '#f04a4a'
+  const letter = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : 'D'
+  return (
+    <div style={{ textAlign:'center' }}>
+      <div style={{ fontSize:22, fontWeight:900, color, lineHeight:1 }}>{score}</div>
+      <div style={{ fontSize:11, fontWeight:700, color }}>{letter}</div>
+    </div>
+  )
+}
+
+function TrendBadge({ trend }) {
+  const map = { up:['↑','#22c97a'], down:['↓','#f04a4a'], stable:['→','#6b7494'] }
+  const [icon, color] = map[trend] || map.stable
+  return <span style={{ fontSize:13, color, fontWeight:700 }}>{icon}</span>
+}
 import Gradebook from './Gradebook'
 import LessonPlan from './LessonPlan'
 import ParentMessages from './ParentMessages'
