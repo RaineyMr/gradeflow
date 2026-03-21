@@ -1,497 +1,497 @@
-import React, { useState } from 'react'
-import BottomNav from '../components/ui/BottomNav'
+import React, { useState, useRef, useEffect } from 'react'
+import { GradeBar, GradeBadge } from '../components/ui'
 
-const THEME = {
-  bg:'#000d1f', card:'#001830', inner:'#002040', text:'#e8edf5',
-  muted:'#6080a0', border:'#003a6a', green:'#22c97a', blue:'#B3A369',
-  red:'#f04a4a', amber:'#f5a623', header:'linear-gradient(135deg,#003057 0%,#001830 100%)',
-  primary:'#003057', secondary:'#B3A369',
+// ─── HISD Theme (shared by Student) ─────────────────────────────────────────
+const T = {
+  primary:   '#003057',
+  secondary: '#B3A369',
+  bg:        '#000d1f',
+  card:      '#001830',
+  inner:     '#002040',
+  raised:    '#002a52',
+  text:      '#e8f0ff',
+  soft:      '#b0c4e8',
+  muted:     '#5a7aa0',
+  border:    '#003a6a',
+  green:     '#22c97a',
+  blue:      '#B3A369',   // gold as accent
+  red:       '#f04a4a',
+  amber:     '#f5a623',
+  teal:      '#0fb8a0',
+  purple:    '#9b6ef5',
+  header:    'linear-gradient(135deg, #003057 0%, #001830 100%)',
+  navActive: '#B3A369',
 }
 
+// ─── Demo data ────────────────────────────────────────────────────────────────
 const STUDENT = {
-  name:'Marcus', fullName:'Marcus Thompson', grade:'3rd Grade',
-  school:'Lincoln Elementary', gpa:87.4,
-  classes:[
+  name: 'Marcus', fullName: 'Marcus Thompson',
+  grade: '3rd Grade', school: 'Houston ISD · Lincoln Elementary',
+  gpa: 87.4,
+  classes: [
     { id:1, subject:'Math',    teacher:'Ms. Johnson', grade:87, letter:'B', period:'1st', color:'#3b7ef4' },
-    { id:2, subject:'Reading', teacher:'Ms. Davis',   grade:95, letter:'A', period:'2nd', color:'#9b6ef5' },
-    { id:3, subject:'Science', teacher:'Mr. Lee',     grade:79, letter:'C', period:'3rd', color:'#0fb8a0' },
+    { id:2, subject:'Reading', teacher:'Ms. Davis',   grade:95, letter:'A', period:'2nd', color:'#22c97a' },
+    { id:3, subject:'Science', teacher:'Mr. Lee',     grade:61, letter:'D', period:'3rd', color:'#f04a4a' },
     { id:4, subject:'Writing', teacher:'Ms. Clark',   grade:88, letter:'B', period:'4th', color:'#f54a7a' },
   ],
-  assignments:[
-    { id:1, name:'Ch.4 Worksheet', subject:'Math',    due:'Today',     status:'pending'   },
-    { id:2, name:'Book Report',    subject:'Reading',  due:'Tomorrow',  status:'pending'   },
-    { id:3, name:'Lab Report',     subject:'Science',  due:'Friday',    status:'submitted' },
+  assignments: [
+    { id:1, name:'Ch.4 Worksheet', subject:'Math',    due:'Today',    status:'pending'   },
+    { id:2, name:'Book Report',    subject:'Reading',  due:'Tomorrow', status:'pending'   },
+    { id:3, name:'Lab Report',     subject:'Science',  due:'Friday',   status:'submitted' },
   ],
-  messages:[
-    { id:1, from:'Ms. Johnson', subject:'Great work!',          content:"Great work on yesterday's quiz, Marcus! Keep it up!", time:'1 hr ago',  unread:true  },
-    { id:2, from:'Mr. Lee',     subject:'Science Fair Reminder', content:'Reminder: Science fair project due Friday.',          time:'Yesterday', unread:false },
+  alerts: [
+    { id:1, msg:'Science grade is 61% — below passing', color:'#f04a4a', icon:'⚑' },
+    { id:2, msg:'2 assignments due this week',           color:'#f5a623', icon:'📋' },
   ],
-  feed:[
-    { id:1, title:'📅 Test Friday — Ch. 4 & 5!', author:'Ms. Johnson', meta:'1hr ago · Read: 18/24', content:'Test Friday on Chapter 4 — fractions and decimals. Study pages 84–91.' },
-    { id:2, title:'🏆 Great job this week!',       author:'Ms. Davis',   meta:'3hr ago',              content:'Fantastic reading logs this week everyone — keep it up!' },
+  // Full thread data per conversation
+  threads: [
+    {
+      id: 1, from: 'Ms. Johnson', subject: 'Math', avatar: '👩‍🏫', unread: true,
+      messages: [
+        { id:1, sender:'Ms. Johnson', text:"Great work on yesterday's quiz, Marcus! You scored 87%. Keep it up!", time:'1 hr ago', isMe:false },
+        { id:2, sender:'Me',          text:"Thank you, Ms. Johnson! I studied really hard.", time:'45 min ago', isMe:true },
+        { id:3, sender:'Ms. Johnson', text:"Don't forget the worksheet due Friday. Let me know if you need help!", time:'30 min ago', isMe:false },
+      ],
+    },
+    {
+      id: 2, from: 'Mr. Lee', subject: 'Science', avatar: '🧑‍🔬', unread: false,
+      messages: [
+        { id:1, sender:'Mr. Lee', text:"Reminder: Science fair project due Friday. Make sure to include your hypothesis!", time:'Yesterday', isMe:false },
+      ],
+    },
+    {
+      id: 3, from: 'Ms. Clark', subject: 'Writing', avatar: '✍️', unread: false,
+      messages: [
+        { id:1, sender:'Ms. Clark', text:'Your essay draft was excellent! Just need to add a conclusion paragraph.', time:'2 days ago', isMe:false },
+      ],
+    },
   ],
-  aiTip:{ headline:'Science needs your focus! 📚', body:'10 min flashcards tonight · same strategy that boosted Reading +8pts' },
-  needsAttention:'Science below 70% · Study tips available',
+  feed: [
+    { id:1, author:'Ms. Johnson', content:'📅 Unit Test Friday! Review chapters 3–4. Study guide below.', time:'2 hours ago', reactions:{'👍':12,'❤️':5,'😂':2} },
+    { id:2, author:'Ms. Johnson', content:"🎉 Great work on yesterday's homework! Class average was 87%.",  time:'Yesterday',  reactions:{'👍':18,'❤️':9} },
+  ],
 }
 
-function gradeColor(g) { return g>=90?'#22c97a':g>=80?'#B3A369':g>=70?'#f5a623':'#f04a4a' }
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function gradeColor(g) { return g>=90?T.green:g>=80?T.blue:g>=70?T.amber:T.red }
 
-function Widget({ onClick, children, style, title, titleRight }) {
+function Widget({ onClick, children, style={} }) {
   return (
-    <div onClick={onClick}
-      style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:20, padding:'14px 16px', margin:'0 10px 12px', cursor:onClick?'pointer':'default', transition:'transform 0.15s', ...style }}
-      onMouseEnter={e => onClick && (e.currentTarget.style.transform='scale(1.005)')}
-      onMouseLeave={e => (e.currentTarget.style.transform='scale(1)')}>
-      {(title||titleRight) && (
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-          {title && <span style={{ fontSize:13, fontWeight:700, color:THEME.text }}>{title}</span>}
-          {titleRight}
-        </div>
-      )}
+    <div onClick={onClick} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:20, padding:16, marginBottom:12, cursor:onClick?'pointer':'default', transition:'border-color 0.15s', ...style }}
+      onMouseEnter={e=>{ if(onClick) e.currentTarget.style.borderColor=T.secondary }}
+      onMouseLeave={e=>{ e.currentTarget.style.borderColor = style.borderColor||T.border }}>
       {children}
     </div>
   )
 }
 
-function Btn({ label, color, onClick }) {
+function Btn({ label, color, onClick, style={} }) {
   return (
-    <button onClick={e => { e.stopPropagation(); onClick?.() }}
-      style={{ background:`${color}22`, color, border:'none', borderRadius:999, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+    <button onClick={e=>{e.stopPropagation();onClick?.()}}
+      style={{ background:`${color}22`, color, border:`1px solid ${color}40`, borderRadius:10, padding:'7px 13px', fontSize:11, fontWeight:700, cursor:'pointer', ...style }}>
       {label}
     </button>
   )
 }
 
-function BackBtn({ onClick }) {
+// ─── Bottom nav ───────────────────────────────────────────────────────────────
+const NAV_ITEMS = [
+  { id:'home',    icon:'⊞',  label:'Home'     },
+  { id:'grades',  icon:'📊', label:'Grades'   },
+  { id:'scan',    icon:'📷', label:'Scan'     },
+  { id:'messages',icon:'💬', label:'Messages' },
+  { id:'settings',icon:'⚙',  label:'Settings' },
+]
+
+function BottomNav({ active, onSelect }) {
   return (
-    <button onClick={onClick}
-      style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:12 }}>
-      ← Back
-    </button>
+    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'rgba(0,13,31,0.97)', backdropFilter:'blur(20px)', borderTop:`1px solid ${T.border}`, padding:'8px 0 max(14px,env(safe-area-inset-bottom))', display:'grid', gridTemplateColumns:`repeat(${NAV_ITEMS.length},1fr)` }}>
+      {NAV_ITEMS.map(item => {
+        const isActive = item.id === active
+        return (
+          <button key={item.id} onClick={()=>onSelect(item.id)}
+            style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'5px 2px', position:'relative' }}>
+            <span style={{ fontSize:18, transition:'transform 0.15s', transform:isActive?'scale(1.15)':'scale(1)' }}>{item.icon}</span>
+            <span style={{ fontSize:9, fontWeight:isActive?700:400, color:isActive?T.secondary:T.muted, transition:'color 0.15s' }}>{item.label}</span>
+            {isActive && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:2, background:T.secondary, borderRadius:1 }}/>}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
-// ── GPA Bar ────────────────────────────────────────────────────────────────────
-function GPABar({ gpa }) {
-  const color = gpa>=90?'#22c97a':gpa>=80?'#B3A369':gpa>=70?'#f5a623':'#f04a4a'
-  return (
-    <div style={{ background:'linear-gradient(135deg,#003057,#001830)', borderRadius:16, padding:'14px 16px', marginBottom:12 }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-        <div>
-          <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', marginBottom:2 }}>Overall GPA</div>
-          <div style={{ fontSize:36, fontWeight:900, color:'#fff', lineHeight:1 }}>{gpa}</div>
-        </div>
-        <div style={{ textAlign:'right' }}>
-          <div style={{ fontSize:22, fontWeight:800, color }}>{gpa>=90?'A':gpa>=80?'B':gpa>=70?'C':'D'}</div>
-          <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>
-            {gpa>=90?'Excellent':gpa>=80?'Good Standing':gpa>=70?'On Track':'Needs Support'}
+// ─── FULL MESSAGES PAGE ───────────────────────────────────────────────────────
+function MessagesPage({ onBack, isParent=false }) {
+  const [selectedThread, setSelectedThread] = useState(null)
+  const [reply, setReply]     = useState('')
+  const [threads, setThreads] = useState(STUDENT.threads)
+  const [showNewRecipient, setShowNewRecipient] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+  const [newName, setNewName]  = useState('')
+  const bottomRef = useRef(null)
+
+  // Contacts that can be messaged
+  const CONTACTS = [
+    { name:'Ms. Johnson', role:'Math Teacher',    avatar:'👩‍🏫' },
+    { name:'Mr. Lee',     role:'Science Teacher', avatar:'🧑‍🔬' },
+    { name:'Ms. Davis',   role:'Reading Teacher', avatar:'👩‍💼' },
+    { name:'Ms. Clark',   role:'Writing Teacher', avatar:'✍️'  },
+    { name:'Principal',   role:'Administration',  avatar:'🏫'  },
+  ]
+
+  useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) },[selectedThread])
+
+  function sendReply() {
+    if (!reply.trim() || !selectedThread) return
+    const msg = { id: Date.now(), sender:'Me', text:reply.trim(), time:'Just now', isMe:true }
+    setThreads(ts => ts.map(t => t.id===selectedThread.id ? { ...t, messages:[...t.messages, msg] } : t))
+    setSelectedThread(t => ({ ...t, messages:[...t.messages, msg] }))
+    setReply('')
+  }
+
+  function startThread(contact) {
+    const exists = threads.find(t => t.from===contact.name)
+    if (exists) { setSelectedThread(exists); setShowNewRecipient(false); return }
+    const newThread = { id:Date.now(), from:contact.name, subject:'New Conversation', avatar:contact.avatar, unread:false, messages:[] }
+    setThreads(ts=>[...ts, newThread])
+    setSelectedThread(newThread)
+    setShowNewRecipient(false)
+  }
+
+  function addByEmail() {
+    if (!newEmail.trim()) return
+    const t = { id:Date.now(), from:newName||newEmail, subject:'New Conversation', avatar:'📧', unread:false, messages:[] }
+    setThreads(ts=>[...ts,t])
+    setSelectedThread(t)
+    setNewEmail(''); setNewName(''); setShowNewRecipient(false)
+  }
+
+  // ── Thread view ──────────────────────────────────────────────────────────────
+  if (selectedThread) {
+    const thread = threads.find(t=>t.id===selectedThread.id) || selectedThread
+    return (
+      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", display:'flex', flexDirection:'column' }}>
+        {/* Thread header */}
+        <div style={{ background:T.header, padding:'16px 16px 16px', position:'sticky', top:0, zIndex:10 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <button onClick={()=>setSelectedThread(null)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+            <span style={{ fontSize:24 }}>{thread.avatar}</span>
+            <div>
+              <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>{thread.from}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>{thread.subject}</div>
+            </div>
           </div>
         </div>
+
+        {/* Messages */}
+        <div style={{ flex:1, padding:'16px 16px 120px', overflowY:'auto' }}>
+          {thread.messages.length === 0 && (
+            <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>💬</div>
+              <div style={{ fontSize:13 }}>Start the conversation</div>
+            </div>
+          )}
+          {thread.messages.map(msg => (
+            <div key={msg.id} style={{ display:'flex', justifyContent:msg.isMe?'flex-end':'flex-start', marginBottom:12 }}>
+              {!msg.isMe && <div style={{ width:30, height:30, borderRadius:'50%', background:T.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, marginRight:8, flexShrink:0 }}>{thread.avatar}</div>}
+              <div style={{ maxWidth:'75%' }}>
+                {!msg.isMe && <div style={{ fontSize:10, color:T.muted, marginBottom:3, marginLeft:2 }}>{msg.sender}</div>}
+                <div style={{ background:msg.isMe?T.secondary:T.inner, color:msg.isMe?T.primary:T.text, borderRadius:msg.isMe?'16px 16px 4px 16px':'16px 16px 16px 4px', padding:'10px 13px', fontSize:13, lineHeight:1.5 }}>
+                  {msg.text}
+                </div>
+                <div style={{ fontSize:9, color:T.muted, marginTop:3, textAlign:msg.isMe?'right':'left' }}>{msg.time}</div>
+              </div>
+            </div>
+          ))}
+          <div ref={bottomRef}/>
+        </div>
+
+        {/* Reply bar — fixed at bottom */}
+        <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:`${T.bg}f0`, backdropFilter:'blur(16px)', borderTop:`1px solid ${T.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
+          <textarea
+            value={reply}
+            onChange={e=>setReply(e.target.value)}
+            onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}}
+            placeholder="Type a message..."
+            rows={1}
+            style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}
+          />
+          <button onClick={sendReply} disabled={!reply.trim()}
+            style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0, transition:'all 0.15s' }}>
+            Send
+          </button>
+        </div>
       </div>
-      <div style={{ background:'rgba(255,255,255,0.15)', borderRadius:999, height:8, overflow:'hidden' }}>
-        <div style={{ background:color, height:'100%', width:`${gpa}%`, borderRadius:999, transition:'width 0.6s' }} />
+    )
+  }
+
+  // ── Thread list ──────────────────────────────────────────────────────────────
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      {/* Header */}
+      <div style={{ background:T.header, padding:'16px 16px 20px', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+            <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
+          </div>
+          <button onClick={()=>setShowNewRecipient(true)}
+            style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+            + New
+          </button>
+        </div>
+      </div>
+
+      {/* New recipient panel */}
+      {showNewRecipient && (
+        <div style={{ margin:'12px 16px', background:T.card, border:`1px solid ${T.secondary}40`, borderRadius:18, padding:16 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Start a new conversation</div>
+
+          {/* Contact list */}
+          <div style={{ marginBottom:14 }}>
+            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>From your contacts</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+              {CONTACTS.map(c=>(
+                <button key={c.name} onClick={()=>startThread(c)}
+                  style={{ background:T.inner, border:`1px solid ${T.border}`, borderRadius:12, padding:'10px 14px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', textAlign:'left' }}>
+                  <span style={{ fontSize:22 }}>{c.avatar}</span>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
+                    <div style={{ fontSize:10, color:T.muted }}>{c.role}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Email / URL */}
+          <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14 }}>
+            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>Or add by email</div>
+            <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Name (optional)"
+              style={{ width:'100%', background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
+            <div style={{ display:'flex', gap:8 }}>
+              <input value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="Email address or URL"
+                style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none' }}/>
+              <button onClick={addByEmail}
+                style={{ background:T.secondary, color:T.primary, border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
+            </div>
+          </div>
+
+          <button onClick={()=>setShowNewRecipient(false)}
+            style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
+        </div>
+      )}
+
+      {/* Thread list */}
+      <div style={{ padding:'8px 16px 0' }}>
+        {threads.map(thread=>(
+          <button key={thread.id} onClick={()=>setSelectedThread(thread)}
+            style={{ width:'100%', background:thread.unread?T.inner:T.card, border:`1px solid ${thread.unread?T.secondary+'50':T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left', transition:'background 0.15s' }}
+            onMouseEnter={e=>(e.currentTarget.style.background=T.raised)}
+            onMouseLeave={e=>(e.currentTarget.style.background=thread.unread?T.inner:T.card)}>
+            <div style={{ width:42, height:42, borderRadius:'50%', background:T.raised, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0, position:'relative' }}>
+              {thread.avatar}
+              {thread.unread && <div style={{ position:'absolute', top:0, right:0, width:10, height:10, borderRadius:'50%', background:T.red, border:`2px solid ${T.bg}` }}/>}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                <div style={{ fontWeight:700, fontSize:14, color:T.text }}>{thread.from}</div>
+                <div style={{ fontSize:10, color:T.muted }}>{thread.messages[thread.messages.length-1]?.time||''}</div>
+              </div>
+              <div style={{ fontSize:11, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {thread.messages[thread.messages.length-1]?.text||'No messages yet'}
+              </div>
+            </div>
+            <span style={{ color:T.muted, fontSize:16 }}>›</span>
+          </button>
+        ))}
       </div>
     </div>
   )
 }
 
-export default function StudentDashboard({ currentUser, onNavigate }) {
-  const [page, setPage]           = useState('home')
-  const [selectedClass, setSelectedClass] = useState(null)
-  const [selectedMsg, setSelectedMsg]     = useState(null)
-  const [selectedFeed, setSelectedFeed]   = useState(null)
+// ─── HOME PAGE ────────────────────────────────────────────────────────────────
+function HomePage({ navigate }) {
+  const pendingAssignments = STUDENT.assignments.filter(a=>a.status==='pending').length
 
-  const studentName = currentUser?.studentName || STUDENT.name
+  // Daily overview mirrors bottom nav (minus Home): Grades, Scan, Messages, Settings
+  const overviewTiles = [
+    { icon:'📊', val:STUDENT.gpa,           label:'Grades',   page:'grades',   color:T.secondary },
+    { icon:'📷', val:'Scan',                 label:'Scan',     page:'scan',     color:T.teal     },
+    { icon:'💬', val:STUDENT.threads.filter(t=>t.unread).length||'', label:'Messages', page:'messages', color:T.purple   },
+    { icon:'⚙',  val:'',                     label:'Settings', page:'settings', color:T.muted    },
+  ]
 
-  function S(screen) { setPage(screen); window.scrollTo(0,0) }
-  function goHome()  { S('home'); setSelectedClass(null); setSelectedMsg(null); setSelectedFeed(null) }
-
-  function handleNavSelect(id) {
-    if (id==='__back__') { goHome(); return }
-    if (id==='home')     { goHome(); return }
-    S(id)
-  }
-
-  const isSubPage = page !== 'home'
-
-  // ── Grades page ──────────────────────────────────────────────────────────────
-  if (page==='grades') return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:THEME.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📊 My Grades</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          {/* GPA Summary Bar */}
-          <GPABar gpa={STUDENT.gpa} />
-
-          {selectedClass ? (
-            <>
-              <button onClick={() => setSelectedClass(null)}
-                style={{ background:THEME.inner, border:'none', borderRadius:10, padding:'7px 14px', color:THEME.text, cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:14 }}>
-                ← All Classes
-              </button>
-              <div style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:16, padding:20 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-                  <div>
-                    <div style={{ fontSize:18, fontWeight:800, color:THEME.text }}>{selectedClass.subject}</div>
-                    <div style={{ fontSize:12, color:THEME.muted }}>{selectedClass.teacher} · {selectedClass.period} Period</div>
-                  </div>
-                  <div style={{ textAlign:'right' }}>
-                    <div style={{ fontSize:36, fontWeight:900, color:gradeColor(selectedClass.grade) }}>{selectedClass.grade}%</div>
-                    <div style={{ fontSize:16, fontWeight:700, color:gradeColor(selectedClass.grade) }}>{selectedClass.letter}</div>
-                  </div>
-                </div>
-                <div style={{ background:THEME.inner, borderRadius:999, height:10, overflow:'hidden', marginBottom:16 }}>
-                  <div style={{ background:selectedClass.color, height:'100%', width:`${selectedClass.grade}%`, borderRadius:999 }} />
-                </div>
-                <div style={{ fontSize:11, color:THEME.muted, marginBottom:12 }}>Recent assignments in this class</div>
-                {STUDENT.assignments.filter(a=>a.subject===selectedClass.subject).map(a => (
-                  <div key={a.id} style={{ background:THEME.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <div>
-                      <div style={{ fontSize:12, fontWeight:600, color:THEME.text }}>{a.name}</div>
-                      <div style={{ fontSize:10, color:THEME.muted }}>Due: {a.due}</div>
-                    </div>
-                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:999,
-                      background:a.status==='submitted'?'rgba(34,201,122,0.15)':'rgba(245,166,35,0.15)',
-                      color:a.status==='submitted'?THEME.green:THEME.amber }}>
-                      {a.status==='submitted'?'✓ Submitted':'Pending'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            STUDENT.classes.map(c => (
-              <div key={c.id} onClick={() => setSelectedClass(c)}
-                style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderLeft:`3px solid ${c.color}`, borderRadius:16, padding:'14px 16px', marginBottom:10, cursor:'pointer' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                  <div>
-                    <div style={{ fontWeight:700, fontSize:14, color:THEME.text }}>{c.subject}</div>
-                    <div style={{ fontSize:11, color:THEME.muted }}>{c.teacher} · {c.period} Period</div>
-                  </div>
-                  <div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}% {c.letter}</div>
-                </div>
-                <div style={{ background:THEME.inner, borderRadius:999, height:6, overflow:'hidden' }}>
-                  <div style={{ background:c.color, height:'100%', width:`${c.grade}%`, borderRadius:999 }} />
-                </div>
-                <div style={{ fontSize:9, color:THEME.muted, marginTop:6 }}>Tap to see assignments →</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-      <BottomNav role="student" activePage="grades" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── Messages page ────────────────────────────────────────────────────────────
-  if (page==='messages') return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:THEME.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          {selectedMsg ? (
-            <>
-              <button onClick={() => setSelectedMsg(null)}
-                style={{ background:THEME.inner, border:'none', borderRadius:10, padding:'7px 14px', color:THEME.text, cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:14 }}>
-                ← Back to Messages
-              </button>
-              <div style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:16, padding:20 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
-                  <div style={{ fontWeight:700, fontSize:15, color:THEME.text }}>{selectedMsg.from}</div>
-                  <span style={{ fontSize:10, color:THEME.muted }}>{selectedMsg.time}</span>
-                </div>
-                <div style={{ fontSize:13, fontWeight:600, color:THEME.text, marginBottom:10 }}>{selectedMsg.subject}</div>
-                <p style={{ fontSize:13, color:'#c0c8e0', lineHeight:1.7, margin:0 }}>{selectedMsg.content}</p>
-              </div>
-            </>
-          ) : (
-            STUDENT.messages.map(m => (
-              <div key={m.id} onClick={() => setSelectedMsg(m)}
-                style={{ background:m.unread?'#1a1800':THEME.card, border:`1px solid ${m.unread?THEME.amber:THEME.border}30`, borderRadius:16, padding:'14px 16px', marginBottom:10, cursor:'pointer' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-                  <span style={{ fontWeight:700, fontSize:13, color:THEME.text }}>{m.from}</span>
-                  <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                    {m.unread && <span style={{ width:8, height:8, background:THEME.amber, borderRadius:'50%', display:'inline-block' }} />}
-                    <span style={{ fontSize:10, color:THEME.muted }}>{m.time}</span>
-                  </div>
-                </div>
-                <div style={{ fontSize:12, fontWeight:600, color:THEME.text, marginBottom:4 }}>{m.subject}</div>
-                <p style={{ fontSize:11, color:THEME.muted, margin:0, lineHeight:1.5 }}>{m.content.substring(0,60)}...</p>
-                <div style={{ fontSize:10, color:THEME.blue, marginTop:6 }}>Tap to read →</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-      <BottomNav role="student" activePage="messages" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── Feed page ────────────────────────────────────────────────────────────────
-  if (page==='feed') return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:THEME.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📢 Class Feed</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          {selectedFeed ? (
-            <>
-              <button onClick={() => setSelectedFeed(null)}
-                style={{ background:THEME.inner, border:'none', borderRadius:10, padding:'7px 14px', color:THEME.text, cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:14 }}>
-                ← Back to Feed
-              </button>
-              <div style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:16, padding:20 }}>
-                <div style={{ fontSize:15, fontWeight:700, color:THEME.text, marginBottom:6 }}>{selectedFeed.title}</div>
-                <div style={{ fontSize:11, color:THEME.muted, marginBottom:12 }}>{selectedFeed.author} · {selectedFeed.meta}</div>
-                <p style={{ fontSize:13, color:'#c0c8e0', lineHeight:1.7, margin:0 }}>{selectedFeed.content}</p>
-              </div>
-            </>
-          ) : (
-            STUDENT.feed.map(f => (
-              <div key={f.id} onClick={() => setSelectedFeed(f)}
-                style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, cursor:'pointer' }}>
-                <div style={{ fontSize:14, fontWeight:700, color:THEME.text, marginBottom:4 }}>{f.title}</div>
-                <div style={{ fontSize:11, color:THEME.muted, marginBottom:6 }}>{f.author} · {f.meta}</div>
-                <p style={{ fontSize:12, color:'#c0c8e0', margin:0, lineHeight:1.5 }}>{f.content.substring(0,80)}...</p>
-                <div style={{ fontSize:10, color:THEME.blue, marginTop:8 }}>Tap to read →</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-      <BottomNav role="student" activePage="feed" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── Assignments page ─────────────────────────────────────────────────────────
-  if (page==='assignments') return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:THEME.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📋 Assignments</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          {STUDENT.assignments.map(a => (
-            <div key={a.id} style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <div style={{ fontWeight:700, fontSize:13, color:THEME.text }}>{a.name}</div>
-                  <div style={{ fontSize:11, color:THEME.muted }}>{a.subject} · Due: {a.due}</div>
-                </div>
-                <span style={{ fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:999,
-                  background:a.status==='submitted'?'rgba(34,201,122,0.15)':'rgba(245,166,35,0.15)',
-                  color:a.status==='submitted'?THEME.green:THEME.amber }}>
-                  {a.status==='submitted'?'✓ Submitted':'Pending'}
-                </span>
-              </div>
-              {a.status==='pending' && (
-                <button style={{ marginTop:10, background:'var(--school-color,#003057)', color:'#fff', border:'none', borderRadius:10, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
-                  📤 Submit Work
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-      <BottomNav role="student" activePage="assignments" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── Upload Assignment page ────────────────────────────────────────────────────
-  if (page==='upload') return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:THEME.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📤 Upload Assignment</h1>
-        </div>
-        <div style={{ padding:'16px 16px' }}>
-          <div style={{ fontSize:12, color:THEME.muted, marginBottom:16 }}>Photo · File · Link · Note to teacher</div>
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {[
-              { icon:'📷', label:'Take Photo',    sub:'Use your camera',        color:'#22c97a' },
-              { icon:'📄', label:'Upload File',   sub:'PDF · Doc · Image',      color:'#3b7ef4' },
-              { icon:'🔗', label:'Share Link',    sub:'Google Drive · Dropbox', color:'#9b6ef5' },
-              { icon:'📝', label:'Note to Teacher', sub:'Type a message',       color:'#f5a623' },
-            ].map(opt => (
-              <button key={opt.label}
-                style={{ background:THEME.card, border:`1px solid ${opt.color}22`, borderRadius:14, padding:'14px 16px', textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}
-                onMouseEnter={e => e.currentTarget.style.borderColor=opt.color}
-                onMouseLeave={e => e.currentTarget.style.borderColor=`${opt.color}22`}>
-                <div style={{ width:44, height:44, borderRadius:12, background:`${opt.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>{opt.icon}</div>
-                <div>
-                  <div style={{ fontWeight:700, fontSize:13, color:THEME.text }}>{opt.label}</div>
-                  <div style={{ fontSize:11, color:THEME.muted }}>{opt.sub}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-          <div style={{ marginTop:16 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:THEME.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Select Assignment</div>
-            {STUDENT.assignments.filter(a=>a.status==='pending').map(a => (
-              <div key={a.id} style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:12, padding:'10px 14px', marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                <div>
-                  <div style={{ fontSize:12, fontWeight:600, color:THEME.text }}>{a.name}</div>
-                  <div style={{ fontSize:10, color:THEME.muted }}>{a.subject} · Due {a.due}</div>
-                </div>
-                <span style={{ fontSize:10, color:THEME.amber }}>Pending</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <BottomNav role="student" activePage="upload" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── Alerts page ──────────────────────────────────────────────────────────────
-  if (page==='alerts') return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:THEME.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🔔 Alerts</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          <div style={{ background:'#1c1012', border:'1px solid rgba(240,74,74,0.2)', borderRadius:14, padding:'14px 16px', marginBottom:10, borderLeft:'3px solid #f04a4a' }}>
-            <div style={{ fontSize:13, color:THEME.text }}>⚑ Science below 70% — study tips available</div>
-            <button onClick={() => S('grades')} style={{ marginTop:8, background:'rgba(240,74,74,0.15)', color:'#f04a4a', border:'none', borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>View Grades →</button>
-          </div>
-          <div style={{ background:THEME.card, border:`1px solid ${THEME.border}`, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
-            <div style={{ fontSize:13, color:THEME.text }}>📋 2 assignments due this week</div>
-            <button onClick={() => S('assignments')} style={{ marginTop:8, background:`${THEME.amber}22`, color:THEME.amber, border:'none', borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>View Assignments →</button>
-          </div>
-        </div>
-      </div>
-      <BottomNav role="student" activePage="alerts" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── HOME ─────────────────────────────────────────────────────────────────────
   return (
-    <>
-      <div style={{ minHeight:'100vh', background:THEME.bg, color:THEME.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        {/* Header */}
-        <div style={{ background:THEME.header, padding:'20px 16px 28px', marginBottom:16 }}>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.7)', marginBottom:4 }}>Good Morning! 🌟</div>
-          <div style={{ fontSize:24, fontWeight:800, color:'#fff', marginBottom:4 }}>Hi, {studentName}! 👋</div>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.7)' }}>{STUDENT.grade} · {STUDENT.school}</div>
+    <div style={{ padding:'12px 12px 0' }}>
+
+      {/* W1: Daily Overview — mirrors bottom nav */}
+      <Widget style={{ background:`linear-gradient(135deg,${T.primary} 0%,#001020 100%)`, border:'none' }}>
+        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+          {overviewTiles.map(tile=>(
+            <button key={tile.label} onClick={e=>{e.stopPropagation();navigate(tile.page)}}
+              style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'12px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+              <span style={{ fontSize:18 }}>{tile.icon}</span>
+              {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
+              <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
+            </button>
+          ))}
         </div>
+      </Widget>
 
-        {/* SW1: Daily Overview */}
-        <Widget onClick={() => S('grades')} style={{ background:'linear-gradient(135deg,#003057,#001830)', border:'none' }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.5)', marginBottom:10 }}>DAILY OVERVIEW</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6 }}>
-            {[
-              { icon:'📊', val:STUDENT.gpa,                                    label:'GPA',         page:'grades'      },
-              { icon:'📚', val:STUDENT.classes.length,                         label:'Classes',     page:'grades'      },
-              { icon:'📋', val:STUDENT.assignments.filter(a=>a.status==='pending').length, label:'Assignments', page:'assignments' },
-              { icon:'🔔', val:2,                                              label:'Updates',     page:'alerts'      },
-            ].map(t => (
-              <button key={t.label} onClick={e => { e.stopPropagation(); S(t.page) }}
-                style={{ background:'rgba(255,255,255,0.11)', borderRadius:13, padding:'10px 4px', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
-                <span style={{ fontSize:16 }}>{t.icon}</span>
-                <span style={{ fontSize:16, fontWeight:800, color:'#fff', lineHeight:1 }}>{t.val}</span>
-                <span style={{ fontSize:8, color:'rgba(255,255,255,0.6)', textAlign:'center' }}>{t.label}</span>
-              </button>
-            ))}
+      {/* W2: Alerts (not "needs attention" or "reminders") */}
+      {STUDENT.alerts.length>0 && (
+        <Widget onClick={()=>navigate('alerts')} style={{ border:`1px solid ${T.red}25` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div style={{ fontSize:13, fontWeight:700 }}>🔔 Alerts</div>
+            <span style={{ background:`${T.red}18`, color:T.red, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999 }}>{STUDENT.alerts.length}</span>
           </div>
-        </Widget>
-
-        {/* SW2: Today's Lessons */}
-        <Widget onClick={() => S('grades')} style={{ background:'linear-gradient(135deg,#002040,#001020)', border:`1px solid ${THEME.border}` }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.5)', marginBottom:8 }}>TODAY'S LESSONS 📖</div>
-          <div style={{ fontSize:15, fontWeight:700, color:THEME.text, marginBottom:4 }}>Ch.4 · Fractions &amp; Decimals</div>
-          <div style={{ fontSize:11, color:THEME.muted, marginBottom:10 }}>Math · Pages 84–91 · Ms. Johnson · Based on teacher plan</div>
-          <Btn label="View Worksheet 📄" color={THEME.secondary} onClick={() => S('grades')} />
-        </Widget>
-
-        {/* SW3: My Classes — individual cards open that class's grades */}
-        <Widget onClick={() => S('grades')} title="My Classes">
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-            {STUDENT.classes.map(c => (
-              <button key={c.id} onClick={e => { e.stopPropagation(); setSelectedClass(c); S('grades') }}
-                style={{ background:THEME.inner, borderRadius:12, padding:'12px', border:`1px solid ${THEME.border}`, borderLeft:`3px solid ${c.color}`, cursor:'pointer', textAlign:'left' }}>
-                <div style={{ fontWeight:700, fontSize:12, color:THEME.text, marginBottom:2 }}>{c.subject}</div>
-                <div style={{ fontSize:10, color:THEME.muted, marginBottom:6 }}>{c.teacher}</div>
-                <div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}%</div>
-                <div style={{ background:'rgba(255,255,255,0.1)', borderRadius:999, height:4, overflow:'hidden', marginTop:4 }}>
-                  <div style={{ background:c.color, height:'100%', width:`${c.grade}%`, borderRadius:999 }} />
-                </div>
-              </button>
-            ))}
-          </div>
-          <div style={{ fontSize:9, color:THEME.muted, marginTop:8, textAlign:'center' }}>Tap any class → see grades & assignments</div>
-        </Widget>
-
-        {/* SW4: Needs Attention */}
-        <Widget onClick={() => S('grades')} style={{ border:'1px solid rgba(240,74,74,0.12)' }} title="Needs Attention ⚑">
-          <div style={{ background:'#1c1012', borderRadius:10, padding:'8px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ fontSize:12, color:'#f04a4a' }}>{STUDENT.needsAttention}</span>
-            <Btn label="Study Tips →" color="#9b6ef5" onClick={() => S('aiTips')} />
-          </div>
-        </Widget>
-
-        {/* SW5: Messages — widget navigates to messenger, clicking individual opens thread */}
-        <Widget onClick={() => S('messages')} title="💬 Messages"
-          titleRight={<span style={{ background:`rgba(179,163,105,0.2)`, color:THEME.secondary, borderRadius:999, padding:'3px 8px', fontSize:10, fontWeight:700 }}>{STUDENT.messages.filter(m=>m.unread).length} new</span>}>
-          {STUDENT.messages.slice(0,2).map(m => (
-            <div key={m.id} onClick={e => { e.stopPropagation(); setSelectedMsg(m); S('messages') }}
-              style={{ background:m.unread?'#1a1800':THEME.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, cursor:'pointer', border:m.unread?`1px solid ${THEME.amber}30`:'none' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                <span style={{ fontSize:12, fontWeight:700, color:THEME.text }}>{m.from}</span>
-                {m.unread && <span style={{ width:7, height:7, background:THEME.amber, borderRadius:'50%' }} />}
-              </div>
-              <div style={{ fontSize:11, color:THEME.muted }}>{m.content.substring(0,50)}...</div>
-              <div style={{ fontSize:9, color:THEME.blue, marginTop:4 }}>Tap to open →</div>
+          {STUDENT.alerts.map(a=>(
+            <div key={a.id} style={{ background:T.inner, borderLeft:`3px solid ${a.color}`, borderRadius:10, padding:'9px 12px', marginBottom:6, display:'flex', gap:8, alignItems:'flex-start' }}>
+              <span>{a.icon}</span>
+              <span style={{ fontSize:12, color:T.text }}>{a.msg}</span>
             </div>
           ))}
         </Widget>
+      )}
 
-        {/* SW6: Class Feed — topics clickable */}
-        <Widget onClick={() => S('feed')} title="📢 Class Feed">
-          {STUDENT.feed.map(f => (
-            <div key={f.id} onClick={e => { e.stopPropagation(); setSelectedFeed(f); S('feed') }}
-              style={{ background:THEME.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, cursor:'pointer' }}>
-              <div style={{ fontSize:13, fontWeight:700, color:THEME.text, marginBottom:2 }}>{f.title}</div>
-              <div style={{ fontSize:10, color:THEME.muted, marginBottom:4 }}>{f.author} · {f.meta}</div>
-              <div style={{ fontSize:10, color:THEME.blue }}>Tap to read →</div>
-            </div>
+      {/* W3: Today's Lesson */}
+      <Widget onClick={()=>navigate('lessons')} style={{ background:'linear-gradient(135deg,#001830,#000d1f)', border:`1px solid #003a6a` }}>
+        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:8 }}>TODAY'S LESSONS 📖</div>
+        <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:4 }}>Ch.4 · Fractions & Decimals</div>
+        <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:10 }}>Math · Pages 84–91 · Ms. Johnson</div>
+        <Btn label="View Worksheet 📄" color={T.teal} onClick={()=>navigate('lessons')}/>
+      </Widget>
+
+      {/* W4: My Classes */}
+      <Widget onClick={()=>navigate('grades')}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>📚 My Classes</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          {STUDENT.classes.map(c=>(
+            <button key={c.id} onClick={e=>{e.stopPropagation();navigate('grades')}}
+              style={{ background:T.inner, borderLeft:`3px solid ${c.color}`, borderRadius:12, padding:'10px 12px', border:'none', cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontWeight:700, fontSize:12, color:T.text, marginBottom:2 }}>{c.subject}</div>
+              <div style={{ fontSize:10, color:T.muted, marginBottom:6 }}>{c.teacher}</div>
+              <div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}%</div>
+            </button>
           ))}
-        </Widget>
+        </div>
+      </Widget>
 
-        {/* SW7: AI Study Tips */}
-        <Widget onClick={() => {}} style={{ background:'linear-gradient(135deg,rgba(70,29,124,0.3),rgba(15,184,160,0.2))', border:'1px solid rgba(155,110,245,0.2)' }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.5)', marginBottom:8 }}>✨ AI STUDY TIPS</div>
-          <div style={{ fontSize:14, fontWeight:700, color:THEME.text, marginBottom:6 }}>{STUDENT.aiTip.headline}</div>
-          <div style={{ fontSize:11, color:'#b090d0', marginBottom:8 }}>{STUDENT.aiTip.body}</div>
-          <div style={{ fontSize:10, color:'#9b6ef5', fontWeight:600, cursor:'pointer' }}>Tap for full personalized study plan →</div>
-        </Widget>
-
-        {/* SW8: Upload Assignment */}
-        <Widget onClick={() => S('upload')} style={{ border:'1px solid rgba(34,201,122,0.18)' }} title="📤 Upload Assignment"
-          titleRight={<Btn label="Submit" color="#22c97a" onClick={() => S('upload')} />}>
-          <div style={{ fontSize:11, color:THEME.muted, marginBottom:10 }}>Photo · File · Link · Note to teacher</div>
-          <div style={{ display:'flex', gap:8 }}>
-            {[['📷 Photo','#22c97a'],['📄 File','#3b7ef4'],['🔗 Link','#9b6ef5']].map(([label,color]) => (
-              <button key={label} onClick={e => { e.stopPropagation(); S('upload') }}
-                style={{ background:`${color}20`, color, border:'none', borderRadius:10, padding:'7px 12px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
-                {label}
-              </button>
-            ))}
+      {/* W5: Messages preview */}
+      <Widget onClick={()=>navigate('messages')}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+          <div style={{ fontSize:13, fontWeight:700 }}>💬 Messages</div>
+          <Btn label="+ New" color={T.secondary} onClick={()=>navigate('messages')}/>
+        </div>
+        {STUDENT.threads.filter(t=>t.unread).slice(0,2).map(t=>(
+          <div key={t.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:20 }}>{t.avatar}</span>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:700, fontSize:12, color:T.text }}>{t.from}</div>
+              <div style={{ fontSize:10, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.messages[t.messages.length-1]?.text}</div>
+            </div>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:T.red, flexShrink:0 }}/>
           </div>
-        </Widget>
+        ))}
+        {!STUDENT.threads.some(t=>t.unread) && <div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}
+      </Widget>
+
+      {/* W6: Class Feed */}
+      <Widget onClick={()=>navigate('feed')}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>📢 Class Feed</div>
+        {STUDENT.feed.slice(0,1).map(p=>(
+          <div key={p.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px' }}>
+            <div style={{ fontSize:11, fontWeight:600, color:T.secondary, marginBottom:4 }}>{p.author}</div>
+            <div style={{ fontSize:12, color:T.text, lineHeight:1.5 }}>{p.content}</div>
+            <div style={{ fontSize:10, color:T.muted, marginTop:6 }}>{p.time}</div>
+          </div>
+        ))}
+      </Widget>
+
+      {/* W7: AI Study Tips */}
+      <Widget style={{ background:'linear-gradient(135deg,#0d1a3a 0%,#000d1f 100%)', border:`1px solid ${T.purple}30` }}>
+        <div style={{ fontSize:11, fontWeight:700, color:T.purple, marginBottom:6 }}>✨ AI Study Tips</div>
+        <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:4 }}>Science needs your focus! 📚</div>
+        <div style={{ fontSize:11, color:T.muted }}>10 min flashcards tonight · same strategy that boosted Reading +8pts</div>
+      </Widget>
+
+      {/* W8: Upload Assignment */}
+      <Widget onClick={()=>navigate('scan')} style={{ background:'linear-gradient(135deg,#0a1a0a,#000d1f)', border:`1px solid ${T.green}20` }}>
+        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+          <span style={{ fontSize:28 }}>📤</span>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700, color:T.green, marginBottom:2 }}>Upload Assignment</div>
+            <div style={{ fontSize:11, color:T.muted }}>Photo · File · Link · Note to teacher</div>
+          </div>
+          <span style={{ color:T.green, fontSize:18, marginLeft:'auto' }}>›</span>
+        </div>
+      </Widget>
+    </div>
+  )
+}
+
+// ─── Grades page ───────────────────────────────────────────────────────────────
+function GradesPage({ onBack }) {
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
+        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📊 My Grades</h1>
       </div>
-      <BottomNav role="student" activePage="home" onNavigate={handleNavSelect} isSubPage={false} />
-    </>
+      <div style={{ padding:'16px' }}>
+        {STUDENT.classes.map(c=>(
+          <div key={c.id} style={{ background:T.card, border:`1px solid ${T.border}`, borderLeft:`4px solid ${c.color}`, borderRadius:16, padding:'14px 16px', marginBottom:10 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+              <div>
+                <div style={{ fontWeight:700, fontSize:14, color:T.text }}>{c.subject}</div>
+                <div style={{ fontSize:11, color:T.muted }}>{c.teacher} · {c.period} Period</div>
+              </div>
+              <div style={{ textAlign:'right' }}>
+                <div style={{ fontSize:20, fontWeight:900, color:gradeColor(c.grade) }}>{c.grade}%</div>
+                <div style={{ fontSize:11, fontWeight:700, color:gradeColor(c.grade) }}>{c.letter}</div>
+              </div>
+            </div>
+            <GradeBar score={c.grade}/>
+          </div>
+        ))}
+        <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:'14px 16px' }}>
+          <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>📋 Assignments</div>
+          {STUDENT.assignments.map(a=>(
+            <div key={a.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0', borderBottom:`1px solid ${T.border}` }}>
+              <div>
+                <div style={{ fontSize:12, fontWeight:600, color:T.text }}>{a.name}</div>
+                <div style={{ fontSize:10, color:T.muted }}>{a.subject} · Due: {a.due}</div>
+              </div>
+              <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:999, background:a.status==='submitted'?`${T.green}18`:`${T.amber}18`, color:a.status==='submitted'?T.green:T.amber }}>
+                {a.status==='submitted'?'✓ Submitted':'Pending'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Alerts page ──────────────────────────────────────────────────────────────
+function AlertsPage({ onBack }) {
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
+        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🔔 Alerts</h1>
+      </div>
+      <div style={{ padding:'16px' }}>
+        {STUDENT.alerts.map(a=>(
+          <div key={a.id} style={{ background:T.card, border:`1px solid ${a.color}30`, borderLeft:`4px solid ${a.color}`, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
+            <div style={{ fontSize:20, marginBottom:6 }}>{a.icon}</div>
+            <div style={{ fontSize:13, color:T.text }}>{a.msg}</div>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }
