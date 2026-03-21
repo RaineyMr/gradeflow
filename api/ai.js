@@ -2,40 +2,24 @@
 // ─── GradeFlow AI Backend Proxy ───────────────────────────────────────────────
 // Sits between the browser and Anthropic.
 // The API key NEVER touches the frontend — it lives only in Vercel env vars.
-//
-// Endpoint: POST /api/ai
-// Body: { intent, ...intentSpecificFields }
-//
-// Supported intents:
-//   "general"        — general Claude call (system + prompt)
-//   "grade"          — grade a student paper (base64 image + assignment + answerKey)
-//   "extractRoster"  — extract student names from a roster image
-//   "extractAnswers" — extract answer key from a document image
-//   "lessonPlan"     — generate a lesson plan
-//   "search"         — general call with web_search tool enabled
 // ─────────────────────────────────────────────────────────────────────────────
 
 const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
 const MODEL         = 'claude-sonnet-4-20250514'
 
 // ── Simple rate limiting (in-memory, resets on cold start) ────────────────────
-// For production, replace with Vercel KV or Redis.
 const rateLimitMap = new Map()
-const RATE_LIMIT_WINDOW_MS = 60_000  // 1 minute
-const RATE_LIMIT_MAX        = 20     // max 20 requests per minute per IP
+const RATE_LIMIT_WINDOW_MS = 60_000
+const RATE_LIMIT_MAX        = 20
 
 function checkRateLimit(ip) {
   const now   = Date.now()
   const entry = rateLimitMap.get(ip) || { count: 0, windowStart: now }
-
   if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    // Reset window
     rateLimitMap.set(ip, { count: 1, windowStart: now })
     return true
   }
-
   if (entry.count >= RATE_LIMIT_MAX) return false
-
   entry.count++
   rateLimitMap.set(ip, entry)
   return true
@@ -50,8 +34,7 @@ function buildRequestBody(intent, body) {
     case 'general': {
       const { system, prompt, max_tokens = 1000 } = body
       return {
-        ...base,
-        max_tokens,
+        ...base, max_tokens,
         ...(system ? { system } : {}),
         messages: [{ role: 'user', content: prompt }],
       }
@@ -60,8 +43,7 @@ function buildRequestBody(intent, body) {
     case 'search': {
       const { system, prompt, max_tokens = 1000 } = body
       return {
-        ...base,
-        max_tokens,
+        ...base, max_tokens,
         ...(system ? { system } : {}),
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }],
@@ -71,27 +53,21 @@ function buildRequestBody(intent, body) {
     case 'grade': {
       const { imageBase64, mediaType = 'image/jpeg', assignmentName = 'Unknown', answerKey = '' } = body
       return {
-        ...base,
-        max_tokens: 1500,
+        ...base, max_tokens: 1500,
         messages: [{
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: imageBase64 },
-            },
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
             {
               type: 'text',
               text: `Grade this paper.${answerKey ? ` Answer key: ${answerKey}` : ''} Assignment: ${assignmentName}
 
-Return ONLY valid JSON in this format:
+Return ONLY valid JSON:
 {
   "score": 85,
   "grade": "B",
-  "feedback": "Good work overall...",
-  "corrections": [
-    { "question": 1, "studentAnswer": "...", "correctAnswer": "...", "points": -5 }
-  ]
+  "feedback": "...",
+  "corrections": [{ "question": 1, "studentAnswer": "...", "correctAnswer": "...", "points": -5 }]
 }`,
             },
           ],
@@ -102,19 +78,12 @@ Return ONLY valid JSON in this format:
     case 'extractRoster': {
       const { imageBase64, mediaType = 'image/jpeg' } = body
       return {
-        ...base,
-        max_tokens: 1000,
+        ...base, max_tokens: 1000,
         messages: [{
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: imageBase64 },
-            },
-            {
-              type: 'text',
-              text: 'Extract all student names from this roster. Return ONLY valid JSON: {"students":[{"name":"","id":""}]}',
-            },
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
+            { type: 'text', text: 'Extract all student names from this roster. Return ONLY valid JSON: {"students":[{"name":"","id":""}]}' },
           ],
         }],
       }
@@ -123,19 +92,12 @@ Return ONLY valid JSON in this format:
     case 'extractAnswers': {
       const { imageBase64, mediaType = 'image/jpeg' } = body
       return {
-        ...base,
-        max_tokens: 1000,
+        ...base, max_tokens: 1000,
         messages: [{
           role: 'user',
           content: [
-            {
-              type: 'image',
-              source: { type: 'base64', media_type: mediaType, data: imageBase64 },
-            },
-            {
-              type: 'text',
-              text: 'Extract the answer key from this document. Return ONLY valid JSON: {"answers":[{"question":1,"answer":"A"}]}',
-            },
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
+            { type: 'text', text: 'Extract the answer key from this document. Return ONLY valid JSON: {"answers":[{"question":1,"answer":"A"}]}' },
           ],
         }],
       }
@@ -144,8 +106,7 @@ Return ONLY valid JSON in this format:
     case 'lessonPlan': {
       const { subject, grade, topic, duration = 50, standards = '' } = body
       return {
-        ...base,
-        max_tokens: 2000,
+        ...base, max_tokens: 2000,
         system: 'You are an expert curriculum designer. Generate detailed, practical lesson plans.',
         messages: [{
           role: 'user',
@@ -170,6 +131,32 @@ Return ONLY valid JSON:
       }
     }
 
+    case 'studyTips': {
+      const { studentName, subject, score, recentGrades = [] } = body
+      const gradesText = recentGrades.length
+        ? recentGrades.map(g => `${g.assignment}: ${g.score ?? 'ungraded'}`).join(', ')
+        : 'No recent grades available'
+      return {
+        ...base, max_tokens: 800,
+        system: 'You are a supportive academic coach. Give practical, encouraging, specific study tips.',
+        messages: [{
+          role: 'user',
+          content: `Generate personalized study tips for this student:
+Name: ${studentName}
+Subject: ${subject}
+Current Grade: ${score}%
+Recent assignments: ${gradesText}
+
+Return ONLY valid JSON with this exact structure:
+{
+  "tip": "One encouraging summary sentence about their progress",
+  "actions": ["Specific action 1", "Specific action 2", "Specific action 3", "Specific action 4", "Specific action 5"],
+  "timeEstimate": "X hours per week"
+}`,
+        }],
+      }
+    }
+
     default:
       throw new Error(`Unknown intent: ${intent}`)
   }
@@ -177,7 +164,6 @@ Return ONLY valid JSON:
 
 // ── Handler ───────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
-  // CORS — tighten origin in production to your actual domain
   res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*')
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
@@ -185,13 +171,11 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
-  // Rate limit by IP
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || 'unknown'
   if (!checkRateLimit(ip)) {
     return res.status(429).json({ error: 'Too many requests. Please slow down.' })
   }
 
-  // Validate API key is configured
   const apiKey = process.env.ANTHROPIC_API_KEY
   if (!apiKey) {
     console.error('ANTHROPIC_API_KEY not set in environment variables')
