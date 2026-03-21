@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { GradeBar, GradeBadge } from '../components/ui'
 
 // ─── HISD Theme (shared by Student) ─────────────────────────────────────────
 const T = {
@@ -21,6 +20,17 @@ const T = {
   purple:    '#9b6ef5',
   header:    'linear-gradient(135deg, #003057 0%, #001830 100%)',
   navActive: '#B3A369',
+}
+
+// Inline grade bar — no Tailwind dependency, uses T colors
+function GradeBar({ score }) {
+  const pct   = Math.min(100, Math.max(0, score))
+  const color = pct>=90?T.green:pct>=80?T.teal:pct>=70?T.amber:T.red
+  return (
+    <div style={{ height:4, background:T.raised, borderRadius:2, overflow:'hidden', marginTop:6 }}>
+      <div style={{ height:'100%', width:`${pct}%`, background:color, borderRadius:2, transition:'width 0.4s' }}/>
+    </div>
+  )
 }
 
 // ─── Demo data ────────────────────────────────────────────────────────────────
@@ -492,6 +502,56 @@ function AlertsPage({ onBack }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+// ─── MAIN STUDENT DASHBOARD ───────────────────────────────────────────────────
+export default function StudentDashboard({ currentUser }) {
+  const [page, setPage]         = useState('home')
+  const [activeNav, setActiveNav] = useState('home')
+
+  useEffect(()=>{ window.scrollTo(0,0) },[page])
+
+  function navigate(id) {
+    setPage(id)
+    if(NAV_ITEMS.find(n=>n.id===id)) setActiveNav(id)
+    window.scrollTo(0,0)
+  }
+
+  function goHome() { navigate('home'); setActiveNav('home') }
+
+  // Sub-pages
+  if (page==='grades')   return <><GradesPage onBack={goHome}/><BottomNav active={activeNav} onSelect={navigate}/></>
+  if (page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages' onSelect={navigate}/></>
+  if (page==='alerts')   return <><AlertsPage onBack={goHome}/><BottomNav active={activeNav} onSelect={navigate}/></>
+
+  const now = new Date()
+  const hour = now.getHours()
+  const greeting = hour<12?'Good morning':'Good afternoon'
+
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
+      {/* Sticky header */}
+      <div style={{ position:'sticky', top:0, zIndex:100, background:T.header, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2 }}>HOUSTON ISD · LINCOLN ELEMENTARY</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div>
+            <div style={{ fontSize:17, fontWeight:800, color:'#fff' }}>{greeting}, {STUDENT.name} 👋</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>{STUDENT.grade}</div>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={()=>navigate('scan')} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:16 }}>📷</button>
+            <button onClick={()=>navigate('messages')} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:16, position:'relative' }}>
+              💬
+              {STUDENT.threads.some(t=>t.unread) && <div style={{ position:'absolute', top:-2, right:-2, width:8, height:8, borderRadius:'50%', background:T.red }}/>}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <HomePage navigate={navigate}/>
+      <BottomNav active={activeNav} onSelect={navigate}/>
     </div>
   )
 }
