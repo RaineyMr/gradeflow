@@ -1,575 +1,520 @@
-import React, { useState } from 'react'
-import BottomNav from '../components/ui/BottomNav'
+import React, { useState, useRef, useEffect } from 'react'
 
-function GradeBar({ score }) {
-  const color = score >= 85 ? '#22c97a' : score >= 75 ? '#f5a623' : '#f04a4a'
-  return (
-    <div style={{ background:'rgba(255,255,255,0.1)', borderRadius:999, height:6, overflow:'hidden' }}>
-      <div style={{ background:color, height:'100%', width:`${score}%`, borderRadius:999 }} />
-    </div>
-  )
-}
-
-function GradeBadge({ score }) {
-  const color = score >= 90 ? '#22c97a' : score >= 80 ? '#3b7ef4' : score >= 70 ? '#f5a623' : '#f04a4a'
-  const letter = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : 'D'
-  return (
-    <div style={{ textAlign:'right' }}>
-      <div style={{ fontSize:20, fontWeight:900, color }}>{score}%</div>
-      <div style={{ fontSize:11, fontWeight:700, color }}>{letter}</div>
-    </div>
-  )
-}
-
-
+// ─── HISD Theme — IDENTICAL to StudentDashboard ──────────────────────────────
 const T = {
-  primary:'#C8102E', secondary:'#ffffff', bg:'#0f0003', card:'#1e0008',
-  inner:'#2c000e', border:'#5a001a', text:'#f8eaec', muted:'#a06070',
-  green:'#22c97a', blue:'#3b7ef4', amber:'#f5a623', red:'#f04a4a',
-  header:'linear-gradient(135deg,#C8102E,#8b0a1f)',
+  primary:   '#003057',
+  secondary: '#B3A369',
+  bg:        '#000d1f',
+  card:      '#001830',
+  inner:     '#002040',
+  raised:    '#002a52',
+  text:      '#e8f0ff',
+  soft:      '#b0c4e8',
+  muted:     '#5a7aa0',
+  border:    '#003a6a',
+  green:     '#22c97a',
+  blue:      '#B3A369',
+  red:       '#f04a4a',
+  amber:     '#f5a623',
+  teal:      '#0fb8a0',
+  purple:    '#9b6ef5',
+  header:    'linear-gradient(135deg, #003057 0%, #001830 100%)',
+  navActive: '#B3A369',
 }
 
+// ─── Demo data ────────────────────────────────────────────────────────────────
 const CHILD = {
-  name:'Marcus', school:'Bellaire High School', grade:'10th Grade', gpa:87.4,
-  classes:[
-    { id:1, subject:'Math',    teacher:'Ms. Johnson', grade:87, letter:'B', period:'1st', trend:'stable', color:'#3b7ef4',
-      assignments:[{name:'Ch.4 Worksheet',due:'Today',status:'pending'},{name:'Ch.3 Quiz',due:'Completed',status:'done',score:82}] },
-    { id:2, subject:'Reading', teacher:'Ms. Davis',   grade:95, letter:'A', period:'2nd', trend:'up',     color:'#9b6ef5',
-      assignments:[{name:'Book Report',due:'Tomorrow',status:'pending'},{name:'Reading Log',due:'Completed',status:'done',score:98}] },
-    { id:3, subject:'Science', teacher:'Mr. Lee',     grade:79, letter:'C', period:'3rd', trend:'down',   color:'#0fb8a0',
-      assignments:[{name:'Lab Report',due:'Friday',status:'pending'},{name:'Chapter Test',due:'Completed',status:'done',score:71}] },
-    { id:4, subject:'Writing', teacher:'Ms. Clark',   grade:88, letter:'B', period:'4th', trend:'stable', color:'#f54a7a',
-      assignments:[{name:'Essay Draft',due:'Next Mon',status:'pending'},{name:'Grammar Quiz',due:'Completed',status:'done',score:91}] },
+  name: 'Marcus', fullName: 'Marcus Thompson',
+  grade: '3rd Grade', school: 'Houston ISD · Lincoln Elementary',
+  gpa: 87.4,
+  classes: [
+    { id:1, subject:'Math',    teacher:'Ms. Johnson', grade:87, letter:'B', period:'1st', color:'#3b7ef4' },
+    { id:2, subject:'Reading', teacher:'Ms. Davis',   grade:95, letter:'A', period:'2nd', color:'#22c97a' },
+    { id:3, subject:'Science', teacher:'Mr. Lee',     grade:61, letter:'D', period:'3rd', color:'#f04a4a' },
+    { id:4, subject:'Writing', teacher:'Ms. Clark',   grade:88, letter:'B', period:'4th', color:'#f54a7a' },
   ],
-  teacherMessages:[
-    { id:1, from:'Ms. Johnson', subject:'Fractions Test',       content:'Marcus showed excellent work on the fractions test today. Keep it up!',          time:'2h ago',    unread:true  },
-    { id:2, from:'Mr. Lee',     subject:'Science Fair Reminder', content:'Reminder: Science fair project is due this Friday. Please review the rubric.',  time:'Yesterday', unread:false },
-    { id:3, from:'Ms. Davis',   subject:'Reading Progress',      content:'Marcus finished his reading log ahead of schedule — great discipline!',         time:'2 days ago', unread:false },
-  ],
-  privateMessages:[
-    { id:1, from:'You',         subject:'Science concern',     content:'Hi Ms. Johnson, Marcus has been struggling with fractions at home. Any tips?',         time:'3 days ago', fromParent:true  },
-    { id:2, from:'Ms. Johnson', subject:'Re: Science concern', content:"Happy to help! Try using pizza slices as a visual — works great. Let's schedule a call.", time:'2 days ago', fromParent:false },
-  ],
-  alerts:[
-    { id:1, type:'grade',      msg:'Math grade dropped from 91% to 87% this week.',  color:'#f5a623' },
-    { id:2, type:'attendance', msg:'Marcus was 5 minutes late on Monday.',            color:'#f04a4a' },
-  ],
-  feed:[
-    { id:1, author:'Ms. Johnson', content:'📅 Test Friday on Chapter 4 — fractions and decimals. Study pages 84–91.', time:'1h ago',    reactions:{'👍':8,'❤️':3} },
-    { id:2, author:'Mr. Lee',     content:'Science fair projects due this Friday! Set up starts at 8am in the gym.',   time:'3h ago',    reactions:{'👍':12,'😂':2} },
-    { id:3, author:'Ms. Clark',   content:'Great writing essays this week — keep up the creative work everyone!',      time:'Yesterday', reactions:{'❤️':15,'👍':6} },
-  ],
-  assignments:[
-    { id:1, subject:'Math',    title:'Ch.4 Practice Problems', due:'Tomorrow',  status:'pending' },
-    { id:2, subject:'Science', title:'Lab Report #3',          due:'Friday',    status:'pending' },
-    { id:3, subject:'Reading', title:'Reading Log Week 8',     due:'Completed', status:'done'    },
+  alerts: [
+    { id:1, msg:"Marcus's Science grade is 61% — below passing", color:'#f04a4a', icon:'⚑' },
+    { id:2, msg:"2 assignments due this week for Marcus",         color:'#f5a623', icon:'📋' },
   ],
 }
 
+// Parent threads: private teacher channel + student view (same messages student sees)
+const INITIAL_THREADS = [
+  {
+    id:1, from:'Ms. Johnson', subject:'Math · Private', avatar:'👩‍🏫', unread:true, private:true,
+    messages:[
+      { id:1, sender:'Ms. Johnson', text:"Hi Ms. Thompson, I wanted to reach out about Marcus's recent progress. He's doing well overall but Science is a concern.", time:'1 hr ago', isMe:false },
+      { id:2, sender:'Me',          text:"Thank you for reaching out. I'll work with him on Science at home.", time:'45 min ago', isMe:true },
+      { id:3, sender:'Ms. Johnson', text:"That would be great! Also, he has a test on Friday. Please remind him to review chapters 3 & 4.", time:'30 min ago', isMe:false },
+    ],
+  },
+  {
+    id:2, from:'Mr. Lee', subject:'Science · Private', avatar:'🧑‍🔬', unread:false, private:true,
+    messages:[
+      { id:1, sender:'Mr. Lee', text:"Hi Ms. Thompson, Marcus's Science grade has dropped. I recommend additional practice problems this week.", time:'Yesterday', isMe:false },
+    ],
+  },
+  {
+    id:3, from:'Marcus', subject:"Student View — Marcus's Messages", avatar:'🎒', unread:false, private:false, readOnly:true,
+    messages:[
+      { id:1, sender:'Ms. Johnson', text:"Great work on yesterday's quiz, Marcus!", time:'1 hr ago', isMe:false },
+      { id:2, sender:'Marcus',      text:"Thank you, Ms. Johnson! I studied really hard.", time:'45 min ago', isMe:false },
+      { id:3, sender:'Ms. Johnson', text:"Don't forget the worksheet due Friday!", time:'30 min ago', isMe:false },
+    ],
+  },
+]
+
+const CONTACTS = [
+  { name:'Ms. Johnson', role:'Math Teacher',    avatar:'👩‍🏫' },
+  { name:'Mr. Lee',     role:'Science Teacher', avatar:'🧑‍🔬' },
+  { name:'Ms. Davis',   role:'Reading Teacher', avatar:'👩‍💼' },
+  { name:'Ms. Clark',   role:'Writing Teacher', avatar:'✍️'  },
+  { name:'Principal',   role:'Administration',  avatar:'🏫'  },
+]
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function gradeColor(g) { return g>=90?T.green:g>=80?T.blue:g>=70?T.amber:T.red }
 
-function Widget({ onClick, children, style, title, titleRight }) {
+function Widget({ onClick, children, style={} }) {
   return (
-    <div onClick={onClick}
-      style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:20, padding:'14px 16px', margin:'0 10px 12px', cursor:onClick?'pointer':'default', transition:'transform 0.15s', ...style }}
-      onMouseEnter={e => onClick && (e.currentTarget.style.transform='scale(1.005)')}
-      onMouseLeave={e => (e.currentTarget.style.transform='scale(1)')}>
-      {(title||titleRight) && (
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-          {title && <span style={{ fontSize:13, fontWeight:700, color:T.text }}>{title}</span>}
-          {titleRight}
-        </div>
-      )}
+    <div onClick={onClick} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:20, padding:16, marginBottom:12, cursor:onClick?'pointer':'default', transition:'border-color 0.15s', ...style }}
+      onMouseEnter={e=>{ if(onClick) e.currentTarget.style.borderColor=T.secondary }}
+      onMouseLeave={e=>{ e.currentTarget.style.borderColor = style.borderColor||T.border }}>
       {children}
     </div>
   )
 }
 
-function Btn({ label, color, onClick }) {
+function Btn({ label, color, onClick, style={} }) {
   return (
-    <button onClick={e => { e.stopPropagation(); onClick?.() }}
-      style={{ background:`${color}22`, color, border:'none', borderRadius:999, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+    <button onClick={e=>{e.stopPropagation();onClick?.()}}
+      style={{ background:`${color}22`, color, border:`1px solid ${color}40`, borderRadius:10, padding:'7px 13px', fontSize:11, fontWeight:700, cursor:'pointer', ...style }}>
       {label}
     </button>
   )
 }
 
-function BackBtn({ onClick }) {
+// ─── Bottom nav (same items as student) ───────────────────────────────────────
+const NAV_ITEMS = [
+  { id:'home',    icon:'⊞',  label:'Home'     },
+  { id:'grades',  icon:'📊', label:'Grades'   },
+  { id:'feed',    icon:'📢', label:'Feed'     },
+  { id:'messages',icon:'💬', label:'Messages' },
+  { id:'settings',icon:'⚙',  label:'Settings' },
+]
+
+function BottomNav({ active, onSelect }) {
   return (
-    <button onClick={onClick}
-      style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:12 }}>
-      ← Back
-    </button>
+    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'rgba(0,13,31,0.97)', backdropFilter:'blur(20px)', borderTop:`1px solid ${T.border}`, padding:'8px 0 max(14px,env(safe-area-inset-bottom))', display:'grid', gridTemplateColumns:`repeat(${NAV_ITEMS.length},1fr)` }}>
+      {NAV_ITEMS.map(item=>{
+        const isActive = item.id===active
+        return (
+          <button key={item.id} onClick={()=>onSelect(item.id)}
+            style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'5px 2px', position:'relative' }}>
+            <span style={{ fontSize:18, transition:'transform 0.15s', transform:isActive?'scale(1.15)':'scale(1)' }}>{item.icon}</span>
+            <span style={{ fontSize:9, fontWeight:isActive?700:400, color:isActive?T.secondary:T.muted }}>{item.label}</span>
+            {isActive && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:2, background:T.secondary, borderRadius:1 }}/>}
+          </button>
+        )
+      })}
+    </div>
   )
 }
 
-export default function ParentDashboard({ currentUser, onNavigate }) {
-  const [page, setPage]           = useState('home')
-  const [selectedClass, setSelectedClass] = useState(null)
-  const [msgTab, setMsgTab]       = useState('student')
-  const [selectedMsg, setSelectedMsg]     = useState(null)
-  const [selectedFeed, setSelectedFeed]   = useState(null)
-  const [composing, setComposing] = useState(false)
-  const [composeTo, setComposeTo] = useState(null)
-  const [draftText, setDraftText] = useState('')
-  const [draftSubj, setDraftSubj] = useState('')
-  const [sent, setSent]           = useState(false)
-  const [myReactions, setMyReactions] = useState({})
+// ─── FULL MESSAGES PAGE (Parent version) ─────────────────────────────────────
+function MessagesPage({ onBack }) {
+  const [threads, setThreads]           = useState(INITIAL_THREADS)
+  const [selectedThread, setSelectedThread] = useState(null)
+  const [reply, setReply]               = useState('')
+  const [showNewRecipient, setShowNewRecipient] = useState(false)
+  const [newEmail, setNewEmail]         = useState('')
+  const [newName, setNewName]           = useState('')
+  const bottomRef = useRef(null)
 
-  const parentName   = currentUser?.userName || 'Ms. Thompson'
-  const unreadCount  = CHILD.teacherMessages.filter(m=>m.unread).length
-  const isSubPage    = page !== 'home'
+  useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) },[selectedThread])
 
-  function S(screen) { setPage(screen); window.scrollTo(0,0) }
-  function goHome()  { S('home'); setSelectedClass(null); setSelectedMsg(null); setSelectedFeed(null) }
-
-  function handleNavSelect(id) {
-    if (id==='__back__') { goHome(); return }
-    if (id==='home')     { goHome(); return }
-    S(id)
+  function sendReply() {
+    if (!reply.trim() || !selectedThread) return
+    const msg = { id:Date.now(), sender:'Me', text:reply.trim(), time:'Just now', isMe:true }
+    setThreads(ts=>ts.map(t=>t.id===selectedThread.id ? { ...t, messages:[...t.messages,msg] } : t))
+    setSelectedThread(t=>({ ...t, messages:[...t.messages,msg] }))
+    setReply('')
   }
 
-  function sendMessage() {
-    if (!draftText.trim()) return
-    setSent(true)
-    setTimeout(() => { setSent(false); setComposing(false); setDraftText(''); setDraftSubj(''); setComposeTo(null) }, 1800)
+  function startThread(contact) {
+    const exists = threads.find(t=>t.from===contact.name && t.private)
+    if (exists) { setSelectedThread(exists); setShowNewRecipient(false); return }
+    const t = { id:Date.now(), from:contact.name, subject:`${contact.role} · Private`, avatar:contact.avatar, unread:false, private:true, messages:[] }
+    setThreads(ts=>[...ts,t])
+    setSelectedThread(t)
+    setShowNewRecipient(false)
   }
 
-  function react(feedId, emoji) {
-    setMyReactions(prev => ({ ...prev, [`${feedId}-${emoji}`]: !prev[`${feedId}-${emoji}`] }))
+  function addByEmail() {
+    if (!newEmail.trim()) return
+    const t = { id:Date.now(), from:newName||newEmail, subject:'New Conversation', avatar:'📧', unread:false, private:true, messages:[] }
+    setThreads(ts=>[...ts,t])
+    setSelectedThread(t)
+    setNewEmail(''); setNewName(''); setShowNewRecipient(false)
   }
 
-  // ── Grades page ──────────────────────────────────────────────────────────────
-  if (page==='grades') return (
-    <>
-      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:T.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📊 {CHILD.name}'s Grades</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          {/* GPA Summary */}
-          <div style={{ background:'linear-gradient(135deg,#C8102E,#8b0a1f)', borderRadius:16, padding:20, marginBottom:16, textAlign:'center' }}>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', marginBottom:4 }}>Overall GPA</div>
-            <div style={{ fontSize:44, fontWeight:900, color:'#fff' }}>{CHILD.gpa}</div>
-            <div style={{ fontSize:14, color:'rgba(255,255,255,0.8)', fontWeight:700 }}>B+ · Good Standing</div>
-            <div style={{ background:'rgba(255,255,255,0.2)', borderRadius:999, height:8, overflow:'hidden', marginTop:12 }}>
-              <div style={{ background:'#fff', height:'100%', width:`${CHILD.gpa}%`, borderRadius:999 }} />
-            </div>
-          </div>
-
-          {selectedClass ? (
-            <>
-              <button onClick={() => setSelectedClass(null)}
-                style={{ background:T.inner, border:'none', borderRadius:10, padding:'7px 14px', color:T.text, cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:14 }}>
-                ← All Classes
-              </button>
-              <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:20 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                  <div>
-                    <div style={{ fontSize:18, fontWeight:800, color:T.text }}>{selectedClass.subject}</div>
-                    <div style={{ fontSize:12, color:T.muted }}>{selectedClass.teacher} · {selectedClass.period} Period</div>
-                  </div>
-                  <div style={{ textAlign:'right' }}>
-                    <div style={{ fontSize:32, fontWeight:900, color:gradeColor(selectedClass.grade) }}>{selectedClass.grade}%</div>
-                    <div style={{ fontSize:14, fontWeight:700, color:gradeColor(selectedClass.grade) }}>{selectedClass.letter}</div>
-                  </div>
-                </div>
-                <div style={{ background:T.inner, borderRadius:999, height:8, overflow:'hidden', marginBottom:16 }}>
-                  <div style={{ background:selectedClass.color, height:'100%', width:`${selectedClass.grade}%`, borderRadius:999 }} />
-                </div>
-                <div style={{ fontSize:11, fontWeight:700, color:T.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:10 }}>Assignments</div>
-                {selectedClass.assignments.map((a,i) => (
-                  <div key={i} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <div>
-                      <div style={{ fontSize:12, fontWeight:600, color:T.text }}>{a.name}</div>
-                      <div style={{ fontSize:10, color:T.muted }}>{a.due}</div>
-                    </div>
-                    <div style={{ textAlign:'right' }}>
-                      <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:999,
-                        background:a.status==='done'?'rgba(34,201,122,0.15)':'rgba(245,166,35,0.15)',
-                        color:a.status==='done'?T.green:T.amber }}>
-                        {a.status==='done'?`✓ ${a.score}%`:'Pending'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={() => { setComposeTo(selectedClass.teacher); setComposing(true); S('messages') }}
-                  style={{ marginTop:10, background:`${T.blue}22`, color:T.blue, border:'none', borderRadius:10, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer', width:'100%' }}>
-                  💬 Message {selectedClass.teacher}
-                </button>
-              </div>
-            </>
-          ) : (
-            CHILD.classes.map(c => (
-              <div key={c.id} onClick={() => setSelectedClass(c)}
-                style={{ background:T.card, border:`1px solid ${T.border}`, borderLeft:`3px solid ${c.color}`, borderRadius:16, padding:'14px 16px', marginBottom:10, cursor:'pointer' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                  <div>
-                    <div style={{ fontWeight:700, fontSize:14 }}>{c.subject}</div>
-                    <div style={{ fontSize:11, color:T.muted }}>{c.teacher} · {c.period} Period</div>
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <span style={{ fontSize:11, color:c.trend==='up'?T.green:c.trend==='down'?T.red:T.muted }}>{c.trend==='up'?'↑':c.trend==='down'?'↓':'→'}</span>
-                    <GradeBadge score={c.grade} />
-                  </div>
-                </div>
-                <GradeBar score={c.grade} />
-                <div style={{ fontSize:9, color:T.muted, marginTop:6 }}>Tap to see assignments & details →</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-      <BottomNav role="parent" activePage="grades" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── Feed page ─────────────────────────────────────────────────────────────────
-  if (page==='feed') return (
-    <>
-      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:T.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📢 Class Feed</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          <p style={{ fontSize:12, color:T.muted, margin:'0 0 12px 6px' }}>Updates from {CHILD.name}'s teachers · React to show you've seen it</p>
-          {selectedFeed ? (
-            <>
-              <button onClick={() => setSelectedFeed(null)}
-                style={{ background:T.inner, border:'none', borderRadius:10, padding:'7px 14px', color:T.text, cursor:'pointer', fontSize:12, fontWeight:600, marginBottom:14 }}>
-                ← Back to Feed
-              </button>
-              <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:20 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-                  <span style={{ fontWeight:700, fontSize:13 }}>{selectedFeed.author}</span>
-                  <span style={{ fontSize:10, color:T.muted }}>{selectedFeed.time}</span>
-                </div>
-                <p style={{ fontSize:13, lineHeight:1.7, margin:'0 0 16px' }}>{selectedFeed.content}</p>
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-                  {Object.entries(selectedFeed.reactions).map(([emoji, count]) => (
-                    <button key={emoji} onClick={() => react(selectedFeed.id, emoji)}
-                      style={{ background:myReactions[`${selectedFeed.id}-${emoji}`]?`${T.primary}30`:T.inner, border:`1px solid ${myReactions[`${selectedFeed.id}-${emoji}`]?T.primary:T.border}`, borderRadius:999, padding:'4px 10px', fontSize:12, color:T.text, cursor:'pointer' }}>
-                      {emoji} {count+(myReactions[`${selectedFeed.id}-${emoji}`]?1:0)}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : (
-            CHILD.feed.map(post => (
-              <div key={post.id} onClick={() => setSelectedFeed(post)}
-                style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, cursor:'pointer' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                  <span style={{ fontWeight:700, fontSize:13 }}>{post.author}</span>
-                  <span style={{ fontSize:10, color:T.muted }}>{post.time}</span>
-                </div>
-                <p style={{ fontSize:13, lineHeight:1.6, margin:'0 0 8px' }}>{post.content.substring(0,80)}...</p>
-                <div style={{ display:'flex', gap:8 }}>
-                  {Object.entries(post.reactions).map(([emoji, count]) => (
-                    <span key={emoji} style={{ background:T.inner, borderRadius:999, padding:'3px 8px', fontSize:11 }}>{emoji} {count}</span>
-                  ))}
-                </div>
-                <div style={{ fontSize:9, color:T.primary, marginTop:6 }}>Tap to read & react →</div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-      <BottomNav role="parent" activePage="feed" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── Calendar page ─────────────────────────────────────────────────────────────
-  if (page==='calendar') return (
-    <>
-      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:T.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📅 {CHILD.name}'s Calendar</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:10, paddingLeft:4 }}>Upcoming Assignments</div>
-          {CHILD.assignments.map(a => (
-            <div key={a.id} style={{ background:T.card, border:`1px solid ${a.status==='done'?T.green+'40':T.border}`, borderRadius:14, padding:'12px 16px', marginBottom:8, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <div>
-                <div style={{ fontWeight:700, fontSize:13 }}>{a.title}</div>
-                <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{a.subject}</div>
-              </div>
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontSize:11, fontWeight:700, color:a.status==='done'?T.green:a.due==='Tomorrow'?T.red:T.amber }}>{a.due}</div>
-                {a.status==='done' && <div style={{ fontSize:10, color:T.green }}>✓ Done</div>}
-              </div>
-            </div>
-          ))}
-          <div style={{ fontSize:12, fontWeight:700, color:T.muted, textTransform:'uppercase', letterSpacing:'0.06em', margin:'20px 0 10px', paddingLeft:4 }}>Alerts</div>
-          {CHILD.alerts.map(a => (
-            <div key={a.id} style={{ background:T.inner, border:`1px solid ${a.color}20`, borderRadius:12, padding:'10px 14px', marginBottom:8, borderLeft:`3px solid ${a.color}` }}>
-              <div style={{ fontSize:12 }}>{a.msg}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <BottomNav role="parent" activePage="calendar" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── Messages page ─────────────────────────────────────────────────────────────
-  if (page==='messages') {
-    const currentMessages = msgTab==='student' ? CHILD.teacherMessages : CHILD.privateMessages
-
-    if (composing) return (
-      <>
-        <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-          <div style={{ background:T.header, padding:'20px 16px 24px' }}>
-            <BackBtn onClick={() => setComposing(false)} />
-            <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>✏️ New Private Message</h1>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', marginTop:4 }}>🔒 Only you and the teacher will see this</div>
-          </div>
-          <div style={{ padding:'16px' }}>
-            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginBottom:12 }}>
-              <div style={{ fontSize:11, color:T.muted, marginBottom:8, fontWeight:700 }}>SELECT TEACHER</div>
-              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                {CHILD.classes.map(c => (
-                  <button key={c.id} onClick={() => setComposeTo(c.teacher)}
-                    style={{ background:composeTo===c.teacher?T.primary:T.inner, color:composeTo===c.teacher?'#fff':T.text, border:`1px solid ${composeTo===c.teacher?T.primary:T.border}`, borderRadius:999, padding:'7px 16px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
-                    {c.teacher}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <input value={draftSubj} onChange={e => setDraftSubj(e.target.value)} placeholder="Subject..."
-              style={{ width:'100%', background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:'12px 14px', color:T.text, fontSize:13, marginBottom:10, boxSizing:'border-box', outline:'none' }} />
-            <textarea rows={5} value={draftText} onChange={e => setDraftText(e.target.value)} placeholder="Write your message..."
-              style={{ width:'100%', background:T.card, border:`1px solid ${T.border}`, borderRadius:12, padding:'12px 14px', color:T.text, fontSize:13, resize:'none', boxSizing:'border-box', lineHeight:1.6, outline:'none' }} />
-            {sent && <div style={{ background:'#0f2a1a', border:`1px solid ${T.green}40`, borderRadius:10, padding:'8px 12px', color:T.green, fontSize:13, margin:'10px 0' }}>✅ Message sent to {composeTo}!</div>}
-            <div style={{ display:'flex', gap:8, marginTop:12 }}>
-              <button onClick={sendMessage} style={{ flex:1, background:T.primary, color:'#fff', border:'none', borderRadius:999, padding:12, fontSize:14, fontWeight:700, cursor:'pointer' }}>Send</button>
-              <button onClick={() => setComposing(false)} style={{ flex:1, background:T.inner, color:T.muted, border:'none', borderRadius:999, padding:12, fontSize:13, fontWeight:600, cursor:'pointer' }}>Cancel</button>
-            </div>
-          </div>
-        </div>
-        <BottomNav role="parent" activePage="messages" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-      </>
-    )
-
-    if (selectedMsg) return (
-      <>
-        <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-          <div style={{ background:T.header, padding:'20px 16px 24px' }}>
-            <BackBtn onClick={() => setSelectedMsg(null)} />
-            <h1 style={{ fontSize:18, fontWeight:800, color:'#fff', margin:0 }}>{selectedMsg.subject}</h1>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', marginTop:4 }}>
-              {msgTab==='private'?'🔒 Private · Only you and the teacher see this':`From ${selectedMsg.from}`}
-            </div>
-          </div>
-          <div style={{ padding:'16px' }}>
-            <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:16, marginBottom:12 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
-                <span style={{ fontWeight:700, fontSize:13 }}>{selectedMsg.from}</span>
-                <span style={{ fontSize:11, color:T.muted }}>{selectedMsg.time}</span>
-              </div>
-              <p style={{ fontSize:13, lineHeight:1.6, margin:0 }}>{selectedMsg.content}</p>
-            </div>
-            {msgTab==='private' && (
-              <button onClick={() => { setComposeTo(selectedMsg.fromParent?null:selectedMsg.from); setComposing(true) }}
-                style={{ width:'100%', background:T.primary, color:'#fff', border:'none', borderRadius:12, padding:12, fontSize:14, fontWeight:700, cursor:'pointer' }}>
-                Reply
-              </button>
-            )}
-          </div>
-        </div>
-        <BottomNav role="parent" activePage="messages" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-      </>
-    )
+  // ── Thread view ──────────────────────────────────────────────────────────────
+  if (selectedThread) {
+    const thread = threads.find(t=>t.id===selectedThread.id)||selectedThread
+    const isReadOnly = thread.readOnly
 
     return (
-      <>
-        <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-          <div style={{ background:T.header, padding:'20px 16px 24px' }}>
-            <BackBtn onClick={goHome} />
-            <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
-          </div>
-          <div style={{ padding:'12px 16px 0' }}>
-            <div style={{ background:T.inner, borderRadius:999, padding:3, display:'flex', marginBottom:12 }}>
-              <button onClick={() => setMsgTab('student')}
-                style={{ flex:1, background:msgTab==='student'?T.primary:'transparent', color:msgTab==='student'?'#fff':T.muted, border:'none', borderRadius:999, padding:'9px 0', fontSize:12, fontWeight:700, cursor:'pointer', transition:'all 0.2s' }}>
-                👁 Student View
-              </button>
-              <button onClick={() => setMsgTab('private')}
-                style={{ flex:1, background:msgTab==='private'?T.primary:'transparent', color:msgTab==='private'?'#fff':T.muted, border:'none', borderRadius:999, padding:'9px 0', fontSize:12, fontWeight:700, cursor:'pointer', transition:'all 0.2s' }}>
-                🔒 Private w/ Teacher
-              </button>
-            </div>
-            {msgTab==='private' && (
-              <>
-                <div style={{ background:`${T.red}12`, border:`1px solid ${T.red}30`, borderRadius:10, padding:'8px 12px', marginBottom:10, fontSize:11, color:T.red }}>
-                  🔒 Private — Only you and the teacher see these messages
-                </div>
-                <button onClick={() => { setComposeTo(null); setComposing(true) }}
-                  style={{ width:'100%', background:T.primary, color:'#fff', border:'none', borderRadius:12, padding:'11px 0', fontSize:13, fontWeight:700, cursor:'pointer', marginBottom:12 }}>
-                  + New Private Message to Teacher
-                </button>
-              </>
-            )}
-            {msgTab==='student' && (
-              <p style={{ fontSize:12, color:T.muted, marginBottom:12 }}>
-                Messages between {CHILD.name}'s teachers and {CHILD.name}. You can read and react.
-              </p>
-            )}
-            {currentMessages.map(m => (
-              <div key={m.id} onClick={() => setSelectedMsg(m)}
-                style={{ background:m.unread?`${T.primary}15`:T.card, border:`1px solid ${m.unread?T.primary+'50':T.border}`, borderRadius:14, padding:'12px 16px', marginBottom:8, cursor:'pointer' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
-                  <span style={{ fontWeight:700, fontSize:13 }}>{m.from}</span>
-                  <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                    {m.unread && <span style={{ width:7, height:7, background:T.primary, borderRadius:'50%' }} />}
-                    <span style={{ fontSize:10, color:T.muted }}>{m.time}</span>
-                  </div>
-                </div>
-                <div style={{ fontSize:12, fontWeight:600, marginBottom:3 }}>{m.subject}</div>
-                <p style={{ fontSize:11, color:T.muted, margin:0, lineHeight:1.4 }}>{m.content.substring(0,70)}...</p>
-                <div style={{ fontSize:9, color:T.primary, marginTop:6 }}>Tap to read →</div>
+      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", display:'flex', flexDirection:'column' }}>
+        <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <button onClick={()=>setSelectedThread(null)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+            <span style={{ fontSize:24 }}>{thread.avatar}</span>
+            <div>
+              <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>{thread.from}</div>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>{thread.subject}</div>
+                {thread.private && <span style={{ fontSize:9, background:'rgba(240,74,74,0.25)', color:T.red, borderRadius:999, padding:'2px 6px', fontWeight:700 }}>🔒 Private</span>}
+                {isReadOnly && <span style={{ fontSize:9, background:'rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.5)', borderRadius:999, padding:'2px 6px', fontWeight:700 }}>👁 View only</span>}
               </div>
-            ))}
+            </div>
           </div>
         </div>
-        <BottomNav role="parent" activePage="messages" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-      </>
+
+        {isReadOnly && (
+          <div style={{ margin:'10px 16px 0', background:'#1a1a2e', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'8px 12px', fontSize:11, color:'rgba(255,255,255,0.5)' }}>
+            👁 You're viewing Marcus's messages with his teacher. This is read-only.
+          </div>
+        )}
+
+        <div style={{ flex:1, padding:'16px 16px 120px', overflowY:'auto' }}>
+          {thread.messages.length===0 && (
+            <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>💬</div>
+              <div style={{ fontSize:13 }}>Start the conversation</div>
+            </div>
+          )}
+          {thread.messages.map(msg=>(
+            <div key={msg.id} style={{ display:'flex', justifyContent:msg.isMe?'flex-end':'flex-start', marginBottom:12 }}>
+              {!msg.isMe && <div style={{ width:30, height:30, borderRadius:'50%', background:T.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, marginRight:8, flexShrink:0 }}>{thread.avatar}</div>}
+              <div style={{ maxWidth:'75%' }}>
+                {!msg.isMe && <div style={{ fontSize:10, color:T.muted, marginBottom:3, marginLeft:2 }}>{msg.sender}</div>}
+                <div style={{ background:msg.isMe?T.secondary:T.inner, color:msg.isMe?T.primary:T.text, borderRadius:msg.isMe?'16px 16px 4px 16px':'16px 16px 16px 4px', padding:'10px 13px', fontSize:13, lineHeight:1.5 }}>
+                  {msg.text}
+                </div>
+                <div style={{ fontSize:9, color:T.muted, marginTop:3, textAlign:msg.isMe?'right':'left' }}>{msg.time}</div>
+              </div>
+            </div>
+          ))}
+          <div ref={bottomRef}/>
+        </div>
+
+        {/* Reply bar (not shown for read-only student view) */}
+        {!isReadOnly && (
+          <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:`${T.bg}f0`, backdropFilter:'blur(16px)', borderTop:`1px solid ${T.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
+            <textarea
+              value={reply}
+              onChange={e=>setReply(e.target.value)}
+              onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}}
+              placeholder="Reply to teacher..."
+              rows={1}
+              style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}
+            />
+            <button onClick={sendReply} disabled={!reply.trim()}
+              style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0 }}>
+              Send
+            </button>
+          </div>
+        )}
+      </div>
     )
   }
 
-  // ── Alerts page ──────────────────────────────────────────────────────────────
-  if (page==='alerts') return (
-    <>
-      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:T.header, padding:'20px 16px 24px' }}>
-          <BackBtn onClick={goHome} />
-          <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🔔 Alerts</h1>
-        </div>
-        <div style={{ padding:'16px 10px' }}>
-          {CHILD.alerts.map(a => (
-            <div key={a.id} style={{ background:T.inner, border:`1px solid ${a.color}20`, borderRadius:14, padding:'14px 16px', marginBottom:10, borderLeft:`3px solid ${a.color}` }}>
-              <div style={{ fontSize:13 }}>{a.msg}</div>
-              <button onClick={() => S('grades')} style={{ marginTop:8, background:`${a.color}22`, color:a.color, border:'none', borderRadius:8, padding:'5px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-                View Details →
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-      <BottomNav role="parent" activePage="alerts" onNavigate={handleNavSelect} isSubPage={true} onBack={goHome} />
-    </>
-  )
-
-  // ── HOME ─────────────────────────────────────────────────────────────────────
+  // ── Thread list ──────────────────────────────────────────────────────────────
   return (
-    <>
-      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:'Inter,Arial,sans-serif', paddingBottom:80 }}>
-        <div style={{ background:T.header, padding:'20px 16px 28px', marginBottom:12 }}>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', marginBottom:2 }}>Parent Dashboard 👋</div>
-          <div style={{ fontSize:22, fontWeight:800, color:'#fff', marginBottom:2 }}>{parentName} 👋</div>
-          <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)' }}>Viewing: {CHILD.name} · {CHILD.grade} · {CHILD.school}</div>
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+            <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
+          </div>
+          <button onClick={()=>setShowNewRecipient(true)}
+            style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+            + New
+          </button>
         </div>
-
-        {/* PW1: Daily Overview */}
-        <Widget onClick={() => S('grades')} style={{ background:'linear-gradient(135deg,#C8102E,#8b0a1f)', border:'none' }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.5)', marginBottom:10 }}>MARCUS'S DAILY OVERVIEW</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6 }}>
-            {[
-              { icon:'📊', val:CHILD.gpa,            label:'GPA',      page:'grades'   },
-              { icon:'📚', val:CHILD.classes.length, label:'Classes',  page:'grades'   },
-              { icon:'⚑',  val:CHILD.alerts.length,  label:'Alerts',   page:'alerts'   },
-              { icon:'💬', val:unreadCount,           label:'Messages', page:'messages' },
-            ].map(t => (
-              <button key={t.label} onClick={e => { e.stopPropagation(); S(t.page) }}
-                style={{ background:'rgba(255,255,255,0.12)', borderRadius:13, padding:'10px 4px', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
-                <span style={{ fontSize:16 }}>{t.icon}</span>
-                <span style={{ fontSize:16, fontWeight:800, color:'#fff', lineHeight:1 }}>{t.val}</span>
-                <span style={{ fontSize:8, color:'rgba(255,255,255,0.6)', textAlign:'center' }}>{t.label}</span>
-              </button>
-            ))}
-          </div>
-        </Widget>
-
-        {/* PW2: Today's Lessons */}
-        <Widget onClick={() => S('calendar')} style={{ background:'linear-gradient(135deg,#2c000e,#1e0008)', border:`1px solid ${T.border}` }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:8 }}>TODAY'S LESSONS 📖</div>
-          <div style={{ fontSize:14, fontWeight:700, marginBottom:4 }}>Ch.4 · Fractions &amp; Decimals · Math</div>
-          <div style={{ fontSize:11, color:T.muted }}>Pages 84–91 · Ms. Johnson · Parent view of {CHILD.name}'s lessons</div>
-        </Widget>
-
-        {/* PW3: Marcus's Classes — each card opens that class's grades */}
-        <Widget onClick={() => S('grades')} title={`📚 ${CHILD.name}'s Classes`}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-            {CHILD.classes.map(c => (
-              <button key={c.id} onClick={e => { e.stopPropagation(); setSelectedClass(c); S('grades') }}
-                style={{ background:T.inner, borderRadius:12, padding:'12px', border:`1px solid ${T.border}`, borderLeft:`3px solid ${c.color}`, cursor:'pointer', textAlign:'left' }}>
-                <div style={{ fontWeight:700, fontSize:12, marginBottom:2 }}>{c.subject}</div>
-                <div style={{ fontSize:10, color:T.muted, marginBottom:6 }}>{c.teacher}</div>
-                <div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}%</div>
-                <div style={{ fontSize:9, color:c.trend==='up'?T.green:c.trend==='down'?T.red:T.muted, marginTop:2 }}>
-                  {c.trend==='up'?'↑ Improving':c.trend==='down'?'↓ Declining':'→ Stable'}
-                </div>
-                <div style={{ fontSize:8, color:T.primary, marginTop:4 }}>Tap to see grades →</div>
-              </button>
-            ))}
-          </div>
-        </Widget>
-
-        {/* PW4: Needs Attention */}
-        <Widget onClick={() => S('grades')} style={{ border:'1px solid rgba(240,74,74,0.15)' }} title="⚑ Needs Attention">
-          <div style={{ background:'#1c1012', borderRadius:10, padding:'10px 12px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-            <span style={{ fontSize:12, color:T.red }}>Science 61% · Study tips available for {CHILD.name}</span>
-            <Btn label="View →" color={T.red} onClick={() => S('grades')} />
-          </div>
-        </Widget>
-
-        {/* PW5: Messages */}
-        <Widget onClick={() => S('messages')} title="💬 Messages"
-          titleRight={unreadCount>0 && <span style={{ background:`rgba(200,16,46,0.2)`, color:T.primary, borderRadius:999, padding:'3px 8px', fontSize:10, fontWeight:700 }}>{unreadCount} new</span>}>
-          <div style={{ background:T.inner, borderRadius:999, padding:3, display:'flex', marginBottom:10 }}>
-            <div style={{ flex:1, background:T.primary, borderRadius:999, padding:'6px 0', fontSize:10, fontWeight:700, color:'#fff', textAlign:'center' }}>👁 Student View</div>
-            <div style={{ flex:1, padding:'6px 0', fontSize:10, fontWeight:700, color:T.muted, textAlign:'center' }}>🔒 Private</div>
-          </div>
-          {CHILD.teacherMessages.slice(0,2).map(m => (
-            <div key={m.id} onClick={e => { e.stopPropagation(); setSelectedMsg(m); S('messages') }}
-              style={{ background:m.unread?`${T.primary}12`:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:6, cursor:'pointer' }}>
-              <div style={{ fontSize:12, fontWeight:700 }}>{m.from}</div>
-              <div style={{ fontSize:11, color:T.muted, marginTop:2 }}>{m.content.substring(0,55)}...</div>
-              <div style={{ fontSize:9, color:T.primary, marginTop:4 }}>Tap to read →</div>
-            </div>
-          ))}
-          <Btn label="View all messages →" color={T.primary} onClick={() => S('messages')} />
-        </Widget>
-
-        {/* PW6: Class Feed — topics clickable */}
-        <Widget onClick={() => S('feed')} title="📢 Class Feed"
-          titleRight={<Btn label="View →" color={T.primary} onClick={() => S('feed')} />}>
-          {CHILD.feed.slice(0,2).map(post => (
-            <div key={post.id} onClick={e => { e.stopPropagation(); setSelectedFeed(post); S('feed') }}
-              style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, cursor:'pointer' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
-                <span style={{ fontSize:12, fontWeight:700 }}>{post.author}</span>
-                <span style={{ fontSize:10, color:T.muted }}>{post.time}</span>
-              </div>
-              <div style={{ fontSize:11, color:T.muted, lineHeight:1.4 }}>{post.content.substring(0,60)}...</div>
-              <div style={{ fontSize:9, color:T.primary, marginTop:4 }}>Tap to read & react →</div>
-            </div>
-          ))}
-        </Widget>
-
-        {/* PW7: AI Tips */}
-        <Widget style={{ background:`linear-gradient(135deg,rgba(200,16,46,0.12),rgba(44,0,14,0.8))`, border:`1px solid rgba(200,16,46,0.2)` }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:8 }}>✨ AI TIPS FOR PARENTS</div>
-          <p style={{ fontSize:13, lineHeight:1.6, margin:'0 0 10px' }}>
-            {CHILD.name} is doing well in Reading but could use extra support in Science. Try 10 minutes of review tonight using the class notes.
-          </p>
-          <Btn label="More tips" color={T.primary} onClick={() => {}} />
-        </Widget>
       </div>
-      <BottomNav role="parent" activePage="home" onNavigate={handleNavSelect} isSubPage={false} />
-    </>
+
+      {showNewRecipient && (
+        <div style={{ margin:'12px 16px', background:T.card, border:`1px solid ${T.secondary}40`, borderRadius:18, padding:16 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Message a teacher</div>
+          <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
+            {CONTACTS.map(c=>(
+              <button key={c.name} onClick={()=>startThread(c)}
+                style={{ background:T.inner, border:`1px solid ${T.border}`, borderRadius:12, padding:'10px 14px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', textAlign:'left' }}>
+                <span style={{ fontSize:22 }}>{c.avatar}</span>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
+                  <div style={{ fontSize:10, color:T.muted }}>{c.role}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14 }}>
+            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>Or add by email</div>
+            <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Name (optional)"
+              style={{ width:'100%', background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
+            <div style={{ display:'flex', gap:8 }}>
+              <input value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="Email address or URL"
+                style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none' }}/>
+              <button onClick={addByEmail}
+                style={{ background:T.secondary, color:T.primary, border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
+            </div>
+          </div>
+          <button onClick={()=>setShowNewRecipient(false)}
+            style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
+        </div>
+      )}
+
+      {/* Thread categories */}
+      <div style={{ padding:'12px 16px 4px' }}>
+        <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>🔒 Private · Teacher Channel</div>
+        {threads.filter(t=>t.private).map(thread=>(
+          <button key={thread.id} onClick={()=>setSelectedThread(thread)}
+            style={{ width:'100%', background:thread.unread?T.inner:T.card, border:`1px solid ${thread.unread?T.secondary+'50':T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left' }}
+            onMouseEnter={e=>(e.currentTarget.style.background=T.raised)}
+            onMouseLeave={e=>(e.currentTarget.style.background=thread.unread?T.inner:T.card)}>
+            <div style={{ width:42, height:42, borderRadius:'50%', background:T.raised, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0, position:'relative' }}>
+              {thread.avatar}
+              {thread.unread && <div style={{ position:'absolute', top:0, right:0, width:10, height:10, borderRadius:'50%', background:T.red, border:`2px solid ${T.bg}` }}/>}
+            </div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
+                <div style={{ fontWeight:700, fontSize:14, color:T.text }}>{thread.from}</div>
+                <div style={{ fontSize:10, color:T.muted }}>{thread.messages[thread.messages.length-1]?.time||''}</div>
+              </div>
+              <div style={{ fontSize:11, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {thread.messages[thread.messages.length-1]?.text||'No messages yet'}
+              </div>
+            </div>
+            <span style={{ color:T.muted, fontSize:16 }}>›</span>
+          </button>
+        ))}
+
+        <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, margin:'12px 0 8px' }}>👁 Marcus's View</div>
+        {threads.filter(t=>!t.private).map(thread=>(
+          <button key={thread.id} onClick={()=>setSelectedThread(thread)}
+            style={{ width:'100%', background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left' }}
+            onMouseEnter={e=>(e.currentTarget.style.background=T.raised)}
+            onMouseLeave={e=>(e.currentTarget.style.background=T.card)}>
+            <div style={{ width:42, height:42, borderRadius:'50%', background:T.raised, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>{thread.avatar}</div>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:700, fontSize:14, color:T.text, marginBottom:3 }}>{thread.from}</div>
+              <div style={{ fontSize:11, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                {thread.messages[thread.messages.length-1]?.text||'No messages'}
+              </div>
+            </div>
+            <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
+              <span style={{ fontSize:9, color:T.muted, background:T.inner, borderRadius:999, padding:'2px 6px', fontWeight:700 }}>👁 Read only</span>
+              <span style={{ color:T.muted, fontSize:16 }}>›</span>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Grades page ──────────────────────────────────────────────────────────────
+function GradesPage({ onBack }) {
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
+        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📊 Marcus's Grades</h1>
+      </div>
+      <div style={{ padding:'16px' }}>
+        {CHILD.classes.map(c=>(
+          <div key={c.id} style={{ background:T.card, border:`1px solid ${T.border}`, borderLeft:`4px solid ${c.color}`, borderRadius:16, padding:'14px 16px', marginBottom:10 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div>
+                <div style={{ fontWeight:700, fontSize:14, color:T.text }}>{c.subject}</div>
+                <div style={{ fontSize:11, color:T.muted }}>{c.teacher} · {c.period} Period</div>
+              </div>
+              <div style={{ textAlign:'right' }}>
+                <div style={{ fontSize:20, fontWeight:900, color:gradeColor(c.grade) }}>{c.grade}%</div>
+                <div style={{ fontSize:11, fontWeight:700, color:gradeColor(c.grade) }}>{c.letter}</div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── Home page ────────────────────────────────────────────────────────────────
+function HomePage({ navigate, childName }) {
+  const overviewTiles = [
+    { icon:'📊', val:CHILD.gpa,   label:'Grades',   page:'grades',   color:T.secondary },
+    { icon:'📢', val:'',          label:'Feed',     page:'feed',     color:T.teal      },
+    { icon:'💬', val:INITIAL_THREADS.filter(t=>t.unread&&t.private).length||'', label:'Messages', page:'messages', color:T.purple },
+    { icon:'⚙',  val:'',          label:'Settings', page:'settings', color:T.muted     },
+  ]
+
+  return (
+    <div style={{ padding:'12px 12px 0' }}>
+
+      {/* W1: Daily Overview — mirrors bottom nav */}
+      <Widget style={{ background:`linear-gradient(135deg,${T.primary} 0%,#001020 100%)`, border:'none' }}>
+        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>
+          {childName.toUpperCase()}'S DAILY OVERVIEW
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+          {overviewTiles.map(tile=>(
+            <button key={tile.label} onClick={e=>{e.stopPropagation();navigate(tile.page)}}
+              style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'12px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+              <span style={{ fontSize:18 }}>{tile.icon}</span>
+              {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
+              <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
+            </button>
+          ))}
+        </div>
+      </Widget>
+
+      {/* W2: Alerts */}
+      {CHILD.alerts.length>0 && (
+        <Widget onClick={()=>navigate('alerts')} style={{ border:`1px solid ${T.red}25` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div style={{ fontSize:13, fontWeight:700 }}>🔔 Alerts</div>
+            <span style={{ background:`${T.red}18`, color:T.red, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999 }}>{CHILD.alerts.length}</span>
+          </div>
+          {CHILD.alerts.map(a=>(
+            <div key={a.id} style={{ background:T.inner, borderLeft:`3px solid ${a.color}`, borderRadius:10, padding:'9px 12px', marginBottom:6, display:'flex', gap:8, alignItems:'flex-start' }}>
+              <span>{a.icon}</span><span style={{ fontSize:12, color:T.text }}>{a.msg}</span>
+            </div>
+          ))}
+        </Widget>
+      )}
+
+      {/* W3: Today's Lesson */}
+      <Widget onClick={()=>navigate('lessons')} style={{ background:'linear-gradient(135deg,#001830,#000d1f)', border:`1px solid #003a6a` }}>
+        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:8 }}>TODAY'S LESSONS 📖</div>
+        <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:4 }}>Ch.4 · Fractions & Decimals · Math</div>
+        <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)' }}>Pages 84–91 · Ms. Johnson · Parent view of {childName}'s lessons</div>
+      </Widget>
+
+      {/* W4: Classes */}
+      <Widget onClick={()=>navigate('grades')}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>📚 {childName}'s Classes</div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          {CHILD.classes.map(c=>(
+            <button key={c.id} onClick={e=>{e.stopPropagation();navigate('grades')}}
+              style={{ background:T.inner, borderLeft:`3px solid ${c.color}`, borderRadius:12, padding:'10px 12px', border:'none', cursor:'pointer', textAlign:'left' }}>
+              <div style={{ fontWeight:700, fontSize:12, color:T.text, marginBottom:2 }}>{c.subject}</div>
+              <div style={{ fontSize:10, color:T.muted, marginBottom:6 }}>{c.teacher}</div>
+              <div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}%</div>
+            </button>
+          ))}
+        </div>
+      </Widget>
+
+      {/* W5: Messages preview */}
+      <Widget onClick={()=>navigate('messages')}>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+          <div style={{ fontSize:13, fontWeight:700 }}>💬 Messages</div>
+          <Btn label="+ New" color={T.secondary} onClick={()=>navigate('messages')}/>
+        </div>
+        {INITIAL_THREADS.filter(t=>t.unread&&t.private).slice(0,2).map(t=>(
+          <div key={t.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:20 }}>{t.avatar}</span>
+            <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ fontWeight:700, fontSize:12, color:T.text }}>{t.from}</div>
+              <div style={{ fontSize:10, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.messages[t.messages.length-1]?.text}</div>
+            </div>
+            <div style={{ width:8, height:8, borderRadius:'50%', background:T.red, flexShrink:0 }}/>
+          </div>
+        ))}
+        {!INITIAL_THREADS.some(t=>t.unread&&t.private) && <div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}
+      </Widget>
+
+      {/* W6: AI Tips */}
+      <Widget style={{ background:'linear-gradient(135deg,#0d1a3a 0%,#000d1f 100%)', border:`1px solid ${T.purple}30` }}>
+        <div style={{ fontSize:11, fontWeight:700, color:T.purple, marginBottom:6 }}>✨ AI Tips for {childName}</div>
+        <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:4 }}>Science needs focus!</div>
+        <div style={{ fontSize:11, color:T.muted }}>10 min flashcards tonight · same strategy that boosted Reading +8pts</div>
+      </Widget>
+    </div>
+  )
+}
+
+// ─── Alerts page ──────────────────────────────────────────────────────────────
+function AlertsPage({ onBack }) {
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
+        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🔔 Alerts</h1>
+      </div>
+      <div style={{ padding:'16px' }}>
+        {CHILD.alerts.map(a=>(
+          <div key={a.id} style={{ background:T.card, border:`1px solid ${a.color}30`, borderLeft:`4px solid ${a.color}`, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
+            <div style={{ fontSize:20, marginBottom:6 }}>{a.icon}</div>
+            <div style={{ fontSize:13, color:T.text }}>{a.msg}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── MAIN PARENT DASHBOARD ────────────────────────────────────────────────────
+export default function ParentDashboard({ currentUser }) {
+  const [page, setPage]           = useState('home')
+  const [activeNav, setActiveNav] = useState('home')
+  const parentName = currentUser?.userName || 'Ms. Thompson'
+  const childName  = CHILD.name
+
+  useEffect(()=>{ window.scrollTo(0,0) },[page])
+
+  function navigate(id) {
+    setPage(id)
+    if(NAV_ITEMS.find(n=>n.id===id)) setActiveNav(id)
+    window.scrollTo(0,0)
+  }
+
+  function goHome() { navigate('home'); setActiveNav('home') }
+
+  if (page==='grades')   return <><GradesPage onBack={goHome}/><BottomNav active={activeNav} onSelect={navigate}/></>
+  if (page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages' onSelect={navigate}/></>
+  if (page==='alerts')   return <><AlertsPage onBack={goHome}/><BottomNav active={activeNav} onSelect={navigate}/></>
+
+  const now = new Date()
+  const hour = now.getHours()
+  const greeting = hour<12?'Good morning':'Good afternoon'
+
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
+      {/* Sticky header — same style as student, different copy */}
+      <div style={{ position:'sticky', top:0, zIndex:100, background:T.header, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2 }}>HOUSTON ISD · LINCOLN ELEMENTARY</div>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div>
+            <div style={{ fontSize:17, fontWeight:800, color:'#fff' }}>{greeting}, {parentName} 👋</div>
+            <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Viewing: {childName} · {CHILD.grade}</div>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button onClick={()=>navigate('messages')} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:16, position:'relative' }}>
+              💬
+              {INITIAL_THREADS.some(t=>t.unread&&t.private) && <div style={{ position:'absolute', top:-2, right:-2, width:8, height:8, borderRadius:'50%', background:T.red }}/>}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <HomePage navigate={navigate} childName={childName}/>
+      <BottomNav active={activeNav} onSelect={navigate}/>
+    </div>
   )
 }
