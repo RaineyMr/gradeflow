@@ -37,25 +37,23 @@ const CHILD = {
     { id:1, msg:"Marcus's Science grade is 61% — below passing", color:'#f04a4a', icon:'⚑' },
     { id:2, msg:"2 assignments due this week for Marcus",         color:'#f5a623', icon:'📋' },
   ],
-  assignments: [
-    { id:1, name:'Ch.4 Worksheet', subject:'Math',   due:'Today',    status:'pending'   },
-    { id:2, name:'Book Report',    subject:'Reading', due:'Tomorrow', status:'pending'   },
-    { id:3, name:'Lab Report',     subject:'Science', due:'Friday',   status:'submitted' },
-  ],
 }
 
+// Parent threads: private teacher channel + student view (same messages student sees)
 const INITIAL_THREADS = [
   {
     id:1, from:'Ms. Johnson', subject:'Math · Private', avatar:'👩‍🏫', unread:true, private:true,
     messages:[
-      { id:1, sender:'Ms. Johnson', text:"Hi Ms. Thompson, I wanted to reach out about Marcus's recent progress.", time:'1 hr ago', isMe:false },
+      { id:1, sender:'Ms. Johnson', text:"Hi Ms. Thompson, I wanted to reach out about Marcus's recent progress. He's doing well overall but Science is a concern.", time:'1 hr ago', isMe:false },
       { id:2, sender:'Me',          text:"Thank you for reaching out. I'll work with him on Science at home.", time:'45 min ago', isMe:true },
-      { id:3, sender:'Ms. Johnson', text:"That would be great! He has a test on Friday — chapters 3 & 4.", time:'30 min ago', isMe:false },
+      { id:3, sender:'Ms. Johnson', text:"That would be great! Also, he has a test on Friday. Please remind him to review chapters 3 & 4.", time:'30 min ago', isMe:false },
     ],
   },
   {
     id:2, from:'Mr. Lee', subject:'Science · Private', avatar:'🧑‍🔬', unread:false, private:true,
-    messages:[{ id:1, sender:'Mr. Lee', text:"Hi Ms. Thompson, Marcus's Science grade has dropped. I recommend additional practice this week.", time:'Yesterday', isMe:false }],
+    messages:[
+      { id:1, sender:'Mr. Lee', text:"Hi Ms. Thompson, Marcus's Science grade has dropped. I recommend additional practice problems this week.", time:'Yesterday', isMe:false },
+    ],
   },
   {
     id:3, from:'Marcus', subject:"Student View — Marcus's Messages", avatar:'🎒', unread:false, private:false, readOnly:true,
@@ -97,9 +95,9 @@ function Btn({ label, color, onClick, style={} }) {
   )
 }
 
-// ─── Bottom nav ───────────────────────────────────────────────────────────────
+// ─── Bottom nav (same items as student) ───────────────────────────────────────
 const NAV_ITEMS = [
-  { id:'home',    icon:'🏠',  label:'Home'     },
+  { id:'home',    icon:'⊞',  label:'Home'     },
   { id:'grades',  icon:'📊', label:'Grades'   },
   { id:'feed',    icon:'📢', label:'Feed'     },
   { id:'messages',icon:'💬', label:'Messages' },
@@ -126,12 +124,12 @@ function BottomNav({ active, onSelect }) {
 
 // ─── FULL MESSAGES PAGE (Parent version) ─────────────────────────────────────
 function MessagesPage({ onBack }) {
-  const [threads, setThreads]               = useState(INITIAL_THREADS)
+  const [threads, setThreads]           = useState(INITIAL_THREADS)
   const [selectedThread, setSelectedThread] = useState(null)
-  const [reply, setReply]                   = useState('')
+  const [reply, setReply]               = useState('')
   const [showNewRecipient, setShowNewRecipient] = useState(false)
-  const [newEmail, setNewEmail] = useState('')
-  const [newName, setNewName]   = useState('')
+  const [newEmail, setNewEmail]         = useState('')
+  const [newName, setNewName]           = useState('')
   const bottomRef = useRef(null)
 
   useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) },[selectedThread])
@@ -161,9 +159,11 @@ function MessagesPage({ onBack }) {
     setNewEmail(''); setNewName(''); setShowNewRecipient(false)
   }
 
+  // ── Thread view ──────────────────────────────────────────────────────────────
   if (selectedThread) {
     const thread = threads.find(t=>t.id===selectedThread.id)||selectedThread
     const isReadOnly = thread.readOnly
+
     return (
       <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", display:'flex', flexDirection:'column' }}>
         <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
@@ -180,11 +180,13 @@ function MessagesPage({ onBack }) {
             </div>
           </div>
         </div>
+
         {isReadOnly && (
           <div style={{ margin:'10px 16px 0', background:'#1a1a2e', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'8px 12px', fontSize:11, color:'rgba(255,255,255,0.5)' }}>
             👁 You're viewing Marcus's messages with his teacher. This is read-only.
           </div>
         )}
+
         <div style={{ flex:1, padding:'16px 16px 120px', overflowY:'auto' }}>
           {thread.messages.length===0 && (
             <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}>
@@ -197,27 +199,38 @@ function MessagesPage({ onBack }) {
               {!msg.isMe && <div style={{ width:30, height:30, borderRadius:'50%', background:T.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, marginRight:8, flexShrink:0 }}>{thread.avatar}</div>}
               <div style={{ maxWidth:'75%' }}>
                 {!msg.isMe && <div style={{ fontSize:10, color:T.muted, marginBottom:3, marginLeft:2 }}>{msg.sender}</div>}
-                <div style={{ background:msg.isMe?T.secondary:T.inner, color:msg.isMe?T.primary:T.text, borderRadius:msg.isMe?'16px 16px 4px 16px':'16px 16px 16px 4px', padding:'10px 13px', fontSize:13, lineHeight:1.5 }}>{msg.text}</div>
+                <div style={{ background:msg.isMe?T.secondary:T.inner, color:msg.isMe?T.primary:T.text, borderRadius:msg.isMe?'16px 16px 4px 16px':'16px 16px 16px 4px', padding:'10px 13px', fontSize:13, lineHeight:1.5 }}>
+                  {msg.text}
+                </div>
                 <div style={{ fontSize:9, color:T.muted, marginTop:3, textAlign:msg.isMe?'right':'left' }}>{msg.time}</div>
               </div>
             </div>
           ))}
           <div ref={bottomRef}/>
         </div>
+
+        {/* Reply bar (not shown for read-only student view) */}
         {!isReadOnly && (
           <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:`${T.bg}f0`, backdropFilter:'blur(16px)', borderTop:`1px solid ${T.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
-            <textarea value={reply} onChange={e=>setReply(e.target.value)}
+            <textarea
+              value={reply}
+              onChange={e=>setReply(e.target.value)}
               onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}}
-              placeholder="Reply to teacher..." rows={1}
-              style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}/>
+              placeholder="Reply to teacher..."
+              rows={1}
+              style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}
+            />
             <button onClick={sendReply} disabled={!reply.trim()}
-              style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0 }}>Send</button>
+              style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0 }}>
+              Send
+            </button>
           </div>
         )}
       </div>
     )
   }
 
+  // ── Thread list ──────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
       <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
@@ -227,9 +240,12 @@ function MessagesPage({ onBack }) {
             <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
           </div>
           <button onClick={()=>setShowNewRecipient(true)}
-            style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>+ New</button>
+            style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>
+            + New
+          </button>
         </div>
       </div>
+
       {showNewRecipient && (
         <div style={{ margin:'12px 16px', background:T.card, border:`1px solid ${T.secondary}40`, borderRadius:18, padding:16 }}>
           <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Message a teacher</div>
@@ -252,12 +268,16 @@ function MessagesPage({ onBack }) {
             <div style={{ display:'flex', gap:8 }}>
               <input value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="Email address or URL"
                 style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none' }}/>
-              <button onClick={addByEmail} style={{ background:T.secondary, color:T.primary, border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
+              <button onClick={addByEmail}
+                style={{ background:T.secondary, color:T.primary, border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
             </div>
           </div>
-          <button onClick={()=>setShowNewRecipient(false)} style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
+          <button onClick={()=>setShowNewRecipient(false)}
+            style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
         </div>
       )}
+
+      {/* Thread categories */}
       <div style={{ padding:'12px 16px 4px' }}>
         <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>🔒 Private · Teacher Channel</div>
         {threads.filter(t=>t.private).map(thread=>(
@@ -281,6 +301,7 @@ function MessagesPage({ onBack }) {
             <span style={{ color:T.muted, fontSize:16 }}>›</span>
           </button>
         ))}
+
         <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, margin:'12px 0 8px' }}>👁 Marcus's View</div>
         {threads.filter(t=>!t.private).map(thread=>(
           <button key={thread.id} onClick={()=>setSelectedThread(thread)}
@@ -333,44 +354,19 @@ function GradesPage({ onBack }) {
   )
 }
 
-// ─── Alerts page ──────────────────────────────────────────────────────────────
-function AlertsPage({ onBack }) {
-  return (
-    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
-      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
-        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
-        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🔔 Alerts</h1>
-      </div>
-      <div style={{ padding:'16px' }}>
-        {CHILD.alerts.map(a=>(
-          <div key={a.id} style={{ background:T.card, border:`1px solid ${a.color}30`, borderLeft:`4px solid ${a.color}`, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
-            <div style={{ fontSize:20, marginBottom:6 }}>{a.icon}</div>
-            <div style={{ fontSize:13, color:T.text }}>{a.msg}</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ─── Home page ────────────────────────────────────────────────────────────────
 function HomePage({ navigate, childName }) {
-  const unreadCount      = INITIAL_THREADS.filter(t=>t.unread&&t.private).length
-  const pendingCount     = CHILD.assignments.filter(a=>a.status==='pending').length
-
-  // ── Parent Daily Overview: GPA · Messages · Assignments · Alerts ─────────
-  // No Scan tile — scan is not relevant for parents
   const overviewTiles = [
-    { icon:'📊', val:CHILD.gpa,          label:'GPA',         page:'grades',   color:T.secondary },
-    { icon:'💬', val:unreadCount||'',    label:'Messages',    page:'messages', color:T.purple    },
-    { icon:'📋', val:pendingCount||'',   label:'Assignments', page:'grades',   color:T.teal      },
-    { icon:'🔔', val:CHILD.alerts.length||'', label:'Alerts', page:'alerts',  color:T.red       },
+    { icon:'📊', val:CHILD.gpa,                                                              label:'GPA',         page:'grades',   color:T.secondary },
+    { icon:'💬', val:INITIAL_THREADS.filter(t=>t.unread&&t.private).length||'',             label:'Messages',    page:'messages', color:T.purple    },
+    { icon:'📋', val:'',                                                                     label:'Assignments', page:'grades',   color:T.teal      },
+    { icon:'🔔', val:CHILD.alerts.length||'',                                               label:'Alerts',      page:'alerts',   color:T.amber     },
   ]
 
   return (
     <div style={{ padding:'12px 12px 0' }}>
 
-      {/* W1: Daily Overview — GPA · Messages · Assignments · Alerts */}
+      {/* W1: Daily Overview — mirrors bottom nav */}
       <Widget style={{ background:`linear-gradient(135deg,${T.primary} 0%,#001020 100%)`, border:'none' }}>
         <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>
           {childName.toUpperCase()}'S DAILY OVERVIEW
@@ -453,6 +449,26 @@ function HomePage({ navigate, childName }) {
   )
 }
 
+// ─── Alerts page ──────────────────────────────────────────────────────────────
+function AlertsPage({ onBack }) {
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
+        <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🔔 Alerts</h1>
+      </div>
+      <div style={{ padding:'16px' }}>
+        {CHILD.alerts.map(a=>(
+          <div key={a.id} style={{ background:T.card, border:`1px solid ${a.color}30`, borderLeft:`4px solid ${a.color}`, borderRadius:14, padding:'14px 16px', marginBottom:10 }}>
+            <div style={{ fontSize:20, marginBottom:6 }}>{a.icon}</div>
+            <div style={{ fontSize:13, color:T.text }}>{a.msg}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── MAIN PARENT DASHBOARD ────────────────────────────────────────────────────
 export default function ParentDashboard({ currentUser }) {
   const [page, setPage]           = useState('home')
@@ -470,9 +486,9 @@ export default function ParentDashboard({ currentUser }) {
 
   function goHome() { navigate('home'); setActiveNav('home') }
 
-  if (page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navigate}/></>
-  if (page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages'   onSelect={navigate}/></>
-  if (page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navigate}/></>
+  if (page==='grades')   return <><GradesPage onBack={goHome}/><BottomNav active={activeNav} onSelect={navigate}/></>
+  if (page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages' onSelect={navigate}/></>
+  if (page==='alerts')   return <><AlertsPage onBack={goHome}/><BottomNav active={activeNav} onSelect={navigate}/></>
 
   const now = new Date()
   const hour = now.getHours()
@@ -480,8 +496,7 @@ export default function ParentDashboard({ currentUser }) {
 
   return (
     <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
-
-      {/* Sticky header — greeting only, no duplicate buttons */}
+      {/* Sticky header — same style as student, different copy */}
       <div style={{ position:'sticky', top:0, zIndex:100, background:T.header, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2 }}>HOUSTON ISD · LINCOLN ELEMENTARY</div>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -489,19 +504,4 @@ export default function ParentDashboard({ currentUser }) {
             <div style={{ fontSize:17, fontWeight:800, color:'#fff' }}>{greeting}, {parentName} 👋</div>
             <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Viewing: {childName} · {CHILD.grade}</div>
           </div>
-          {/* Unread badge only — no duplicate messages button */}
-          {INITIAL_THREADS.some(t=>t.unread&&t.private) && (
-            <button onClick={()=>navigate('messages')}
-              style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:16, position:'relative' }}>
-              💬
-              <div style={{ position:'absolute', top:-2, right:-2, width:8, height:8, borderRadius:'50%', background:T.red }}/>
-            </button>
-          )}
-        </div>
-      </div>
-
-      <HomePage navigate={navigate} childName={childName}/>
-      <BottomNav active={activeNav} onSelect={navigate}/>
-    </div>
-  )
-}
+          <div style={{ display:'flex', gap:8 }}>
