@@ -178,6 +178,7 @@ export default function App() {
     menuRef,
     dropdownSections,
     onCameraClick: handleCameraClick,
+    onLogoClick: () => setActivePage(currentUser.role),
   }
 
   // ── Tutorials ────────────────────────────────────────────────────────────────
@@ -319,7 +320,7 @@ export default function App() {
 }
 
 // ─── Sticky Header ────────────────────────────────────────────────────────────
-function StickyHeader({ currentUser, theme, roleLabel, menuOpen, setMenuOpen, menuRef, dropdownSections, onCameraClick }) {
+function StickyHeader({ currentUser, theme, roleLabel, menuOpen, setMenuOpen, menuRef, dropdownSections, onCameraClick, onLogoClick }) {
   return (
     <header
       style={{
@@ -337,18 +338,23 @@ function StickyHeader({ currentUser, theme, roleLabel, menuOpen, setMenuOpen, me
         fontFamily: 'Inter, Arial, sans-serif',
       }}
     >
-      {/* Left: school badge + name */}
+      {/* Left: GradeFlow logo (clickable → home) + school name */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{
-          padding: '6px 12px',
-          borderRadius: 12,
-          background: theme.soft || 'rgba(249,115,22,0.14)',
-          color: theme.primary,
-          fontWeight: 800,
-          fontSize: 14,
-        }}>
+        <button
+          onClick={onLogoClick}
+          style={{
+            padding: '6px 12px',
+            borderRadius: 12,
+            background: theme.soft || 'rgba(249,115,22,0.14)',
+            color: theme.primary,
+            fontWeight: 800,
+            fontSize: 14,
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
           ⚡ GradeFlow
-        </div>
+        </button>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <span style={{ fontWeight: 800, fontSize: 13, color: '#eef0f8', lineHeight: 1.2 }}>
             {currentUser.schoolName}
