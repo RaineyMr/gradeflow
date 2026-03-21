@@ -1,105 +1,120 @@
-# GradeFlow Backend Setup Guide
+// src/lib/ai.js
+// ─── GradeFlow Frontend AI Helper ────────────────────────────────────────────
+// ALL AI calls go through this file.
+// This file NEVER contains an API key — it calls /api/ai (your secure backend).
+//
+// Usage:
+//   import { callAI, gradeWork, extractRoster, extractAnswers, generateLessonPlan } from '../lib/ai'
+// ─────────────────────────────────────────────────────────────────────────────
 
-## What changed and why
+const API_ENDPOINT = '/api/ai'
 
-Your Anthropic API key was **hardcoded directly in the JavaScript bundle** — visible to anyone
-who opens DevTools. This fix moves all AI calls to a secure backend proxy on Vercel.
+// ── Core fetch wrapper ────────────────────────────────────────────────────────
+async function callProxy(intent, payload = {}) {
+  const response = await fetch(API_ENDPOINT, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ intent, ...payload }),
+  })
 
----
+  const data = await response.json()
 
-## Step 1 — Add your API key to Vercel (2 minutes)
+  if (!response.ok) {
+    throw new Error(data.error || `API error ${response.status}`)
+  }
 
-1. Go to **vercel.com/hiremrrainey-7105s-projects/gradeflow/settings/environment-variables**
-2. Click **Add New**
-3. Set:
-   - **Name:** `ANTHROPIC_API_KEY`
-   - **Value:** your `sk-ant-...` key
-   - **Environments:** ✅ Production ✅ Preview ✅ Development
-4. Click **Save**
+  return data
+}
 
-⚠️ Do NOT use `VITE_` prefix — that would make it public again.
+// ── Parse text from Anthropic response ───────────────────────────────────────
+function extractText(data) {
+  if (!data?.content) return ''
+  return data.content
+    .filter(block => block.type === 'text')
+    .map(block => block.text)
+    .join('\n')
+}
 
----
+// ── Parse JSON from Anthropic response (strips markdown fences) ───────────────
+function extractJSON(data) {
+  const text = extractText(data)
+  const clean = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim()
+  try {
+    return JSON.parse(clean)
+  } catch {
+    throw new Error(`Failed to parse AI response as JSON: ${text.slice(0, 200)}`)
+  }
+}
 
-## Step 2 — Add the two new files to your repo
+// ─────────────────────────────────────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────────────────────────────────────
 
-Drop these files in exactly these locations:
+/**
+ * General AI call — use for chat, summaries, explanations, etc.
+ * @param {string} prompt
+ * @param {string} [system] - optional system prompt
+ * @param {number} [max_tokens]
+ * @returns {Promise<string>} - text response
+ */
+export async function callAI(prompt, system = '', max_tokens = 1000) {
+  const data = await callProxy('general', { prompt, system, max_tokens })
+  return extractText(data)
+}
 
-```
-gradeflow/
-  api/
-    ai.js          ← NEW (the secure backend proxy)
-  src/
-    lib/
-      ai.js        ← REPLACE your existing ai.js
-```
+/**
+ * General AI call with web search enabled.
+ * @param {string} prompt
+ * @param {string} [system]
+ * @param {number} [max_tokens]
+ * @returns {Promise<string>} - text response
+ */
+export async function callAIWithSearch(prompt, system = '', max_tokens = 1000) {
+  const data = await callProxy('search', { prompt, system, max_tokens })
+  return extractText(data)
+}
 
----
+/**
+ * Grade a student paper from a base64 image.
+ * @param {string} imageBase64
+ * @param {string} mediaType - e.g. 'image/jpeg'
+ * @param {string} assignmentName
+ * @param {string} [answerKey]
+ * @returns {Promise<{score, grade, feedback, corrections}>}
+ */
+export async function gradeWork(imageBase64, mediaType, assignmentName, answerKey = '') {
+  const data = await callProxy('grade', { imageBase64, mediaType, assignmentName, answerKey })
+  return extractJSON(data)
+}
 
-## Step 3 — Update your existing files to use the new helper
+/**
+ * Extract student names from a roster image.
+ * @param {string} imageBase64
+ * @param {string} mediaType
+ * @returns {Promise<{students: Array<{name, id}>}>}
+ */
+export async function extractRoster(imageBase64, mediaType) {
+  const data = await callProxy('extractRoster', { imageBase64, mediaType })
+  return extractJSON(data)
+}
 
-Find every file that currently imports from your old `ai.js` and update the imports.
+/**
+ * Extract answer key from a document image.
+ * @param {string} imageBase64
+ * @param {string} mediaType
+ * @returns {Promise<{answers: Array<{question, answer}>}>}
+ */
+export async function extractAnswers(imageBase64, mediaType) {
+  const data = await callProxy('extractAnswers', { imageBase64, mediaType })
+  return extractJSON(data)
+}
 
-### Old pattern (remove this):
-```js
-import { callAI } from '../lib/ai'
-// or any direct fetch to api.anthropic.com
-```
-
-### New pattern (same import path, new functions):
-```js
-import { callAI, gradeWork, extractRoster, extractAnswers, generateLessonPlan } from '../lib/ai'
-```
-
-### Files most likely to update (based on bundle analysis):
-- `src/pages/Camera.jsx` — uses `gradeWork`, `extractRoster`, `extractAnswers`
-- `src/pages/LessonPlan.jsx` — uses `generateLessonPlan`
-- `src/pages/Dashboard.jsx` or similar — uses `callAI`
-- Any component using AI web search — switch to `callAIWithSearch`
-
----
-
-## Step 4 — Delete the old API key from your code
-
-Search your entire repo for:
-```
-sk-ant-
-```
-
-If you find it anywhere, delete it immediately and rotate your key at:
-**console.anthropic.com → API Keys → Revoke → Create New**
-
-Then update the `ANTHROPIC_API_KEY` in Vercel with the new key.
-
----
-
-## Step 5 — Push and verify
-
-```bash
-git add api/ai.js src/lib/ai.js
-git commit -m "security: move API key to backend proxy"
-git push
-```
-
-Vercel will redeploy automatically. The site will work exactly the same —
-but now the key is safe.
-
----
-
-## What the proxy handles
-
-| Intent | Used by | Returns |
-|--------|---------|---------|
-| `general` | Dashboards, summaries | text string |
-| `search` | Web-search AI features | text string |
-| `grade` | Camera grading flow | `{score, grade, feedback, corrections}` |
-| `extractRoster` | Camera roster upload | `{students: [{name, id}]}` |
-| `extractAnswers` | Camera answer key upload | `{answers: [{question, answer}]}` |
-| `lessonPlan` | Lesson Plan page | structured lesson object |
-
----
-
-## Adding more intents later
-
-Just add a new `case` to the `switch` in `api/ai.js` and a new exported function
-in `src/lib/ai.js`. No other files need to change.
+/**
+ * Generate a lesson plan.
+ * @param {object} params - { subject, grade, topic, duration, standards }
+ * @returns {Promise<object>} - structured lesson plan
+ */
+export async function generateLessonPlan({ subject, grade, topic, duration = 50, standards = '' }) {
+  const data = await callProxy('lessonPlan', { subject, grade, topic, duration, standards })
+  return extractJSON(data)
+}
