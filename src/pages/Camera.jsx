@@ -635,6 +635,9 @@ Rules:
   )
 
   // ── CAPTURE ──────────────────────────────────────────────────────────────────
+  const captureClassStudents    = getStudentsForClass(Number(selectedClassId) || 0)
+  const captureClassAssignments = getAssignmentsForClass(Number(selectedClassId) || 0)
+
   if (mode === 'capture') return (
     <div style={S.shell}>
       <div style={S.header}>
@@ -642,84 +645,80 @@ Rules:
         <h1 style={S.h1}>{INTENTS.find(i => i.id === intent)?.label}</h1>
       </div>
 
-      {intent === 'grade' && (() => {
-        const classStudents   = getStudentsForClass(Number(selectedClassId) || 0)
-        const classAssignments = getAssignmentsForClass(Number(selectedClassId) || 0)
-        return (
-          <div style={S.card}>
-            {/* Class selector */}
-            <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>Class</label>
-            <select
-              style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
-              value={selectedClassId}
-              onChange={e => { setSelectedClassId(e.target.value); setSelectedAssignmentId(''); setSelectedStudentId('') }}>
-              {classes.map(c => <option key={c.id} value={c.id}>{c.period} · {c.subject}</option>)}
-            </select>
+      {intent === 'grade' && (
+        <div style={S.card}>
+          {/* Class selector */}
+          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>Class</label>
+          <select
+            style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
+            value={selectedClassId}
+            onChange={e => { setSelectedClassId(e.target.value); setSelectedAssignmentId(''); setSelectedStudentId('') }}>
+            {classes.map(c => <option key={c.id} value={c.id}>{c.period} · {c.subject}</option>)}
+          </select>
 
-            {/* Assignment selector + create new */}
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-              <label style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494' }}>Assignment</label>
-              <button onClick={() => setShowNewAssign(v => !v)}
-                style={{ background:'var(--school-color)', border:'none', borderRadius:8, padding:'3px 10px', color:'#fff', fontSize:10, fontWeight:700, cursor:'pointer' }}>
-                {showNewAssign ? '✕ Cancel' : '+ New'}
+          {/* Assignment selector + create new */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+            <label style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494' }}>Assignment</label>
+            <button onClick={() => setShowNewAssign(v => !v)}
+              style={{ background:'var(--school-color)', border:'none', borderRadius:8, padding:'3px 10px', color:'#fff', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+              {showNewAssign ? '✕ Cancel' : '+ New'}
+            </button>
+          </div>
+
+          {showNewAssign ? (
+            <div style={{ background:'#1e2231', borderRadius:10, padding:10, marginBottom:12 }}>
+              <input
+                value={newAssignName}
+                onChange={e => setNewAssignName(e.target.value)}
+                placeholder="Assignment name..."
+                style={{ width:'100%', background:'#161923', border:'1px solid #2a2f42', borderRadius:8, padding:'8px 10px', color:'#eef0f8', fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
+              <div style={{ display:'flex', gap:6, marginBottom:8 }}>
+                {['quiz','test','homework','participation'].map(t => (
+                  <button key={t} onClick={() => setNewAssignType(t)}
+                    style={{ flex:1, padding:'5px 4px', borderRadius:8, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
+                      background: newAssignType===t ? 'var(--school-color)' : '#161923',
+                      color:      newAssignType===t ? '#fff' : '#6b7494' }}>
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <button onClick={createAndSelectAssignment} disabled={!newAssignName.trim()}
+                style={{ width:'100%', background: newAssignName.trim() ? 'var(--school-color)' : '#2a2f42', color:'#fff', border:'none', borderRadius:8, padding:'8px', fontSize:12, fontWeight:700, cursor: newAssignName.trim() ? 'pointer' : 'not-allowed' }}>
+                Create &amp; Select
               </button>
             </div>
-
-            {showNewAssign ? (
-              <div style={{ background:'#1e2231', borderRadius:10, padding:10, marginBottom:12 }}>
-                <input
-                  value={newAssignName}
-                  onChange={e => setNewAssignName(e.target.value)}
-                  placeholder="Assignment name..."
-                  style={{ width:'100%', background:'#161923', border:'1px solid #2a2f42', borderRadius:8, padding:'8px 10px', color:'#eef0f8', fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
-                <div style={{ display:'flex', gap:6, marginBottom:8 }}>
-                  {['quiz','test','homework','participation'].map(t => (
-                    <button key={t} onClick={() => setNewAssignType(t)}
-                      style={{ flex:1, padding:'5px 4px', borderRadius:8, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
-                        background: newAssignType===t ? 'var(--school-color)' : '#161923',
-                        color:      newAssignType===t ? '#fff' : '#6b7494' }}>
-                      {t}
-                    </button>
-                  ))}
-                </div>
-                <button onClick={createAndSelectAssignment} disabled={!newAssignName.trim()}
-                  style={{ width:'100%', background: newAssignName.trim() ? 'var(--school-color)' : '#2a2f42', color:'#fff', border:'none', borderRadius:8, padding:'8px', fontSize:12, fontWeight:700, cursor: newAssignName.trim() ? 'pointer' : 'not-allowed' }}>
-                  Create &amp; Select
-                </button>
-              </div>
-            ) : (
-              <select
-                style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
-                value={selectedAssignmentId}
-                onChange={e => { setSelectedAssignmentId(e.target.value); setSyncAssignmentId(e.target.value) }}>
-                <option value="">-- Select assignment --</option>
-                {classAssignments.map(a => <option key={a.id} value={a.id}>{a.name} · {a.type}</option>)}
-              </select>
-            )}
-
-            {/* Student selector — optional */}
-            <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>
-              Student <span style={{ color:'#3b7ef4', textTransform:'none', fontWeight:400 }}>(optional — AI detects from paper)</span>
-            </label>
+          ) : (
             <select
               style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
-              value={selectedStudentId}
-              onChange={e => { setSelectedStudentId(e.target.value); setSyncStudentId(e.target.value) }}>
-              <option value="">All students — detect name from paper</option>
-              {classStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              value={selectedAssignmentId}
+              onChange={e => { setSelectedAssignmentId(e.target.value); setSyncAssignmentId(e.target.value) }}>
+              <option value="">-- Select assignment --</option>
+              {captureClassAssignments.map(a => <option key={a.id} value={a.id}>{a.name} · {a.type}</option>)}
             </select>
+          )}
 
-            {/* Answer key */}
-            <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>Answer Key (optional)</label>
-            <textarea
-              style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:12, resize:'none', boxSizing:'border-box' }}
-              rows={2}
-              placeholder="Paste answer key, or leave blank for AI..."
-              value={answerKey}
-              onChange={e => setAnswerKey(e.target.value)}/>
-          </div>
-        )
-      })()}
+          {/* Student selector — optional */}
+          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>
+            Student <span style={{ color:'#3b7ef4', textTransform:'none', fontWeight:400 }}>(optional — AI detects from paper)</span>
+          </label>
+          <select
+            style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
+            value={selectedStudentId}
+            onChange={e => { setSelectedStudentId(e.target.value); setSyncStudentId(e.target.value) }}>
+            <option value="">All students — detect name from paper</option>
+            {captureClassStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          </select>
+
+          {/* Answer key */}
+          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>Answer Key (optional)</label>
+          <textarea
+            style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:12, resize:'none', boxSizing:'border-box' }}
+            rows={2}
+            placeholder="Paste answer key, or leave blank for AI..."
+            value={answerKey}
+            onChange={e => setAnswerKey(e.target.value)}/>
+        </div>
+      )}
 
       <div style={S.card}>
         {/* Camera viewfinder */}
