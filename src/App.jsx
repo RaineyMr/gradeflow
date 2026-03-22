@@ -184,20 +184,28 @@ export default function App() {
     )
   }
 
-  // Role dashboards
-  const dashboardMap = {
-    teacher: <Dashboard       currentUser={currentUser} onCameraClick={handleCameraClick} onNavigate={navigate}/>,
-    student: <StudentDashboard currentUser={currentUser} onNavigate={navigate}/>,
-    parent:  <ParentDashboard  currentUser={currentUser} onNavigate={navigate}/>,
-    admin:   <AdminDashboard   currentUser={currentUser} onNavigate={navigate}/>,
-  }
+  // ─── Role dashboards ──────────────────────────────────────────────────────
+  // CRITICAL FIX: useMemo prevents the dashboard from remounting on every App
+  // re-render (e.g. opening/closing the hamburger menu sets menuOpen state,
+  // which re-renders App, which created a NEW dashboardMap object with new
+  // React element instances, causing React to unmount + remount the dashboard
+  // and wipe all internal page state back to 'home').
+  // Dependency: [currentUser?.role] — only remount when role actually changes.
+  const dashboard = useMemo(()=>{
+    if(currentUser?.role==='teacher') return <Dashboard        currentUser={currentUser} onCameraClick={handleCameraClick} onNavigate={navigate}/>
+    if(currentUser?.role==='student') return <StudentDashboard currentUser={currentUser} onNavigate={navigate}/>
+    if(currentUser?.role==='parent')  return <ParentDashboard  currentUser={currentUser} onNavigate={navigate}/>
+    if(currentUser?.role==='admin')   return <AdminDashboard   currentUser={currentUser} onNavigate={navigate}/>
+    return null
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[currentUser?.role])
 
   return (
     <div data-app-scroll ref={scrollRef}
       style={{ minHeight:'100vh', background:'#060810', color:'#eef0f8', overflowX:'hidden' }}>
       <StickyHeader {...headerProps}/>
       <div style={{ paddingTop:64 }}>
-        {dashboardMap[currentUser.role] || (
+        {dashboard || (
           <div style={{ padding:'40px 24px', textAlign:'center', color:'#6b7494' }}>
             <p>No dashboard found for role: {currentUser.role}</p>
             <button onClick={handleLogout}
@@ -298,10 +306,10 @@ function ProfileSettings({ currentUser, theme, onBack }) {
             <div style={{ fontSize:12, color:theme.muted||'#6b7494' }}>{currentUser.schoolName} · {currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1)}</div>
           </div>
         </div>
-        {[{ label:'Name',val:currentUser.userName },{ label:'School',val:currentUser.schoolName },{ label:'Role',val:currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1) },{ label:'Email',val:currentUser.email||'Not set' }].map(({ label, value })=>(
+        {[{ label:'Name',val:currentUser.userName },{ label:'School',val:currentUser.schoolName },{ label:'Role',val:currentUser.role.charAt(0).toUpperCase()+currentUser.role.slice(1) },{ label:'Email',val:currentUser.email||'Not set' }].map(({ label, val })=>(
           <div key={label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'12px 0', borderBottom:`1px solid ${theme.border||'#1e2231'}` }}>
             <span style={{ fontSize:13, color:theme.muted||'#6b7494' }}>{label}</span>
-            <span style={{ fontSize:13, fontWeight:600, color:'#eef0f8' }}>{value}</span>
+            <span style={{ fontSize:13, fontWeight:600, color:'#eef0f8' }}>{val}</span>
           </div>
         ))}
       </div>
