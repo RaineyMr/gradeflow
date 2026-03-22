@@ -62,6 +62,24 @@ export default function App() {
     document.documentElement.style.setProperty('--school-secondary', theme.secondary||theme.primary)
   },[theme])
 
+  // ─── MUST be before any early return — Rules of Hooks ────────────────────
+  // useMemo prevents the dashboard from remounting on every App re-render
+  // (e.g. opening/closing the hamburger menu). Without this, internal page
+  // state resets to 'home' every time App re-renders because a new element
+  // instance is created, causing React to unmount + remount the dashboard.
+  // Dependency: [currentUser?.role] — only remounts when role changes.
+  const dashboard = useMemo(()=>{
+    if(!currentUser) return null
+    const navigate = (page) => setActivePage(page)
+    const handleCameraNav = () => { setActivePage('camera'); setMenuOpen(false) }
+    if(currentUser.role==='teacher') return <Dashboard        currentUser={currentUser} onCameraClick={handleCameraNav} onNavigate={navigate}/>
+    if(currentUser.role==='student') return <StudentDashboard currentUser={currentUser} onNavigate={navigate}/>
+    if(currentUser.role==='parent')  return <ParentDashboard  currentUser={currentUser} onNavigate={navigate}/>
+    if(currentUser.role==='admin')   return <AdminDashboard   currentUser={currentUser} onNavigate={navigate}/>
+    return null
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[currentUser?.role])
+
   if(!currentUser||activePage==='login') {
     return <Login onLogin={handleLogin} onDemoLogin={handleLogin}/>
   }
@@ -183,22 +201,6 @@ export default function App() {
       </div>
     )
   }
-
-  // ─── Role dashboards ──────────────────────────────────────────────────────
-  // CRITICAL FIX: useMemo prevents the dashboard from remounting on every App
-  // re-render (e.g. opening/closing the hamburger menu sets menuOpen state,
-  // which re-renders App, which created a NEW dashboardMap object with new
-  // React element instances, causing React to unmount + remount the dashboard
-  // and wipe all internal page state back to 'home').
-  // Dependency: [currentUser?.role] — only remount when role actually changes.
-  const dashboard = useMemo(()=>{
-    if(currentUser?.role==='teacher') return <Dashboard        currentUser={currentUser} onCameraClick={handleCameraClick} onNavigate={navigate}/>
-    if(currentUser?.role==='student') return <StudentDashboard currentUser={currentUser} onNavigate={navigate}/>
-    if(currentUser?.role==='parent')  return <ParentDashboard  currentUser={currentUser} onNavigate={navigate}/>
-    if(currentUser?.role==='admin')   return <AdminDashboard   currentUser={currentUser} onNavigate={navigate}/>
-    return null
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[currentUser?.role])
 
   return (
     <div data-app-scroll ref={scrollRef}
