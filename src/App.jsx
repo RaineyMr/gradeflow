@@ -43,6 +43,8 @@ export default function App() {
     setCurrentUser(account)
     setActivePage(account.role)
     localStorage.setItem('gradeflow_user', JSON.stringify(account))
+    // Set HTML lang attribute so browser translation engines respect it
+    document.documentElement.lang = account.lang || 'en'
   }
 
   const handleLogout = () => {
