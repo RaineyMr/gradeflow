@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import ClassFeed from './ClassFeed'
+import ParentMessages from './ParentMessages'
 
 const T = {
   primary:   '#003057',
@@ -42,29 +43,10 @@ const CHILD = {
   ],
 }
 
-const INITIAL_THREADS = [
-  { id:1, from:'Ms. Johnson', subject:'Math · Private', avatar:'👩‍🏫', unread:true, private:true,
-    messages:[
-      { id:1, sender:'Ms. Johnson', text:"Hi Ms. Thompson, I wanted to reach out about Marcus's recent progress.", time:'1 hr ago', isMe:false },
-      { id:2, sender:'Me',          text:"Thank you for reaching out. I'll work with him on Science at home.", time:'45 min ago', isMe:true },
-      { id:3, sender:'Ms. Johnson', text:"That would be great! He has a test on Friday — chapters 3 & 4.", time:'30 min ago', isMe:false },
-    ]},
-  { id:2, from:'Mr. Lee', subject:'Science · Private', avatar:'🧑‍🔬', unread:false, private:true,
-    messages:[{ id:1, sender:'Mr. Lee', text:"Hi Ms. Thompson, Marcus's Science grade has dropped.", time:'Yesterday', isMe:false }]},
-  { id:3, from:'Marcus', subject:"Student View — Marcus's Messages", avatar:'🎒', unread:false, private:false, readOnly:true,
-    messages:[
-      { id:1, sender:'Ms. Johnson', text:"Great work on yesterday's quiz, Marcus!", time:'1 hr ago', isMe:false },
-      { id:2, sender:'Marcus',      text:"Thank you, Ms. Johnson! I studied really hard.", time:'45 min ago', isMe:false },
-      { id:3, sender:'Ms. Johnson', text:"Don't forget the worksheet due Friday!", time:'30 min ago', isMe:false },
-    ]},
-]
-
-const CONTACTS = [
-  { name:'Ms. Johnson', role:'Math Teacher',    avatar:'👩‍🏫' },
-  { name:'Mr. Lee',     role:'Science Teacher', avatar:'🧑‍🔬' },
-  { name:'Ms. Davis',   role:'Reading Teacher', avatar:'👩‍💼' },
-  { name:'Ms. Clark',   role:'Writing Teacher', avatar:'✍️'  },
-  { name:'Principal',   role:'Administration',  avatar:'🏫'  },
+// Minimal data for the home widget preview only — full data lives in ParentMessages.jsx
+const PREVIEW_THREADS = [
+  { id:1, from:'Ms. Johnson', avatar:'👩‍🏫', unread:true, private:true,
+    messages:[{ text:"He has a test on Friday — please remind him to review chapters 3 & 4.", time:'30 min ago' }] },
 ]
 
 function gradeColor(g) { return g>=90?T.green:g>=80?T.blue:g>=70?T.amber:T.red }
@@ -163,177 +145,6 @@ function AddWidgetsBar() {
   )
 }
 
-// ─── MESSAGES PAGE ────────────────────────────────────────────────────────────
-function MessagesPage({ onBack }) {
-  const [threads, setThreads]               = useState(INITIAL_THREADS)
-  const [selectedThread, setSelectedThread] = useState(null)
-  const [reply, setReply]                   = useState('')
-  const [showNew, setShowNew]               = useState(false)
-  const [newEmail, setNewEmail]             = useState('')
-  const [newName, setNewName]               = useState('')
-  const bottomRef = useRef(null)
-
-  useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) },[selectedThread])
-
-  function sendReply() {
-    if(!reply.trim()||!selectedThread) return
-    const msg = { id:Date.now(), sender:'Me', text:reply.trim(), time:'Just now', isMe:true }
-    setThreads(ts=>ts.map(t=>t.id===selectedThread.id ? { ...t, messages:[...t.messages,msg] } : t))
-    setSelectedThread(t=>({ ...t, messages:[...t.messages,msg] }))
-    setReply('')
-  }
-
-  function startThread(contact) {
-    const exists = threads.find(t=>t.from===contact.name&&t.private)
-    if(exists) { setSelectedThread(exists); setShowNew(false); return }
-    const t = { id:Date.now(), from:contact.name, subject:`${contact.role} · Private`, avatar:contact.avatar, unread:false, private:true, messages:[] }
-    setThreads(ts=>[...ts,t]); setSelectedThread(t); setShowNew(false)
-  }
-
-  function addByEmail() {
-    if(!newEmail.trim()) return
-    const t = { id:Date.now(), from:newName||newEmail, subject:'New Conversation', avatar:'📧', unread:false, private:true, messages:[] }
-    setThreads(ts=>[...ts,t]); setSelectedThread(t)
-    setNewEmail(''); setNewName(''); setShowNew(false)
-  }
-
-  if(selectedThread) {
-    const thread = threads.find(t=>t.id===selectedThread.id)||selectedThread
-    const isReadOnly = thread.readOnly
-    return (
-      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", display:'flex', flexDirection:'column' }}>
-        <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <button onClick={()=>setSelectedThread(null)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-            <span style={{ fontSize:24 }}>{thread.avatar}</span>
-            <div>
-              <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>{thread.from}</div>
-              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>{thread.subject}</div>
-                {thread.private && <span style={{ fontSize:9, background:'rgba(240,74,74,0.25)', color:T.red, borderRadius:999, padding:'2px 6px', fontWeight:700 }}>🔒 Private</span>}
-                {isReadOnly && <span style={{ fontSize:9, background:'rgba(255,255,255,0.12)', color:'rgba(255,255,255,0.5)', borderRadius:999, padding:'2px 6px', fontWeight:700 }}>👁 View only</span>}
-              </div>
-            </div>
-          </div>
-        </div>
-        {isReadOnly && (
-          <div style={{ margin:'10px 16px 0', background:'#1a1a2e', border:'1px solid rgba(255,255,255,0.1)', borderRadius:10, padding:'8px 12px', fontSize:11, color:'rgba(255,255,255,0.5)' }}>
-            👁 You're viewing Marcus's messages with his teacher. This is read-only.
-          </div>
-        )}
-        <div style={{ flex:1, padding:'16px 16px 120px', overflowY:'auto' }}>
-          {thread.messages.length===0 && <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}><div style={{ fontSize:32, marginBottom:8 }}>💬</div><div style={{ fontSize:13 }}>Start the conversation</div></div>}
-          {thread.messages.map(msg=>(
-            <div key={msg.id} style={{ display:'flex', justifyContent:msg.isMe?'flex-end':'flex-start', marginBottom:12 }}>
-              {!msg.isMe && <div style={{ width:30, height:30, borderRadius:'50%', background:T.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, marginRight:8, flexShrink:0 }}>{thread.avatar}</div>}
-              <div style={{ maxWidth:'75%' }}>
-                {!msg.isMe && <div style={{ fontSize:10, color:T.muted, marginBottom:3, marginLeft:2 }}>{msg.sender}</div>}
-                <div style={{ background:msg.isMe?T.secondary:T.inner, color:msg.isMe?T.primary:T.text, borderRadius:msg.isMe?'16px 16px 4px 16px':'16px 16px 16px 4px', padding:'10px 13px', fontSize:13, lineHeight:1.5 }}>{msg.text}</div>
-                <div style={{ fontSize:9, color:T.muted, marginTop:3, textAlign:msg.isMe?'right':'left' }}>{msg.time}</div>
-              </div>
-            </div>
-          ))}
-          <div ref={bottomRef}/>
-        </div>
-        {!isReadOnly && (
-          <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:`${T.bg}f0`, backdropFilter:'blur(16px)', borderTop:`1px solid ${T.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
-            <textarea value={reply} onChange={e=>setReply(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}} placeholder="Reply to teacher..." rows={1}
-              style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}/>
-            <button onClick={sendReply} disabled={!reply.trim()}
-              style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0 }}>Send</button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
-      <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-            <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
-          </div>
-          <button onClick={()=>setShowNew(true)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>+ New</button>
-        </div>
-      </div>
-      {showNew && (
-        <div style={{ margin:'12px 16px', background:T.card, border:`1px solid ${T.secondary}40`, borderRadius:18, padding:16 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Message a teacher</div>
-          <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
-            {CONTACTS.map(c=>(
-              <button key={c.name} onClick={()=>startThread(c)}
-                style={{ background:T.inner, border:`1px solid ${T.border}`, borderRadius:12, padding:'10px 14px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', textAlign:'left' }}>
-                <span style={{ fontSize:22 }}>{c.avatar}</span>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
-                  <div style={{ fontSize:10, color:T.muted }}>{c.role}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-          <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14 }}>
-            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>Or add by email</div>
-            <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Name (optional)"
-              style={{ width:'100%', background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
-            <div style={{ display:'flex', gap:8 }}>
-              <input value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="Email address or URL"
-                style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none' }}/>
-              <button onClick={addByEmail} style={{ background:T.secondary, color:T.primary, border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
-            </div>
-          </div>
-          <button onClick={()=>setShowNew(false)} style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
-        </div>
-      )}
-      <div style={{ padding:'12px 16px 4px' }}>
-        <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>🔒 Private · Teacher Channel</div>
-        {threads.filter(t=>t.private).map(thread=>(
-          <button key={thread.id} onClick={()=>setSelectedThread(thread)}
-            style={{ width:'100%', background:thread.unread?T.inner:T.card, border:`1px solid ${thread.unread?T.secondary+'50':T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left' }}
-            onMouseEnter={e=>(e.currentTarget.style.background=T.raised)}
-            onMouseLeave={e=>(e.currentTarget.style.background=thread.unread?T.inner:T.card)}>
-            <div style={{ width:42, height:42, borderRadius:'50%', background:T.raised, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0, position:'relative' }}>
-              {thread.avatar}
-              {thread.unread && <div style={{ position:'absolute', top:0, right:0, width:10, height:10, borderRadius:'50%', background:T.red, border:`2px solid ${T.bg}` }}/>}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-                <div style={{ fontWeight:700, fontSize:14, color:T.text }}>{thread.from}</div>
-                <div style={{ fontSize:10, color:T.muted }}>{thread.messages[thread.messages.length-1]?.time||''}</div>
-              </div>
-              <div style={{ fontSize:11, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {thread.messages[thread.messages.length-1]?.text||'No messages yet'}
-              </div>
-            </div>
-            <span style={{ color:T.muted, fontSize:16 }}>›</span>
-          </button>
-        ))}
-        <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, margin:'12px 0 8px' }}>👁 Marcus's View</div>
-        {threads.filter(t=>!t.private).map(thread=>(
-          <button key={thread.id} onClick={()=>setSelectedThread(thread)}
-            style={{ width:'100%', background:T.card, border:`1px solid ${T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left' }}
-            onMouseEnter={e=>(e.currentTarget.style.background=T.raised)}
-            onMouseLeave={e=>(e.currentTarget.style.background=T.card)}>
-            <div style={{ width:42, height:42, borderRadius:'50%', background:T.raised, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>{thread.avatar}</div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontWeight:700, fontSize:14, color:T.text, marginBottom:3 }}>{thread.from}</div>
-              <div style={{ fontSize:11, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {thread.messages[thread.messages.length-1]?.text||'No messages'}
-              </div>
-            </div>
-            <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:4 }}>
-              <span style={{ fontSize:9, color:T.muted, background:T.inner, borderRadius:999, padding:'2px 6px', fontWeight:700 }}>👁 Read only</span>
-              <span style={{ color:T.muted, fontSize:16 }}>›</span>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ─── GRADES PAGE ──────────────────────────────────────────────────────────────
 function GradesPage({ onBack }) {
   return (
     <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
@@ -383,7 +194,7 @@ function AlertsPage({ onBack }) {
 
 // ─── HOME PAGE ────────────────────────────────────────────────────────────────
 function HomePage({ navigate, childName }) {
-  const unreadCount  = INITIAL_THREADS.filter(t=>t.unread&&t.private).length
+  const unreadCount  = PREVIEW_THREADS.filter(t=>t.unread&&t.private).length
   const pendingCount = CHILD.assignments.filter(a=>a.status==='pending').length
 
   const overviewTiles = [
@@ -456,7 +267,7 @@ function HomePage({ navigate, childName }) {
           <div style={{ fontSize:13, fontWeight:700 }}>💬 Messages</div>
           <Btn label="+ New" color={T.secondary} onClick={()=>navigate('messages')}/>
         </div>
-        {INITIAL_THREADS.filter(t=>t.unread&&t.private).slice(0,2).map(t=>(
+        {PREVIEW_THREADS.filter(t=>t.unread&&t.private).slice(0,2).map(t=>(
           <div key={t.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', alignItems:'center', gap:10 }}>
             <span style={{ fontSize:20 }}>{t.avatar}</span>
             <div style={{ flex:1, minWidth:0 }}>
@@ -466,7 +277,7 @@ function HomePage({ navigate, childName }) {
             <div style={{ width:8, height:8, borderRadius:'50%', background:T.red, flexShrink:0 }}/>
           </div>
         ))}
-        {!INITIAL_THREADS.some(t=>t.unread&&t.private) && <div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}
+        {!PREVIEW_THREADS.some(t=>t.unread&&t.private) && <div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}
       </Widget>
 
       {/* W6: AI Tips */}
@@ -507,7 +318,7 @@ export default function ParentDashboard({ currentUser }) {
   }
 
   if(page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages'   onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='messages') return <><ParentMessages onBack={goHome} viewerRole="parent"/><BottomNav active='messages' onSelect={navSelect} isSubPage={isSubPage}/></>
   if(page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navSelect} isSubPage={isSubPage}/></>
   if(page==='feed')     return <><ClassFeed    onBack={goHome} viewerRole="parent"/><BottomNav active='feed' onSelect={navSelect} isSubPage={isSubPage}/></>
 
@@ -525,7 +336,7 @@ export default function ParentDashboard({ currentUser }) {
             <div style={{ fontSize:17, fontWeight:800, color:'#fff' }}>{greeting}, {parentName} 👋</div>
             <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Viewing: {childName} · {CHILD.grade}</div>
           </div>
-          {INITIAL_THREADS.some(t=>t.unread&&t.private) && (
+          {PREVIEW_THREADS.some(t=>t.unread&&t.private) && (
             <button onClick={()=>navigate('messages')}
               style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:16, position:'relative' }}>
               💬
