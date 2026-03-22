@@ -89,11 +89,14 @@ export default function Camera({ onBack }) {
     if (!file) return
     setCapturedFile(file)
     setMode('processing')
+    const isSpreadsheet = file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
     if (file.type.startsWith('image/')) {
       const reader = new FileReader()
       reader.onload = ev => processImage(ev.target.result, file)
       reader.readAsDataURL(file)
-    } else if (file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+    } else if (isSpreadsheet && intent === 'grade-sheet') {
+      await processGradebookCSV(file)
+    } else if (isSpreadsheet) {
       await processCSV(file)
     } else {
       setResult({ type: 'upload', message: 'File uploaded successfully.', fileName: file.name })
@@ -399,6 +402,78 @@ Match student names to the known list as closely as possible.`,
     const parsed = safeParseJSON(data.content?.[0]?.text || '')
     setResult({ type:'roster', students:parsed?.students || [] })
     setMode('result')
+  }
+
+  async function processGradebookCSV(file) {
+    setError('')
+    const fileName    = file.name
+    const text        = await file.text()
+    const csvText     = text.slice(0, 8000) // enough for a full class gradebook
+    const studentNames   = students.map(s => s.name).join(', ')
+    const assignmentList = assignments.map(a => a.name).join(', ')
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method:  'POST',
+        headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+        body: JSON.stringify({
+          model:      'claude-sonnet-4-20250514',
+          max_tokens: 3000,
+          system: `You parse teacher gradebook spreadsheets exported as CSV.
+The first column is usually student names. Remaining columns are assignment names with scores.
+Known students in system: ${studentNames || 'extract from CSV'}.
+Known assignments in system: ${assignmentList || 'extract from CSV'}.
+
+Extract EVERY student + assignment score pair.
+Return ONLY valid JSON:
+{"grades":[{"studentName":"","assignmentName":"","score":0,"maxScore":100,"percentage":0}]}
+
+Rules:
+- If a cell has "87/100" parse as score=87, maxScore=100, percentage=87
+- If a cell has just "87" and maxScore is unknown, assume maxScore=100
+- If a cell is empty or "N/A" or "--", skip that pair entirely
+- Calculate percentage = (score/maxScore)*100, round to 1 decimal
+- Match student names to known students as closely as possible`,
+          messages: [{ role:'user', content:`Parse this gradebook CSV from file "${fileName}":\n\n${csvText}` }],
+        }),
+      })
+
+      if (!res.ok) throw new Error(`API error ${res.status}`)
+      const data   = await res.json()
+      const parsed = safeParseJSON(data.content?.[0]?.text || '')
+
+      if (!parsed?.grades?.length) {
+        throw new Error('No grade data found. Make sure the file has student names in the first column and scores in the remaining columns.')
+      }
+
+      // Fuzzy match to store students and assignments
+      const matched = parsed.grades.map(g => {
+        const lower   = (g.studentName || '').toLowerCase()
+        const matchSt = students.find(s =>
+          s.name.toLowerCase().includes(lower) ||
+          lower.includes(s.name.toLowerCase().split(' ')[0].toLowerCase())
+        )
+        const aLower  = (g.assignmentName || '').toLowerCase()
+        const matchAn = assignments.find(a =>
+          a.name.toLowerCase().includes(aLower) ||
+          aLower.includes(a.name.toLowerCase())
+        )
+        return {
+          ...g,
+          matchedStudentId:      matchSt?.id || null,
+          matchedStudentName:    matchSt?.name || g.studentName,
+          matchedAssignmentId:   matchAn?.id || assignments[0]?.id || null,
+          matchedAssignmentName: matchAn?.name || g.assignmentName,
+          editing: false,
+        }
+      })
+
+      setBulkGrades(matched)
+      setMode('bulk-review')
+    } catch (err) {
+      setError(err.message || 'Could not parse gradebook file.')
+      setMode('capture')
+    }
   }
 
   async function processCSV(file) {
