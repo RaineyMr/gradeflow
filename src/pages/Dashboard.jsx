@@ -242,63 +242,108 @@ function AddWidgetsBar() {
   )
 }
 
-// ─── PARENT MESSAGES WIDGET (upgraded) ────────────────────────────────────────
-function ParentMessagesWidget({ navigate, pending }) {
-  const [tab, setTab] = useState('pending')
+// ─── PARENT MESSAGES WIDGET — matches layout4 D6 exactly ─────────────────────
+const WIDGET_MSGS = [
+  { id:1, studentName:'Marcus T.', subject:'Math', trigger:'Failed 58%', tone:'Warm & Friendly', lang:'English', status:'pending',
+    preview:"Dear Parent, Marcus received 58% on his Math assessment. I'd love to connect this week to discuss support options." },
+  { id:2, studentName:'Aaliyah B.', subject:'Reading', trigger:'Improved +12pts', tone:'Celebrating', lang:'English', status:'sent',
+    preview:"Great news! Aaliyah improved her Reading score by 12 points this month. She should be so proud!" },
+]
+
+function ParentMessagesWidget({ navigate }) {
+  const [tab,      setTab]      = useState('pending')
+  const [autoSend, setAutoSend] = useState(false)
+
+  const filtered = tab==='all' ? WIDGET_MSGS : tab==='sent' ? WIDGET_MSGS.filter(m=>m.status==='sent') : WIDGET_MSGS.filter(m=>m.status==='pending')
+  const pendingCount = WIDGET_MSGS.filter(m=>m.status==='pending').length
 
   return (
-    <Widget style={{ background:'linear-gradient(135deg,#0d0820 0%,#060810 100%)', border:`1px solid ${C.purple}25` }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-        <div style={{ fontSize:13, fontWeight:700, color:C.text }}>💬 Parent Messages</div>
-        <ActionBtn label="See all →" color={C.purple} onClick={()=>navigate('parentMessages')}/>
+    <div style={{ background:'linear-gradient(135deg,#0d0820 0%,#060810 100%)', border:`1px solid ${C.purple}25`, borderRadius:20, padding:'16px', marginBottom:12 }}>
+
+      {/* Header */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
+        <div>
+          <div style={{ fontSize:14, fontWeight:800, color:C.text }}>Parent Messages</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Every negative has a positive version · AI writes both · Multilingual</div>
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
+          style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+          See all →
+        </button>
       </div>
 
-      {/* Pending/Sent/All tabs */}
-      <div style={{ display:'flex', gap:6, marginBottom:12 }}>
-        {['pending','sent','all'].map(t=>(
-          <button key={t} onClick={e=>{ e.stopPropagation(); setTab(t) }}
-            style={{ padding:'4px 10px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700, textTransform:'capitalize', background:tab===t?`${C.purple}25`:C.inner, color:tab===t?C.purple:C.muted, outline:tab===t?`1px solid ${C.purple}40`:'none' }}>
-            {t==='pending' && pending.length>0 ? `Pending (${pending.length})` : t.charAt(0).toUpperCase()+t.slice(1)}
+      {/* Pending / Sent / All tabs */}
+      <div style={{ display:'flex', gap:6, margin:'10px 0 12px' }}>
+        {[['pending',`Pending`],['sent','Sent'],['all','All']].map(([k,l])=>(
+          <button key={k} onClick={e=>{ e.stopPropagation(); setTab(k) }}
+            style={{ padding:'5px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
+              background:tab===k?C.amber:C.inner, color:tab===k?'#000':C.muted }}>
+            {k==='pending' && pendingCount>0 ? `Pending (${pendingCount})` : l}
           </button>
         ))}
       </div>
 
-      {/* AI draft notice */}
-      <div style={{ background:`${C.teal}10`, border:`1px solid ${C.teal}20`, borderRadius:10, padding:'7px 10px', marginBottom:12, fontSize:10, color:C.muted }}>
-        <span style={{ color:C.teal, fontWeight:700 }}>✨ AI writes every message</span> — negative triggers get warm drafts, improvements get celebrations. You review before sending.
-      </div>
-
-      {/* Message list */}
-      {pending.slice(0,2).map(m=>(
-        <div key={m.id} style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:8 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6 }}>
-            <div>
-              <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{m.studentName}</div>
-              <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{m.trigger} · <span style={{ color:C.teal }}>✨ AI drafted</span></div>
+      {/* Message rows */}
+      {filtered.map(m=>(
+        <div key={m.id} style={{ background:C.inner, borderRadius:13, padding:'11px 13px', marginBottom:9, border:`1px solid ${m.status==='pending'?C.amber+'30':C.border}` }}>
+          {/* Row 1: student + trigger + status badge */}
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+              <span style={{ fontSize:12, color:C.amber }}>⚑</span>
+              <span style={{ fontSize:12, fontWeight:700, color:C.text }}>{m.studentName} — {m.subject} · {m.trigger}</span>
             </div>
-            <span style={{ fontSize:9, fontWeight:700, color:C.amber, background:`${C.amber}18`, borderRadius:999, padding:'2px 6px' }}>Pending</span>
+            <span style={{ fontSize:9, fontWeight:700, borderRadius:999, padding:'2px 7px', flexShrink:0,
+              background:m.status==='pending'?`${C.amber}18`:`${C.green}18`, color:m.status==='pending'?C.amber:C.green }}>
+              {m.status==='pending'?'Pending':'Sent ✓'}
+            </span>
           </div>
-          <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-            <ActionBtn label="Send ✓" color={C.green} onClick={()=>navigate('parentMessages')}/>
-            <ActionBtn label="Edit"   color={C.blue}  onClick={()=>navigate('parentMessages')}/>
-            <ActionBtn label="Skip"   color={C.red}   onClick={()=>navigate('parentMessages')}/>
+          {/* Row 2: AI metadata */}
+          <div style={{ fontSize:10, color:C.muted, marginBottom:8 }}>
+            AI drafted · {m.tone} · {m.lang} · 👍😊
           </div>
+          {/* Row 3: message preview */}
+          <div style={{ fontSize:11, color:C.soft, lineHeight:1.5, marginBottom:10,
+            overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
+            {m.preview}
+          </div>
+          {/* Row 4: action buttons */}
+          {m.status==='pending' && (
+            <div style={{ display:'flex', gap:6 }}>
+              <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
+                style={{ background:`${C.green}18`, color:C.green, border:`1px solid ${C.green}35`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+                Send ✓
+              </button>
+              <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
+                style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}35`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+                ← Edit
+              </button>
+              <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
+                style={{ background:`${C.red}15`, color:C.red, border:`1px solid ${C.red}30`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+                ✕ Skip
+              </button>
+            </div>
+          )}
         </div>
       ))}
 
-      {pending.length===0 && (
-        <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:'8px 0' }}>No pending messages</div>
+      {filtered.length===0 && (
+        <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:'10px 0' }}>No messages in this category</div>
       )}
 
-      {/* Auto-send toggle */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:8, padding:'8px 0', borderTop:`1px solid ${C.border}` }}>
+      {/* Auto-send toggle row */}
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0 6px', borderTop:`1px solid ${C.border}` }}>
         <span style={{ fontSize:11, color:C.muted }}>Auto-send "Failed" messages</span>
-        <div style={{ width:36, height:20, borderRadius:10, background:C.inner, cursor:'pointer', position:'relative' }}>
-          <div style={{ width:14, height:14, borderRadius:'50%', background:C.muted, position:'absolute', top:3, left:3 }}/>
+        <div onClick={e=>{ e.stopPropagation(); setAutoSend(v=>!v) }}
+          style={{ width:38, height:22, borderRadius:11, background:autoSend?C.green:C.inner, cursor:'pointer', position:'relative', transition:'background 0.2s', border:`1px solid ${C.border}` }}>
+          <div style={{ width:16, height:16, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left:autoSend?19:2, transition:'left 0.2s' }}/>
         </div>
       </div>
-      <div style={{ fontSize:10, color:C.green, marginTop:4 }}>★ Positive version "Improved / Great Work" also drafted and ready</div>
-    </Widget>
+
+      {/* Positive version notice */}
+      <div style={{ background:`${C.green}10`, border:`1px solid ${C.green}20`, borderRadius:9, padding:'7px 10px', marginTop:4, fontSize:10, color:C.green, fontWeight:600 }}>
+        ★ Positive version "Improved / Great Work" also drafted and ready
+      </div>
+    </div>
   )
 }
 
@@ -546,8 +591,8 @@ function HomeFeed({ navigate }) {
         </Widget>
       )}
 
-      {/* W5: Parent Messages (upgraded) */}
-      <ParentMessagesWidget navigate={navigate} pending={pending}/>
+      {/* W5: Parent Messages */}
+      <ParentMessagesWidget navigate={navigate}/>
 
       {/* W6: Reports */}
       <Widget onClick={()=>navigate('reports')} style={{ background:'linear-gradient(135deg,#0a1628 0%,#060810 100%)', border:'1px solid #1a2a40' }}
