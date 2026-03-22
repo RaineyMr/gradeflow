@@ -67,8 +67,8 @@ const DEMO_LESSONS = {
 }
 
 const DEMO_FEED = [
-  { id: 1, classId: 1, author: 'Ms. Johnson', content: '📅 Unit Test Friday! Review chapters 3-4. Study guide posted below.', time: '2 hours ago', reactions: { '👍': 12, '❤️': 5, '😂': 2 }, confused: 3, questions: 1, approved: true },
-  { id: 2, classId: 1, author: 'Ms. Johnson', content: "🎉 Great work on yesterday's homework! Class average was 87%.",       time: 'Yesterday',  reactions: { '👍': 18, '❤️': 9, '😂': 4 }, confused: 0, questions: 0, approved: true },
+  { id: 1, classId: 1, author: 'Ms. Johnson', content: '📅 Unit Test Friday! Review chapters 3-4. Study guide posted below.', time: '2 hours ago', reactions: { '👍': 12, '❤': 5, '😂': 2 }, confused: 3, questions: 1, approved: true },
+  { id: 2, classId: 1, author: 'Ms. Johnson', content: "🎉 Great work on yesterday's homework! Class average was 87%.",       time: 'Yesterday',  reactions: { '👍': 18, '❤': 9, '😂': 4 }, confused: 0, questions: 0, approved: true },
 ]
 
 const DEMO_REMINDERS = [
@@ -80,7 +80,7 @@ const DEMO_REMINDERS = [
 
 const DEFAULT_CATEGORIES = [
   { id: 1, name: 'Tests',         weight: 40, color: '#f04a4a', icon: '📝' },
-  { id: 2, name: 'Quizzes',       weight: 30, color: '#f5a623', icon: '✏️' },
+  { id: 2, name: 'Quizzes',       weight: 30, color: '#f5a623', icon: '✏' },
   { id: 3, name: 'Homework',      weight: 20, color: '#3b7ef4', icon: '📚' },
   { id: 4, name: 'Participation', weight: 10, color: '#22c97a', icon: '🙋' },
 ]
@@ -89,9 +89,9 @@ const CURRICULUM_SOURCES = [
   { id: 'gomath',         name: 'Go Math',              publisher: 'Houghton Mifflin', subjects: ['Math'],           logo: '📐', searchable: true  },
   { id: 'readingwonders', name: 'Reading Wonders',      publisher: 'McGraw-Hill',      subjects: ['Reading', 'ELA'], logo: '📖', searchable: true  },
   { id: 'amplify',        name: 'Amplify Science',      publisher: 'Amplify',          subjects: ['Science'],        logo: '🔬', searchable: true  },
-  { id: 'studysync',      name: 'StudySync',            publisher: 'McGraw-Hill',      subjects: ['Writing', 'ELA'], logo: '✍️', searchable: true  },
+  { id: 'studysync',      name: 'StudySync',            publisher: 'McGraw-Hill',      subjects: ['Writing', 'ELA'], logo: '✍', searchable: true  },
   { id: 'eureka',         name: 'Eureka Math',          publisher: 'Great Minds',      subjects: ['Math'],           logo: '∑',  searchable: true  },
-  { id: 'ckscience',      name: 'CK-12 Science',        publisher: 'CK-12',            subjects: ['Science'],        logo: '⚗️', searchable: true  },
+  { id: 'ckscience',      name: 'CK-12 Science',        publisher: 'CK-12',            subjects: ['Science'],        logo: '⚗', searchable: true  },
   { id: 'commonlit',      name: 'CommonLit',            publisher: 'CommonLit',        subjects: ['Reading', 'ELA'], logo: '📜', searchable: true  },
   { id: 'custom',         name: 'Custom / No textbook', publisher: '',                 subjects: [],                 logo: '🏗',  searchable: false },
 ]
@@ -335,3 +335,163 @@ export const useStore = create((set, get) => ({
   activeStudent:       null,
   activeLessonClassId: null,
   notifications:       3,
+  lessonPlanMode:      null,
+  keyAlertsDismissed:  [],
+  cameraIntent:        null,
+
+  setScreen: (screen) => set(state => ({
+    previousScreen: state.activeScreen,
+    activeScreen:   screen,
+  })),
+
+  goBack: () => set(state => ({
+    activeScreen:   state.previousScreen || 'dashboard',
+    previousScreen: null,
+  })),
+
+  setActiveClass: (cls) => set(state => ({
+    activeClass:    cls,
+    previousScreen: state.activeScreen,
+    activeScreen:   cls ? 'gradebook' : state.activeScreen,
+  })),
+
+  setActiveStudent: (student) => set(state => ({
+    activeStudent:  student,
+    previousScreen: state.activeScreen,
+    activeScreen:   student ? 'studentProfile' : state.activeScreen,
+  })),
+
+  setActiveLessonClass: (classId) => set({ activeLessonClassId: classId }),
+  setCameraIntent:      (intent)  => set({ cameraIntent: intent }),
+  setLessonPlanMode:    (mode)    => set({ lessonPlanMode: mode }),
+
+  // ── Lesson status mutations ───────────────────────────────────────────────────
+  setLessonStatus: (classId, status) => set(state => {
+    const classLessons = [...(state.lessons[classId] || [])]
+    if (!classLessons.length) return {}
+    if (status === 'done') {
+      classLessons[0] = { ...classLessons[0], status: 'done', dayLabel: 'Previous' }
+      const [completed, ...rest] = classLessons
+      const reordered = [...rest, completed]
+      if (reordered[0]) reordered[0] = { ...reordered[0], dayLabel: 'Today', status: 'pending' }
+      return { lessons: { ...state.lessons, [classId]: reordered } }
+    }
+    if (status === 'tbd') {
+      classLessons[0] = { ...classLessons[0], status: 'tbd' }
+      return { lessons: { ...state.lessons, [classId]: classLessons } }
+    }
+    return {}
+  }),
+
+  addLesson: (classId, lesson) => set(state => {
+    const existing = state.lessons[classId] || []
+    return {
+      lessons: {
+        ...state.lessons,
+        [classId]: [...existing, { ...lesson, id: `custom-${Date.now()}`, status: 'pending' }]
+      }
+    }
+  }),
+
+  // ── Computed ──────────────────────────────────────────────────────────────────
+  getStudentsForClass:          (classId)        => get().students.filter(s => s.classId === classId),
+  getAssignmentsForClass:       (classId)        => get().assignments.filter(a => a.classId === classId),
+  getGradeForStudentAssignment: (studentId, aId) => get().grades.find(g => g.studentId === studentId && g.assignmentId === aId),
+  getNeedsAttention:            ()               => get().students.filter(s => s.grade < 70 || s.flagged || s.submitUngraded),
+
+  getTodayLesson: (classId) => {
+    const lessons = get().lessons[classId] || []
+    return lessons[0] || null
+  },
+
+  calcWeightedGrade: (studentId, classId) => {
+    const { assignments, grades, categories, gradingMethod } = get()
+    const clsAssigns = assignments.filter(a => a.classId === classId)
+    if (gradingMethod === 'total_points') {
+      const scored = clsAssigns.map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id)).filter(Boolean)
+      if (!scored.length) return null
+      return Math.round(scored.reduce((s, g) => s + g.score, 0) / scored.length)
+    }
+    let total = 0, totalWeight = 0
+    categories.forEach(cat => {
+      const catAssigns = clsAssigns.filter(a => a.categoryId === cat.id)
+      const catGrades  = catAssigns.map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id)).filter(Boolean)
+      if (catGrades.length) {
+        const avg = catGrades.reduce((s, g) => s + g.score, 0) / catGrades.length
+        total       += avg * (cat.weight / 100)
+        totalWeight += cat.weight
+      }
+    })
+    return totalWeight > 0 ? Math.round(total * 100 / totalWeight) : null
+  },
+
+  // ── Mutations (local + write-through to Supabase) ─────────────────────────────
+  updateGrade: async (studentId, assignmentId, score) => {
+    set(state => ({
+      grades: state.grades.map(g =>
+        g.studentId === studentId && g.assignmentId === assignmentId ? { ...g, score } : g
+      ),
+    }))
+    const { error } = await supabase
+      .from('grades')
+      .upsert(
+        { student_id: studentId, assignment_id: assignmentId, score, graded: true },
+        { onConflict: 'student_id,assignment_id' }
+      )
+    if (error) console.error('Grade sync failed:', error)
+  },
+
+  updateMessage: (id, changes) => set(state => ({
+    messages: state.messages.map(m => m.id === id ? { ...m, ...changes } : m),
+  })),
+
+  dismissMessage: (id) => set(state => ({
+    messages: state.messages.map(m => m.id === id ? { ...m, status: 'dismissed' } : m),
+  })),
+
+  sendMessage: (id) => set(state => ({
+    messages: state.messages.map(m => m.id === id ? { ...m, status: 'sent' } : m),
+  })),
+
+  addAssignment: (assignment) => set(state => ({
+    assignments: [...state.assignments, { ...assignment, id: Date.now() }],
+  })),
+
+  saveLessonPlan: (plan) => set(state => ({
+    lessonPlans: [...state.lessonPlans, { ...plan, id: Date.now(), createdAt: new Date().toISOString() }],
+  })),
+
+  dismissKeyAlert: (assignmentId) => set(state => ({
+    keyAlertsDismissed: [...state.keyAlertsDismissed, assignmentId],
+  })),
+
+  addReminder: (text) => set(state => ({
+    reminders: [...state.reminders, { id: Date.now(), text, due: 'Today', done: false, priority: 'medium' }],
+  })),
+
+  toggleReminder: (id) => set(state => ({
+    reminders: state.reminders.map(r => r.id === id ? { ...r, done: !r.done } : r),
+  })),
+
+  deleteReminder: (id) => set(state => ({
+    reminders: state.reminders.filter(r => r.id !== id),
+  })),
+
+  addFeedPost: async (classId, content) => {
+    const authorName = useStore.getState().teacher.name
+    set(state => ({
+      feed: [{ id: Date.now(), classId, author: authorName, content, time: 'Just now', reactions: {}, confused: 0, questions: 0, approved: false }, ...state.feed],
+    }))
+    const { error } = await supabase.from('feed_posts').insert({
+      class_id: classId, author_name: authorName, content, approved: false, reactions: {},
+    })
+    if (error) console.error('Feed post sync failed:', error)
+  },
+
+  quickCreateAssignment:      (a) => get().addAssignment(a),
+  clearQuickCreateAssignment: ()  => {},
+
+  // Legacy compat
+  weights: { test: 40, quiz: 30, homework: 20, participation: 10 },
+  setWeights: (w) => set({ weights: w }),
+}))
