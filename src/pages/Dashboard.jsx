@@ -87,8 +87,6 @@ function SubPage({ children }) {
 }
 
 // ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
-// On home: Grades · Messages · 🏠 Home · Lessons · 🔔 Alerts  (5 items)
-// On sub:  ← Back · Grades · Messages · Lessons · 🔔 Alerts   (5 items, Home removed)
 function BottomNav({ active, onSelect, isSubPage }) {
   const homeItems = [
     { id:'gradebook',      icon:'📊', label:'Grades'   },
@@ -105,7 +103,6 @@ function BottomNav({ active, onSelect, isSubPage }) {
     { id:'alerts',         icon:'🔔', label:'Alerts'   },
   ]
   const items = isSubPage ? subItems : homeItems
-
   return (
     <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'rgba(6,8,16,0.97)', backdropFilter:'blur(20px)', borderTop:`1px solid ${C.border}`, padding:`8px 0 max(14px,env(safe-area-inset-bottom))`, display:'grid', gridTemplateColumns:`repeat(${items.length},1fr)` }}>
       {items.map(item=>{
@@ -123,23 +120,18 @@ function BottomNav({ active, onSelect, isSubPage }) {
   )
 }
 
-// ─── STICKY HEADER (no camera/hamburger — those live in App.jsx) ──────────────
+// ─── STICKY HEADER ────────────────────────────────────────────────────────────
 function StickyHeader({ teacher }) {
   const now = new Date()
   const hour = now.getHours()
   const greeting = hour<12?'Good morning':hour<17?'Good afternoon':'Good evening'
   const timeStr = now.toLocaleTimeString('en-US',{ hour:'numeric', minute:'2-digit' })
-
   return (
     <div style={{ position:'sticky', top:0, zIndex:100, background:'linear-gradient(135deg, var(--school-color) 0%, var(--school-surface,#0a000a) 100%)', padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
         <div>
-          <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2 }}>
-            {teacher.school?.toUpperCase()}
-          </div>
-          <div style={{ fontSize:17, fontWeight:800, color:'#fff', lineHeight:1.2 }}>
-            {greeting}, {teacher.name.split(' ').pop()} 👋
-          </div>
+          <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2 }}>{teacher.school?.toUpperCase()}</div>
+          <div style={{ fontSize:17, fontWeight:800, color:'#fff', lineHeight:1.2 }}>{greeting}, {teacher.name.split(' ').pop()} 👋</div>
         </div>
         <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', fontWeight:600 }}>{timeStr}</div>
       </div>
@@ -150,7 +142,7 @@ function StickyHeader({ teacher }) {
   )
 }
 
-// ─── TODAY'S LESSONS WIDGET ───────────────────────────────────────────────────
+// ─── TODAY'S LESSONS WIDGET — UNTOUCHED ───────────────────────────────────────
 function TodaysLessonsWidget({ navigate }) {
   const { classes, setActiveLessonClass, setLessonStatus, getTodayLesson } = useStore()
   const [activeClassId, setActiveClassId] = useState(classes[0]?.id||1)
@@ -173,20 +165,13 @@ function TodaysLessonsWidget({ navigate }) {
       </div>
       {lesson ? (
         <>
-          {lesson.status==='tbd' && (
-            <div style={{ background:'#2a1f0a', border:'1px solid rgba(245,166,35,0.3)', borderRadius:8, padding:'5px 10px', fontSize:10, color:C.amber, fontWeight:700, marginBottom:8, display:'inline-block' }}>⟳ TBD — Repeating this session</div>
-          )}
+          {lesson.status==='tbd' && <div style={{ background:'#2a1f0a', border:'1px solid rgba(245,166,35,0.3)', borderRadius:8, padding:'5px 10px', fontSize:10, color:C.amber, fontWeight:700, marginBottom:8, display:'inline-block' }}>⟳ TBD — Repeating this session</div>}
           <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:4, lineHeight:1.3 }}>{lesson.title}</div>
           <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:12 }}>{[lesson.pages,lesson.duration].filter(Boolean).join(' · ')}</div>
-          {lesson.objective && (
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', marginBottom:12, lineHeight:1.5, fontStyle:'italic' }}>"{lesson.objective.substring(0,80)}{lesson.objective.length>80?'...':''}"</div>
-          )}
+          {lesson.objective && <div style={{ fontSize:11, color:'rgba(255,255,255,0.65)', marginBottom:12, lineHeight:1.5, fontStyle:'italic' }}>"{lesson.objective.substring(0,80)}{lesson.objective.length>80?'...':''}"</div>}
           <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
             <ActionBtn label="📋 Full Plan" color={C.teal} onClick={openLesson}/>
-            {lesson.status!=='done' && <>
-              <ActionBtn label="✓ Done" color={C.green} onClick={markDone}/>
-              <ActionBtn label="⟳ TBD"  color={C.amber} onClick={markTBD}/>
-            </>}
+            {lesson.status!=='done' && <><ActionBtn label="✓ Done" color={C.green} onClick={markDone}/><ActionBtn label="⟳ TBD" color={C.amber} onClick={markTBD}/></>}
             {lesson.status==='done' && <span style={{ fontSize:11, color:C.green, fontWeight:700, alignSelf:'center' }}>✓ Lesson completed</span>}
           </div>
         </>
@@ -200,154 +185,506 @@ function TodaysLessonsWidget({ navigate }) {
   )
 }
 
-// ─── ADD WIDGETS BAR ──────────────────────────────────────────────────────────
-function AddWidgetsBar() {
-  const [open, setOpen] = useState(false)
-  const WIDGETS = [
-    { icon:'📊', name:'Daily Overview' }, { icon:'📖', name:"Today's Lessons" },
-    { icon:'📚', name:'My Classes'     }, { icon:'⚑',  name:'Needs Attention' },
-    { icon:'💬', name:'Messages'       }, { icon:'📢', name:'Class Feed'       },
-    { icon:'📈', name:'Reports'        }, { icon:'📋', name:'Lesson Plans'     },
-    { icon:'🧪', name:'Testing Suite'  }, { icon:'📷', name:'Grading Scan'     },
-    { icon:'🔔', name:'Reminders'      }, { icon:'✏',  name:'Sketchpad'        },
-    { icon:'🔗', name:'Integrations'   }, { icon:'📉', name:'Progress Graph'   },
-  ]
+// ─── EDIT MODE BAR ────────────────────────────────────────────────────────────
+function EditModeBar() {
   return (
-    <div style={{ margin:'8px 12px 0', marginBottom:open?12:24 }}>
-      {open ? (
-        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:16 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.text }}>＋ Widget Library</div>
-            <button onClick={()=>setOpen(false)} style={{ background:C.inner, border:'none', borderRadius:8, padding:'5px 10px', color:C.muted, cursor:'pointer', fontSize:13 }}>✕</button>
-          </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-            {WIDGETS.map(w=>(
-              <button key={w.name} style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'10px 6px', cursor:'pointer', textAlign:'center' }}
-                onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--school-color)')}
-                onMouseLeave={e=>(e.currentTarget.style.borderColor=C.border)}>
-                <div style={{ fontSize:20, marginBottom:4 }}>{w.icon}</div>
-                <div style={{ fontSize:9, color:C.muted, fontWeight:600 }}>{w.name}</div>
-              </button>
-            ))}
-          </div>
-          <div style={{ fontSize:10, color:C.muted, textAlign:'center', marginTop:12 }}>Drag · Resize · Save to account</div>
-        </div>
-      ) : (
-        <button onClick={()=>setOpen(true)}
-          style={{ width:'100%', background:C.inner, border:`1px dashed ${C.border}`, borderRadius:14, padding:'10px', color:C.muted, cursor:'pointer', fontSize:12, fontWeight:600 }}>
-          ＋ Add Widgets
-        </button>
-      )}
+    <div style={{ margin:'4px 12px 24px', background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'11px 14px', textAlign:'center' }}>
+      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:3 }}>— Hold any widget → Edit Mode</div>
+      <div style={{ fontSize:10, color:C.muted, lineHeight:1.6 }}>
+        Drag to rearrange · Pinch to resize · + to add · All widgets available<br/>
+        Saved to your account · Same layout on all devices
+      </div>
     </div>
   )
 }
 
-// ─── PARENT MESSAGES WIDGET — matches layout4 D6 exactly ─────────────────────
-const WIDGET_MSGS = [
-  { id:1, studentName:'Marcus T.', subject:'Math', trigger:'Failed 58%', tone:'Warm & Friendly', lang:'English', status:'pending',
-    preview:"Dear Parent, Marcus received 58% on his Math assessment. I'd love to connect this week to discuss support options." },
-  { id:2, studentName:'Aaliyah B.', subject:'Reading', trigger:'Improved +12pts', tone:'Celebrating', lang:'English', status:'sent',
-    preview:"Great news! Aaliyah improved her Reading score by 12 points this month. She should be so proud!" },
+// ─── MESSAGES WIDGET (admin-style thread list) ────────────────────────────────
+const MSG_THREADS = [
+  { id:1, name:'Ms. Thompson', role:'parent', avatar:'👩', subject:'Marcus — Math Assessment', unread:true,  aiDrafted:true,  status:'pending', preview:"Dear Ms. Thompson, Marcus received 58% on his Math assessment. I'd love to connect this week." },
+  { id:2, name:'Ms. Brooks',   role:'parent', avatar:'👩', subject:'Aaliyah — Outstanding Progress!', unread:false, aiDrafted:true, status:'sent', preview:"Great news! Aaliyah improved her Reading score by 12 points this month." },
+  { id:3, name:'Mr. Rivera',   role:'teacher',avatar:'🧑‍🔬',subject:'Cross-class collaboration', unread:true,  aiDrafted:false, status:'sent', preview:'Hey — thinking our classes could do a joint project on fractions + measurement.' },
+  { id:4, name:'Marcus T.',    role:'student', avatar:'👦', subject:'Extra credit opportunity', unread:false, aiDrafted:false, status:'sent', preview:'Hi Marcus! I have an optional extra credit worksheet before the unit test.' },
 ]
 
-function ParentMessagesWidget({ navigate }) {
-  const [tab,      setTab]      = useState('pending')
-  const [autoSend, setAutoSend] = useState(false)
+function RoleBadge({ role }) {
+  const m = { teacher:{c:C.blue,t:'Teacher'}, student:{c:C.green,t:'Student'}, parent:{c:C.amber,t:'Parent'}, admin:{c:C.purple,t:'Admin'} }
+  const b = m[role]||m.teacher
+  return <span style={{ background:`${b.c}18`, color:b.c, borderRadius:999, padding:'2px 7px', fontSize:9, fontWeight:700 }}>{b.t}</span>
+}
 
-  const filtered = tab==='all' ? WIDGET_MSGS : tab==='sent' ? WIDGET_MSGS.filter(m=>m.status==='sent') : WIDGET_MSGS.filter(m=>m.status==='pending')
-  const pendingCount = WIDGET_MSGS.filter(m=>m.status==='pending').length
-
+function MessagesWidget({ navigate }) {
+  const unread = MSG_THREADS.filter(t=>t.unread).length
   return (
-    <div style={{ background:'linear-gradient(135deg,#0d0820 0%,#060810 100%)', border:`1px solid ${C.purple}25`, borderRadius:20, padding:'16px', marginBottom:12 }}>
-
-      {/* Header */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
+    <Widget style={{ background:'linear-gradient(135deg,#0d0820 0%,#060810 100%)', border:`1px solid ${C.purple}25` }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
         <div>
-          <div style={{ fontSize:14, fontWeight:800, color:C.text }}>Parent Messages</div>
-          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Every negative has a positive version · AI writes both · Multilingual</div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>💬 Messages</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Teachers · Students · Parents · Admin</div>
         </div>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          {unread>0 && <span style={{ background:`${C.red}28`, color:C.red, borderRadius:999, padding:'2px 8px', fontSize:10, fontWeight:700 }}>{unread} new</span>}
+          <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
+            style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+            See all →
+          </button>
+        </div>
+      </div>
+
+      {MSG_THREADS.slice(0,3).map(t=>(
+        <div key={t.id} onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
+          style={{ background:t.unread?C.raised:C.inner, border:`1px solid ${t.unread?'var(--school-color)28':C.border}`, borderRadius:13, padding:'10px 12px', marginBottom:8, cursor:'pointer', display:'flex', gap:11, alignItems:'flex-start' }}
+          onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
+          onMouseLeave={e=>(e.currentTarget.style.background=t.unread?C.raised:C.inner)}>
+          {/* Avatar */}
+          <div style={{ position:'relative', flexShrink:0 }}>
+            <div style={{ width:36, height:36, borderRadius:'50%', background:'var(--school-color)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{t.avatar}</div>
+            {t.unread && <div style={{ position:'absolute', top:-1, right:-1, width:9, height:9, borderRadius:'50%', background:C.red, border:`2px solid ${C.bg}` }}/>}
+          </div>
+          {/* Content */}
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
+              <span style={{ fontSize:12, fontWeight:700, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.name}</span>
+              <RoleBadge role={t.role}/>
+              {t.aiDrafted && <span style={{ fontSize:9, color:C.teal }}>✨AI</span>}
+              {t.status==='pending' && <span style={{ fontSize:9, color:C.amber, background:`${C.amber}18`, borderRadius:999, padding:'1px 5px', fontWeight:700 }}>Pending</span>}
+            </div>
+            <div style={{ fontSize:11, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.preview}</div>
+          </div>
+          {/* Reply arrow */}
+          <span style={{ color:C.teal, fontSize:11, fontWeight:700, flexShrink:0, alignSelf:'center' }}>Reply →</span>
+        </div>
+      ))}
+
+      <div style={{ fontSize:10, color:C.muted, textAlign:'center', padding:'6px 0 0', borderTop:`1px solid ${C.border}` }}>
+        ✨ AI writes every message · Every negative has a positive version · Multilingual
+      </div>
+    </Widget>
+  )
+}
+
+// ─── NEEDS ATTENTION WIDGET ───────────────────────────────────────────────────
+function NeedsAttentionWidget({ atRisk, navigate }) {
+  if (atRisk.length === 0) return null
+  return (
+    <Widget style={{ border:`1px solid ${C.red}25`, background:C.card }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>⚑ Needs Attention</div>
+        <span style={{ background:`${C.red}18`, color:C.red, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999 }}>{atRisk.length} students</span>
+      </div>
+      {/* Inline student names like layout */}
+      <div style={{ fontSize:12, color:C.soft, lineHeight:1.8, marginBottom:10 }}>
+        {atRisk.slice(0,2).map((s,i)=>(
+          <span key={s.id}>
+            <span style={{ color:C.text, fontWeight:600 }}>{s.name.split(' ')[0]} {s.name.split(' ')[1]?.[0]}.</span>
+            <span style={{ color:C.muted }}> · {s.subject||'Math'} {s.grade}% {s.grade<70?'Failed':s.trend==='down'?`dropped ${Math.abs(s.drop||5)}pts`:''}</span>
+            {i<Math.min(atRisk.length,2)-1 && <span style={{ color:C.border }}> · </span>}
+          </span>
+        ))}
+        {atRisk.length>2 && <span style={{ color:C.muted }}> + {atRisk.length-2} more</span>}
+      </div>
+      <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        <button onClick={e=>{ e.stopPropagation(); navigate('attention') }}
+          style={{ background:`${C.red}18`, color:C.red, border:`1px solid ${C.red}30`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+          Tap to view all
+        </button>
         <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
-          style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+          style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+          📩 Message individually or as group
+        </button>
+      </div>
+    </Widget>
+  )
+}
+
+// ─── REPORTS WIDGET ───────────────────────────────────────────────────────────
+function ReportsWidget({ navigate }) {
+  const reportLinks = ['Class Mastery', 'Student Report', 'Grade Distribution', 'Needs Attention', 'Comm. Log', 'Progress']
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#0a1628 0%,#060810 100%)', border:'1px solid #1a2a40' }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📊 Reports</div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('reports') }}
+          style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
           See all →
         </button>
       </div>
+      {/* Text link list */}
+      <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 12px', marginBottom:14 }}>
+        {reportLinks.map(l=>(
+          <button key={l} onClick={e=>{ e.stopPropagation(); navigate('reports') }}
+            style={{ background:'none', border:'none', color:C.teal, fontSize:12, fontWeight:600, cursor:'pointer', padding:0, textDecoration:'underline', textDecorationColor:`${C.teal}40` }}>
+            {l}
+          </button>
+        ))}
+      </div>
+      {/* Export buttons */}
+      <div style={{ display:'flex', gap:8, borderTop:`1px solid ${C.border}`, paddingTop:12 }}>
+        {[['🖨 Print',C.muted],['↑ PDF',C.blue],['⬛ Spreadsheet',C.green]].map(([label,color])=>(
+          <button key={label} onClick={e=>{ e.stopPropagation(); navigate('reports') }}
+            style={{ flex:1, background:`${color}15`, color, border:`1px solid ${color}30`, borderRadius:10, padding:'8px 6px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+            {label}
+          </button>
+        ))}
+      </div>
+    </Widget>
+  )
+}
 
-      {/* Pending / Sent / All tabs */}
-      <div style={{ display:'flex', gap:6, margin:'10px 0 12px' }}>
-        {[['pending',`Pending`],['sent','Sent'],['all','All']].map(([k,l])=>(
-          <button key={k} onClick={e=>{ e.stopPropagation(); setTab(k) }}
-            style={{ padding:'5px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
-              background:tab===k?C.amber:C.inner, color:tab===k?'#000':C.muted }}>
-            {k==='pending' && pendingCount>0 ? `Pending (${pendingCount})` : l}
+// ─── GRADING WIDGET ───────────────────────────────────────────────────────────
+function GradingWidget({ navigate }) {
+  const weights = [
+    { label:'Test',  pct:'40%', color:C.red   },
+    { label:'Quiz',  pct:'30%', color:C.amber  },
+    { label:'Part.', pct:'10%', color:C.teal   },
+    { label:'Other', pct:'20%', color:C.blue   },
+  ]
+  return (
+    <Widget onClick={()=>navigate('gradebook')} style={{ background:C.card }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
+        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📷 Grading</div>
+        <span style={{ fontSize:10, color:C.green, fontWeight:700 }}>Synced: PowerSchool ✓</span>
+      </div>
+      <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>
+        Last: Today 8:42am · 24 grades · Tap 📷 to scan
+      </div>
+      {/* Weight chips */}
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
+        <span style={{ fontSize:10, color:C.muted, alignSelf:'center' }}>Weights:</span>
+        {weights.map(w=>(
+          <span key={w.label} style={{ background:`${w.color}20`, color:w.color, border:`1px solid ${w.color}35`, borderRadius:999, padding:'3px 9px', fontSize:10, fontWeight:700 }}>
+            {w.label} {w.pct}
+          </span>
+        ))}
+      </div>
+      <button onClick={e=>{ e.stopPropagation(); navigate('settings') }}
+        style={{ background:'none', border:'none', color:C.teal, fontSize:11, fontWeight:600, cursor:'pointer', padding:0, textDecoration:'underline' }}>
+        Edit in Settings
+      </button>
+    </Widget>
+  )
+}
+
+// ─── LESSON PLAN BUILDER WIDGET ───────────────────────────────────────────────
+const LESSON_LIST = [
+  { id:1, title:'Algorithms',       status:'done',    chips:['Standards','TPAS'] },
+  { id:2, title:'Standards / TPAS', status:'pending', chips:['Reminders'] },
+  { id:3, title:'Replace 3 J',      status:'tbd',     chips:['Reports','Caleb'] },
+]
+
+function LessonPlanWidget({ navigate }) {
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#071a30 0%,#060810 100%)', border:`1px solid ${C.teal}25` }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📋 Lesson Plan Builder</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>AI · TEKS · Standards · Curriculum</div>
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
+          style={{ background:`${C.teal}18`, color:C.teal, border:`1px solid ${C.teal}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          Open →
+        </button>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ display:'flex', gap:7, marginBottom:14, flexWrap:'wrap' }}>
+        {[
+          { icon:'📤', label:'Upload lesson plan',  color:C.blue   },
+          { icon:'✨', label:'AI Generate',          color:C.purple },
+          { icon:'📝', label:'Build from scratch',   color:C.teal   },
+        ].map(b=>(
+          <button key={b.label} onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
+            style={{ flex:1, minWidth:80, background:`${b.color}15`, color:b.color, border:`1px solid ${b.color}30`, borderRadius:10, padding:'8px 6px', fontSize:10, fontWeight:700, cursor:'pointer', textAlign:'center' }}>
+            <div style={{ fontSize:16, marginBottom:2 }}>{b.icon}</div>
+            {b.label}
           </button>
         ))}
       </div>
 
-      {/* Message rows */}
-      {filtered.map(m=>(
-        <div key={m.id} style={{ background:C.inner, borderRadius:13, padding:'11px 13px', marginBottom:9, border:`1px solid ${m.status==='pending'?C.amber+'30':C.border}` }}>
-          {/* Row 1: student + trigger + status badge */}
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:4 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-              <span style={{ fontSize:12, color:C.amber }}>⚑</span>
-              <span style={{ fontSize:12, fontWeight:700, color:C.text }}>{m.studentName} — {m.subject} · {m.trigger}</span>
-            </div>
-            <span style={{ fontSize:9, fontWeight:700, borderRadius:999, padding:'2px 7px', flexShrink:0,
-              background:m.status==='pending'?`${C.amber}18`:`${C.green}18`, color:m.status==='pending'?C.amber:C.green }}>
-              {m.status==='pending'?'Pending':'Sent ✓'}
-            </span>
-          </div>
-          {/* Row 2: AI metadata */}
-          <div style={{ fontSize:10, color:C.muted, marginBottom:8 }}>
-            AI drafted · {m.tone} · {m.lang} · 👍😊
-          </div>
-          {/* Row 3: message preview */}
-          <div style={{ fontSize:11, color:C.soft, lineHeight:1.5, marginBottom:10,
-            overflow:'hidden', display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' }}>
-            {m.preview}
-          </div>
-          {/* Row 4: action buttons */}
-          {m.status==='pending' && (
-            <div style={{ display:'flex', gap:6 }}>
-              <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
-                style={{ background:`${C.green}18`, color:C.green, border:`1px solid ${C.green}35`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-                Send ✓
-              </button>
-              <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
-                style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}35`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-                ← Edit
-              </button>
-              <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
-                style={{ background:`${C.red}15`, color:C.red, border:`1px solid ${C.red}30`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-                ✕ Skip
-              </button>
-            </div>
-          )}
-        </div>
-      ))}
-
-      {filtered.length===0 && (
-        <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:'10px 0' }}>No messages in this category</div>
-      )}
-
-      {/* Auto-send toggle row */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 0 6px', borderTop:`1px solid ${C.border}` }}>
-        <span style={{ fontSize:11, color:C.muted }}>Auto-send "Failed" messages</span>
-        <div onClick={e=>{ e.stopPropagation(); setAutoSend(v=>!v) }}
-          style={{ width:38, height:22, borderRadius:11, background:autoSend?C.green:C.inner, cursor:'pointer', position:'relative', transition:'background 0.2s', border:`1px solid ${C.border}` }}>
-          <div style={{ width:16, height:16, borderRadius:'50%', background:'#fff', position:'absolute', top:2, left:autoSend?19:2, transition:'left 0.2s' }}/>
+      {/* Connect textbook */}
+      <div style={{ background:C.inner, borderRadius:10, padding:'8px 12px', marginBottom:12, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <span style={{ fontSize:11, color:C.muted }}>Connect textbook:</span>
+        <div style={{ display:'flex', gap:6 }}>
+          {[['+ PDF',C.red],['Google',C.blue]].map(([l,c])=>(
+            <button key={l} onClick={e=>e.stopPropagation()}
+              style={{ background:`${c}18`, color:c, border:`1px solid ${c}30`, borderRadius:8, padding:'4px 9px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+              {l}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Positive version notice */}
-      <div style={{ background:`${C.green}10`, border:`1px solid ${C.green}20`, borderRadius:9, padding:'7px 10px', marginTop:4, fontSize:10, color:C.green, fontWeight:600 }}>
-        ★ Positive version "Improved / Great Work" also drafted and ready
-      </div>
-    </div>
+      {/* Lesson list */}
+      <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Recent Plans</div>
+      {LESSON_LIST.map(l=>{
+        const statusColor = l.status==='done'?C.green:l.status==='tbd'?C.amber:C.muted
+        const statusLabel = l.status==='done'?'✓ Done':l.status==='tbd'?'⟳ TBD':'Not started'
+        return (
+          <div key={l.id} onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
+            style={{ background:C.inner, borderRadius:10, padding:'9px 12px', marginBottom:6, display:'flex', justifyContent:'space-between', alignItems:'center', cursor:'pointer' }}
+            onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
+            onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
+            <div>
+              <div style={{ fontSize:12, fontWeight:600, color:C.text, marginBottom:3 }}>{l.title}</div>
+              <div style={{ display:'flex', gap:4 }}>
+                {l.chips.map(c=>(
+                  <span key={c} style={{ fontSize:9, color:C.muted, background:C.raised, borderRadius:6, padding:'2px 6px' }}>{c}</span>
+                ))}
+              </div>
+            </div>
+            <span style={{ fontSize:10, fontWeight:700, color:statusColor, background:`${statusColor}18`, borderRadius:999, padding:'3px 8px', flexShrink:0, marginLeft:8 }}>{statusLabel}</span>
+          </div>
+        )
+      })}
+    </Widget>
   )
 }
 
-// ─── REMINDERS PAGE ───────────────────────────────────────────────────────────
+// ─── SKETCH & ANNOTATE WIDGET ─────────────────────────────────────────────────
+function SketchAnnotateWidget({ navigate }) {
+  const [uploaded, setUploaded] = useState(false)
+  const tools = [
+    { icon:'🖊', label:'Highlight' },
+    { icon:'✏', label:'Free draw' },
+    { icon:'◻', label:'Box'       },
+    { icon:'➤', label:'Arrow'     },
+    { icon:'T',  label:'Text'      },
+  ]
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#0a0a1a 0%,#060810 100%)', border:`1px solid ${C.amber}20` }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>✏ Sketch & Annotate</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Annotate student work · Send back with push notification</div>
+        </div>
+      </div>
+
+      {/* Upload / Camera area */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
+        <button onClick={e=>{ e.stopPropagation(); navigate('camera') }}
+          style={{ background:`${C.blue}15`, border:`1px dashed ${C.blue}40`, borderRadius:12, padding:'14px 8px', cursor:'pointer', textAlign:'center' }}>
+          <div style={{ fontSize:24, marginBottom:4 }}>📷</div>
+          <div style={{ fontSize:11, fontWeight:700, color:C.blue }}>Use Camera</div>
+          <div style={{ fontSize:9, color:C.muted }}>Phone · tablet · laptop</div>
+        </button>
+        <button onClick={e=>e.stopPropagation()}
+          style={{ background:`${C.teal}15`, border:`1px dashed ${C.teal}40`, borderRadius:12, padding:'14px 8px', cursor:'pointer', textAlign:'center' }}>
+          <div style={{ fontSize:24, marginBottom:4 }}>📄</div>
+          <div style={{ fontSize:11, fontWeight:700, color:C.teal }}>Upload File</div>
+          <div style={{ fontSize:9, color:C.muted }}>Canvas · Upload image or doc</div>
+        </button>
+      </div>
+
+      {/* Annotation tools */}
+      <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Annotation Tools</div>
+      <div style={{ display:'flex', gap:6, marginBottom:12 }}>
+        {tools.map(t=>(
+          <button key={t.label} onClick={e=>e.stopPropagation()}
+            style={{ flex:1, background:C.inner, border:`1px solid ${C.border}`, borderRadius:9, padding:'7px 4px', cursor:'pointer', textAlign:'center' }}
+            onMouseEnter={e=>(e.currentTarget.style.borderColor='var(--school-color)')}
+            onMouseLeave={e=>(e.currentTarget.style.borderColor=C.border)}>
+            <div style={{ fontSize:14, marginBottom:2 }}>{t.icon}</div>
+            <div style={{ fontSize:8, color:C.muted }}>{t.label}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Actions */}
+      <div style={{ display:'flex', gap:8 }}>
+        <button onClick={e=>e.stopPropagation()}
+          style={{ flex:1, background:C.inner, color:C.muted, border:`1px solid ${C.border}`, borderRadius:10, padding:'9px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+          ← Annotate student work
+        </button>
+        <button onClick={e=>e.stopPropagation()}
+          style={{ flex:1, background:'var(--school-color)', color:'#fff', border:'none', borderRadius:10, padding:'9px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+          Send Back ›
+        </button>
+      </div>
+      <div style={{ fontSize:10, color:C.muted, marginTop:6, textAlign:'center' }}>
+        🔔 Push notification sent to student on send back
+      </div>
+    </Widget>
+  )
+}
+
+// ─── TESTING SUITE WIDGET ─────────────────────────────────────────────────────
+function TestingSuiteWidget({ navigate }) {
+  const modes = [
+    { icon:'🔒', label:'Lockdown',      sub:'Browser · External test from any ed site · locked', color:C.blue   },
+    { icon:'🏗',  label:'Native Builder', sub:'Build in GradeFlow · MC · Short ans · T/F · Essay · Fill blank', color:C.green  },
+    { icon:'📄', label:'PDF Convert',   sub:'Upload any PDF · AI digitizes it · Questions editable', color:C.purple },
+  ]
+  const sources = ['Take photo of test', '↑ Upload any format', '🔵 Search database', '✨ AI-generate by grade level + subject + standard', '↗ Pull from ed site']
+  const features = ['Timer + auto-submit', '👁 Real-time monitoring', '✕ Randomize order', '🚩 Flag exit attempts', '✨ AI auto-grade short answers', '📋 Flag essays']
+
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#0d0a1e 0%,#060810 100%)', border:`1px solid ${C.purple}25` }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>🧪 Testing Suite</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>3 modes · All devices · Lockdown · Auto-grade · Real-time monitoring</div>
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('testingSuite') }}
+          style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          Create Test →
+        </button>
+      </div>
+
+      {/* 3 mode cards */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, margin:'12px 0' }}>
+        {modes.map(m=>(
+          <button key={m.label} onClick={e=>{ e.stopPropagation(); navigate('testingSuite') }}
+            style={{ background:`${m.color}12`, border:`1px solid ${m.color}25`, borderRadius:12, padding:'10px 6px', cursor:'pointer', textAlign:'center' }}
+            onMouseEnter={e=>(e.currentTarget.style.background=`${m.color}22`)}
+            onMouseLeave={e=>(e.currentTarget.style.background=`${m.color}12`)}>
+            <div style={{ fontSize:22, marginBottom:4 }}>{m.icon}</div>
+            <div style={{ fontSize:10, fontWeight:700, color:m.color, marginBottom:3 }}>{m.label}</div>
+            <div style={{ fontSize:8, color:C.muted, lineHeight:1.4 }}>{m.sub}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Test sources */}
+      <div style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:8 }}>
+        <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>Test Sources</div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 12px' }}>
+          {sources.map(s=>(
+            <span key={s} style={{ fontSize:10, color:C.soft }}>· {s}</span>
+          ))}
+        </div>
+        <div style={{ fontSize:10, color:C.muted, marginTop:6 }}>All questions editable after upload/photo · AI suggests grade-appropriate answers if no key found</div>
+      </div>
+
+      {/* Features */}
+      <div style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:8 }}>
+        <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>Features</div>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 12px' }}>
+          {features.map(f=>(
+            <span key={f} style={{ fontSize:10, color:C.soft }}>· {f}</span>
+          ))}
+        </div>
+        <div style={{ fontSize:10, color:C.muted, marginTop:6 }}>Answer key: upload · photo · AI finds online · AI generates if not found · Teacher edits</div>
+      </div>
+
+      {/* Grade posting */}
+      <div style={{ fontSize:10, color:C.muted, borderTop:`1px solid ${C.border}`, paddingTop:8 }}>
+        Grade posting: Auto · Review first · Teacher chooses per test → posts to gradebook at correct weight
+      </div>
+    </Widget>
+  )
+}
+
+// ─── SCAN GRADE SHEET WIDGET ──────────────────────────────────────────────────
+function ScanGradeSheetWidget({ navigate }) {
+  const weights = [
+    { label:'Test',  pct:'40%', color:C.red    },
+    { label:'Quiz',  pct:'30%', color:C.amber  },
+    { label:'Part.', pct:'10%', color:C.teal   },
+    { label:'Other', pct:'20%', color:C.blue   },
+  ]
+  return (
+    <Widget style={{ background:C.card }}>
+      <div style={{ marginBottom:12 }}>
+        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📷 Scan Grade Sheet</div>
+        <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Camera · Upload · AI reads all formats → auto-convert to %</div>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
+        <button onClick={e=>{ e.stopPropagation(); navigate('camera') }}
+          style={{ background:'var(--school-color)18', border:`2px solid var(--school-color)40`, borderRadius:14, padding:'16px 8px', cursor:'pointer', textAlign:'center' }}>
+          <div style={{ fontSize:28, marginBottom:4 }}>📷</div>
+          <div style={{ fontSize:12, fontWeight:700, color:'var(--school-color)' }}>Use Camera</div>
+          <div style={{ fontSize:9, color:C.muted }}>Phone · tablet · laptop</div>
+        </button>
+        <button onClick={e=>e.stopPropagation()}
+          style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'16px 8px', cursor:'pointer', textAlign:'center' }}>
+          <div style={{ fontSize:28, marginBottom:4 }}>📁</div>
+          <div style={{ fontSize:12, fontWeight:700, color:C.soft }}>Upload File</div>
+          <div style={{ fontSize:9, color:C.muted }}>Any format</div>
+        </button>
+      </div>
+      <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
+        <span style={{ fontSize:10, color:C.muted }}>Assignment type:</span>
+        {weights.map(w=>(
+          <span key={w.label} style={{ background:`${w.color}20`, color:w.color, border:`1px solid ${w.color}35`, borderRadius:999, padding:'3px 9px', fontSize:10, fontWeight:700 }}>
+            {w.label} {w.pct}
+          </span>
+        ))}
+      </div>
+      <div style={{ fontSize:10, color:C.muted, marginTop:8 }}>
+        Weights auto-pulled from school system · teacher editable anytime in Settings
+      </div>
+    </Widget>
+  )
+}
+
+// ─── GRADEBOOK WIDGET ─────────────────────────────────────────────────────────
+function GradebookWidget({ navigate }) {
+  const { classes, setActiveClass } = useStore()
+  const [activeId, setActiveId] = useState(classes[0]?.id||1)
+  const cls = classes.find(c=>c.id===activeId)||classes[0]
+  const STUDENTS = [
+    { id:1, name:'Aaliyah Brooks',  grade:95, letter:'A', bar:C.green },
+    { id:2, name:'Marcus Thompson', grade:58, letter:'F', bar:C.red   },
+    { id:3, name:'Sofia Rodriguez', grade:82, letter:'B', bar:C.blue  },
+    { id:4, name:'Jordan Williams', grade:74, letter:'C', bar:C.amber },
+  ]
+
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#0a0f1e 0%,#060810 100%)', border:`1px solid ${C.blue}20` }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📚 Gradebook + Student Profile</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{cls?.students||24} students · Synced: PowerSchool ✓ · Tap student → full editable profile</div>
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('gradebook') }}
+          style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          Open →
+        </button>
+      </div>
+
+      {/* Class tabs */}
+      <div style={{ display:'flex', gap:6, marginBottom:12, overflowX:'auto' }}>
+        {classes.map(c=>(
+          <button key={c.id} onClick={e=>{ e.stopPropagation(); setActiveId(c.id) }}
+            style={{ padding:'5px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, whiteSpace:'nowrap', flexShrink:0,
+              background:activeId===c.id?c.color:C.inner, color:activeId===c.id?'#fff':C.muted }}>
+            {c.subject}
+          </button>
+        ))}
+      </div>
+
+      {/* Student list */}
+      {STUDENTS.map(s=>(
+        <div key={s.id} onClick={e=>{ e.stopPropagation(); navigate('gradebook') }}
+          style={{ display:'flex', alignItems:'center', gap:10, background:C.inner, borderRadius:10, padding:'9px 12px', marginBottom:6, cursor:'pointer' }}
+          onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
+          onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
+          <div style={{ flex:1 }}>
+            <div style={{ fontSize:12, fontWeight:600, color:C.text }}>{s.name}</div>
+            <div style={{ height:4, background:C.raised, borderRadius:2, marginTop:5, overflow:'hidden' }}>
+              <div style={{ height:'100%', width:`${s.grade}%`, background:s.bar, borderRadius:2 }}/>
+            </div>
+          </div>
+          <div style={{ textAlign:'right', flexShrink:0 }}>
+            <span style={{ fontSize:14, fontWeight:800, color:s.bar }}>{s.grade}%</span>
+            <span style={{ fontSize:11, color:s.bar, marginLeft:4, fontWeight:700 }}>{s.letter}</span>
+          </div>
+        </div>
+      ))}
+
+      {/* Action buttons */}
+      <div style={{ display:'flex', gap:8, marginTop:10, borderTop:`1px solid ${C.border}`, paddingTop:10 }}>
+        {[['✨ AI Insights',C.purple],['📊 Student Report',C.green],['📩 Message Parent',C.amber]].map(([l,c])=>(
+          <button key={l} onClick={e=>{ e.stopPropagation(); navigate(l.includes('Message')?'parentMessages':'gradebook') }}
+            style={{ flex:1, background:`${c}18`, color:c, border:`1px solid ${c}30`, borderRadius:9, padding:'7px 4px', fontSize:9, fontWeight:700, cursor:'pointer', textAlign:'center' }}>
+            {l}
+          </button>
+        ))}
+      </div>
+    </Widget>
+  )
+}
+
+// ─── SUB-PAGES ────────────────────────────────────────────────────────────────
 function RemindersPage({ onBack }) {
   const { reminders, addReminder, toggleReminder, deleteReminder } = useStore()
   const [text, setText] = useState('')
@@ -384,7 +721,6 @@ function RemindersPage({ onBack }) {
   )
 }
 
-// ─── NEEDS ATTENTION PAGE ─────────────────────────────────────────────────────
 function NeedsAttentionPage({ onBack }) {
   const { getNeedsAttention, setActiveStudent, setScreen } = useStore()
   const atRisk = getNeedsAttention()
@@ -421,7 +757,6 @@ function NeedsAttentionPage({ onBack }) {
   )
 }
 
-// ─── CLASSES PAGE ─────────────────────────────────────────────────────────────
 function ClassesPage({ onBack, navigate }) {
   const { classes, setActiveClass } = useStore()
   return (
@@ -433,9 +768,7 @@ function ClassesPage({ onBack, navigate }) {
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px' }}>
         {classes.map(cls=>(
           <button key={cls.id} onClick={()=>{ setActiveClass(cls); navigate('gradebook') }}
-            style={{ background:C.card, border:`1px solid ${C.border}`, borderLeft:`4px solid ${cls.color}`, borderRadius:16, padding:16, textAlign:'left', cursor:'pointer' }}
-            onMouseEnter={e=>(e.currentTarget.style.transform='scale(1.02)')}
-            onMouseLeave={e=>(e.currentTarget.style.transform='scale(1)')}>
+            style={{ background:C.card, border:`1px solid ${C.border}`, borderLeft:`4px solid ${cls.color}`, borderRadius:16, padding:16, textAlign:'left', cursor:'pointer' }}>
             <div style={{ fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>{cls.period} · {cls.subject}</div>
             <div style={{ fontSize:10, color:C.muted, marginBottom:10 }}>{cls.students} students</div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -450,40 +783,6 @@ function ClassesPage({ onBack, navigate }) {
   )
 }
 
-// ─── SETTINGS PAGE ────────────────────────────────────────────────────────────
-function SettingsPage({ onBack, navigate }) {
-  const items = [
-    { icon:'🔗', label:'Integrations',    sub:'Sync gradebooks, LMS, curriculum',  page:'integrations' },
-    { icon:'⚖',  label:'Grading Setup',   sub:'Category weights & grading method', page:'gradebook'    },
-    { icon:'📚', label:'Curriculum Links', sub:'Connect textbooks for auto-lessons',page:'integrations' },
-    { icon:'🎨', label:'School Branding',  sub:'Colors, logo, school name',         page:null           },
-    { icon:'🔔', label:'Notifications',   sub:'Alerts, emails, push settings',     page:null           },
-    { icon:'👤', label:'Account & Profile',sub:'Name, email, password',            page:null           },
-  ]
-  return (
-    <SubPage>
-      <div style={{ padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
-        <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-        <h1 style={{ fontSize:22, fontWeight:800, color:C.text, margin:0 }}>⚙ Settings</h1>
-      </div>
-      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:8 }}>
-        {items.map(item=>(
-          <button key={item.label} onClick={()=>item.page&&navigate(item.page)}
-            style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'14px 16px', textAlign:'left', cursor:item.page?'pointer':'default', opacity:item.page?1:0.5, display:'flex', alignItems:'center', gap:14 }}>
-            <span style={{ fontSize:24 }}>{item.icon}</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{item.label}</div>
-              <div style={{ fontSize:11, color:C.muted }}>{item.sub}</div>
-            </div>
-            {item.page ? <span style={{ color:C.muted, fontSize:18 }}>›</span> : <span style={{ background:C.inner, color:C.muted, fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:999 }}>Soon</span>}
-          </button>
-        ))}
-      </div>
-    </SubPage>
-  )
-}
-
-// ─── ALERTS PAGE ─────────────────────────────────────────────────────────────
 function AlertsPage({ onBack }) {
   const { messages, getNeedsAttention } = useStore()
   const pending = messages.filter(m=>m.status==='pending')
@@ -516,6 +815,38 @@ function AlertsPage({ onBack }) {
   )
 }
 
+function SettingsPage({ onBack, navigate }) {
+  const items = [
+    { icon:'🔗', label:'Integrations',    sub:'Sync gradebooks, LMS, curriculum',  page:'integrations' },
+    { icon:'⚖',  label:'Grading Setup',   sub:'Category weights & grading method', page:'gradebook'    },
+    { icon:'📚', label:'Curriculum Links', sub:'Connect textbooks for auto-lessons',page:'integrations' },
+    { icon:'🎨', label:'School Branding',  sub:'Colors, logo, school name',         page:null           },
+    { icon:'🔔', label:'Notifications',   sub:'Alerts, emails, push settings',     page:null           },
+    { icon:'👤', label:'Account & Profile',sub:'Name, email, password',            page:null           },
+  ]
+  return (
+    <SubPage>
+      <div style={{ padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
+        <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
+        <h1 style={{ fontSize:22, fontWeight:800, color:C.text, margin:0 }}>⚙ Settings</h1>
+      </div>
+      <div style={{ padding:'0 16px', display:'flex', flexDirection:'column', gap:8 }}>
+        {items.map(item=>(
+          <button key={item.label} onClick={()=>item.page&&navigate(item.page)}
+            style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'14px 16px', textAlign:'left', cursor:item.page?'pointer':'default', opacity:item.page?1:0.5, display:'flex', alignItems:'center', gap:14 }}>
+            <span style={{ fontSize:24 }}>{item.icon}</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:13, fontWeight:700, color:C.text }}>{item.label}</div>
+              <div style={{ fontSize:11, color:C.muted }}>{item.sub}</div>
+            </div>
+            {item.page ? <span style={{ color:C.muted, fontSize:18 }}>›</span> : <span style={{ background:C.inner, color:C.muted, fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:999 }}>Soon</span>}
+          </button>
+        ))}
+      </div>
+    </SubPage>
+  )
+}
+
 // ─── HOME FEED ────────────────────────────────────────────────────────────────
 function HomeFeed({ navigate }) {
   const store = useStore()
@@ -523,18 +854,17 @@ function HomeFeed({ navigate }) {
   const pending = messages.filter(m=>m.status==='pending')
   const atRisk  = getNeedsAttention()
 
-  // Daily overview: Classes · Messages · Lesson Plans · Alerts
   const overviewTiles = [
-    { icon:'📚', val:classes.length,      label:'Classes',      page:'classes',        color:C.blue   },
-    { icon:'💬', val:pending.length||'',  label:'Messages',     page:'parentMessages', color:C.purple },
-    { icon:'📋', val:'',                  label:'Lesson Plans', page:'lessonPlan',     color:C.teal   },
-    { icon:'🔔', val:atRisk.length||'',   label:'Alerts',       page:'alerts',         color:C.red    },
+    { icon:'📚', val:classes.length,    label:'Classes',      page:'classes',        color:C.blue   },
+    { icon:'💬', val:pending.length||'',label:'Messages',     page:'parentMessages', color:C.purple },
+    { icon:'📋', val:'',                label:'Lesson Plans', page:'lessonPlan',     color:C.teal   },
+    { icon:'🔔', val:atRisk.length||'', label:'Alerts',       page:'alerts',         color:C.red    },
   ]
 
   return (
     <div style={{ padding:'12px 12px 0' }}>
 
-      {/* W1: Daily Overview */}
+      {/* W1: Daily Overview — untouched */}
       <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
@@ -551,7 +881,7 @@ function HomeFeed({ navigate }) {
         </div>
       </Widget>
 
-      {/* W2: Today's Lessons */}
+      {/* W2: Today's Lessons — untouched */}
       <TodaysLessonsWidget navigate={navigate}/>
 
       {/* W3: My Classes */}
@@ -575,107 +905,34 @@ function HomeFeed({ navigate }) {
       </Widget>
 
       {/* W4: Needs Attention */}
-      {atRisk.length>0 && (
-        <Widget onClick={()=>navigate('attention')} style={{ border:`1px solid ${C.red}25` }} title="⚑ Needs Attention"
-          titleRight={<span style={{ background:`${C.red}18`, color:C.red, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999 }}>{atRisk.length}</span>}>
-          {atRisk.slice(0,3).map(s=>(
-            <div key={s.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', background:C.inner, borderRadius:10, padding:'10px 12px', marginBottom:6 }}>
-              <div>
-                <div style={{ fontSize:12, fontWeight:600, color:C.text }}>{s.name}</div>
-                <div style={{ fontSize:10, color:C.muted }}>{s.grade<70?`${s.grade}% — failing`:s.submitUngraded?'Ungraded work':'Flagged'}</div>
-              </div>
-              <span style={{ fontSize:13, fontWeight:800, color:C.red }}>{s.grade}%</span>
-            </div>
-          ))}
-          {atRisk.length>3 && <div style={{ fontSize:11, color:C.muted, textAlign:'center', marginTop:4 }}>+{atRisk.length-3} more students</div>}
-        </Widget>
-      )}
+      <NeedsAttentionWidget atRisk={atRisk} navigate={navigate}/>
 
-      {/* W5: Parent Messages */}
-      <ParentMessagesWidget navigate={navigate}/>
+      {/* W5: Messages (admin-style widget) */}
+      <MessagesWidget navigate={navigate}/>
 
       {/* W6: Reports */}
-      <Widget onClick={()=>navigate('reports')} style={{ background:'linear-gradient(135deg,#0a1628 0%,#060810 100%)', border:'1px solid #1a2a40' }}
-        title="📈 Reports" titleRight={<ActionBtn label="View All →" color={C.blue} onClick={()=>navigate('reports')}/>}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
-          {[
-            { label:'Class Mastery', val:'87%',  icon:'🏆', color:C.green },
-            { label:'At Risk',       val:atRisk.length, icon:'⚑', color:C.red },
-            { label:'Avg GPA',       val:(classes.reduce((s,c)=>s+c.gpa,0)/classes.length).toFixed(1), icon:'📊', color:C.blue },
-          ].map(stat=>(
-            <div key={stat.label} style={{ background:C.inner, borderRadius:12, padding:'12px 10px', textAlign:'center' }}>
-              <div style={{ fontSize:18, marginBottom:4 }}>{stat.icon}</div>
-              <div style={{ fontSize:18, fontWeight:900, color:stat.color }}>{stat.val}</div>
-              <div style={{ fontSize:9, color:C.muted, marginTop:2 }}>{stat.label}</div>
-            </div>
-          ))}
-        </div>
-      </Widget>
+      <ReportsWidget navigate={navigate}/>
 
-      {/* W7: Testing Suite */}
-      <Widget onClick={()=>navigate('testingSuite')} style={{ background:'linear-gradient(135deg,#0d0a1e 0%,#060810 100%)', border:`1px solid ${C.purple}25` }}
-        title="🧪 Testing Suite" titleRight={<ActionBtn label="Create Test →" color={C.purple} onClick={()=>navigate('testingSuite')}/>}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
-          {[
-            { icon:'🔒', label:'Lockdown',   sub:'External URL',     color:C.blue   },
-            { icon:'🏗',  label:'Builder',    sub:'MC · T/F · Essay', color:C.green  },
-            { icon:'📄', label:'File Import', sub:'AI digitizes',     color:C.purple },
-          ].map(mode=>(
-            <button key={mode.label} onClick={e=>{ e.stopPropagation(); navigate('testingSuite') }}
-              style={{ background:`${mode.color}12`, border:`1px solid ${mode.color}25`, borderRadius:12, padding:'10px 6px', cursor:'pointer', textAlign:'center' }}>
-              <div style={{ fontSize:20, marginBottom:4 }}>{mode.icon}</div>
-              <div style={{ fontSize:10, fontWeight:700, color:mode.color }}>{mode.label}</div>
-              <div style={{ fontSize:9, color:C.muted, marginTop:2 }}>{mode.sub}</div>
-            </button>
-          ))}
-        </div>
-      </Widget>
+      {/* W7: Grading */}
+      <GradingWidget navigate={navigate}/>
 
-      {/* W8: Lesson Plans */}
-      <Widget onClick={()=>navigate('lessonPlan')} style={{ background:'linear-gradient(135deg,#071a30 0%,#060810 100%)', border:`1px solid ${C.teal}25` }}
-        title="📋 Lesson Plans" titleRight={<ActionBtn label="View All →" color={C.teal} onClick={()=>navigate('lessonPlan')}/>}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
-          {[
-            { icon:'✨', label:'AI Generate', sub:'From TEKS/standard', color:C.purple },
-            { icon:'📝', label:'Build',       sub:'From scratch',       color:C.teal   },
-            { icon:'📤', label:'Upload',      sub:'PDF · CSV · Word',   color:C.blue   },
-          ].map(mode=>(
-            <button key={mode.label} onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
-              style={{ background:`${mode.color}12`, border:`1px solid ${mode.color}25`, borderRadius:12, padding:'10px 6px', cursor:'pointer', textAlign:'center' }}>
-              <div style={{ fontSize:20, marginBottom:4 }}>{mode.icon}</div>
-              <div style={{ fontSize:10, fontWeight:700, color:mode.color }}>{mode.label}</div>
-              <div style={{ fontSize:9, color:C.muted, marginTop:2 }}>{mode.sub}</div>
-            </button>
-          ))}
-        </div>
-      </Widget>
+      {/* W8: Lesson Plan Builder */}
+      <LessonPlanWidget navigate={navigate}/>
 
-      {/* W9: Reminders */}
-      <Widget onClick={()=>navigate('reminders')} title="🔔 Reminders" titleRight={<ActionBtn label="+ Add" color={C.amber} onClick={()=>navigate('reminders')}/>}>
-        {reminders.filter(r=>!r.done).slice(0,3).map(r=>(
-          <div key={r.id} style={{ display:'flex', alignItems:'center', gap:10, background:C.inner, borderRadius:10, padding:'9px 12px', marginBottom:6 }}>
-            <div style={{ width:6, height:6, borderRadius:'50%', background:r.priority==='high'?C.red:r.priority==='medium'?C.amber:C.muted, flexShrink:0 }}/>
-            <div style={{ flex:1, fontSize:12, color:C.text }}>{r.text}</div>
-            <div style={{ fontSize:10, color:C.muted }}>{r.due}</div>
-          </div>
-        ))}
-        {reminders.filter(r=>!r.done).length===0 && <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:'8px 0' }}>All caught up! 🎉</div>}
-      </Widget>
+      {/* W9: Sketch & Annotate */}
+      <SketchAnnotateWidget navigate={navigate}/>
 
-      {/* W10: Integrations */}
-      <Widget onClick={()=>navigate('integrations')} style={{ background:'linear-gradient(135deg,#0a0f1e 0%,#060810 100%)', border:`1px solid ${C.teal}20` }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          <span style={{ fontSize:28 }}>🔗</span>
-          <div style={{ flex:1 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.teal, marginBottom:2 }}>Sync your tools</div>
-            <div style={{ fontSize:11, color:C.muted }}>Connect PowerSchool, Google Classroom, Canvas & more</div>
-          </div>
-          <span style={{ color:C.teal, fontSize:18 }}>›</span>
-        </div>
-      </Widget>
+      {/* W10: Testing Suite */}
+      <TestingSuiteWidget navigate={navigate}/>
 
-      {/* Add Widgets */}
-      <AddWidgetsBar/>
+      {/* W11: Scan Grade Sheet */}
+      <ScanGradeSheetWidget navigate={navigate}/>
+
+      {/* W12: Gradebook + Student Profile */}
+      <GradebookWidget navigate={navigate}/>
+
+      {/* Edit Mode Bar */}
+      <EditModeBar/>
     </div>
   )
 }
@@ -689,7 +946,6 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   const [activeNav, setActiveNav] = useState('dashboard')
 
   useEffect(()=>{ applyTheme('kipp'); scrollTop() },[])
-
   useEffect(()=>{ if(activeScreen==='studentProfile') setSubPage('studentProfile') },[activeScreen])
 
   function goHome() { setSubPage(null); setActiveNav('dashboard'); store.setScreen('dashboard'); scrollTop() }
@@ -719,18 +975,18 @@ export default function Dashboard({ currentUser, onCameraClick }) {
 
   if(subPage==='gradebook')      return withNav(<SubPage><Gradebook      onBack={goHome}/></SubPage>)
   if(subPage==='lessonPlan')     return withNav(<SubPage><LessonPlan     initialMode="view" classId={activeLessonClassId} onBack={goHome}/></SubPage>)
-  if(subPage==='parentMessages') return withNav(<SubPage><ParentMessages onBack={goHome}/></SubPage>)
+  if(subPage==='parentMessages') return withNav(<SubPage><ParentMessages onBack={goHome} viewerRole="teacher"/></SubPage>)
   if(subPage==='reports')        return withNav(<SubPage><Reports        onBack={goHome}/></SubPage>)
   if(subPage==='testingSuite')   return withNav(<SubPage><TestingSuite   onBack={goHome}/></SubPage>)
   if(subPage==='classFeed')      return withNav(<SubPage><ClassFeed      onBack={goHome} viewerRole="teacher"/></SubPage>)
   if(subPage==='studentProfile') return withNav(<SubPage><StudentProfile onBack={goHome}/></SubPage>)
   if(subPage==='camera')         return withNav(<SubPage><Camera         onBack={goHome}/></SubPage>)
   if(subPage==='integrations')   return withNav(<SubPage><Integrations   onBack={goHome}/></SubPage>)
-  if(subPage==='reminders')      return withNav(<RemindersPage     onBack={goHome}/>)
-  if(subPage==='attention')      return withNav(<NeedsAttentionPage onBack={goHome}/>)
-  if(subPage==='alerts')         return withNav(<AlertsPage        onBack={goHome}/>)
-  if(subPage==='classes')        return withNav(<ClassesPage  onBack={goHome} navigate={navigate}/>)
-  if(subPage==='settings')       return withNav(<SettingsPage onBack={goHome} navigate={navigate}/>)
+  if(subPage==='reminders')      return withNav(<RemindersPage      onBack={goHome}/>)
+  if(subPage==='attention')      return withNav(<NeedsAttentionPage  onBack={goHome}/>)
+  if(subPage==='alerts')         return withNav(<AlertsPage          onBack={goHome}/>)
+  if(subPage==='classes')        return withNav(<ClassesPage   onBack={goHome} navigate={navigate}/>)
+  if(subPage==='settings')       return withNav(<SettingsPage  onBack={goHome} navigate={navigate}/>)
 
   return withNav(
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
