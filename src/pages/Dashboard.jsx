@@ -92,14 +92,14 @@ function BottomNav({ active, onSelect, isSubPage }) {
     { id:'gradebook',      icon:'📊', label:'Grades'   },
     { id:'parentMessages', icon:'💬', label:'Messages' },
     { id:'dashboard',      icon:'🏠', label:'Home'     },
-    { id:'feed',           icon:'📢', label:'Feed'     },
+    { id:'lessonPlan',     icon:'📋', label:'Lessons'  },
     { id:'alerts',         icon:'🔔', label:'Alerts'   },
   ]
   const subItems = [
     { id:'__back__',       icon:'←',  label:'Back'     },
     { id:'gradebook',      icon:'📊', label:'Grades'   },
     { id:'parentMessages', icon:'💬', label:'Messages' },
-    { id:'feed',           icon:'📢', label:'Feed'     },
+    { id:'lessonPlan',     icon:'📋', label:'Lessons'  },
     { id:'alerts',         icon:'🔔', label:'Alerts'   },
   ]
   const items = isSubPage ? subItems : homeItems
