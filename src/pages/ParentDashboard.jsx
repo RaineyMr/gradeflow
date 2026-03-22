@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
+import ClassFeed from './ClassFeed'
 
-// ─── HISD Theme — IDENTICAL to StudentDashboard ──────────────────────────────
 const T = {
   primary:   '#003057',
   secondary: '#B3A369',
@@ -19,25 +19,23 @@ const T = {
   teal:      '#0fb8a0',
   purple:    '#9b6ef5',
   header:    'linear-gradient(135deg, #003057 0%, #001830 100%)',
-  navActive: '#B3A369',
 }
 
-// ─── Demo data ────────────────────────────────────────────────────────────────
 const CHILD = {
-  name: 'Marcus', fullName: 'Marcus Thompson',
-  grade: '3rd Grade', school: 'Houston ISD · Lincoln Elementary',
-  gpa: 87.4,
-  classes: [
+  name:'Marcus', fullName:'Marcus Thompson',
+  grade:'3rd Grade', school:'Houston ISD · Lincoln Elementary',
+  gpa:87.4,
+  classes:[
     { id:1, subject:'Math',    teacher:'Ms. Johnson', grade:87, letter:'B', period:'1st', color:'#3b7ef4' },
     { id:2, subject:'Reading', teacher:'Ms. Davis',   grade:95, letter:'A', period:'2nd', color:'#22c97a' },
     { id:3, subject:'Science', teacher:'Mr. Lee',     grade:61, letter:'D', period:'3rd', color:'#f04a4a' },
     { id:4, subject:'Writing', teacher:'Ms. Clark',   grade:88, letter:'B', period:'4th', color:'#f54a7a' },
   ],
-  alerts: [
+  alerts:[
     { id:1, msg:"Marcus's Science grade is 61% — below passing", color:'#f04a4a', icon:'⚑' },
     { id:2, msg:"2 assignments due this week for Marcus",         color:'#f5a623', icon:'📋' },
   ],
-  assignments: [
+  assignments:[
     { id:1, name:'Ch.4 Worksheet', subject:'Math',   due:'Today',    status:'pending'   },
     { id:2, name:'Book Report',    subject:'Reading', due:'Tomorrow', status:'pending'   },
     { id:3, name:'Lab Report',     subject:'Science', due:'Friday',   status:'submitted' },
@@ -45,26 +43,20 @@ const CHILD = {
 }
 
 const INITIAL_THREADS = [
-  {
-    id:1, from:'Ms. Johnson', subject:'Math · Private', avatar:'👩‍🏫', unread:true, private:true,
+  { id:1, from:'Ms. Johnson', subject:'Math · Private', avatar:'👩‍🏫', unread:true, private:true,
     messages:[
       { id:1, sender:'Ms. Johnson', text:"Hi Ms. Thompson, I wanted to reach out about Marcus's recent progress.", time:'1 hr ago', isMe:false },
       { id:2, sender:'Me',          text:"Thank you for reaching out. I'll work with him on Science at home.", time:'45 min ago', isMe:true },
       { id:3, sender:'Ms. Johnson', text:"That would be great! He has a test on Friday — chapters 3 & 4.", time:'30 min ago', isMe:false },
-    ],
-  },
-  {
-    id:2, from:'Mr. Lee', subject:'Science · Private', avatar:'🧑‍🔬', unread:false, private:true,
-    messages:[{ id:1, sender:'Mr. Lee', text:"Hi Ms. Thompson, Marcus's Science grade has dropped. I recommend additional practice this week.", time:'Yesterday', isMe:false }],
-  },
-  {
-    id:3, from:'Marcus', subject:"Student View — Marcus's Messages", avatar:'🎒', unread:false, private:false, readOnly:true,
+    ]},
+  { id:2, from:'Mr. Lee', subject:'Science · Private', avatar:'🧑‍🔬', unread:false, private:true,
+    messages:[{ id:1, sender:'Mr. Lee', text:"Hi Ms. Thompson, Marcus's Science grade has dropped.", time:'Yesterday', isMe:false }]},
+  { id:3, from:'Marcus', subject:"Student View — Marcus's Messages", avatar:'🎒', unread:false, private:false, readOnly:true,
     messages:[
       { id:1, sender:'Ms. Johnson', text:"Great work on yesterday's quiz, Marcus!", time:'1 hr ago', isMe:false },
       { id:2, sender:'Marcus',      text:"Thank you, Ms. Johnson! I studied really hard.", time:'45 min ago', isMe:false },
       { id:3, sender:'Ms. Johnson', text:"Don't forget the worksheet due Friday!", time:'30 min ago', isMe:false },
-    ],
-  },
+    ]},
 ]
 
 const CONTACTS = [
@@ -75,7 +67,6 @@ const CONTACTS = [
   { name:'Principal',   role:'Administration',  avatar:'🏫'  },
 ]
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 function gradeColor(g) { return g>=90?T.green:g>=80?T.blue:g>=70?T.amber:T.red }
 
 function Widget({ onClick, children, style={} }) {
@@ -90,31 +81,40 @@ function Widget({ onClick, children, style={} }) {
 
 function Btn({ label, color, onClick, style={} }) {
   return (
-    <button onClick={e=>{e.stopPropagation();onClick?.()}}
+    <button onClick={e=>{ e.stopPropagation(); onClick?.() }}
       style={{ background:`${color}22`, color, border:`1px solid ${color}40`, borderRadius:10, padding:'7px 13px', fontSize:11, fontWeight:700, cursor:'pointer', ...style }}>
       {label}
     </button>
   )
 }
 
-// ─── Bottom nav ───────────────────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { id:'home',    icon:'🏠',  label:'Home'     },
-  { id:'grades',  icon:'📊', label:'Grades'   },
-  { id:'feed',    icon:'📢', label:'Feed'     },
-  { id:'messages',icon:'💬', label:'Messages' },
-  { id:'settings',icon:'⚙',  label:'Settings' },
-]
-
-function BottomNav({ active, onSelect }) {
+// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
+// Home: Grades · Messages · 🏠 Home (center) · Feed · 🔔 Alerts
+// Sub:  ← Back · Grades · Messages · Feed · 🔔 Alerts
+function BottomNav({ active, onSelect, isSubPage }) {
+  const homeItems = [
+    { id:'grades',   icon:'📊', label:'Grades'   },
+    { id:'messages', icon:'💬', label:'Messages' },
+    { id:'home',     icon:'🏠', label:'Home'     },
+    { id:'feed',     icon:'📢', label:'Feed'     },
+    { id:'alerts',   icon:'🔔', label:'Alerts'   },
+  ]
+  const subItems = [
+    { id:'__back__', icon:'←',  label:'Back'     },
+    { id:'grades',   icon:'📊', label:'Grades'   },
+    { id:'messages', icon:'💬', label:'Messages' },
+    { id:'feed',     icon:'📢', label:'Feed'     },
+    { id:'alerts',   icon:'🔔', label:'Alerts'   },
+  ]
+  const items = isSubPage ? subItems : homeItems
   return (
-    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'rgba(0,13,31,0.97)', backdropFilter:'blur(20px)', borderTop:`1px solid ${T.border}`, padding:'8px 0 max(14px,env(safe-area-inset-bottom))', display:'grid', gridTemplateColumns:`repeat(${NAV_ITEMS.length},1fr)` }}>
-      {NAV_ITEMS.map(item=>{
-        const isActive = item.id===active
+    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'rgba(0,13,31,0.97)', backdropFilter:'blur(20px)', borderTop:`1px solid ${T.border}`, padding:'8px 0 max(14px,env(safe-area-inset-bottom))', display:'grid', gridTemplateColumns:`repeat(${items.length},1fr)` }}>
+      {items.map(item=>{
+        const isActive = item.id===active && item.id!=='__back__'
         return (
           <button key={item.id} onClick={()=>onSelect(item.id)}
             style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'5px 2px', position:'relative' }}>
-            <span style={{ fontSize:18, transition:'transform 0.15s', transform:isActive?'scale(1.15)':'scale(1)' }}>{item.icon}</span>
+            <span style={{ fontSize:item.id==='__back__'?20:18, transition:'transform 0.15s', transform:isActive?'scale(1.15)':'scale(1)', color:item.id==='__back__'?T.soft:'inherit' }}>{item.icon}</span>
             <span style={{ fontSize:9, fontWeight:isActive?700:400, color:isActive?T.secondary:T.muted }}>{item.label}</span>
             {isActive && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:2, background:T.secondary, borderRadius:1 }}/>}
           </button>
@@ -124,20 +124,59 @@ function BottomNav({ active, onSelect }) {
   )
 }
 
-// ─── FULL MESSAGES PAGE (Parent version) ─────────────────────────────────────
+// ─── ADD WIDGETS BAR ──────────────────────────────────────────────────────────
+function AddWidgetsBar() {
+  const [open, setOpen] = useState(false)
+  const WIDGETS = [
+    { icon:'📊', name:'Daily Overview'   }, { icon:'📖', name:"Today's Lessons" },
+    { icon:'📚', name:"Marcus's Classes" }, { icon:'⚑',  name:'Needs Attention' },
+    { icon:'💬', name:'Messages'         }, { icon:'📢', name:'Class Feed'       },
+    { icon:'✨', name:'AI Tips'          }, { icon:'📅', name:'Calendar'         },
+  ]
+  return (
+    <div style={{ margin:'8px 12px 0', marginBottom:open?12:24 }}>
+      {open ? (
+        <div style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:20, padding:16 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+            <div style={{ fontSize:13, fontWeight:700, color:T.text }}>＋ Widget Library</div>
+            <button onClick={()=>setOpen(false)} style={{ background:T.inner, border:'none', borderRadius:8, padding:'5px 10px', color:T.muted, cursor:'pointer', fontSize:13 }}>✕</button>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+            {WIDGETS.map(w=>(
+              <button key={w.name} style={{ background:T.inner, border:`1px solid ${T.border}`, borderRadius:12, padding:'10px 6px', cursor:'pointer', textAlign:'center' }}
+                onMouseEnter={e=>(e.currentTarget.style.borderColor=T.secondary)}
+                onMouseLeave={e=>(e.currentTarget.style.borderColor=T.border)}>
+                <div style={{ fontSize:20, marginBottom:4 }}>{w.icon}</div>
+                <div style={{ fontSize:9, color:T.muted, fontWeight:600 }}>{w.name}</div>
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize:10, color:T.muted, textAlign:'center', marginTop:12 }}>Drag · Resize · Save to account</div>
+        </div>
+      ) : (
+        <button onClick={()=>setOpen(true)}
+          style={{ width:'100%', background:T.inner, border:`1px dashed ${T.border}`, borderRadius:14, padding:'10px', color:T.muted, cursor:'pointer', fontSize:12, fontWeight:600 }}>
+          ＋ Add Widgets
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── MESSAGES PAGE ────────────────────────────────────────────────────────────
 function MessagesPage({ onBack }) {
   const [threads, setThreads]               = useState(INITIAL_THREADS)
   const [selectedThread, setSelectedThread] = useState(null)
   const [reply, setReply]                   = useState('')
-  const [showNewRecipient, setShowNewRecipient] = useState(false)
-  const [newEmail, setNewEmail] = useState('')
-  const [newName, setNewName]   = useState('')
+  const [showNew, setShowNew]               = useState(false)
+  const [newEmail, setNewEmail]             = useState('')
+  const [newName, setNewName]               = useState('')
   const bottomRef = useRef(null)
 
   useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) },[selectedThread])
 
   function sendReply() {
-    if (!reply.trim() || !selectedThread) return
+    if(!reply.trim()||!selectedThread) return
     const msg = { id:Date.now(), sender:'Me', text:reply.trim(), time:'Just now', isMe:true }
     setThreads(ts=>ts.map(t=>t.id===selectedThread.id ? { ...t, messages:[...t.messages,msg] } : t))
     setSelectedThread(t=>({ ...t, messages:[...t.messages,msg] }))
@@ -145,23 +184,20 @@ function MessagesPage({ onBack }) {
   }
 
   function startThread(contact) {
-    const exists = threads.find(t=>t.from===contact.name && t.private)
-    if (exists) { setSelectedThread(exists); setShowNewRecipient(false); return }
+    const exists = threads.find(t=>t.from===contact.name&&t.private)
+    if(exists) { setSelectedThread(exists); setShowNew(false); return }
     const t = { id:Date.now(), from:contact.name, subject:`${contact.role} · Private`, avatar:contact.avatar, unread:false, private:true, messages:[] }
-    setThreads(ts=>[...ts,t])
-    setSelectedThread(t)
-    setShowNewRecipient(false)
+    setThreads(ts=>[...ts,t]); setSelectedThread(t); setShowNew(false)
   }
 
   function addByEmail() {
-    if (!newEmail.trim()) return
+    if(!newEmail.trim()) return
     const t = { id:Date.now(), from:newName||newEmail, subject:'New Conversation', avatar:'📧', unread:false, private:true, messages:[] }
-    setThreads(ts=>[...ts,t])
-    setSelectedThread(t)
-    setNewEmail(''); setNewName(''); setShowNewRecipient(false)
+    setThreads(ts=>[...ts,t]); setSelectedThread(t)
+    setNewEmail(''); setNewName(''); setShowNew(false)
   }
 
-  if (selectedThread) {
+  if(selectedThread) {
     const thread = threads.find(t=>t.id===selectedThread.id)||selectedThread
     const isReadOnly = thread.readOnly
     return (
@@ -186,12 +222,7 @@ function MessagesPage({ onBack }) {
           </div>
         )}
         <div style={{ flex:1, padding:'16px 16px 120px', overflowY:'auto' }}>
-          {thread.messages.length===0 && (
-            <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}>
-              <div style={{ fontSize:32, marginBottom:8 }}>💬</div>
-              <div style={{ fontSize:13 }}>Start the conversation</div>
-            </div>
-          )}
+          {thread.messages.length===0 && <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}><div style={{ fontSize:32, marginBottom:8 }}>💬</div><div style={{ fontSize:13 }}>Start the conversation</div></div>}
           {thread.messages.map(msg=>(
             <div key={msg.id} style={{ display:'flex', justifyContent:msg.isMe?'flex-end':'flex-start', marginBottom:12 }}>
               {!msg.isMe && <div style={{ width:30, height:30, borderRadius:'50%', background:T.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, marginRight:8, flexShrink:0 }}>{thread.avatar}</div>}
@@ -206,9 +237,7 @@ function MessagesPage({ onBack }) {
         </div>
         {!isReadOnly && (
           <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:`${T.bg}f0`, backdropFilter:'blur(16px)', borderTop:`1px solid ${T.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
-            <textarea value={reply} onChange={e=>setReply(e.target.value)}
-              onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}}
-              placeholder="Reply to teacher..." rows={1}
+            <textarea value={reply} onChange={e=>setReply(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}} placeholder="Reply to teacher..." rows={1}
               style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}/>
             <button onClick={sendReply} disabled={!reply.trim()}
               style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0 }}>Send</button>
@@ -226,11 +255,10 @@ function MessagesPage({ onBack }) {
             <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
             <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
           </div>
-          <button onClick={()=>setShowNewRecipient(true)}
-            style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>+ New</button>
+          <button onClick={()=>setShowNew(true)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>+ New</button>
         </div>
       </div>
-      {showNewRecipient && (
+      {showNew && (
         <div style={{ margin:'12px 16px', background:T.card, border:`1px solid ${T.secondary}40`, borderRadius:18, padding:16 }}>
           <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Message a teacher</div>
           <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
@@ -255,7 +283,7 @@ function MessagesPage({ onBack }) {
               <button onClick={addByEmail} style={{ background:T.secondary, color:T.primary, border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
             </div>
           </div>
-          <button onClick={()=>setShowNewRecipient(false)} style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
+          <button onClick={()=>setShowNew(false)} style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
         </div>
       )}
       <div style={{ padding:'12px 16px 4px' }}>
@@ -305,7 +333,7 @@ function MessagesPage({ onBack }) {
   )
 }
 
-// ─── Grades page ──────────────────────────────────────────────────────────────
+// ─── GRADES PAGE ──────────────────────────────────────────────────────────────
 function GradesPage({ onBack }) {
   return (
     <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
@@ -333,7 +361,7 @@ function GradesPage({ onBack }) {
   )
 }
 
-// ─── Alerts page ──────────────────────────────────────────────────────────────
+// ─── ALERTS PAGE ──────────────────────────────────────────────────────────────
 function AlertsPage({ onBack }) {
   return (
     <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
@@ -353,31 +381,29 @@ function AlertsPage({ onBack }) {
   )
 }
 
-// ─── Home page ────────────────────────────────────────────────────────────────
+// ─── HOME PAGE ────────────────────────────────────────────────────────────────
 function HomePage({ navigate, childName }) {
-  const unreadCount      = INITIAL_THREADS.filter(t=>t.unread&&t.private).length
-  const pendingCount     = CHILD.assignments.filter(a=>a.status==='pending').length
+  const unreadCount  = INITIAL_THREADS.filter(t=>t.unread&&t.private).length
+  const pendingCount = CHILD.assignments.filter(a=>a.status==='pending').length
 
-  // ── Parent Daily Overview: GPA · Messages · Assignments · Alerts ─────────
-  // No Scan tile — scan is not relevant for parents
   const overviewTiles = [
-    { icon:'📊', val:CHILD.gpa,          label:'GPA',         page:'grades',   color:T.secondary },
-    { icon:'💬', val:unreadCount||'',    label:'Messages',    page:'messages', color:T.purple    },
-    { icon:'📋', val:pendingCount||'',   label:'Assignments', page:'grades',   color:T.teal      },
-    { icon:'🔔', val:CHILD.alerts.length||'', label:'Alerts', page:'alerts',  color:T.red       },
+    { icon:'📊', val:CHILD.gpa,               label:'GPA',         page:'grades',   color:T.secondary },
+    { icon:'💬', val:unreadCount||'',          label:'Messages',    page:'messages', color:T.purple    },
+    { icon:'📋', val:pendingCount||'',         label:'Assignments', page:'grades',   color:T.teal      },
+    { icon:'🔔', val:CHILD.alerts.length||'',  label:'Alerts',      page:'alerts',   color:T.red       },
   ]
 
   return (
     <div style={{ padding:'12px 12px 0' }}>
 
-      {/* W1: Daily Overview — GPA · Messages · Assignments · Alerts */}
+      {/* W1: Daily Overview */}
       <Widget style={{ background:`linear-gradient(135deg,${T.primary} 0%,#001020 100%)`, border:'none' }}>
         <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>
           {childName.toUpperCase()}'S DAILY OVERVIEW
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
           {overviewTiles.map(tile=>(
-            <button key={tile.label} onClick={e=>{e.stopPropagation();navigate(tile.page)}}
+            <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
               style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'12px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
               <span style={{ fontSize:18 }}>{tile.icon}</span>
               {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
@@ -414,7 +440,7 @@ function HomePage({ navigate, childName }) {
         <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>📚 {childName}'s Classes</div>
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
           {CHILD.classes.map(c=>(
-            <button key={c.id} onClick={e=>{e.stopPropagation();navigate('grades')}}
+            <button key={c.id} onClick={e=>{ e.stopPropagation(); navigate('grades') }}
               style={{ background:T.inner, borderLeft:`3px solid ${c.color}`, borderRadius:12, padding:'10px 12px', border:'none', cursor:'pointer', textAlign:'left' }}>
               <div style={{ fontWeight:700, fontSize:12, color:T.text, marginBottom:2 }}>{c.subject}</div>
               <div style={{ fontSize:10, color:T.muted, marginBottom:6 }}>{c.teacher}</div>
@@ -449,6 +475,8 @@ function HomePage({ navigate, childName }) {
         <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:4 }}>Science needs focus!</div>
         <div style={{ fontSize:11, color:T.muted }}>10 min flashcards tonight · same strategy that boosted Reading +8pts</div>
       </Widget>
+
+      <AddWidgetsBar/>
     </div>
   )
 }
@@ -464,24 +492,32 @@ export default function ParentDashboard({ currentUser }) {
 
   function navigate(id) {
     setPage(id)
-    if(NAV_ITEMS.find(n=>n.id===id)) setActiveNav(id)
+    if(['home','grades','messages','feed','alerts'].includes(id)) setActiveNav(id)
     window.scrollTo(0,0)
   }
 
   function goHome() { navigate('home'); setActiveNav('home') }
 
-  if (page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navigate}/></>
-  if (page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages'   onSelect={navigate}/></>
-  if (page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navigate}/></>
+  const isSubPage = page !== 'home'
 
-  const now = new Date()
+  function navSelect(id) {
+    if(id==='__back__') { goHome(); return }
+    navigate(id)
+    setActiveNav(id)
+  }
+
+  if(page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages'   onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='feed')     return <><ClassFeed    onBack={goHome} viewerRole="parent"/><BottomNav active='feed' onSelect={navSelect} isSubPage={isSubPage}/></>
+
+  const now  = new Date()
   const hour = now.getHours()
   const greeting = hour<12?'Good morning':'Good afternoon'
 
   return (
     <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
-
-      {/* Sticky header — greeting only, no duplicate buttons */}
+      {/* Sticky header — greeting only, no camera/hamburger (App.jsx owns those) */}
       <div style={{ position:'sticky', top:0, zIndex:100, background:T.header, padding:'14px 16px', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ fontSize:10, color:'rgba(255,255,255,0.55)', fontWeight:700, letterSpacing:'0.06em', marginBottom:2 }}>HOUSTON ISD · LINCOLN ELEMENTARY</div>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
@@ -489,7 +525,6 @@ export default function ParentDashboard({ currentUser }) {
             <div style={{ fontSize:17, fontWeight:800, color:'#fff' }}>{greeting}, {parentName} 👋</div>
             <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)' }}>Viewing: {childName} · {CHILD.grade}</div>
           </div>
-          {/* Unread badge only — no duplicate messages button */}
           {INITIAL_THREADS.some(t=>t.unread&&t.private) && (
             <button onClick={()=>navigate('messages')}
               style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, width:36, height:36, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:16, position:'relative' }}>
@@ -499,9 +534,8 @@ export default function ParentDashboard({ currentUser }) {
           )}
         </div>
       </div>
-
       <HomePage navigate={navigate} childName={childName}/>
-      <BottomNav active={activeNav} onSelect={navigate}/>
+      <BottomNav active={activeNav} onSelect={navSelect} isSubPage={false}/>
     </div>
   )
 }
