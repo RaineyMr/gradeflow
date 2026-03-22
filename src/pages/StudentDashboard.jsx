@@ -493,11 +493,12 @@ export default function StudentDashboard({ currentUser }) {
 
   function navSelect(id) {
     if(id==='__back__') { goBack(); return }
+    if(id==='home') { goHome(); return }
     navigate(id)
     setActiveNav(id)
   }
 
-  const isSubPage = page !== 'home' || activeThread !== null
+  const isSubPage = page !== 'home'
 
   // Thread opened from home widget
   if (activeThread) {
