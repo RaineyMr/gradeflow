@@ -324,7 +324,7 @@ function ThreadView({ thread, onBack, senderName }) {
       )}
 
       {/* Messages */}
-      <div style={{ flex:1, padding:'16px 16px 110px', overflowY:'auto' }}>
+      <div style={{ flex:1, padding:'16px 16px 140px', overflowY:'auto' }}>
         {msgs.length===0 && (
           <div style={{ textAlign:'center', padding:'50px 0', color:C.muted }}>
             <div style={{ fontSize:36, marginBottom:10 }}>💬</div>
@@ -346,9 +346,9 @@ function ThreadView({ thread, onBack, senderName }) {
         <div ref={bottom}/>
       </div>
 
-      {/* Reply bar — all roles except read-only parent student-view */}
+      {/* Reply bar — sits above bottom nav at bottom:72px, never hidden */}
       {!isRO && (
-        <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'11px 15px max(14px,env(safe-area-inset-bottom))', background:`${C.bg}f2`, backdropFilter:'blur(14px)', borderTop:`1px solid ${C.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
+        <div style={{ position:'fixed', bottom:72, left:0, right:0, padding:'11px 15px', background:`${C.bg}f5`, backdropFilter:'blur(16px)', borderTop:`1px solid ${C.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:150 }}>
           <textarea value={reply} onChange={e=>setReply(e.target.value)}
             onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send() }}}
             placeholder="Reply..." rows={1}
@@ -554,7 +554,7 @@ export default function ParentMessages({ onBack, viewerRole='teacher' }) {
               onMouseEnter={e=>(e.currentTarget.style.background=C.raised)} onMouseLeave={e=>(e.currentTarget.style.background=t.unread||isPending?C.inner:C.card)}>
 
               {/* Avatar */}
-              <div style={{ position:'relative', flexShrink:0 }} onClick={()=>setActive(t)} style={{ cursor:'pointer', position:'relative', flexShrink:0 }}>
+              <div style={{ cursor:'pointer', position:'relative', flexShrink:0 }} onClick={()=>setActive(t)}>
                 <Av emoji={t.avatar} size={42}/>
                 {t.unread && <div style={{ position:'absolute', top:-1, right:-1, width:10, height:10, borderRadius:'50%', background:C.red, border:`2px solid ${C.bg}` }}/>}
               </div>
