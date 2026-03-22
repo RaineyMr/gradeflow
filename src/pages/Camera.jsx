@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useStore } from '../lib/store'
 
 const INTENTS = [
-  { id: 'grade',             icon: '📝', label: 'Grade Student Work',    desc: 'Capture a paper — AI reads & grades it',              roles: ['teacher', 'admin'] },
-  { id: 'upload-answer-key', icon: '🔑', label: 'Upload Answer Key',     desc: 'Photo, file, or spreadsheet of the answer key',       roles: ['teacher', 'admin'] },
-  { id: 'upload-assignment', icon: '📋', label: 'Upload Assignment',     desc: 'Digitize a worksheet, PDF, or CSV assignment',        roles: ['teacher', 'admin', 'student'] },
-  { id: 'upload-roster',     icon: '📊', label: 'Upload Class Roster',   desc: 'Spreadsheet, CSV, or photo — AI extracts student list', roles: ['teacher', 'admin'] },
-  { id: 'submit',            icon: '📤', label: 'Submit Your Work',      desc: 'Photo, file, or document of your completed assignment', roles: ['student'] },
+  { id: 'grade',             icon: '📝', label: 'Grade Student Work',       desc: 'Capture a paper — AI reads & grades it',                roles: ['teacher', 'admin'] },
+  { id: 'grade-sheet',       icon: '📋', label: 'Scan Grade Sheet (Bulk)',  desc: 'Photo of a full class grade sheet — bulk sync all scores', roles: ['teacher', 'admin'] },
+  { id: 'upload-answer-key', icon: '🔑', label: 'Upload Answer Key',        desc: 'Photo, file, or spreadsheet of the answer key',          roles: ['teacher', 'admin'] },
+  { id: 'upload-assignment', icon: '📋', label: 'Upload Assignment',        desc: 'Digitize a worksheet, PDF, or CSV assignment',           roles: ['teacher', 'admin', 'student'] },
+  { id: 'upload-roster',     icon: '📊', label: 'Upload Class Roster',      desc: 'Spreadsheet, CSV, or photo — AI extracts student list',  roles: ['teacher', 'admin'] },
+  { id: 'submit',            icon: '📤', label: 'Submit Your Work',         desc: 'Photo, file, or document of your completed assignment',  roles: ['student'] },
 ]
 
 const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY
@@ -36,7 +37,12 @@ export default function Camera({ onBack }) {
   // ── Voice state ──────────────────────────────────────────────────────────────
   const [recording,    setRecording]    = useState(false)
   const [transcribing, setTranscribing] = useState(false)
-  const [voiceStatus,  setVoiceStatus]  = useState('') // status message shown during recording/transcription
+  const [voiceStatus,  setVoiceStatus]  = useState('')
+
+  // ── Bulk grade sheet state ────────────────────────────────────────────────────
+  const [bulkGrades,   setBulkGrades]   = useState([]) // [{studentName, matchedStudentId, assignmentName, score, maxScore, percentage, confidence, editing}]
+  const [bulkSyncing,  setBulkSyncing]  = useState(false)
+  const [bulkDone,     setBulkDone]     = useState(false)
 
   const videoRef    = useRef(null)
   const streamRef   = useRef(null)
@@ -221,6 +227,82 @@ If score and maxScore are given, calculate percentage. If only percentage, set s
     }
   }
 
+  // ── Bulk grade sheet ─────────────────────────────────────────────────────────
+  async function gradeSheet(base64, mediaType) {
+    const studentNames   = students.map(s => s.name).join(', ')
+    const assignmentList = assignments.map(a => a.name).join(', ')
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:  'POST',
+      headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({
+        model:      'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        system: `You read teacher grade sheets — grids with student names and scores.
+Known students: ${studentNames || 'see image'}.
+Known assignments: ${assignmentList || 'see image'}.
+Extract EVERY student-score pair visible. For each row/student, extract all scores.
+Return ONLY valid JSON:
+{"grades":[{"studentName":"","assignmentName":"","score":0,"maxScore":100,"percentage":0,"confidence":"high|medium|low"}]}
+Calculate percentage = (score/maxScore)*100. If only percentage visible, set score=percentage, maxScore=100.
+Match student names to the known list as closely as possible.`,
+        messages: [{
+          role:    'user',
+          content: [
+            { type:'image', source:{ type:'base64', media_type:mediaType, data:base64 } },
+            { type:'text',  text:'Extract all grades from this grade sheet.' },
+          ],
+        }],
+      }),
+    })
+
+    if (!res.ok) throw new Error(`API error ${res.status}`)
+    const data   = await res.json()
+    const parsed = safeParseJSON(data.content?.[0]?.text || '')
+
+    if (!parsed?.grades?.length) throw new Error('No grades found in image. Make sure the grade sheet is clearly visible.')
+
+    // Fuzzy match student names to store students
+    const matched = parsed.grades.map(g => {
+      const lower    = g.studentName.toLowerCase()
+      const matched  = students.find(s =>
+        s.name.toLowerCase().includes(lower) ||
+        lower.includes(s.name.toLowerCase().split(' ')[0].toLowerCase())
+      )
+      const matchedAssignment = assignments.find(a =>
+        a.name.toLowerCase().includes((g.assignmentName || '').toLowerCase()) ||
+        (g.assignmentName || '').toLowerCase().includes(a.name.toLowerCase())
+      )
+      return {
+        ...g,
+        matchedStudentId:     matched?.id || null,
+        matchedStudentName:   matched?.name || g.studentName,
+        matchedAssignmentId:  matchedAssignment?.id || assignments[0]?.id || null,
+        matchedAssignmentName: matchedAssignment?.name || g.assignmentName,
+        editing: false,
+      }
+    })
+
+    setBulkGrades(matched)
+    setMode('bulk-review')
+  }
+
+  async function syncAllToGradebook() {
+    setBulkSyncing(true)
+    let synced = 0
+    for (const g of bulkGrades) {
+      if (g.matchedStudentId && g.matchedAssignmentId && g.percentage !== undefined) {
+        try {
+          await updateGrade(g.matchedStudentId, g.matchedAssignmentId, g.percentage)
+          synced++
+        } catch { /* skip failed rows */ }
+      }
+    }
+    setBulkSyncing(false)
+    setBulkDone(true)
+    setTimeout(() => setMode('done'), 1200)
+  }
+
   // ── Image / CSV processing ───────────────────────────────────────────────────
   async function processImage(dataUrl, file) {
     setError('')
@@ -238,6 +320,8 @@ If score and maxScore are given, calculate percentage. If only percentage, set s
 
       if (intent === 'grade') {
         await gradeDocument(base64, mediaType)
+      } else if (intent === 'grade-sheet') {
+        await gradeSheet(base64, mediaType)
       } else if (intent === 'upload-roster') {
         await extractRoster(base64, mediaType)
       } else if (intent === 'upload-answer-key') {
@@ -362,6 +446,7 @@ If score and maxScore are given, calculate percentage. If only percentage, set s
     setIntent(null); setCapturedImage(null); setCapturedFile(null)
     setResult(null); setError(''); setMode('intent')
     setRecording(false); setTranscribing(false); setVoiceStatus('')
+    setBulkGrades([]); setBulkSyncing(false); setBulkDone(false)
     stopStream()
   }
 
@@ -596,6 +681,108 @@ If score and maxScore are given, calculate percentage. If only percentage, set s
 
         <div style={{ padding:'0 16px' }}>
           <button onClick={resetAll} style={{ ...S.btn('#6b7494'), width:'100%', padding:'12px 0' }}>Scan Another</button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── BULK REVIEW ──────────────────────────────────────────────────────────────
+  if (mode === 'bulk-review') {
+    const readyCount = bulkGrades.filter(g => g.matchedStudentId && g.matchedAssignmentId).length
+    return (
+      <div style={S.shell}>
+        <div style={S.header}>
+          <button style={S.backBtn} onClick={resetAll}>← Back</button>
+          <h1 style={S.h1}>Review Grades</h1>
+        </div>
+
+        {/* Summary bar */}
+        <div style={{ margin:'0 16px 14px', background:'#161923', border:'1px solid #1e2231', borderRadius:14, padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+          <div>
+            <div style={{ fontSize:20, fontWeight:900, color:'#22c97a' }}>{readyCount}</div>
+            <div style={{ fontSize:10, color:'#6b7494' }}>ready to sync</div>
+          </div>
+          <div>
+            <div style={{ fontSize:20, fontWeight:900, color:'#f5a623' }}>{bulkGrades.length - readyCount}</div>
+            <div style={{ fontSize:10, color:'#6b7494' }}>need review</div>
+          </div>
+          <div>
+            <div style={{ fontSize:20, fontWeight:900, color:'#3b7ef4' }}>{bulkGrades.length}</div>
+            <div style={{ fontSize:10, color:'#6b7494' }}>total rows</div>
+          </div>
+        </div>
+
+        {/* Grade rows */}
+        <div style={{ padding:'0 16px', marginBottom:80 }}>
+          {bulkGrades.map((g, i) => {
+            const pct    = g.percentage || 0
+            const color  = pct >= 90 ? '#22c97a' : pct >= 80 ? '#3b7ef4' : pct >= 70 ? '#f5a623' : '#f04a4a'
+            const letter = pct >= 90 ? 'A' : pct >= 80 ? 'B' : pct >= 70 ? 'C' : pct >= 60 ? 'D' : 'F'
+            const hasIssue = !g.matchedStudentId || !g.matchedAssignmentId
+
+            return (
+              <div key={i} style={{ background:'#161923', border:`1px solid ${hasIssue ? '#f5a62340' : '#1e2231'}`, borderRadius:14, padding:'12px 14px', marginBottom:8 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:hasIssue ? 8 : 0 }}>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:13, fontWeight:700, color: hasIssue ? '#f5a623' : '#eef0f8', marginBottom:2 }}>
+                      {hasIssue ? '⚠ ' : ''}{g.matchedStudentName || g.studentName}
+                    </div>
+                    <div style={{ fontSize:10, color:'#6b7494' }}>
+                      {g.matchedAssignmentName || g.assignmentName || 'Unknown assignment'} &middot; {g.format || `${g.score}/${g.maxScore}`}
+                    </div>
+                  </div>
+                  <div style={{ textAlign:'right', flexShrink:0, marginLeft:12 }}>
+                    <div style={{ fontSize:22, fontWeight:900, color }}>{Math.round(pct)}%</div>
+                    <div style={{ fontSize:11, fontWeight:700, color }}>{letter}</div>
+                  </div>
+                </div>
+
+                {/* Inline fix for unmatched students */}
+                {hasIssue && (
+                  <div style={{ marginTop:6 }}>
+                    <select
+                      value={g.matchedStudentId || ''}
+                      onChange={e => {
+                        const st = students.find(s => s.id === Number(e.target.value))
+                        setBulkGrades(prev => prev.map((row, idx) =>
+                          idx === i ? { ...row, matchedStudentId: st?.id || null, matchedStudentName: st?.name || row.studentName } : row
+                        ))
+                      }}
+                      style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:8, padding:'7px 10px', color:'#eef0f8', fontSize:12, marginBottom:4 }}>
+                      <option value="">-- Match to student --</option>
+                      {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                    <select
+                      value={g.matchedAssignmentId || ''}
+                      onChange={e => {
+                        const a = assignments.find(a => a.id === Number(e.target.value))
+                        setBulkGrades(prev => prev.map((row, idx) =>
+                          idx === i ? { ...row, matchedAssignmentId: a?.id || null, matchedAssignmentName: a?.name || row.assignmentName } : row
+                        ))
+                      }}
+                      style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:8, padding:'7px 10px', color:'#eef0f8', fontSize:12 }}>
+                      <option value="">-- Match to assignment --</option>
+                      {assignments.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                    </select>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Sticky bottom bar */}
+        <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:'rgba(6,8,16,0.97)', backdropFilter:'blur(16px)', borderTop:'1px solid #1e2231', display:'flex', gap:8 }}>
+          <button onClick={resetAll}
+            style={{ ...S.btn('#6b7494'), flex:'none', padding:'12px 16px' }}>
+            Retake
+          </button>
+          <button
+            onClick={syncAllToGradebook}
+            disabled={bulkSyncing || readyCount === 0}
+            style={{ flex:1, background: readyCount > 0 ? '#22c97a' : '#1e2231', color: readyCount > 0 ? '#000' : '#6b7494', border:'none', borderRadius:12, padding:'12px', fontSize:14, fontWeight:800, cursor: readyCount > 0 ? 'pointer' : 'not-allowed' }}>
+            {bulkSyncing ? 'Syncing...' : bulkDone ? '✅ Done!' : `Sync ${readyCount} Grade${readyCount !== 1 ? 's' : ''} to Gradebook`}
+          </button>
         </div>
       </div>
     )
