@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import ClassFeed from './ClassFeed'
+import ParentMessages from './ParentMessages'
 
 const T = {
   primary:   '#003057',
@@ -166,151 +167,6 @@ function AddWidgetsBar() {
 }
 
 // ─── MESSAGES PAGE ────────────────────────────────────────────────────────────
-function MessagesPage({ onBack }) {
-  const [selectedThread, setSelectedThread] = useState(null)
-  const [reply, setReply]     = useState('')
-  const [threads, setThreads] = useState(STUDENT.threads)
-  const [showNew, setShowNew] = useState(false)
-  const [newEmail, setNewEmail] = useState('')
-  const [newName, setNewName]  = useState('')
-  const bottomRef = useRef(null)
-
-  const CONTACTS = [
-    { name:'Ms. Johnson', role:'Math Teacher',    avatar:'👩‍🏫' },
-    { name:'Mr. Lee',     role:'Science Teacher', avatar:'🧑‍🔬' },
-    { name:'Ms. Davis',   role:'Reading Teacher', avatar:'👩‍💼' },
-    { name:'Ms. Clark',   role:'Writing Teacher', avatar:'✍️'  },
-    { name:'Principal',   role:'Administration',  avatar:'🏫'  },
-  ]
-
-  useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) },[selectedThread])
-
-  function sendReply() {
-    if(!reply.trim()||!selectedThread) return
-    const msg = { id:Date.now(), sender:'Me', text:reply.trim(), time:'Just now', isMe:true }
-    setThreads(ts=>ts.map(t=>t.id===selectedThread.id ? { ...t, messages:[...t.messages,msg] } : t))
-    setSelectedThread(t=>({ ...t, messages:[...t.messages,msg] }))
-    setReply('')
-  }
-
-  function startThread(contact) {
-    const exists = threads.find(t=>t.from===contact.name)
-    if(exists) { setSelectedThread(exists); setShowNew(false); return }
-    const t = { id:Date.now(), from:contact.name, subject:'New Conversation', avatar:contact.avatar, unread:false, messages:[] }
-    setThreads(ts=>[...ts,t]); setSelectedThread(t); setShowNew(false)
-  }
-
-  function addByEmail() {
-    if(!newEmail.trim()) return
-    const t = { id:Date.now(), from:newName||newEmail, subject:'New Conversation', avatar:'📧', unread:false, messages:[] }
-    setThreads(ts=>[...ts,t]); setSelectedThread(t)
-    setNewEmail(''); setNewName(''); setShowNew(false)
-  }
-
-  if(selectedThread) {
-    const thread = threads.find(t=>t.id===selectedThread.id)||selectedThread
-    return (
-      <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", display:'flex', flexDirection:'column' }}>
-        <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <button onClick={()=>setSelectedThread(null)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-            <span style={{ fontSize:24 }}>{thread.avatar}</span>
-            <div>
-              <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>{thread.from}</div>
-              <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>{thread.subject}</div>
-            </div>
-          </div>
-        </div>
-        <div style={{ flex:1, padding:'16px 16px 120px', overflowY:'auto' }}>
-          {thread.messages.length===0 && <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}><div style={{ fontSize:32, marginBottom:8 }}>💬</div><div style={{ fontSize:13 }}>Start the conversation</div></div>}
-          {thread.messages.map(msg=>(
-            <div key={msg.id} style={{ display:'flex', justifyContent:msg.isMe?'flex-end':'flex-start', marginBottom:12 }}>
-              {!msg.isMe && <div style={{ width:30, height:30, borderRadius:'50%', background:T.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, marginRight:8, flexShrink:0 }}>{thread.avatar}</div>}
-              <div style={{ maxWidth:'75%' }}>
-                {!msg.isMe && <div style={{ fontSize:10, color:T.muted, marginBottom:3, marginLeft:2 }}>{msg.sender}</div>}
-                <div style={{ background:msg.isMe?T.secondary:T.inner, color:msg.isMe?T.primary:T.text, borderRadius:msg.isMe?'16px 16px 4px 16px':'16px 16px 16px 4px', padding:'10px 13px', fontSize:13, lineHeight:1.5 }}>{msg.text}</div>
-                <div style={{ fontSize:9, color:T.muted, marginTop:3, textAlign:msg.isMe?'right':'left' }}>{msg.time}</div>
-              </div>
-            </div>
-          ))}
-          <div ref={bottomRef}/>
-        </div>
-        <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:`${T.bg}f0`, backdropFilter:'blur(16px)', borderTop:`1px solid ${T.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
-          <textarea value={reply} onChange={e=>setReply(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}} placeholder="Type a message..." rows={1}
-            style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}/>
-          <button onClick={sendReply} disabled={!reply.trim()}
-            style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0 }}>Send</button>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
-      <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <button onClick={onBack} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-            <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>💬 Messages</h1>
-          </div>
-          <button onClick={()=>setShowNew(true)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:12, fontWeight:700 }}>+ New</button>
-        </div>
-      </div>
-      {showNew && (
-        <div style={{ margin:'12px 16px', background:T.card, border:`1px solid ${T.secondary}40`, borderRadius:18, padding:16 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:12 }}>Start a new conversation</div>
-          <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
-            {CONTACTS.map(c=>(
-              <button key={c.name} onClick={()=>startThread(c)}
-                style={{ background:T.inner, border:`1px solid ${T.border}`, borderRadius:12, padding:'10px 14px', display:'flex', alignItems:'center', gap:12, cursor:'pointer', textAlign:'left' }}>
-                <span style={{ fontSize:22 }}>{c.avatar}</span>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:T.text }}>{c.name}</div>
-                  <div style={{ fontSize:10, color:T.muted }}>{c.role}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-          <div style={{ borderTop:`1px solid ${T.border}`, paddingTop:14 }}>
-            <div style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:T.muted, marginBottom:8 }}>Or add by email</div>
-            <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Name (optional)"
-              style={{ width:'100%', background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
-            <div style={{ display:'flex', gap:8 }}>
-              <input value={newEmail} onChange={e=>setNewEmail(e.target.value)} placeholder="Email address or URL"
-                style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:'8px 12px', color:T.text, fontSize:13, outline:'none' }}/>
-              <button onClick={addByEmail} style={{ background:T.secondary, color:T.primary, border:'none', borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:'pointer' }}>Add</button>
-            </div>
-          </div>
-          <button onClick={()=>setShowNew(false)} style={{ width:'100%', background:'transparent', border:'none', color:T.muted, padding:'10px', fontSize:12, cursor:'pointer', marginTop:8 }}>Cancel</button>
-        </div>
-      )}
-      <div style={{ padding:'8px 16px 0' }}>
-        {threads.map(thread=>(
-          <button key={thread.id} onClick={()=>setSelectedThread(thread)}
-            style={{ width:'100%', background:thread.unread?T.inner:T.card, border:`1px solid ${thread.unread?T.secondary+'50':T.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left', transition:'background 0.15s' }}
-            onMouseEnter={e=>(e.currentTarget.style.background=T.raised)}
-            onMouseLeave={e=>(e.currentTarget.style.background=thread.unread?T.inner:T.card)}>
-            <div style={{ width:42, height:42, borderRadius:'50%', background:T.raised, display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0, position:'relative' }}>
-              {thread.avatar}
-              {thread.unread && <div style={{ position:'absolute', top:0, right:0, width:10, height:10, borderRadius:'50%', background:T.red, border:`2px solid ${T.bg}` }}/>}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:3 }}>
-                <div style={{ fontWeight:700, fontSize:14, color:T.text }}>{thread.from}</div>
-                <div style={{ fontSize:10, color:T.muted }}>{thread.messages[thread.messages.length-1]?.time||''}</div>
-              </div>
-              <div style={{ fontSize:11, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                {thread.messages[thread.messages.length-1]?.text||'No messages yet'}
-              </div>
-            </div>
-            <span style={{ color:T.muted, fontSize:16 }}>›</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
 // ─── GRADES PAGE ──────────────────────────────────────────────────────────────
 function GradesPage({ onBack }) {
   return (
@@ -525,7 +381,7 @@ export default function StudentDashboard({ currentUser }) {
   }
 
   if(page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav} onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages'  onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='messages') return <><ParentMessages onBack={goHome} viewerRole="student"/><BottomNav active='messages' onSelect={navSelect} isSubPage={isSubPage}/></>
   if(page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav} onSelect={navSelect} isSubPage={isSubPage}/></>
   if(page==='feed')     return <><ClassFeed    onBack={goHome} viewerRole="student"/><BottomNav active='feed' onSelect={navSelect} isSubPage={isSubPage}/></>
 
