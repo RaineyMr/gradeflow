@@ -525,11 +525,13 @@ export default function ParentDashboard({ currentUser }) {
 
   function navSelect(id) {
     if(id==='__back__') { goBack(); return }
+    if(id==='home') { goHome(); return }
     navigate(id)
     setActiveNav(id)
   }
 
-  const isSubPage = page !== 'home' || activeThread !== null
+  // isSubPage is ONLY true when page is not home — activeThread has its own early return
+  const isSubPage = page !== 'home'
 
   // Thread opened from home widget — show thread view inline with nav
   if (activeThread) {
