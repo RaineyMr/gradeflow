@@ -92,14 +92,14 @@ function BottomNav({ active, onSelect, isSubPage }) {
     { id:'gradebook',      icon:'📊', label:'Grades'   },
     { id:'parentMessages', icon:'💬', label:'Messages' },
     { id:'dashboard',      icon:'🏠', label:'Home'     },
-    { id:'lessonPlan',     icon:'📋', label:'Lessons'  },
+    { id:'feed',           icon:'📢', label:'Feed'     },
     { id:'alerts',         icon:'🔔', label:'Alerts'   },
   ]
   const subItems = [
     { id:'__back__',       icon:'←',  label:'Back'     },
     { id:'gradebook',      icon:'📊', label:'Grades'   },
     { id:'parentMessages', icon:'💬', label:'Messages' },
-    { id:'lessonPlan',     icon:'📋', label:'Lessons'  },
+    { id:'feed',           icon:'📢', label:'Feed'     },
     { id:'alerts',         icon:'🔔', label:'Alerts'   },
   ]
   const items = isSubPage ? subItems : homeItems
@@ -944,23 +944,40 @@ export default function Dashboard({ currentUser, onCameraClick }) {
 
   const [subPage,   setSubPage]   = useState(null)
   const [activeNav, setActiveNav] = useState('dashboard')
+  const history = useRef([])
 
   useEffect(()=>{ applyTheme('kipp'); scrollTop() },[])
   useEffect(()=>{ if(activeScreen==='studentProfile') setSubPage('studentProfile') },[activeScreen])
 
-  function goHome() { setSubPage(null); setActiveNav('dashboard'); store.setScreen('dashboard'); scrollTop() }
+  function goHome() {
+    history.current = []
+    setSubPage(null)
+    setActiveNav('dashboard')
+    store.setScreen('dashboard')
+    scrollTop()
+  }
+
+  function goBack() {
+    history.current.pop() // remove current
+    const prev = history.current[history.current.length - 1] || null
+    if (!prev) { goHome(); return }
+    setSubPage(prev)
+    setActiveNav(prev==='gradebook'?'gradebook':prev==='parentMessages'?'parentMessages':prev==='alerts'?'alerts':activeNav)
+    scrollTop()
+  }
 
   function navigate(id) {
     if(!id) return
     if(id==='dashboard') { goHome(); return }
     if(id==='logout')    { goHome(); return }
+    history.current.push(id)
     setSubPage(id)
-    setActiveNav(id==='gradebook'?'gradebook':id==='parentMessages'?'parentMessages':id==='lessonPlan'?'lessonPlan':id==='alerts'?'alerts':activeNav)
+    setActiveNav(id==='gradebook'?'gradebook':id==='parentMessages'?'parentMessages':id==='lessonPlan'?'lessonPlan':id==='alerts'?'alerts':id==='feed'?activeNav:activeNav)
     scrollTop()
   }
 
   function navSelect(id) {
-    if(id==='__back__') { goHome(); return }
+    if(id==='__back__') { goBack(); return }
     navigate(id)
     setActiveNav(id)
   }
@@ -973,20 +990,20 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     </>
   )
 
-  if(subPage==='gradebook')      return withNav(<SubPage><Gradebook      onBack={goHome}/></SubPage>)
-  if(subPage==='lessonPlan')     return withNav(<SubPage><LessonPlan     initialMode="view" classId={activeLessonClassId} onBack={goHome}/></SubPage>)
-  if(subPage==='parentMessages') return withNav(<SubPage><ParentMessages onBack={goHome} viewerRole="teacher"/></SubPage>)
-  if(subPage==='reports')        return withNav(<SubPage><Reports        onBack={goHome}/></SubPage>)
-  if(subPage==='testingSuite')   return withNav(<SubPage><TestingSuite   onBack={goHome}/></SubPage>)
-  if(subPage==='classFeed')      return withNav(<SubPage><ClassFeed      onBack={goHome} viewerRole="teacher"/></SubPage>)
-  if(subPage==='studentProfile') return withNav(<SubPage><StudentProfile onBack={goHome}/></SubPage>)
-  if(subPage==='camera')         return withNav(<SubPage><Camera         onBack={goHome}/></SubPage>)
-  if(subPage==='integrations')   return withNav(<SubPage><Integrations   onBack={goHome}/></SubPage>)
-  if(subPage==='reminders')      return withNav(<RemindersPage      onBack={goHome}/>)
-  if(subPage==='attention')      return withNav(<NeedsAttentionPage  onBack={goHome}/>)
-  if(subPage==='alerts')         return withNav(<AlertsPage          onBack={goHome}/>)
-  if(subPage==='classes')        return withNav(<ClassesPage   onBack={goHome} navigate={navigate}/>)
-  if(subPage==='settings')       return withNav(<SettingsPage  onBack={goHome} navigate={navigate}/>)
+  if(subPage==='gradebook')      return withNav(<SubPage><Gradebook      onBack={goBack}/></SubPage>)
+  if(subPage==='lessonPlan')     return withNav(<SubPage><LessonPlan     initialMode="view" classId={activeLessonClassId} onBack={goBack}/></SubPage>)
+  if(subPage==='parentMessages') return withNav(<SubPage><ParentMessages onBack={goBack} viewerRole="teacher"/></SubPage>)
+  if(subPage==='reports')        return withNav(<SubPage><Reports        onBack={goBack}/></SubPage>)
+  if(subPage==='testingSuite')   return withNav(<SubPage><TestingSuite   onBack={goBack}/></SubPage>)
+  if(subPage==='feed')           return withNav(<SubPage><ClassFeed      onBack={goBack} viewerRole="teacher"/></SubPage>)
+  if(subPage==='studentProfile') return withNav(<SubPage><StudentProfile onBack={goBack}/></SubPage>)
+  if(subPage==='camera')         return withNav(<SubPage><Camera         onBack={goBack}/></SubPage>)
+  if(subPage==='integrations')   return withNav(<SubPage><Integrations   onBack={goBack}/></SubPage>)
+  if(subPage==='reminders')      return withNav(<RemindersPage      onBack={goBack}/>)
+  if(subPage==='attention')      return withNav(<NeedsAttentionPage  onBack={goBack}/>)
+  if(subPage==='alerts')         return withNav(<AlertsPage          onBack={goBack}/>)
+  if(subPage==='classes')        return withNav(<ClassesPage   onBack={goBack} navigate={navigate}/>)
+  if(subPage==='settings')       return withNav(<SettingsPage  onBack={goBack} navigate={navigate}/>)
 
   return withNav(
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
