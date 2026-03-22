@@ -11,6 +11,7 @@ import LessonPlan from './pages/LessonPlan'
 import Reports from './pages/Reports'
 import ClassFeed from './pages/ClassFeed'
 import { demoAccounts } from './lib/demoAccounts'
+import { useStore } from './lib/store'
 
 export default function App() {
   const [currentUser, setCurrentUser] = useState(null)
@@ -19,7 +20,12 @@ export default function App() {
   const menuRef   = useRef(null)
   const scrollRef = useRef(null)
 
+  const loadFromDB = useStore(s => s.loadFromDB)
+
   useEffect(()=>{ localStorage.removeItem('gradeflow_user') },[])
+
+  // Load real data from Supabase once on mount
+  useEffect(()=>{ loadFromDB() },[])
 
   useEffect(()=>{
     window.scrollTo(0,0)
