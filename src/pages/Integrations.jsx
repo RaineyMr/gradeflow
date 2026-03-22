@@ -1,204 +1,328 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
 
 const C = {
-  bg: '#060810', card: '#161923', inner: '#1e2231', text: '#eef0f8',
-  muted: '#6b7494', border: '#2a2f42', green: '#22c97a', blue: '#3b7ef4',
-  red: '#f04a4a', amber: '#f5a623', teal: '#0fb8a0', purple: '#9b6ef5',
-}
-
-const CATEGORY_LABELS = {
-  roster:  { label: 'Roster & Gradebook',    icon: '🏫', desc: 'Pull student rosters and sync grades back to your SIS' },
-  lms:     { label: 'Learning Management',   icon: '📋', desc: 'Sync assignments, submissions, and grade passback'      },
-  lessons: { label: 'Lesson Plans',          icon: '📅', desc: 'Import lesson plans and curriculum resources'           },
-}
-
-// ─── Curriculum Sync Panel ────────────────────────────────────────────────────
-function CurriculumPanel({ onClose }) {
-  const { curriculumSources, connectedCurricula, setConnectedCurriculum, classes } = useStore()
-  const subjects = [...new Set(classes.map(c => c.subject))]
-
-  return (
-    <div>
-      <p style={{ fontSize: 12, color: C.muted, marginBottom: 16 }}>
-        Connect a curriculum to each subject. GradeFlow will pull lesson plans from the internet when you haven't created your own.
-      </p>
-      {subjects.map(subject => {
-        const connected = connectedCurricula[subject]
-        const source    = curriculumSources.find(s => s.id === connected)
-        const options   = curriculumSources.filter(s => s.subjects.includes(subject) || s.subjects.length === 0)
-
-        return (
-          <div key={subject} style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 8 }}>{subject}</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {options.map(opt => (
-                <button key={opt.id} onClick={() => setConnectedCurriculum(subject, connected === opt.id ? null : opt.id)}
-                  style={{ background: connected === opt.id ? `${C.teal}18` : C.inner, border: `1px solid ${connected === opt.id ? C.teal : C.border}`, borderRadius: 12, padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', transition: 'all 0.15s' }}>
-                  <span style={{ fontSize: 20 }}>{opt.logo}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: connected === opt.id ? C.teal : C.text }}>{opt.name}</div>
-                    {opt.publisher && <div style={{ fontSize: 10, color: C.muted }}>{opt.publisher}</div>}
-                  </div>
-                  {connected === opt.id && <span style={{ fontSize: 11, fontWeight: 700, color: C.teal }}>✓ Selected</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        )
-      })}
-      <button onClick={onClose}
-        style={{ width: '100%', background: 'var(--school-color, #BA0C2F)', color: '#fff', border: 'none', borderRadius: 999, padding: '14px', fontSize: 15, fontWeight: 800, cursor: 'pointer', marginTop: 8 }}>
-        Save Curriculum Links
-      </button>
-    </div>
-  )
+  bg:     '#060810',
+  card:   '#0d1117',
+  inner:  '#161b22',
+  raised: '#1c2128',
+  text:   '#e6edf3',
+  muted:  '#7d8590',
+  border: '#30363d',
+  green:  '#22c97a',
+  blue:   '#3b7ef4',
+  red:    '#f04a4a',
+  amber:  '#f5a623',
+  purple: '#9b6ef5',
+  teal:   '#0fb8a0',
 }
 
 // ─── Sync status badge ────────────────────────────────────────────────────────
 function SyncBadge({ connected, lastSync }) {
   if (!connected) return (
-    <span style={{ background: C.inner, color: C.muted, borderRadius: 999, padding: '3px 8px', fontSize: 10, fontWeight: 700 }}>Not connected</span>
+    <span style={{ background:C.inner, color:C.muted, borderRadius:999, padding:'3px 8px', fontSize:10, fontWeight:700 }}>
+      Not connected
+    </span>
   )
   return (
-    <span style={{ background: '#0f2a1a', color: C.green, borderRadius: 999, padding: '3px 8px', fontSize: 10, fontWeight: 700 }}>
-      ✓ Connected{lastSync ? ` · ${lastSync}` : ''}
+    <span style={{ background:'#0f2a1a', color:C.green, borderRadius:999, padding:'3px 8px', fontSize:10, fontWeight:700 }}>
+      Connected{lastSync ? ` · ${lastSync}` : ''}
     </span>
   )
 }
 
-// ─── Main Integrations page ───────────────────────────────────────────────────
+// ─── Sync result modal ────────────────────────────────────────────────────────
+function SyncResultModal({ summary, onClose }) {
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}
+      onClick={onClose}>
+      <div onClick={e=>e.stopPropagation()}
+        style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:24, width:'100%', maxWidth:400 }}>
+        <div style={{ fontSize:36, textAlign:'center', marginBottom:12 }}>✅</div>
+        <div style={{ fontSize:16, fontWeight:800, color:C.text, textAlign:'center', marginBottom:16 }}>
+          Google Classroom Synced!
+        </div>
+
+        {/* Stats */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+          {[
+            { label:'Classes',     val:summary.courses?.length || 0, color:C.blue   },
+            { label:'Students',    val:summary.students     || 0,   color:C.green  },
+            { label:'Assignments', val:summary.assignments  || 0,   color:C.amber  },
+            { label:'Grades',      val:summary.grades       || 0,   color:C.purple },
+          ].map(s=>(
+            <div key={s.label} style={{ background:C.inner, borderRadius:10, padding:'10px', textAlign:'center' }}>
+              <div style={{ fontSize:20, fontWeight:900, color:s.color }}>{s.val}</div>
+              <div style={{ fontSize:9, color:C.muted }}>{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Course breakdown */}
+        {summary.courses?.length > 0 && (
+          <div style={{ marginBottom:16 }}>
+            <div style={{ fontSize:11, color:C.muted, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Courses synced</div>
+            {summary.courses.map((c,i)=>(
+              <div key={i} style={{ background:C.inner, borderRadius:10, padding:'8px 12px', marginBottom:6, display:'flex', justifyContent:'space-between' }}>
+                <div style={{ fontSize:12, color:C.text, fontWeight:600 }}>{c.name}</div>
+                <div style={{ fontSize:10, color:C.muted }}>{c.students} students · {c.assignments} assignments</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Errors if any */}
+        {summary.errors?.length > 0 && (
+          <div style={{ background:`${C.amber}10`, border:`1px solid ${C.amber}30`, borderRadius:10, padding:'10px 12px', marginBottom:16 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:C.amber, marginBottom:4 }}>Partial sync — some items skipped:</div>
+            {summary.errors.slice(0,3).map((e,i)=>(
+              <div key={i} style={{ fontSize:11, color:C.muted }}>{e}</div>
+            ))}
+          </div>
+        )}
+
+        <button onClick={onClose}
+          style={{ width:'100%', background:'var(--school-color,#BA0C2F)', color:'#fff', border:'none', borderRadius:999, padding:'12px', fontSize:14, fontWeight:800, cursor:'pointer' }}>
+          Done
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── MAIN ──────────────────────────────────────────────────────────────────────
 export default function Integrations({ onBack }) {
-  const { connections, setConnection, goBack, classes, curriculumSources, connectedCurricula } = useStore()
+  const { connections, setConnection, goBack, currentUser } = useStore()
   const handleBack = onBack || goBack
 
-  const [syncing,         setSyncing]         = useState({})
-  const [showCurriculum,  setShowCurriculum]  = useState(false)
-  const [activeCategory,  setActiveCategory]  = useState('all')
-  const [syncSuccess,     setSyncSuccess]     = useState({})
+  const [syncing,       setSyncing]       = useState({})
+  const [syncResult,    setSyncResult]    = useState(null)
+  const [activeCategory, setActiveCategory] = useState('all')
+  const [toast,         setToast]         = useState(null)
+  const [classroomConnected, setClassroomConnected] = useState(
+    connections?.googleClassroom?.connected || false
+  )
+
+  const teacherId = currentUser?.teacherId || '00000000-0000-0000-0000-000000000001'
+
+  // ── Check for OAuth callback params on mount ──────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+
+    if (params.get('classroom_connected') === 'true') {
+      setClassroomConnected(true)
+      setConnection('googleClassroom', true)
+      setToast('Google Classroom connected successfully!')
+      setTimeout(() => setToast(null), 4000)
+      // Clean up URL
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+
+    if (params.get('classroom_error')) {
+      const err = params.get('classroom_error')
+      setToast(`Connection failed: ${err.replace(/_/g, ' ')}`)
+      setTimeout(() => setToast(null), 5000)
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
 
   const categories = ['all', 'roster', 'lms', 'lessons']
 
-  const filtered = Object.entries(connections).filter(([, conn]) =>
+  const filtered = Object.entries(connections || {}).filter(([, conn]) =>
     activeCategory === 'all' || conn.category === activeCategory
   )
 
+  // ── Connect handler — Google Classroom uses real OAuth ────────────────────
   function handleConnect(key) {
-    const conn = connections[key]
-    // Open the service URL in new tab for OAuth
-    window.open(conn.url, '_blank')
+    if (key === 'googleClassroom') {
+      // Real OAuth flow — redirect to our auth route
+      window.location.href = `/api/google-auth?teacherId=${teacherId}`
+    } else {
+      // All others — open in new tab (manual connect)
+      const conn = connections[key]
+      if (conn?.url) window.open(conn.url, '_blank')
+    }
   }
 
-  async function handleMarkConnected(key) {
-    setConnection(key, !connections[key].connected)
+  function handleMarkConnected(key) {
+    if (key === 'googleClassroom') {
+      // Google Classroom uses real OAuth — don't allow manual toggle
+      if (!classroomConnected) {
+        handleConnect(key)
+      }
+      return
+    }
+    setConnection(key, !connections[key]?.connected)
   }
 
+  // ── Sync handler — Google Classroom hits the real API ─────────────────────
   async function handleSync(key) {
-    setSyncing(s => ({ ...s, [key]: true }))
-    // Simulate sync (in production: call real API)
-    await new Promise(r => setTimeout(r, 1800))
-    setSyncing(s => ({ ...s, [key]: false }))
-    setSyncSuccess(s => ({ ...s, [key]: true }))
-    setTimeout(() => setSyncSuccess(s => ({ ...s, [key]: false })), 3000)
-    setConnection(key, true)
+    if (key === 'googleClassroom') {
+      setSyncing(s => ({ ...s, [key]: true }))
+      try {
+        const res = await fetch('/api/classroom-sync', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ teacherId }),
+        })
+        const data = await res.json()
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'Sync failed')
+        }
+
+        setSyncResult(data.summary)
+        setConnection('googleClassroom', true)
+        setToast(`Synced ${data.summary.students} students, ${data.summary.assignments} assignments`)
+        setTimeout(() => setToast(null), 4000)
+      } catch (err) {
+        setToast(`Sync error: ${err.message}`)
+        setTimeout(() => setToast(null), 5000)
+      } finally {
+        setSyncing(s => ({ ...s, [key]: false }))
+      }
+    } else {
+      // Demo sync for other integrations
+      setSyncing(s => ({ ...s, [key]: true }))
+      await new Promise(r => setTimeout(r, 1500))
+      setSyncing(s => ({ ...s, [key]: false }))
+      setToast(`${connections[key]?.label} sync complete`)
+      setTimeout(() => setToast(null), 3000)
+    }
   }
 
-  // Count connected curricula
-  const curriculumCount = Object.keys(connectedCurricula).filter(k => connectedCurricula[k]).length
+  const isGCConnected = (key) =>
+    key === 'googleClassroom' ? classroomConnected : connections[key]?.connected
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: 'Inter, Arial, sans-serif', paddingBottom: 100 }}>
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
 
-      {/* ── Header ── */}
-      <div style={{ background: 'linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, rgba(0,0,0,0.85) 100%)', padding: '20px 16px 20px' }}>
-        <button onClick={handleBack} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 10, padding: '7px 14px', color: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, marginBottom: 14 }}>← Back</button>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px', color: '#fff' }}>🔗 Integrations</h1>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', margin: 0 }}>Connect your tools to sync rosters, grades, and lesson plans</p>
+      {/* Header */}
+      <div style={{ background:'var(--school-color,#BA0C2F)', padding:'16px 16px 20px', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <button onClick={handleBack}
+            style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>
+            &larr; Back
+          </button>
+          <h1 style={{ fontSize:18, fontWeight:800, color:'#fff', margin:0 }}>🔗 Integrations</h1>
+        </div>
       </div>
 
-      {/* ── Curriculum sync card (special section) ── */}
-      <div style={{ margin: '16px 16px 0' }}>
-        <button onClick={() => setShowCurriculum(!showCurriculum)}
-          style={{ width: '100%', background: C.card, border: `1px solid ${C.teal}30`, borderRadius: 16, padding: '14px 16px', cursor: 'pointer', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ fontSize: 28 }}>📚</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: C.teal, marginBottom: 2 }}>Curriculum Sync</div>
-            <div style={{ fontSize: 11, color: C.muted }}>
-              {curriculumCount > 0
-                ? `${curriculumCount} subject${curriculumCount > 1 ? 's' : ''} linked · AI pulls lessons automatically`
-                : 'Link your textbooks · AI auto-pulls lessons for each class'}
-            </div>
-          </div>
-          <span style={{ color: C.muted, fontSize: 20 }}>{showCurriculum ? '▲' : '▼'}</span>
-        </button>
+      {/* Toast */}
+      {toast && (
+        <div style={{ margin:'12px 16px 0', background:`${C.green}18`, border:`1px solid ${C.green}40`, borderRadius:12, padding:'10px 14px', fontSize:12, color:C.green, fontWeight:600 }}>
+          {toast}
+        </div>
+      )}
 
-        {showCurriculum && (
-          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderTop: 'none', borderRadius: '0 0 16px 16px', padding: '16px' }}>
-            <CurriculumPanel onClose={() => setShowCurriculum(false)} />
-          </div>
-        )}
-      </div>
-
-      {/* ── Category filter tabs ── */}
-      <div style={{ display: 'flex', gap: 6, padding: '16px 16px 0', overflowX: 'auto' }}>
-        {categories.map(cat => (
-          <button key={cat} onClick={() => setActiveCategory(cat)}
-            style={{ padding: '6px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0,
-              background: activeCategory === cat ? 'var(--school-color, #BA0C2F)' : C.inner,
-              color:      activeCategory === cat ? '#fff' : C.muted }}>
-            {cat === 'all' ? 'All' : CATEGORY_LABELS[cat]?.label}
+      {/* Category filter */}
+      <div style={{ display:'flex', gap:6, padding:'12px 16px', overflowX:'auto' }}>
+        {categories.map(cat=>(
+          <button key={cat} onClick={()=>setActiveCategory(cat)}
+            style={{ padding:'6px 14px', borderRadius:999, border:'none', cursor:'pointer', fontSize:11, fontWeight:700, whiteSpace:'nowrap', flexShrink:0,
+              background: activeCategory===cat ? 'var(--school-color,#BA0C2F)' : C.inner,
+              color:      activeCategory===cat ? '#fff' : C.muted }}>
+            {cat === 'all' ? 'All' : cat === 'lms' ? 'LMS' : cat.charAt(0).toUpperCase() + cat.slice(1)}
           </button>
         ))}
       </div>
 
-      {/* ── Category description ── */}
-      {activeCategory !== 'all' && (
-        <div style={{ margin: '10px 16px 0', padding: '10px 14px', background: C.inner, borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 20 }}>{CATEGORY_LABELS[activeCategory]?.icon}</span>
-          <p style={{ fontSize: 12, color: C.muted, margin: 0 }}>{CATEGORY_LABELS[activeCategory]?.desc}</p>
+      {/* Google Classroom — featured card */}
+      {(activeCategory === 'all' || activeCategory === 'lms') && (
+        <div style={{ margin:'0 16px 12px', background: classroomConnected ? 'linear-gradient(135deg,#0a2a18,#060810)' : 'linear-gradient(135deg,#0a1628,#060810)', border:`2px solid ${classroomConnected ? C.green : C.blue}40`, borderRadius:18, padding:18 }}>
+          <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:14 }}>
+            <span style={{ fontSize:32, flexShrink:0 }}>🟢</span>
+            <div style={{ flex:1 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
+                <div style={{ fontSize:15, fontWeight:800, color:C.text }}>Google Classroom</div>
+                <SyncBadge connected={classroomConnected} lastSync={connections?.googleClassroom?.lastSync}/>
+              </div>
+              <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>
+                Import your entire gradebook — courses, rosters, assignments, and grades sync directly into GradeFlow.
+              </div>
+
+              {/* What syncs */}
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {['📚 Courses','👥 Rosters','📝 Assignments','✅ Grades'].map(item=>(
+                  <span key={item} style={{ fontSize:10, fontWeight:700, color:C.teal, background:`${C.teal}15`, padding:'3px 8px', borderRadius:999 }}>
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div style={{ display:'flex', gap:8 }}>
+            {!classroomConnected ? (
+              <button onClick={()=>handleConnect('googleClassroom')}
+                style={{ flex:1, background:C.blue, color:'#fff', border:'none', borderRadius:12, padding:'12px', fontSize:13, fontWeight:800, cursor:'pointer' }}>
+                🔗 Connect Google Classroom
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={()=>handleSync('googleClassroom')}
+                  disabled={!!syncing['googleClassroom']}
+                  style={{ flex:2, background: syncing['googleClassroom'] ? C.inner : C.green, color: syncing['googleClassroom'] ? C.muted : '#000', border:'none', borderRadius:12, padding:'12px', fontSize:13, fontWeight:800, cursor: syncing['googleClassroom'] ? 'wait' : 'pointer' }}>
+                  {syncing['googleClassroom'] ? '⟳ Syncing...' : '⟳ Sync Now'}
+                </button>
+                <button
+                  onClick={()=>handleConnect('googleClassroom')}
+                  style={{ flex:1, background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}40`, borderRadius:12, padding:'12px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                  Reconnect
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Last sync info */}
+          {classroomConnected && (
+            <div style={{ marginTop:10, fontSize:11, color:C.muted, textAlign:'center' }}>
+              Syncs courses, rosters, assignments &amp; grades &middot; Token auto-refreshes
+            </div>
+          )}
         </div>
       )}
 
-      {/* ── Integration cards ── */}
-      <div style={{ padding: '12px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {filtered.map(([key, conn]) => (
-          <div key={key} style={{ background: C.card, border: `1px solid ${conn.connected ? C.green + '30' : C.border}`, borderRadius: 16, padding: '14px 16px', transition: 'border-color 0.2s' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 10 }}>
-              <span style={{ fontSize: 28, flexShrink: 0 }}>{conn.icon}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: C.text, marginBottom: 2 }}>{conn.label}</div>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>{conn.description}</div>
-                <SyncBadge connected={conn.connected} lastSync={conn.lastSync} />
+      {/* Other integrations */}
+      <div style={{ padding:'0 16px' }}>
+        {filtered
+          .filter(([key]) => key !== 'googleClassroom')
+          .map(([key, conn]) => (
+          <div key={key} style={{ background:C.card, border:`1px solid ${isGCConnected(key) ? C.green+'30' : C.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, transition:'border-color 0.2s' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:14, marginBottom:10 }}>
+              <span style={{ fontSize:26, flexShrink:0 }}>{conn.icon}</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:14, fontWeight:800, color:C.text, marginBottom:2 }}>{conn.label}</div>
+                <div style={{ fontSize:11, color:C.muted, marginBottom:6 }}>{conn.description}</div>
+                <SyncBadge connected={conn.connected} lastSync={conn.lastSync}/>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 8 }}>
-              {/* Connect / Open button */}
-              <button onClick={() => handleConnect(key)}
-                style={{ flex: 1, background: `${C.blue}18`, color: C.blue, border: 'none', borderRadius: 10, padding: '9px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            <div style={{ display:'flex', gap:8 }}>
+              <button onClick={()=>handleConnect(key)}
+                style={{ flex:1, background:`${C.blue}18`, color:C.blue, border:'none', borderRadius:10, padding:'9px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
                 🔗 Open {conn.label}
               </button>
 
-              {/* Mark connected toggle (demo) */}
-              <button onClick={() => handleMarkConnected(key)}
-                style={{ flex: 1, background: conn.connected ? `${C.green}18` : `${C.amber}18`, color: conn.connected ? C.green : C.amber, border: 'none', borderRadius: 10, padding: '9px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-                {conn.connected ? '✓ Connected' : '+ Mark Connected'}
+              <button onClick={()=>handleMarkConnected(key)}
+                style={{ flex:1, background:conn.connected?`${C.green}18`:`${C.amber}18`, color:conn.connected?C.green:C.amber, border:'none', borderRadius:10, padding:'9px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+                {conn.connected ? 'Connected' : '+ Mark Connected'}
               </button>
 
-              {/* Sync now (if connected) */}
               {conn.connected && (
-                <button onClick={() => handleSync(key)} disabled={!!syncing[key]}
-                  style={{ flex: 1, background: syncSuccess[key] ? `${C.green}18` : `${C.teal}18`, color: syncSuccess[key] ? C.green : C.teal, border: 'none', borderRadius: 10, padding: '9px', fontSize: 12, fontWeight: 700, cursor: syncing[key] ? 'wait' : 'pointer' }}>
-                  {syncing[key] ? '⟳ Syncing…' : syncSuccess[key] ? '✓ Synced!' : '⟳ Sync Now'}
+                <button onClick={()=>handleSync(key)} disabled={!!syncing[key]}
+                  style={{ flex:1, background:`${C.teal}18`, color:C.teal, border:'none', borderRadius:10, padding:'9px', fontSize:12, fontWeight:700, cursor:syncing[key]?'wait':'pointer' }}>
+                  {syncing[key] ? '⟳ Syncing...' : '⟳ Sync'}
                 </button>
               )}
             </div>
 
-            {/* What syncs */}
             {conn.connected && (
-              <div style={{ marginTop: 10, padding: '8px 12px', background: C.inner, borderRadius: 10 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, textTransform: 'uppercase', marginBottom: 4 }}>What syncs</div>
-                <div style={{ fontSize: 11, color: C.text }}>
+              <div style={{ marginTop:10, padding:'8px 12px', background:C.inner, borderRadius:10 }}>
+                <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', marginBottom:4 }}>What syncs</div>
+                <div style={{ fontSize:11, color:C.text }}>
                   {conn.category === 'roster'  && '👥 Student names · Class lists · Grade passback'}
                   {conn.category === 'lms'     && '📝 Assignments · Submissions · Grade passback · Roster import'}
                   {conn.category === 'lessons' && '📅 Lesson plans · Curriculum maps · Resources'}
@@ -209,13 +333,16 @@ export default function Integrations({ onBack }) {
         ))}
       </div>
 
-      {/* ── Info footer ── */}
-      <div style={{ margin: '16px 16px 0', padding: '14px', background: C.inner, borderRadius: 14, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <span style={{ fontSize: 20 }}>ℹ️</span>
-        <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.6 }}>
-          <strong style={{ color: C.text }}>How sync works:</strong> GradeFlow connects to your existing tools — it doesn't replace them. Grades flow from GradeFlow → your SIS nightly. Rosters are imported once per term. Lesson plans sync on demand. Changes made in the SIS must also be updated here.
+      {/* Info footer */}
+      <div style={{ margin:'8px 16px 0', padding:'14px', background:C.inner, borderRadius:14, display:'flex', alignItems:'flex-start', gap:12 }}>
+        <span style={{ fontSize:20 }}>&#x2139;&#xfe0f;</span>
+        <div style={{ fontSize:11, color:C.muted, lineHeight:1.6 }}>
+          <strong style={{ color:C.text }}>How sync works:</strong> GradeFlow connects to your existing tools — it never replaces them. Rosters import once per term. Grades sync on demand. Changes in your SIS must also be updated here.
         </div>
       </div>
+
+      {/* Sync result modal */}
+      {syncResult && <SyncResultModal summary={syncResult} onClose={()=>setSyncResult(null)}/>}
     </div>
   )
 }
