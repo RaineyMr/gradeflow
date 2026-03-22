@@ -35,7 +35,7 @@ function GradeBar({ score }) {
 // ─── Demo data ────────────────────────────────────────────────────────────────
 const STUDENT = {
   name: 'Marcus', fullName: 'Marcus Thompson',
-  grade: '3rd Grade', school: 'Houston ISD \u00b7 Lincoln Elementary',
+  grade: '3rd Grade', school: 'Houston ISD · Lincoln Elementary',
   gpa: 87.4,
   classes: [
     { id:1, subject:'Math',    teacher:'Ms. Johnson', grade:87, letter:'B', period:'1st', color:'#3b7ef4' },
@@ -49,30 +49,30 @@ const STUDENT = {
     { id:3, name:'Lab Report',     subject:'Science', due:'Friday',   status:'submitted' },
   ],
   alerts: [
-    { id:1, msg:'Science grade is 61% \u2014 below passing', color:'#f04a4a', icon:'\u26a0' },
-    { id:2, msg:'2 assignments due this week',                color:'#f5a623', icon:'\ud83d\udccb' },
+    { id:1, msg:'Science grade is 61% — below passing', color:'#f04a4a', icon:'⚑' },
+    { id:2, msg:'2 assignments due this week',           color:'#f5a623', icon:'📋' },
   ],
   threads: [
     {
-      id:1, from:'Ms. Johnson', subject:'Math', avatar:'\ud83d\udc69\u200d\ud83c\udfeb', unread:true,
+      id:1, from:'Ms. Johnson', subject:'Math', avatar:'👩‍🏫', unread:true,
       messages:[
-        { id:1, sender:'Ms. Johnson', text:"Great work on yesterday's quiz, Marcus! You scored 87%.", time:'1 hr ago',   isMe:false },
-        { id:2, sender:'Me',          text:"Thank you, Ms. Johnson! I studied really hard.",          time:'45 min ago', isMe:true  },
-        { id:3, sender:'Ms. Johnson', text:"Don't forget the worksheet due Friday!",                  time:'30 min ago', isMe:false },
+        { id:1, sender:'Ms. Johnson', text:"Great work on yesterday's quiz, Marcus! You scored 87%.", time:'1 hr ago', isMe:false },
+        { id:2, sender:'Me',          text:"Thank you, Ms. Johnson! I studied really hard.", time:'45 min ago', isMe:true },
+        { id:3, sender:'Ms. Johnson', text:"Don't forget the worksheet due Friday!", time:'30 min ago', isMe:false },
       ],
     },
     {
-      id:2, from:'Mr. Lee', subject:'Science', avatar:'\ud83e\uddd1\u200d\ud83d\udd2c', unread:false,
-      messages:[{ id:1, sender:'Mr. Lee', text:'Science fair project due Friday!', time:'Yesterday', isMe:false }],
+      id:2, from:'Mr. Lee', subject:'Science', avatar:'🧑‍🔬', unread:false,
+      messages:[{ id:1, sender:'Mr. Lee', text:"Science fair project due Friday!", time:'Yesterday', isMe:false }],
     },
     {
-      id:3, from:'Ms. Clark', subject:'Writing', avatar:'\u270d', unread:false,
+      id:3, from:'Ms. Clark', subject:'Writing', avatar:'✍️', unread:false,
       messages:[{ id:1, sender:'Ms. Clark', text:'Your essay draft was excellent!', time:'2 days ago', isMe:false }],
     },
   ],
   feed: [
-    { id:1, author:'Ms. Johnson', content:'\ud83d\udcc5 Unit Test Friday! Review chapters 3\u20134.', time:'2 hours ago', reactions:{'\ud83d\udc4d':12,'\u2764':5} },
-    { id:2, author:'Ms. Johnson', content:"Great work on yesterday's homework! Class average was 87%.", time:'Yesterday', reactions:{'\ud83d\udc4d':18,'\u2764':9} },
+    { id:1, author:'Ms. Johnson', content:'📅 Unit Test Friday! Review chapters 3–4.', time:'2 hours ago', reactions:{'👍':12,'❤️':5} },
+    { id:2, author:'Ms. Johnson', content:"🎉 Great work on yesterday's homework! Class average was 87%.", time:'Yesterday', reactions:{'👍':18,'❤️':9} },
   ],
 }
 
@@ -99,8 +99,7 @@ function gradeColor(g) { return g>=90?T.green:g>=80?T.blue:g>=70?T.amber:T.red }
 
 function Widget({ onClick, children, style={} }) {
   return (
-    <div onClick={onClick}
-      style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:20, padding:16, marginBottom:12, cursor:onClick?'pointer':'default', transition:'border-color 0.15s', ...style }}
+    <div onClick={onClick} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:20, padding:16, marginBottom:12, cursor:onClick?'pointer':'default', transition:'border-color 0.15s', ...style }}
       onMouseEnter={e=>{ if(onClick) e.currentTarget.style.borderColor=T.secondary }}
       onMouseLeave={e=>{ e.currentTarget.style.borderColor = style.borderColor||T.border }}>
       {children}
@@ -119,11 +118,11 @@ function Btn({ label, color, onClick, style={} }) {
 
 // ─── Bottom nav ───────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { id:'home',     icon:'\ud83c\udfe0', label:'Home'     },
-  { id:'grades',   icon:'\ud83d\udcca', label:'Grades'   },
-  { id:'scan',     icon:'\ud83d\udcf7', label:'Scan'     },
-  { id:'messages', icon:'\ud83d\udcac', label:'Messages' },
-  { id:'settings', icon:'\u2699',       label:'Settings' },
+  { id:'home',    icon:'🏠',  label:'Home'     },
+  { id:'grades',  icon:'📊', label:'Grades'   },
+  { id:'scan',    icon:'📷', label:'Scan'     },
+  { id:'messages',icon:'💬', label:'Messages' },
+  { id:'settings',icon:'⚙',  label:'Settings' },
 ]
 
 function BottomNav({ active, onSelect }) {
@@ -151,7 +150,7 @@ function ModalShell({ onClose, children }) {
       style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(8px)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}
       onClick={onClose}>
       <div
-        onClick={e=>e.stopPropagation()}
+        onClick={e => e.stopPropagation()}
         style={{ width:'100%', maxWidth:480, background:T.bg, borderRadius:'24px 24px 0 0', border:`1px solid ${T.border}`, padding:'20px 20px max(28px,env(safe-area-inset-bottom))', maxHeight:'85vh', overflowY:'auto' }}>
         <div style={{ width:36, height:4, background:T.border, borderRadius:2, margin:'0 auto 18px' }}/>
         {children}
@@ -167,18 +166,14 @@ function VoiceTutorModal({ onClose }) {
   const [errorMsg, setErrorMsg]       = useState('')
   const [showHistory, setShowHistory] = useState(false)
   const [history, setHistory]         = useState([])
-  const wsRef        = useRef(null)
-  const audioCtxRef  = useRef(null)
-  const scrollRef    = useRef(null)
-  const statusRef    = useRef('idle') // track status in callbacks without stale closure
+  const wsRef       = useRef(null)
+  const audioCtxRef = useRef(null)
+  const scrollRef   = useRef(null)
+  const statusRef   = useRef('idle')
 
-  useEffect(() => {
-    setHistory(loadTranscripts())
-  }, [])
+  useEffect(() => { setHistory(loadTranscripts()) }, [])
 
-  useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior:'smooth' })
-  }, [transcript])
+  useEffect(() => { scrollRef.current?.scrollIntoView({ behavior:'smooth' }) }, [transcript])
 
   useEffect(() => {
     return () => {
@@ -192,18 +187,14 @@ function VoiceTutorModal({ onClose }) {
     statusRef.current = 'connecting'
     setTranscript([])
     setErrorMsg('')
-
     try {
-      // 1. Get signed URL from our secure serverless proxy
       const tokenRes = await fetch('/api/elevenlabs-token', { method:'POST' })
       if (!tokenRes.ok) throw new Error('Could not connect to tutor service')
       const { signed_url } = await tokenRes.json()
 
-      // 2. Open WebSocket
       const ws = new WebSocket(signed_url)
       wsRef.current = ws
 
-      // 3. Set up mic
       const stream   = await navigator.mediaDevices.getUserMedia({ audio:true })
       const ctx      = new AudioContext({ sampleRate:16000 })
       audioCtxRef.current = ctx
@@ -223,10 +214,7 @@ function VoiceTutorModal({ onClose }) {
         ws.send(JSON.stringify({ user_audio_chunk: base64 }))
       }
 
-      ws.onopen = () => {
-        setStatus('active')
-        statusRef.current = 'active'
-      }
+      ws.onopen = () => { setStatus('active'); statusRef.current = 'active' }
 
       ws.onmessage = (event) => {
         try {
@@ -248,25 +236,17 @@ function VoiceTutorModal({ onClose }) {
       }
 
       ws.onerror = () => {
-        setStatus('error')
-        statusRef.current = 'error'
+        setStatus('error'); statusRef.current = 'error'
         setErrorMsg('Connection lost. Please try again.')
       }
 
       ws.onclose = () => {
-        processor.disconnect()
-        source.disconnect()
+        processor.disconnect(); source.disconnect()
         stream.getTracks().forEach(t => t.stop())
-        if (statusRef.current === 'active') {
-          setStatus('ended')
-          statusRef.current = 'ended'
-        }
+        if (statusRef.current === 'active') { setStatus('ended'); statusRef.current = 'ended' }
       }
-
     } catch (err) {
-      console.error('VoiceTutor error:', err)
-      setStatus('error')
-      statusRef.current = 'error'
+      setStatus('error'); statusRef.current = 'error'
       setErrorMsg(err.message || 'Could not start session.')
     }
   }
@@ -276,8 +256,6 @@ function VoiceTutorModal({ onClose }) {
     wsRef.current?.close()
     if (audioCtxRef.current?.state !== 'closed') audioCtxRef.current?.close()
     setStatus('ended')
-
-    // Save to localStorage
     setTranscript(current => {
       if (current.length > 0) {
         const session = {
@@ -307,34 +285,31 @@ function VoiceTutorModal({ onClose }) {
     } catch { /* skip bad chunks */ }
   }
 
-  // ── History view ─────────────────────────────────────────────────────────
+  // History view
   if (showHistory) {
     return (
       <ModalShell onClose={onClose}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
           <button onClick={()=>setShowHistory(false)}
             style={{ background:'rgba(255,255,255,0.1)', border:'none', borderRadius:8, padding:'6px 12px', color:T.text, cursor:'pointer', fontSize:12 }}>
-            \u2190 Back
+            &larr; Back
           </button>
           <div style={{ fontSize:15, fontWeight:800, color:T.text }}>Past Sessions</div>
         </div>
-
         {history.length === 0 ? (
           <div style={{ textAlign:'center', padding:'32px 0', color:T.muted }}>
             <div style={{ fontSize:28, marginBottom:8 }}>💬</div>
-            <div style={{ fontSize:13 }}>No sessions yet — tap the mic on the AI widget to start one!</div>
+            <div style={{ fontSize:13 }}>No sessions yet</div>
           </div>
         ) : history.map(session => (
           <div key={session.id} style={{ background:T.inner, borderRadius:14, padding:14, marginBottom:10 }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:8 }}>
               <div style={{ fontSize:12, fontWeight:700, color:T.secondary }}>{session.date}</div>
-              <div style={{ fontSize:10, color:T.muted }}>{session.time} \u00b7 {session.turns.length} turns</div>
+              <div style={{ fontSize:10, color:T.muted }}>{session.time} &middot; {session.turns.length} turns</div>
             </div>
             {session.turns.map((turn, i) => (
               <div key={i} style={{ marginBottom:6 }}>
-                <span style={{ fontSize:10, fontWeight:700, color:turn.role==='Marcus'?T.teal:T.purple, marginRight:6 }}>
-                  {turn.role}:
-                </span>
+                <span style={{ fontSize:10, fontWeight:700, color:turn.role==='Marcus'?T.teal:T.purple, marginRight:6 }}>{turn.role}:</span>
                 <span style={{ fontSize:12, color:T.text, lineHeight:1.5 }}>{turn.text}</span>
               </div>
             ))}
@@ -344,14 +319,13 @@ function VoiceTutorModal({ onClose }) {
     )
   }
 
-  // ── Main session view ─────────────────────────────────────────────────────
+  // Main session view
   return (
     <ModalShell onClose={onClose}>
-      {/* Header */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
         <div>
           <div style={{ fontSize:15, fontWeight:800, color:T.text }}>🎤 Study Tutor</div>
-          <div style={{ fontSize:10, color:T.muted }}>Spark \u00b7 AI Voice Tutor</div>
+          <div style={{ fontSize:10, color:T.muted }}>Spark &middot; AI Voice Tutor</div>
         </div>
         <button onClick={()=>setShowHistory(true)}
           style={{ background:`${T.purple}20`, border:`1px solid ${T.purple}40`, borderRadius:10, padding:'6px 12px', color:T.purple, fontSize:11, fontWeight:700, cursor:'pointer' }}>
@@ -359,43 +333,33 @@ function VoiceTutorModal({ onClose }) {
         </button>
       </div>
 
-      {/* State */}
       <div style={{ textAlign:'center', padding:'16px 0 20px' }}>
         {status === 'idle' && (
           <>
             <div style={{ fontSize:48, marginBottom:12 }}>🎤</div>
-            <div style={{ fontSize:13, color:T.muted, marginBottom:20 }}>
-              Talk to Spark about Math, Reading, Science, or Writing
-            </div>
+            <div style={{ fontSize:13, color:T.muted, marginBottom:20 }}>Talk to Spark about Math, Reading, Science, or Writing</div>
             <button onClick={startSession}
               style={{ background:`linear-gradient(135deg,${T.purple},#6b3fd4)`, border:'none', borderRadius:16, padding:'14px 32px', color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', boxShadow:`0 4px 20px ${T.purple}40` }}>
               Start Session
             </button>
           </>
         )}
-
         {status === 'connecting' && (
           <>
             <div style={{ fontSize:36, marginBottom:12 }}>⏳</div>
             <div style={{ fontSize:13, color:T.muted }}>Connecting to Spark...</div>
           </>
         )}
-
         {status === 'active' && (
           <>
-            <div style={{ width:72, height:72, borderRadius:'50%', background:`${T.purple}30`, border:`2px solid ${T.purple}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, margin:'0 auto 12px', boxShadow:`0 0 24px ${T.purple}50` }}>
-              🎤
-            </div>
-            <div style={{ fontSize:12, color:T.green, fontWeight:700, marginBottom:16 }}>
-              \u25cf Live \u2014 Spark is listening
-            </div>
+            <div style={{ width:72, height:72, borderRadius:'50%', background:`${T.purple}30`, border:`2px solid ${T.purple}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, margin:'0 auto 12px', boxShadow:`0 0 24px ${T.purple}50` }}>🎤</div>
+            <div style={{ fontSize:12, color:T.green, fontWeight:700, marginBottom:16 }}>&#x25cf; Live &mdash; Spark is listening</div>
             <button onClick={endSession}
               style={{ background:`${T.red}22`, border:`1px solid ${T.red}50`, borderRadius:12, padding:'10px 24px', color:T.red, fontSize:13, fontWeight:700, cursor:'pointer' }}>
               End Session
             </button>
           </>
         )}
-
         {status === 'ended' && (
           <>
             <div style={{ fontSize:36, marginBottom:8 }}>✅</div>
@@ -407,10 +371,9 @@ function VoiceTutorModal({ onClose }) {
             </button>
           </>
         )}
-
         {status === 'error' && (
           <>
-            <div style={{ fontSize:36, marginBottom:8 }}>⚠️</div>
+            <div style={{ fontSize:36, marginBottom:8 }}>&#x26a0;&#xfe0f;</div>
             <div style={{ fontSize:12, color:T.red, marginBottom:16 }}>{errorMsg}</div>
             <button onClick={startSession}
               style={{ background:`${T.purple}22`, border:`1px solid ${T.purple}40`, borderRadius:12, padding:'10px 24px', color:T.purple, fontSize:13, fontWeight:700, cursor:'pointer' }}>
@@ -420,17 +383,12 @@ function VoiceTutorModal({ onClose }) {
         )}
       </div>
 
-      {/* Live transcript */}
       {transcript.length > 0 && (
         <div style={{ maxHeight:200, overflowY:'auto', background:T.inner, borderRadius:14, padding:12 }}>
-          <div style={{ fontSize:10, fontWeight:700, color:T.muted, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:8 }}>
-            Live Transcript
-          </div>
+          <div style={{ fontSize:10, fontWeight:700, color:T.muted, letterSpacing:'0.06em', textTransform:'uppercase', marginBottom:8 }}>Live Transcript</div>
           {transcript.map((turn, i) => (
             <div key={i} style={{ marginBottom:8 }}>
-              <span style={{ fontSize:10, fontWeight:700, color:turn.role==='Marcus'?T.teal:T.purple, marginRight:6 }}>
-                {turn.role}:
-              </span>
+              <span style={{ fontSize:10, fontWeight:700, color:turn.role==='Marcus'?T.teal:T.purple, marginRight:6 }}>{turn.role}:</span>
               <span style={{ fontSize:12, color:T.text, lineHeight:1.5 }}>{turn.text}</span>
               <span style={{ fontSize:9, color:T.muted, marginLeft:6 }}>{turn.time}</span>
             </div>
@@ -453,11 +411,11 @@ function MessagesPage({ onBack }) {
   const bottomRef = useRef(null)
 
   const CONTACTS = [
-    { name:'Ms. Johnson', role:'Math Teacher',    avatar:'\ud83d\udc69\u200d\ud83c\udfeb' },
-    { name:'Mr. Lee',     role:'Science Teacher', avatar:'\ud83e\uddd1\u200d\ud83d\udd2c' },
-    { name:'Ms. Davis',   role:'Reading Teacher', avatar:'\ud83d\udc69\u200d\ud83d\udcbc' },
-    { name:'Ms. Clark',   role:'Writing Teacher', avatar:'\u270d'  },
-    { name:'Principal',   role:'Administration',  avatar:'\ud83c\udfeb'  },
+    { name:'Ms. Johnson', role:'Math Teacher',    avatar:'👩‍🏫' },
+    { name:'Mr. Lee',     role:'Science Teacher', avatar:'🧑‍🔬' },
+    { name:'Ms. Davis',   role:'Reading Teacher', avatar:'👩‍💼' },
+    { name:'Ms. Clark',   role:'Writing Teacher', avatar:'✍️'  },
+    { name:'Principal',   role:'Administration',  avatar:'🏫'  },
   ]
 
   useEffect(()=>{ bottomRef.current?.scrollIntoView({ behavior:'smooth' }) },[selectedThread])
@@ -481,7 +439,7 @@ function MessagesPage({ onBack }) {
 
   function addByEmail() {
     if (!newEmail.trim()) return
-    const t = { id:Date.now(), from:newName||newEmail, subject:'New Conversation', avatar:'\ud83d\udce7', unread:false, messages:[] }
+    const t = { id:Date.now(), from:newName||newEmail, subject:'New Conversation', avatar:'📧', unread:false, messages:[] }
     setThreads(ts=>[...ts,t])
     setSelectedThread(t)
     setNewEmail(''); setNewName(''); setShowNewRecipient(false)
@@ -493,5 +451,47 @@ function MessagesPage({ onBack }) {
       <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", display:'flex', flexDirection:'column' }}>
         <div style={{ background:T.header, padding:'16px', position:'sticky', top:0, zIndex:10 }}>
           <div style={{ display:'flex', alignItems:'center', gap:12 }}>
-            <button onClick={()=>setSelectedThread(null)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>\u2190 Back</button>
+            <button onClick={()=>setSelectedThread(null)} style={{ background:'rgba(255,255,255,0.15)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
             <span style={{ fontSize:24 }}>{thread.avatar}</span>
+            <div>
+              <div style={{ fontWeight:700, fontSize:15, color:'#fff' }}>{thread.from}</div>
+              <div style={{ fontSize:10, color:'rgba(255,255,255,0.6)' }}>{thread.subject}</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ flex:1, padding:'16px 16px 120px', overflowY:'auto' }}>
+          {thread.messages.length===0 && (
+            <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>💬</div>
+              <div style={{ fontSize:13 }}>Start the conversation</div>
+            </div>
+          )}
+          {thread.messages.map(msg=>(
+            <div key={msg.id} style={{ display:'flex', justifyContent:msg.isMe?'flex-end':'flex-start', marginBottom:12 }}>
+              {!msg.isMe && <div style={{ width:30, height:30, borderRadius:'50%', background:T.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:14, marginRight:8, flexShrink:0 }}>{thread.avatar}</div>}
+              <div style={{ maxWidth:'75%' }}>
+                {!msg.isMe && <div style={{ fontSize:10, color:T.muted, marginBottom:3, marginLeft:2 }}>{msg.sender}</div>}
+                <div style={{ background:msg.isMe?T.secondary:T.inner, color:msg.isMe?T.primary:T.text, borderRadius:msg.isMe?'16px 16px 4px 16px':'16px 16px 16px 4px', padding:'10px 13px', fontSize:13, lineHeight:1.5 }}>{msg.text}</div>
+                <div style={{ fontSize:9, color:T.muted, marginTop:3, textAlign:msg.isMe?'right':'left' }}>{msg.time}</div>
+              </div>
+            </div>
+          ))}
+          <div ref={bottomRef}/>
+        </div>
+        <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:`${T.bg}f0`, backdropFilter:'blur(16px)', borderTop:`1px solid ${T.border}`, display:'flex', gap:8, alignItems:'flex-end', zIndex:100 }}>
+          <textarea value={reply} onChange={e=>setReply(e.target.value)}
+            onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendReply() }}}
+            placeholder="Type a message..." rows={1}
+            style={{ flex:1, background:T.inner, border:`1px solid ${T.border}`, borderRadius:14, padding:'10px 14px', color:T.text, fontSize:13, resize:'none', outline:'none', maxHeight:100, fontFamily:'inherit' }}/>
+          <button onClick={sendReply} disabled={!reply.trim()}
+            style={{ background:reply.trim()?T.secondary:'#2a2f42', color:reply.trim()?T.primary:'#6b7494', border:'none', borderRadius:12, padding:'10px 16px', fontSize:13, fontWeight:700, cursor:reply.trim()?'pointer':'not-allowed', flexShrink:0 }}>Send</button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
+      <div style={{ background:T.header, padding:'16px 16px 20px', position:'sticky', top:0, zIndex:10 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
