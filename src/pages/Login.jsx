@@ -42,6 +42,7 @@ const T = {
     switchFlag:   '🇲🇽',
     footerNote:   "Each demo uses a real school's branding & colors throughout.",
     roles: { teacher:'Teacher', student:'Student', parent:'Parent', admin:'Admin' },
+    demoLabels: { teacher:'Teacher Demo', student:'Student Demo', parent:'Parent Demo', admin:'Admin Demo' },
     features: [
       { icon:'📷', title:'Auto-grade with camera',      body:'Snap a photo — GradeFlow grades & updates your gradebook instantly.' },
       { icon:'📋', title:'All assignments in one place', body:'Upload, collect, proctor, and generate reports from one screen.'      },
@@ -71,6 +72,7 @@ const T = {
     switchFlag:   '🇺🇸',
     footerNote:   'Cada demo usa los colores y marca de una escuela real.',
     roles: { teacher:'Maestro', student:'Estudiante', parent:'Padre/Madre', admin:'Admin' },
+    demoLabels: { teacher:'Demo Maestro', student:'Demo Estudiante', parent:'Demo Padre/Madre', admin:'Demo Admin' },
     features: [
       { icon:'📷', title:'Califica con la camara',       body:'Toma una foto — GradeFlow califica y actualiza tu libro de calificaciones al instante.' },
       { icon:'📋', title:'Todas las tareas en un lugar',  body:'Sube, recopila, supervisa y genera informes desde una sola pantalla.'                   },
@@ -139,13 +141,13 @@ function useLoginForm(onLogin, onDemoLogin) {
       }
       setLoading(false)
       window.scrollTo(0, 0)
-      onLogin?.(account)
+      onLogin?.({ ...account, lang })
     }, 400)
   }
 
   function handleDemoClick(demo) {
     const account = getDemoAccountByCredentials(demo.email, demo.password, demo.role)
-    if (account) { window.scrollTo(0, 0); onDemoLogin?.(account) }
+    if (account) { window.scrollTo(0, 0); onDemoLogin?.({ ...account, lang }) }
   }
 
   return { selectedRole, setSelectedRole, email, setEmail, password, setPassword, error, loading, handleSubmit, handleDemoClick, lang, toggleLang }
@@ -219,7 +221,7 @@ function MobileLogin({ form }) {
               onMouseEnter={e => e.currentTarget.style.borderColor=BRAND.primary}
               onMouseLeave={e => e.currentTarget.style.borderColor=BRAND.border}>
               <div style={{ fontSize:15, marginBottom:4 }}>{demo.label.split(' ')[0]}</div>
-              <div style={{ fontSize:12, fontWeight:700, color:BRAND.text }}>{demo.label.split(' ').slice(1).join(' ')}</div>
+              <div style={{ fontSize:12, fontWeight:700, color:BRAND.text }}>{t.demoLabels[demo.role]}</div>
               <div style={{ fontSize:10, color:BRAND.muted, marginTop:2 }}>{demo.school}</div>
             </button>
           ))}
@@ -351,7 +353,7 @@ function DesktopLogin({ form }) {
                   onMouseEnter={e => { e.currentTarget.style.borderColor=BRAND.primary; e.currentTarget.style.background='rgba(249,115,22,0.07)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor=BRAND.border; e.currentTarget.style.background=BRAND.inner }}>
                   <div style={{ fontSize:20, marginBottom:5 }}>{demo.label.split(' ')[0]}</div>
-                  <div style={{ fontSize:13, fontWeight:700, color:BRAND.text }}>{demo.label.split(' ').slice(1).join(' ')}</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:BRAND.text }}>{t.demoLabels[demo.role]}</div>
                   <div style={{ fontSize:11, color:BRAND.muted, marginTop:3 }}>{demo.school}</div>
                 </button>
               ))}
