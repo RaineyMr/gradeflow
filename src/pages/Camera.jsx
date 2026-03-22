@@ -20,7 +20,8 @@ function safeParseJSON(text) {
 }
 
 export default function Camera({ onBack }) {
-  const { cameraIntent, setCameraIntent, assignments, updateGrade, students, currentUser } = useStore()
+  const { cameraIntent, setCameraIntent, assignments, updateGrade, students, classes,
+          getStudentsForClass, getAssignmentsForClass, addAssignment, currentUser } = useStore()
   const role = currentUser?.role || 'teacher'
 
   const [intent,               setIntent]               = useState(cameraIntent || null)
@@ -31,8 +32,15 @@ export default function Camera({ onBack }) {
   const [error,                setError]                = useState('')
   const [cameraActive,         setCameraActive]         = useState(false)
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(assignments[0]?.id || '')
+  const [selectedClassId,      setSelectedClassId]      = useState(classes[0]?.id || '')
+  const [selectedStudentId,    setSelectedStudentId]    = useState('') // '' = scan all, detect from paper
   const [answerKey,            setAnswerKey]            = useState('')
   const [rosterResults,        setRosterResults]        = useState(null)
+
+  // ── New assignment inline creation ────────────────────────────────────────────
+  const [showNewAssign, setShowNewAssign]   = useState(false)
+  const [newAssignName, setNewAssignName]   = useState('')
+  const [newAssignType, setNewAssignType]   = useState('quiz')
 
   // ── Voice state ──────────────────────────────────────────────────────────────
   const [recording,    setRecording]    = useState(false)
@@ -43,6 +51,10 @@ export default function Camera({ onBack }) {
   const [bulkGrades,   setBulkGrades]   = useState([]) // [{studentName, matchedStudentId, assignmentName, score, maxScore, percentage, confidence, editing}]
   const [bulkSyncing,  setBulkSyncing]  = useState(false)
   const [bulkDone,     setBulkDone]     = useState(false)
+
+  // ── Single grade sync state ───────────────────────────────────────────────────
+  const [syncStudentId,    setSyncStudentId]    = useState('')
+  const [syncAssignmentId, setSyncAssignmentId] = useState('')
 
   const videoRef    = useRef(null)
   const streamRef   = useRef(null)
@@ -220,6 +232,16 @@ If score and maxScore are given, calculate percentage. If only percentage, set s
         assignment,
         source:      'voice',
       })
+
+      // Auto-match student name
+      const nameLower = (parsed.studentName || '').toLowerCase()
+      const matchedSt = students.find(s => {
+        const sLower = s.name.toLowerCase()
+        return sLower.includes(nameLower) || nameLower.includes(sLower.split(' ')[0])
+      })
+      setSyncStudentId(matchedSt?.id ? String(matchedSt.id) : '')
+      setSyncAssignmentId(assignment?.id ? String(assignment.id) : '')
+
       setMode('result')
       setVoiceStatus('')
 
@@ -340,11 +362,16 @@ Match student names to the known list as closely as possible.`,
   }
 
   async function gradeDocument(base64, mediaType) {
-    const assignment = assignments.find(a => a.id === Number(selectedAssignmentId))
+    const assignment   = assignments.find(a => a.id === Number(selectedAssignmentId))
+    const preStudent   = selectedStudentId ? students.find(s => s.id === Number(selectedStudentId)) : null
+    const studentNames = students.map(s => s.name).join(', ')
+
     const body = JSON.stringify({
       model:      'claude-sonnet-4-20250514',
       max_tokens: 800,
-      system:     'You are an expert at reading graded school papers. Identify the scoring system used and calculate the correct percentage. Return ONLY valid JSON: {"studentName":"","score":85,"maxScore":100,"percentage":85,"format":"e.g. 17/20","feedback":"brief feedback","confidence":"high|medium|low"}',
+      system:     `You are an expert at reading graded school papers. Identify the scoring system and calculate the correct percentage.
+${preStudent ? `This paper belongs to student: ${preStudent.name}. Do not try to detect the student name — use "${preStudent.name}".` : `Known students: ${studentNames || 'unknown'}. Try to read the student name from the paper.`}
+Return ONLY valid JSON: {"studentName":"","score":85,"maxScore":100,"percentage":85,"format":"e.g. 17/20","feedback":"brief feedback","confidence":"high|medium|low"}`,
       messages: [{
         role:    'user',
         content: [
@@ -353,6 +380,7 @@ Match student names to the known list as closely as possible.`,
         ],
       }],
     })
+
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:  'POST',
       headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
@@ -362,8 +390,28 @@ Match student names to the known list as closely as possible.`,
     const data   = await res.json()
     const parsed = safeParseJSON(data.content?.[0]?.text || '')
     if (!parsed) throw new Error('Could not parse AI response.')
-    setResult({ type:'grade', ...parsed, assignment, source:'image' })
+
+    // If student was pre-selected, use them directly — no fuzzy match needed
+    const matchedStudent = preStudent || (() => {
+      const nameFromImage = (parsed.studentName || '').toLowerCase()
+      return students.find(s => {
+        const sLower = s.name.toLowerCase()
+        return sLower.includes(nameFromImage) || nameFromImage.includes(sLower.split(' ')[0])
+      })
+    })()
+
+    const assignmentFromDropdown = assignments.find(a => a.id === Number(selectedAssignmentId))
+    const matchedAssignment = assignmentFromDropdown || assignments[0]
+
+    setSyncStudentId(matchedStudent?.id ? String(matchedStudent.id) : '')
+    setSyncAssignmentId(matchedAssignment?.id ? String(matchedAssignment.id) : '')
+
+    setResult({ type:'grade', ...parsed,
+      studentName: matchedStudent?.name || parsed.studentName,
+      assignment:  matchedAssignment,
+      source:      'image' })
     setMode('result')
+  }
   }
 
   async function extractAnswerKey(base64, mediaType) {
@@ -500,9 +548,12 @@ Rules:
   }
 
   function syncToGradebook() {
-    if (result?.type === 'grade' && result.assignment) {
-      const student = students.find(s => s.name?.toLowerCase().includes(result.studentName?.toLowerCase?.() || ''))
-      if (student) updateGrade(student.id, result.assignment.id, result.percentage)
+    if (result?.type === 'grade') {
+      const studentId    = Number(syncStudentId)
+      const assignmentId = Number(syncAssignmentId)
+      if (studentId && assignmentId && result.percentage !== undefined) {
+        updateGrade(studentId, assignmentId, result.percentage)
+      }
     }
     setMode('done')
   }
@@ -517,11 +568,33 @@ Rules:
     URL.revokeObjectURL(url)
   }
 
+  function createAndSelectAssignment() {
+    if (!newAssignName.trim()) return
+    const newId = Date.now()
+    addAssignment({
+      id:         newId,
+      classId:    Number(selectedClassId) || classes[0]?.id,
+      name:       newAssignName.trim(),
+      type:       newAssignType,
+      categoryId: 2,
+      weight:     0,
+      date:       new Date().toISOString().split('T')[0],
+      dueDate:    new Date().toISOString().split('T')[0],
+      hasKey:     false,
+    })
+    setSelectedAssignmentId(String(newId))
+    setSyncAssignmentId(String(newId))
+    setNewAssignName('')
+    setShowNewAssign(false)
+  }
+
   function resetAll() {
     setIntent(null); setCapturedImage(null); setCapturedFile(null)
     setResult(null); setError(''); setMode('intent')
     setRecording(false); setTranscribing(false); setVoiceStatus('')
     setBulkGrades([]); setBulkSyncing(false); setBulkDone(false)
+    setSyncStudentId(''); setSyncAssignmentId('')
+    setSelectedStudentId(''); setShowNewAssign(false); setNewAssignName('')
     stopStream()
   }
 
@@ -569,24 +642,84 @@ Rules:
         <h1 style={S.h1}>{INTENTS.find(i => i.id === intent)?.label}</h1>
       </div>
 
-      {intent === 'grade' && (
-        <div style={S.card}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:8 }}>Assignment</label>
-          <select
-            style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13 }}
-            value={selectedAssignmentId}
-            onChange={e => setSelectedAssignmentId(e.target.value)}>
-            {assignments.map(a => <option key={a.id} value={a.id}>{a.name} · {a.type}</option>)}
-          </select>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', margin:'12px 0 8px' }}>Answer Key (optional)</label>
-          <textarea
-            style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:12, resize:'none', boxSizing:'border-box' }}
-            rows={2}
-            placeholder="Paste answer key, or leave blank for AI to figure it out..."
-            value={answerKey}
-            onChange={e => setAnswerKey(e.target.value)}/>
-        </div>
-      )}
+      {intent === 'grade' && (() => {
+        const classStudents   = getStudentsForClass(Number(selectedClassId) || 0)
+        const classAssignments = getAssignmentsForClass(Number(selectedClassId) || 0)
+        return (
+          <div style={S.card}>
+            {/* Class selector */}
+            <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>Class</label>
+            <select
+              style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
+              value={selectedClassId}
+              onChange={e => { setSelectedClassId(e.target.value); setSelectedAssignmentId(''); setSelectedStudentId('') }}>
+              {classes.map(c => <option key={c.id} value={c.id}>{c.period} · {c.subject}</option>)}
+            </select>
+
+            {/* Assignment selector + create new */}
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+              <label style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494' }}>Assignment</label>
+              <button onClick={() => setShowNewAssign(v => !v)}
+                style={{ background:'var(--school-color)', border:'none', borderRadius:8, padding:'3px 10px', color:'#fff', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+                {showNewAssign ? '✕ Cancel' : '+ New'}
+              </button>
+            </div>
+
+            {showNewAssign ? (
+              <div style={{ background:'#1e2231', borderRadius:10, padding:10, marginBottom:12 }}>
+                <input
+                  value={newAssignName}
+                  onChange={e => setNewAssignName(e.target.value)}
+                  placeholder="Assignment name..."
+                  style={{ width:'100%', background:'#161923', border:'1px solid #2a2f42', borderRadius:8, padding:'8px 10px', color:'#eef0f8', fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
+                <div style={{ display:'flex', gap:6, marginBottom:8 }}>
+                  {['quiz','test','homework','participation'].map(t => (
+                    <button key={t} onClick={() => setNewAssignType(t)}
+                      style={{ flex:1, padding:'5px 4px', borderRadius:8, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
+                        background: newAssignType===t ? 'var(--school-color)' : '#161923',
+                        color:      newAssignType===t ? '#fff' : '#6b7494' }}>
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                <button onClick={createAndSelectAssignment} disabled={!newAssignName.trim()}
+                  style={{ width:'100%', background: newAssignName.trim() ? 'var(--school-color)' : '#2a2f42', color:'#fff', border:'none', borderRadius:8, padding:'8px', fontSize:12, fontWeight:700, cursor: newAssignName.trim() ? 'pointer' : 'not-allowed' }}>
+                  Create &amp; Select
+                </button>
+              </div>
+            ) : (
+              <select
+                style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
+                value={selectedAssignmentId}
+                onChange={e => { setSelectedAssignmentId(e.target.value); setSyncAssignmentId(e.target.value) }}>
+                <option value="">-- Select assignment --</option>
+                {classAssignments.map(a => <option key={a.id} value={a.id}>{a.name} · {a.type}</option>)}
+              </select>
+            )}
+
+            {/* Student selector — optional */}
+            <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>
+              Student <span style={{ color:'#3b7ef4', textTransform:'none', fontWeight:400 }}>(optional — AI detects from paper)</span>
+            </label>
+            <select
+              style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
+              value={selectedStudentId}
+              onChange={e => { setSelectedStudentId(e.target.value); setSyncStudentId(e.target.value) }}>
+              <option value="">All students — detect name from paper</option>
+              {classStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
+
+            {/* Answer key */}
+            <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>Answer Key (optional)</label>
+            <textarea
+              style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:12, resize:'none', boxSizing:'border-box' }}
+              rows={2}
+              placeholder="Paste answer key, or leave blank for AI..."
+              value={answerKey}
+              onChange={e => setAnswerKey(e.target.value)}/>
+          </div>
+        )
+      })()}
 
       <div style={S.card}>
         {/* Camera viewfinder */}
@@ -703,13 +836,47 @@ Rules:
                 🎤 Graded via voice dictation
               </div>
             )}
-            <div style={{ textAlign:'center', padding:'12px 0 20px' }}>
+
+            {/* Grade display */}
+            <div style={{ textAlign:'center', padding:'12px 0 16px' }}>
               <div style={{ fontSize:56, fontWeight:900, color, lineHeight:1 }}>{Math.round(pct)}%</div>
               <div style={{ fontSize:24, fontWeight:700, color, marginTop:4 }}>{letter}</div>
-              {result.format      && <div style={{ fontSize:12, color:'#6b7494', marginTop:4 }}>{result.format}</div>}
-              {result.studentName && <div style={{ fontSize:13, color:'#eef0f8', marginTop:8 }}>Student: {result.studentName}</div>}
-              {result.assignment  && <div style={{ fontSize:12, color:'#6b7494' }}>Assignment: {result.assignment.name}</div>}
+              {result.format && <div style={{ fontSize:12, color:'#6b7494', marginTop:4 }}>{result.format}</div>}
             </div>
+
+            {/* Student picker — pre-filled from AI read */}
+            <div style={{ marginBottom:10 }}>
+              <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>
+                Student {syncStudentId ? '✓' : '⚠ Select student'}
+              </label>
+              <select
+                value={syncStudentId}
+                onChange={e => setSyncStudentId(e.target.value)}
+                style={{ width:'100%', background:'#1e2231', border:`1px solid ${syncStudentId?'#22c97a':'#f5a623'}`, borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13 }}>
+                <option value="">-- Select student --</option>
+                {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+              </select>
+              {result.studentName && !syncStudentId && (
+                <div style={{ fontSize:11, color:'#f5a623', marginTop:4 }}>
+                  AI read: "{result.studentName}" — please confirm above
+                </div>
+              )}
+            </div>
+
+            {/* Assignment picker — pre-filled from selected or AI read */}
+            <div style={{ marginBottom:14 }}>
+              <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>
+                Assignment {syncAssignmentId ? '✓' : '⚠ Select assignment'}
+              </label>
+              <select
+                value={syncAssignmentId}
+                onChange={e => setSyncAssignmentId(e.target.value)}
+                style={{ width:'100%', background:'#1e2231', border:`1px solid ${syncAssignmentId?'#22c97a':'#f5a623'}`, borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13 }}>
+                <option value="">-- Select assignment --</option>
+                {assignments.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+              </select>
+            </div>
+
             {result.feedback && (
               <div style={{ background:'#1e2231', borderRadius:12, padding:12, marginBottom:12 }}>
                 <div style={{ fontSize:10, fontWeight:700, color:'#6b7494', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>
@@ -718,9 +885,15 @@ Rules:
                 <p style={{ fontSize:13, color:'#c0c8e0', margin:0 }}>{result.feedback}</p>
               </div>
             )}
+
             <div style={{ display:'flex', gap:8 }}>
-              <button onClick={syncToGradebook} style={{ ...S.btn('#22c97a'), padding:'12px 0' }}>✓ Sync to Gradebook</button>
-              <button onClick={downloadResult}   style={{ ...S.btn('#3b7ef4'), padding:'12px 0' }}>⬇ Download</button>
+              <button
+                onClick={syncToGradebook}
+                disabled={!syncStudentId || !syncAssignmentId}
+                style={{ ...S.btn(syncStudentId && syncAssignmentId ? '#22c97a' : '#6b7494'), padding:'12px 0', cursor: syncStudentId && syncAssignmentId ? 'pointer' : 'not-allowed' }}>
+                {syncStudentId && syncAssignmentId ? '✓ Sync to Gradebook' : 'Select student & assignment'}
+              </button>
+              <button onClick={downloadResult} style={{ ...S.btn('#3b7ef4'), padding:'12px 0' }}>⬇</button>
             </div>
           </div>
         )}
