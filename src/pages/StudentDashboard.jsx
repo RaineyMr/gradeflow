@@ -458,26 +458,46 @@ export default function StudentDashboard({ currentUser }) {
   const [page,         setPage]        = useState('home')
   const [activeNav,    setActiveNav]   = useState('home')
   const [activeThread, setActiveThread]= useState(null)
+  const history = useRef([])
 
   useEffect(()=>{ window.scrollTo(0,0) }, [page])
   useEffect(()=>{ if(activeThread) window.scrollTo(0,0) }, [activeThread])
 
+  function goHome() {
+    history.current = []
+    setActiveThread(null)
+    setPage('home')
+    setActiveNav('home')
+    window.scrollTo(0,0)
+  }
+
+  function goBack() {
+    // if a thread is open, close it back to the page we were on
+    if (activeThread) { setActiveThread(null); return }
+    history.current.pop()
+    const prev = history.current[history.current.length - 1] || 'home'
+    if (prev === 'home') { goHome(); return }
+    setPage(prev)
+    if(['grades','messages','feed','alerts'].includes(prev)) setActiveNav(prev)
+    window.scrollTo(0,0)
+  }
+
   function navigate(id) {
     setActiveThread(null)
+    if (id === 'home') { goHome(); return }
+    history.current.push(id)
     setPage(id)
     if(['home','grades','messages','feed','alerts'].includes(id)) setActiveNav(id)
     window.scrollTo(0,0)
   }
 
-  function goHome() { setActiveThread(null); navigate('home'); setActiveNav('home') }
-
-  const isSubPage = page !== 'home' || activeThread !== null
-
   function navSelect(id) {
-    if(id==='__back__') { goHome(); return }
+    if(id==='__back__') { goBack(); return }
     navigate(id)
     setActiveNav(id)
   }
+
+  const isSubPage = page !== 'home' || activeThread !== null
 
   // Thread opened from home widget
   if (activeThread) {
@@ -489,10 +509,10 @@ export default function StudentDashboard({ currentUser }) {
     )
   }
 
-  if(page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(page==='messages') return <><ParentMessages onBack={goHome} viewerRole="student"/><BottomNav active='messages' onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(page==='feed')     return <><ClassFeed    onBack={goHome} viewerRole="student"/><BottomNav active='feed'     onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='grades')   return <><GradesPage   onBack={goBack}/><BottomNav active={activeNav}  onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='messages') return <><ParentMessages onBack={goBack} viewerRole="student"/><BottomNav active='messages' onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='alerts')   return <><AlertsPage   onBack={goBack}/><BottomNav active={activeNav}  onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(page==='feed')     return <><ClassFeed    onBack={goBack} viewerRole="student"/><BottomNav active='feed'     onSelect={navSelect} isSubPage={isSubPage}/></>
 
   const now  = new Date()
   const hour = now.getHours()
