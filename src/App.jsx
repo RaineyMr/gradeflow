@@ -20,11 +20,11 @@ export default function App() {
   const menuRef   = useRef(null)
   const scrollRef = useRef(null)
 
-  const loadFromDB = useStore(s => s.loadFromDB)
+  const loadFromDB   = useStore(s => s.loadFromDB)
+  const setLang      = useStore(s => s.setLang)
+  const storeSetUser = useStore(s => s.setCurrentUser)
 
   useEffect(()=>{ localStorage.removeItem('gradeflow_user') },[])
-
-  // Load real data from Supabase once on mount
   useEffect(()=>{ loadFromDB() },[])
 
   useEffect(()=>{
@@ -41,10 +41,20 @@ export default function App() {
   const handleLogin = (account) => {
     if(!account?.role) return
     setCurrentUser(account)
+    storeSetUser(account)
     setActivePage(account.role)
     localStorage.setItem('gradeflow_user', JSON.stringify(account))
-    // Set HTML lang attribute so browser translation engines respect it
     document.documentElement.lang = account.lang || 'en'
+  }
+
+  function toggleLang() {
+    const newLang = (currentUser?.lang || 'en') === 'en' ? 'es' : 'en'
+    const updated = { ...currentUser, lang: newLang }
+    setCurrentUser(updated)
+    storeSetUser(updated)
+    setLang(newLang)
+    localStorage.setItem('gradeflow_user', JSON.stringify(updated))
+    document.documentElement.lang = newLang
   }
 
   const handleLogout = () => {
@@ -113,6 +123,7 @@ export default function App() {
     { label:'Account', items:[
       { icon:'👤', label:'Profile & Settings', action:()=>{ setActivePage('profile'); setMenuOpen(false) } },
       { icon:'🔄', label:'Switch Account',     action:handleLogout },
+      { icon: currentUser?.lang === 'es' ? '🇺🇸' : '🇲🇽', label: currentUser?.lang === 'es' ? 'Switch to English' : 'Cambiar a Espanol', action: toggleLang },
     ]},
     { label:'App', items:[
       { icon:'🎥', label:'Tutorials',  action:()=>{ setActivePage('tutorials'); setMenuOpen(false) } },

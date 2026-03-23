@@ -219,6 +219,9 @@ export const useStore = create((set, get) => ({
   // ── Auth / User ───────────────────────────────────────────────────────────────
   currentUser: null,
   setCurrentUser: (user) => set({ currentUser: user }),
+  setLang: (lang) => set(state => ({
+    currentUser: state.currentUser ? { ...state.currentUser, lang } : state.currentUser
+  })),
 
   // ── Teacher profile ───────────────────────────────────────────────────────────
   teacher: { id: 1, name: 'Ms. Johnson', school: 'KIPP New Orleans', schoolColor: '#BA0C2F', avatar: '👩‍🏫' },
