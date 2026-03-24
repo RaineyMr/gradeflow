@@ -218,9 +218,18 @@ export const useStore = create((set, get) => ({
 
   // ── Auth / User ───────────────────────────────────────────────────────────────
   currentUser: null,
-  setCurrentUser: (user) => set({ currentUser: user }),
+  // TOP-LEVEL lang field — this is what useT() subscribes to for instant re-renders
+  lang: 'en',
+
+  setCurrentUser: (user) => set({
+    currentUser: user,
+    lang: user?.lang || 'en',
+  }),
+
+  // setLang updates BOTH the top-level lang AND currentUser.lang
   setLang: (lang) => set(state => ({
-    currentUser: state.currentUser ? { ...state.currentUser, lang } : state.currentUser
+    lang,
+    currentUser: state.currentUser ? { ...state.currentUser, lang } : state.currentUser,
   })),
 
   // ── Teacher profile ───────────────────────────────────────────────────────────
@@ -238,7 +247,6 @@ export const useStore = create((set, get) => ({
   reminders:   DEMO_REMINDERS,
 
   // ── Load all data from Supabase ───────────────────────────────────────────────
-  // Call once on app mount. Falls back to demo data silently if unreachable.
   loadFromDB: async () => {
     try {
       const today = new Date().toISOString().split('T')[0]
@@ -261,7 +269,6 @@ export const useStore = create((set, get) => ({
         supabase.from('feed_posts').select('*').order('created_at', { ascending: false }).limit(20),
       ])
 
-      // If critical queries fail keep demo data
       if (classesRes.error || studentsRes.error) {
         console.warn('Supabase load failed, using demo data:', classesRes.error || studentsRes.error)
         set({ dbLoaded: true, dbError: classesRes.error || studentsRes.error })
@@ -275,7 +282,6 @@ export const useStore = create((set, get) => ({
       const messages    = (messagesRes.data    || []).map(mapMessage)
       const feed        = (feedRes.data        || []).map(mapFeedPost)
 
-      // Build lessons keyed by classId
       const lessonsById = {}
       for (const row of (lessonsRes.data || [])) {
         const lesson = mapLesson(row)
@@ -283,7 +289,6 @@ export const useStore = create((set, get) => ({
         lessonsById[row.class_id].push(lesson)
       }
 
-      // Only replace if Supabase actually returned rows
       set({
         classes:     classes.length     > 0 ? classes     : DEMO_CLASSES,
         students:    students.length    > 0 ? students    : DEMO_STUDENTS,
