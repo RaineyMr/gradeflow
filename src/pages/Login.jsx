@@ -141,13 +141,13 @@ function useLoginForm(onLogin, onDemoLogin) {
       }
       setLoading(false)
       window.scrollTo(0, 0)
-      onLogin?.({ ...account, lang })
+      onLogin?.({ ...account, lang: account.lang || lang })
     }, 400)
   }
 
   function handleDemoClick(demo) {
     const account = getDemoAccountByCredentials(demo.email, demo.password, demo.role)
-    if (account) { window.scrollTo(0, 0); onDemoLogin?.({ ...account, lang }) }
+    if (account) { window.scrollTo(0, 0); onDemoLogin?.({ ...account, lang: account.lang || lang }) }
   }
 
   return { selectedRole, setSelectedRole, email, setEmail, password, setPassword, error, loading, handleSubmit, handleDemoClick, lang, toggleLang }
