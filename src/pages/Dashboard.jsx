@@ -1000,3 +1000,8 @@ export default function Dashboard({ currentUser, onCameraClick }) {
 
   return withNav(
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
+      <StickyHeader teacher={teacher}/>
+      <HomeFeed navigate={navigate}/>
+    </div>
+  )
+}
