@@ -216,27 +216,6 @@ export default function AppShell() {
             {isEs ? '🇺🇸 EN' : '🇲🇽 ES'}
           </button>
 
-          {/* GradeFlow / home button (right side) */}
-          <button
-            onClick={homeClick}
-            title="Go to home dashboard"
-            type="button"
-            style={{
-              width:        38,
-              height:       38,
-              borderRadius: 10,
-              background:   theme.soft ?? 'rgba(249,115,22,0.14)',
-              border:       'none',
-              cursor:       'pointer',
-              display:      'flex',
-              alignItems:   'center',
-              justifyContent:'center',
-              fontSize:     18,
-            }}
-          >
-            ⚡
-          </button>
-
           {/* Camera button */}
           <button
             onClick={homeClick}
