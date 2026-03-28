@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
+import BottomNav      from '../components/ui/BottomNav'
 import Gradebook      from './Gradebook'
 import LessonPlan     from './LessonPlan'
 import Reports        from './Reports'
@@ -7,7 +9,6 @@ import TestingSuite   from './TestingSuite'
 import ClassFeed      from './ClassFeed'
 import StudentProfile from './StudentProfile'
 import ParentMessages from './ParentMessages'
-import Camera         from './Camera'
 import Integrations   from './Integrations'
 
 const C = {
@@ -84,40 +85,6 @@ function ActionBtn({ label, color, onClick, style={} }) {
 function SubPage({ children }) {
   useEffect(()=>{ scrollTop() },[])
   return <div style={{ minHeight:'100vh', background:C.bg, paddingBottom:80 }}>{children}</div>
-}
-
-// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
-function BottomNav({ active, onSelect, isSubPage }) {
-  const homeItems = [
-    { id:'gradebook',      icon:'📊', label:'Grades'   },
-    { id:'parentMessages', icon:'💬', label:'Messages' },
-    { id:'dashboard',      icon:'🏠', label:'Home'     },
-    { id:'lessonPlan',     icon:'📋', label:'Lessons'  },
-    { id:'alerts',         icon:'🔔', label:'Alerts'   },
-  ]
-  const subItems = [
-    { id:'__back__',       icon:'←',  label:'Back'     },
-    { id:'gradebook',      icon:'📊', label:'Grades'   },
-    { id:'parentMessages', icon:'💬', label:'Messages' },
-    { id:'lessonPlan',     icon:'📋', label:'Lessons'  },
-    { id:'alerts',         icon:'🔔', label:'Alerts'   },
-  ]
-  const items = isSubPage ? subItems : homeItems
-  return (
-    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'rgba(6,8,16,0.97)', backdropFilter:'blur(20px)', borderTop:`1px solid ${C.border}`, padding:`8px 0 max(14px,env(safe-area-inset-bottom))`, display:'grid', gridTemplateColumns:`repeat(${items.length},1fr)` }}>
-      {items.map(item=>{
-        const isActive = item.id===active && item.id!=='__back__'
-        return (
-          <button key={item.id} onClick={()=>onSelect(item.id)}
-            style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'5px 2px', position:'relative' }}>
-            <span style={{ fontSize:item.id==='__back__'?20:18, transition:'transform 0.15s', transform:isActive?'scale(1.15)':'scale(1)', color:item.id==='__back__'?C.soft:'inherit' }}>{item.icon}</span>
-            <span style={{ fontSize:9, fontWeight:isActive?700:400, color:isActive?'var(--school-color)':C.muted }}>{item.label}</span>
-            {isActive && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:2, background:'var(--school-color)', borderRadius:1 }}/>}
-          </button>
-        )
-      })}
-    </div>
-  )
 }
 
 // ─── STICKY HEADER ────────────────────────────────────────────────────────────
@@ -941,28 +908,55 @@ function HomeFeed({ navigate }) {
 export default function Dashboard({ currentUser, onCameraClick }) {
   const store = useStore()
   const { teacher, activeScreen, activeLessonClassId } = store
+  const routerNav = useNavigate()
 
-  const [subPage,   setSubPage]   = useState(null)
-  const [activeNav, setActiveNav] = useState('dashboard')
+  const [subPage, setSubPage] = useState(null)
   const history = useRef([])
 
   useEffect(()=>{ applyTheme('kipp'); scrollTop() },[])
   useEffect(()=>{ if(activeScreen==='studentProfile') setSubPage('studentProfile') },[activeScreen])
 
+  // Shared BottomNav emits these IDs for the teacher role.
+  // Map them to Dashboard's internal subPage keys.
+  const NAV_TO_PAGE = {
+    classes:   'gradebook',
+    messages:  'parentMessages',
+    reports:   'reports',
+    alerts:    'alerts',
+    dashboard: null,          // home
+  }
+
+  // Reverse map: which BottomNav item should be highlighted per subPage.
+  const PAGE_TO_NAV = {
+    gradebook:      'classes',
+    parentMessages: 'messages',
+    lessonPlan:     'classes',
+    reports:        'reports',
+    alerts:         'alerts',
+    testingSuite:   'classes',
+    feed:           'classes',
+    studentProfile: 'classes',
+    integrations:   'classes',
+    reminders:      'dashboard',
+    attention:      'alerts',
+    classes:        'classes',
+    settings:       'dashboard',
+  }
+
+  const activeNav = subPage ? (PAGE_TO_NAV[subPage] || 'dashboard') : 'dashboard'
+
   function goHome() {
     history.current = []
     setSubPage(null)
-    setActiveNav('dashboard')
     store.setScreen('dashboard')
     scrollTop()
   }
 
   function goBack() {
-    history.current.pop() // remove current
+    history.current.pop()
     const prev = history.current[history.current.length - 1] || null
     if (!prev) { goHome(); return }
     setSubPage(prev)
-    setActiveNav(prev==='gradebook'?'gradebook':prev==='parentMessages'?'parentMessages':prev==='alerts'?'alerts':activeNav)
     scrollTop()
   }
 
@@ -970,23 +964,25 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     if(!id) return
     if(id==='dashboard') { goHome(); return }
     if(id==='logout')    { goHome(); return }
+    if(id==='camera')    { routerNav('/camera'); return }
     history.current.push(id)
     setSubPage(id)
-    setActiveNav(id==='gradebook'?'gradebook':id==='parentMessages'?'parentMessages':id==='lessonPlan'?'lessonPlan':id==='alerts'?'alerts':id==='feed'?activeNav:activeNav)
     scrollTop()
   }
 
   function navSelect(id) {
     if(id==='__back__') { goBack(); return }
-    navigate(id)
-    setActiveNav(id)
+    const page = NAV_TO_PAGE[id]
+    if(page === undefined) return
+    if(page === null) { goHome(); return }
+    navigate(page)
   }
 
   const isSubPage = subPage !== null
   const withNav = (node) => (
     <>
       {node}
-      <BottomNav active={activeNav} onSelect={navSelect} isSubPage={isSubPage}/>
+      <BottomNav active={activeNav} onSelect={navSelect} isSubPage={isSubPage} role="teacher"/>
     </>
   )
 
@@ -997,7 +993,6 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   if(subPage==='testingSuite')   return withNav(<SubPage><TestingSuite   onBack={goBack}/></SubPage>)
   if(subPage==='feed')           return withNav(<SubPage><ClassFeed      onBack={goBack} viewerRole="teacher"/></SubPage>)
   if(subPage==='studentProfile') return withNav(<SubPage><StudentProfile onBack={goBack}/></SubPage>)
-  if(subPage==='camera')         return withNav(<SubPage><Camera         onBack={goBack}/></SubPage>)
   if(subPage==='integrations')   return withNav(<SubPage><Integrations   onBack={goBack}/></SubPage>)
   if(subPage==='reminders')      return withNav(<RemindersPage      onBack={goBack}/>)
   if(subPage==='attention')      return withNav(<NeedsAttentionPage  onBack={goBack}/>)
