@@ -1,859 +1,435 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useStore } from '../lib/store'
+import { scanGradedDocument } from '../lib/ai'
 
-const INTENTS = [
-  { id: 'grade',             icon: '📝', label: 'Grade Student Work',       desc: 'Capture a paper — AI reads & grades it',                roles: ['teacher', 'admin'] },
-  { id: 'grade-sheet',       icon: '📋', label: 'Scan Grade Sheet (Bulk)',  desc: 'Photo of a full class grade sheet — bulk sync all scores', roles: ['teacher', 'admin'] },
-  { id: 'upload-answer-key', icon: '🔑', label: 'Upload Answer Key',        desc: 'Photo, file, or spreadsheet of the answer key',          roles: ['teacher', 'admin'] },
-  { id: 'upload-assignment', icon: '📋', label: 'Upload Assignment',        desc: 'Digitize a worksheet, PDF, or CSV assignment',           roles: ['teacher', 'admin', 'student'] },
-  { id: 'upload-roster',     icon: '📊', label: 'Upload Class Roster',      desc: 'Spreadsheet, CSV, or photo — AI extracts student list',  roles: ['teacher', 'admin'] },
-  { id: 'submit',            icon: '📤', label: 'Submit Your Work',         desc: 'Photo, file, or document of your completed assignment',  roles: ['student'] },
-]
+export default function Camera() {
+  const { classes, activeClass, addAssignment } = useStore()
+  const [mode, setMode] = useState('menu')
+  const [assignType, setAssignType] = useState('quiz')
+  const [capturedImage, setCapturedImage] = useState(null)
+  const [assignName, setAssignName] = useState('')
+  const [selectedClass, setSelectedClass] = useState(activeClass?.id || classes[0]?.id)
+  const [cameraError, setCameraError] = useState(null)
+  const [cameraReady, setCameraReady] = useState(false)
+  const [scanResult, setScanResult] = useState(null)
+  const [scanError, setScanError] = useState(null)
+  const [manualScore, setManualScore] = useState('')
+  const [manualTotal, setManualTotal] = useState('100')
 
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY
-const ACCEPT_ALL    = 'image/*,.pdf,.csv,.xlsx,.xls,.doc,.docx,.txt'
+  const streamRef = useRef(null)
+  const videoRef  = useRef(null)
+  const canvasRef = useRef(null)
+  const fileRef   = useRef(null)
 
-function safeParseJSON(text) {
-  try { return JSON.parse(text.replace(/```json|```/g, '').trim()) } catch {}
-  try { const m = text.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]) } catch {}
-  return null
-}
-
-export default function Camera({ onBack }) {
-  const { cameraIntent, setCameraIntent, assignments, updateGrade, students, classes,
-          getStudentsForClass, getAssignmentsForClass, addAssignment, currentUser } = useStore()
-  const role = currentUser?.role || 'teacher'
-
-  const [intent,               setIntent]               = useState(cameraIntent || null)
-  const [mode,                 setMode]                 = useState('intent')
-  const [capturedImage,        setCapturedImage]        = useState(null)
-  const [capturedFile,         setCapturedFile]         = useState(null)
-  const [result,               setResult]               = useState(null)
-  const [error,                setError]                = useState('')
-  const [cameraActive,         setCameraActive]         = useState(false)
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState(assignments[0]?.id || '')
-  const [selectedClassId,      setSelectedClassId]      = useState(classes[0]?.id || '')
-  const [selectedStudentId,    setSelectedStudentId]    = useState('') // '' = scan all, detect from paper
-  const [answerKey,            setAnswerKey]            = useState('')
-  const [rosterResults,        setRosterResults]        = useState(null)
-
-  // ── New assignment inline creation ────────────────────────────────────────────
-  const [showNewAssign, setShowNewAssign]   = useState(false)
-  const [newAssignName, setNewAssignName]   = useState('')
-  const [newAssignType, setNewAssignType]   = useState('quiz')
-
-  // ── Bulk grade sheet state ───────────────────────────────────────────────────
-  const [bulkGrades,   setBulkGrades]   = useState([]) // [{studentName, matchedStudentId, assignmentName, score, maxScore, percentage, confidence, editing}]
-  const [bulkSyncing,  setBulkSyncing]  = useState(false)
-  const [bulkDone,     setBulkDone]     = useState(false)
-
-  // ── Single grade sync state ───────────────────────────────────────────────────
-  const [syncStudentId,    setSyncStudentId]    = useState('')
-  const [syncAssignmentId, setSyncAssignmentId] = useState('')
-
-  const videoRef    = useRef(null)
-  const streamRef   = useRef(null)
-  const fileRef     = useRef(null)
-
-  useEffect(() => () => stopStream(), [])
+  const typeConfig = [
+    { id: 'test',          label: 'Test',  weight: 40, color: '#f04a4a' },
+    { id: 'quiz',          label: 'Quiz',  weight: 30, color: '#f5a623' },
+    { id: 'participation', label: 'Part.', weight: 10, color: '#9b6ef5' },
+    { id: 'homework',      label: 'Other', weight: 20, color: '#22c97a' },
+  ]
 
   function stopStream() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop())
       streamRef.current = null
     }
-    setCameraActive(false)
+    setCameraReady(false)
   }
 
-  async function startCamera() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-      streamRef.current = stream
-      if (videoRef.current) videoRef.current.srcObject = stream
-      setCameraActive(true)
-    } catch {
-      setError('Camera not accessible. Use "Choose File" instead.')
+  useEffect(() => () => stopStream(), [])
+
+  const attachStream = useCallback((stream) => {
+    const video = videoRef.current
+    if (!video) return
+    video.srcObject = stream
+    if (typeof video.load === 'function') video.load()
+
+    const tryPlay = () => {
+      const p = video.play()
+      if (p !== undefined) {
+        p.then(() => setCameraReady(true)).catch(() => {
+          video.muted = true
+          video.play()
+            .then(() => setCameraReady(true))
+            .catch(err => {
+              setCameraError('Could not start camera: ' + err.message)
+              stopStream()
+              setMode('menu')
+            })
+        })
+      } else {
+        video.addEventListener('canplay', () => setCameraReady(true), { once: true })
+      }
     }
-  }
 
-  function captureFromCamera() {
-    if (!videoRef.current || !cameraActive) return
-    const canvas  = document.createElement('canvas')
-    canvas.width  = videoRef.current.videoWidth
-    canvas.height = videoRef.current.videoHeight
-    canvas.getContext('2d').drawImage(videoRef.current, 0, 0)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92)
-    setCapturedImage(dataUrl)
-    stopStream()
-    setMode('processing')
-    processImage(dataUrl, null)
-  }
-
-  async function handleFileChange(e) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setCapturedFile(file)
-    setMode('processing')
-    const isSpreadsheet = file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      reader.onload = ev => processImage(ev.target.result, file)
-      reader.readAsDataURL(file)
-    } else if (isSpreadsheet && intent === 'grade-sheet') {
-      await processGradebookCSV(file)
-    } else if (isSpreadsheet) {
-      await processCSV(file)
+    if (video.isConnected) {
+      tryPlay()
     } else {
-      setResult({ type: 'upload', message: 'File uploaded successfully.', fileName: file.name })
-      setMode('result')
+      requestAnimationFrame(() => { if (videoRef.current) tryPlay() })
     }
-  }
+  }, [])
 
-  // ── Bulk grade sheet ─────────────────────────────────────────────────────────
-  async function gradeSheet(base64, mediaType) {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:  'POST',
-      headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 2000,
-        system: `You read teacher grade sheets — grids with student names and scores.
-Extract EVERY student-score pair visible. For each row/student, extract all scores.
-Return ONLY valid JSON:
-{"grades":[{"studentName":"","assignmentName":"","score":0,"maxScore":100,"percentage":0,"confidence":"high|medium|low"}]}
-Calculate percentage = (score/maxScore)*100. If only percentage visible, set score=percentage, maxScore=100.`,
-        messages: [{
-          role:    'user',
-          content: [
-            { type:'image', source:{ type:'base64', media_type:mediaType, data:base64 } },
-            { type:'text',  text:'Extract all grades from this grade sheet.' },
-          ],
-        }],
-      }),
-    })
+  // Callback ref fires the moment <video> mounts — eliminates the race condition
+  const videoCallbackRef = useCallback((node) => {
+    videoRef.current = node
+    if (node && streamRef.current) attachStream(streamRef.current)
+  }, [attachStream])
 
-    if (!res.ok) throw new Error(`API error ${res.status}`)
-    const data   = await res.json()
-    const parsed = safeParseJSON(data.content?.[0]?.text || '')
+  async function openCamera() {
+    setCameraError(null)
+    setCameraReady(false)
 
-    if (!parsed?.grades?.length) throw new Error('No grades found in image. Make sure the grade sheet is clearly visible.')
-
-    // Fuzzy match student names to store students
-    const matched = parsed.grades.map(g => {
-      const lower    = g.studentName.toLowerCase()
-      const matched  = students.find(s =>
-        s.name.toLowerCase().includes(lower) ||
-        lower.includes(s.name.toLowerCase().split(' ')[0].toLowerCase())
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError(
+        location.protocol === 'http:' && location.hostname !== 'localhost'
+          ? 'Camera requires HTTPS. Use the Vercel URL.'
+          : 'Browser does not support camera. Try Chrome or Safari, or upload instead.'
       )
-      const matchedAssignment = assignments.find(a =>
-        a.name.toLowerCase().includes((g.assignmentName || '').toLowerCase()) ||
-        (g.assignmentName || '').toLowerCase().includes(a.name.toLowerCase())
-      )
-      return {
-        ...g,
-        matchedStudentId:     matched?.id || null,
-        matchedStudentName:   matched?.name || g.studentName,
-        matchedAssignmentId:  matchedAssignment?.id || assignments[0]?.id || null,
-        matchedAssignmentName: matchedAssignment?.name || g.assignmentName,
-        editing: false,
-      }
-    })
-
-    setBulkGrades(matched)
-    setMode('bulk-review')
-  }
-
-  async function syncAllToGradebook() {
-    setBulkSyncing(true)
-    let synced = 0
-    for (const g of bulkGrades) {
-      if (g.matchedStudentId && g.matchedAssignmentId && g.percentage !== undefined) {
-        try {
-          await updateGrade(g.matchedStudentId, g.matchedAssignmentId, g.percentage)
-          synced++
-        } catch { /* skip failed rows */ }
-      }
-    }
-    setBulkSyncing(false)
-    setBulkDone(true)
-    setTimeout(() => setMode('done'), 1200)
-  }
-
-  // ── Image / CSV processing ───────────────────────────────────────────────────
-  async function processImage(dataUrl, file) {
-    setError('')
-    setResult(null)
-
-    if (!ANTHROPIC_KEY) {
-      setError('No Anthropic API key. Add VITE_ANTHROPIC_KEY to your .env file.')
-      setMode('capture')
       return
     }
 
+    const attempts = [
+      { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
+      { video: { facingMode: 'environment' } },
+      { video: { facingMode: 'user' } },
+      { video: true },
+    ]
+
+    let stream = null
+    let lastErr = null
+    for (const c of attempts) {
+      try { stream = await navigator.mediaDevices.getUserMedia(c); break }
+      catch (err) { lastErr = err; if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break }
+    }
+
+    if (!stream) {
+      const n = lastErr?.name
+      setCameraError(
+        n === 'NotAllowedError' || n === 'PermissionDeniedError'
+          ? 'Camera permission denied. Tap the lock icon in your address bar, allow camera, then retry.'
+          : n === 'NotFoundError' ? 'No camera found. Use Upload instead.'
+          : n === 'NotReadableError' ? 'Camera in use by another app. Close it and retry.'
+          : 'Camera error (' + (n || 'unknown') + '). Use Upload instead.'
+      )
+      return
+    }
+
+    streamRef.current = stream
+    setMode('camera')
+  }
+
+  function capturePhoto() {
+    const video = videoRef.current
+    const canvas = canvasRef.current
+    if (!video || !canvas) return
+    const w = video.videoWidth || 1280
+    const h = video.videoHeight || 720
+    canvas.width = w
+    canvas.height = h
+    canvas.getContext('2d').drawImage(video, 0, 0, w, h)
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
+    stopStream()
+    processImage(dataUrl, dataUrl.split(',')[1], 'image/jpeg')
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    e.target.value = ''
+    const reader = new FileReader()
+    reader.onload = ev => {
+      const dataUrl = ev.target.result
+      processImage(dataUrl, dataUrl.split(',')[1], file.type || 'image/jpeg')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  function processImage(dataUrl, base64, mime) {
+    setCapturedImage(dataUrl)
+    setScanResult(null)
+    setScanError(null)
+    setMode('processing')
+    runAI(base64, mime)
+  }
+
+  async function runAI(base64, mime) {
     try {
-      const base64    = dataUrl.split(',')[1]
-      const mediaType = 'image/jpeg'
-
-      if (intent === 'grade') {
-        await gradeDocument(base64, mediaType)
-      } else if (intent === 'grade-sheet') {
-        await gradeSheet(base64, mediaType)
-      } else if (intent === 'upload-roster') {
-        await extractRoster(base64, mediaType)
-      } else if (intent === 'upload-answer-key') {
-        await extractAnswerKey(base64, mediaType)
-      } else {
-        setResult({ type: 'upload', message: 'Document uploaded successfully.', fileName: file?.name || 'capture.jpg' })
-        setMode('result')
+      const result = await scanGradedDocument(base64, mime)
+      setScanResult(result)
+      if (result.assignmentTitle) setAssignName(result.assignmentTitle)
+      if (result.documentType) {
+        const map = { quiz: 'quiz', test: 'test', homework: 'homework', worksheet: 'homework' }
+        setAssignType(map[result.documentType] || 'quiz')
       }
+      if (result.earnedPoints != null) setManualScore(String(result.earnedPoints))
+      if (result.totalPoints != null)  setManualTotal(String(result.totalPoints))
+      setMode('review')
     } catch (err) {
-      setError(err?.message || 'Processing failed. Please try again.')
-      setMode('capture')
+      setScanError(err.message || 'Scan failed')
+      setMode('review')
     }
   }
 
-  async function gradeDocument(base64, mediaType) {
-    const assignment   = assignments.find(a => a.id === Number(selectedAssignmentId))
-    const preStudent   = selectedStudentId ? students.find(s => s.id === Number(selectedStudentId)) : null
-    const studentNames = students.map(s => s.name).join(', ')
-
-    const body = JSON.stringify({
-      model:      'claude-sonnet-4-20250514',
-      max_tokens: 800,
-      system:     `You are an expert at reading graded school papers. Identify the scoring system and calculate the correct percentage.
-${preStudent ? `This paper belongs to student: ${preStudent.name}. Do not try to detect the student name — use "${preStudent.name}".` : `Known students: ${studentNames || 'unknown'}. Try to read the student name from the paper.`}
-Return ONLY valid JSON: {"studentName":"","score":85,"maxScore":100,"percentage":85,"format":"e.g. 17/20","feedback":"brief feedback","confidence":"high|medium|low"}`,
-      messages: [{
-        role:    'user',
-        content: [
-          { type:'image', source:{ type:'base64', media_type:mediaType, data:base64 } },
-          { type:'text',  text:`Grade this paper.${answerKey ? ` Answer key: ${answerKey}` : ''} Assignment: ${assignment?.name || 'Unknown'}` },
-        ],
-      }],
-    })
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:  'POST',
-      headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body,
-    })
-    if (!res.ok) throw new Error(`API error ${res.status}`)
-    const data   = await res.json()
-    const parsed = safeParseJSON(data.content?.[0]?.text || '')
-    if (!parsed) throw new Error('Could not parse AI response.')
-
-    // If student was pre-selected, use them directly — no fuzzy match needed
-    const matchedStudent = preStudent || (() => {
-      const nameFromImage = (parsed.studentName || '').toLowerCase()
-      return students.find(s => {
-        const sLower = s.name.toLowerCase()
-        return sLower.includes(nameFromImage) || nameFromImage.includes(sLower.split(' ')[0])
-      })
-    })()
-
-    const assignmentFromDropdown = assignments.find(a => a.id === Number(selectedAssignmentId))
-    const matchedAssignment = assignmentFromDropdown || assignments[0]
-
-    setSyncStudentId(matchedStudent?.id ? String(matchedStudent.id) : '')
-    setSyncAssignmentId(matchedAssignment?.id ? String(matchedAssignment.id) : '')
-
-    setResult({ type:'grade', ...parsed,
-      studentName: matchedStudent?.name || parsed.studentName,
-      assignment:  matchedAssignment,
-      source:      'image' })
-    setMode('result')
+  function calcPercentage() {
+    const earned = parseFloat(manualScore)
+    const total  = parseFloat(manualTotal)
+    if (isNaN(earned) || isNaN(total) || total === 0) return null
+    return Math.round((earned / total) * 100)
   }
 
-  async function extractAnswerKey(base64, mediaType) {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:  'POST',
-      headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 600,
-        system:     'Extract answer key from this document. Return ONLY valid JSON: {"answers":[{"question":1,"answer":"A"}]}',
-        messages: [{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:mediaType, data:base64 } },{ type:'text', text:'Extract the answer key.' }] }],
-      }),
-    })
-    if (!res.ok) throw new Error(`API error ${res.status}`)
-    const data   = await res.json()
-    const parsed = safeParseJSON(data.content?.[0]?.text || '')
-    const keyText = parsed?.answers?.map(a => `Q${a.question}: ${a.answer}`).join(', ') || ''
-    setAnswerKey(keyText)
-    setResult({ type:'answer-key', answers:parsed?.answers || [], text:keyText })
-    setMode('result')
-  }
-
-  async function extractRoster(base64, mediaType) {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:  'POST',
-      headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 800,
-        system:     'Extract student roster from image. Return ONLY valid JSON: {"students":[{"name":"","id":""}]}',
-        messages: [{ role:'user', content:[{ type:'image', source:{ type:'base64', media_type:mediaType, data:base64 } },{ type:'text', text:'Extract all student names and IDs.' }] }],
-      }),
-    })
-    if (!res.ok) throw new Error(`API error ${res.status}`)
-    const data   = await res.json()
-    const parsed = safeParseJSON(data.content?.[0]?.text || '')
-    setResult({ type:'roster', students:parsed?.students || [] })
-    setMode('result')
-  }
-
-  async function processGradebookCSV(file) {
-    setError('')
-    const fileName    = file.name
-    const text        = await file.text()
-    const csvText     = text.slice(0, 8000) // enough for a full class gradebook
-
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:  'POST',
-        headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-        body: JSON.stringify({
-          model:      'claude-sonnet-4-20250514',
-          max_tokens: 3000,
-          system: `You parse teacher gradebook spreadsheets exported as CSV.
-The first column is usually student names. Remaining columns are assignment names with scores.
-Extract EVERY student + assignment score pair.
-Return ONLY valid JSON:
-{"grades":[{"studentName":"","assignmentName":"","score":0,"maxScore":100,"percentage":0}]}
-
-Rules:
-- If a cell has "87/100" parse as score=87, maxScore=100, percentage=87
-- If a cell has just "87" and maxScore is unknown, assume maxScore=100
-- If a cell is empty or "N/A" or "--", skip that pair entirely
-- Calculate percentage = (score/maxScore)*100, round to 1 decimal`,
-          messages: [{ role:'user', content:`Parse this gradebook CSV from file "${fileName}":\n\n${csvText}` }],
-        }),
-      })
-
-      if (!res.ok) throw new Error(`API error ${res.status}`)
-      const data   = await res.json()
-      const parsed = safeParseJSON(data.content?.[0]?.text || '')
-
-      if (!parsed?.grades?.length) {
-        throw new Error('No grade data found. Make sure the file has student names in the first column and scores in the remaining columns.')
-      }
-
-      // Fuzzy match to store students and assignments
-      const matched = parsed.grades.map(g => {
-        const lower   = (g.studentName || '').toLowerCase()
-        const matchSt = students.find(s =>
-          s.name.toLowerCase().includes(lower) ||
-          lower.includes(s.name.toLowerCase().split(' ')[0].toLowerCase())
-        )
-        const aLower  = (g.assignmentName || '').toLowerCase()
-        const matchAn = assignments.find(a =>
-          a.name.toLowerCase().includes(aLower) ||
-          aLower.includes(a.name.toLowerCase())
-        )
-        return {
-          ...g,
-          matchedStudentId:      matchSt?.id || null,
-          matchedStudentName:    matchSt?.name || g.studentName,
-          matchedAssignmentId:   matchAn?.id || assignments[0]?.id || null,
-          matchedAssignmentName: matchAn?.name || g.assignmentName,
-          editing: false,
-        }
-      })
-
-      setBulkGrades(matched)
-      setMode('bulk-review')
-    } catch (err) {
-      setError(err.message || 'Could not parse gradebook file.')
-      setMode('capture')
-    }
-  }
-
-  async function processCSV(file) {
-    const fileName = file.name
-    const text     = await file.text()
-    const csvText  = text.slice(0, 5000)
-
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:  'POST',
-      headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 800,
-        system:     'Extract student roster from CSV data. Return ONLY valid JSON: {"students":[{"name":"","id":""}]}',
-        messages:   [{ role:'user', content:`Extract students from this CSV. Return ONLY valid JSON: {"students":[{"name":"","id":""}]}\n\nCSV:\n${csvText}` }],
-      }),
-    })
-    if (!res.ok) throw new Error(`API error ${res.status}`)
-    const data   = await res.json()
-    const parsed = safeParseJSON(data.content?.[0]?.text || '')
-    setRosterResults(parsed?.students || [])
-    setResult({ type:'roster', students:parsed?.students || [], fileName })
-    setMode('result')
-  }
-
-  function syncToGradebook() {
-    if (result?.type === 'grade') {
-      const studentId    = Number(syncStudentId)
-      const assignmentId = Number(syncAssignmentId)
-      if (studentId && assignmentId && result.percentage !== undefined) {
-        updateGrade(studentId, assignmentId, result.percentage)
-      }
-    }
-    setMode('done')
-  }
-
-  function downloadResult() {
-    const blob = new Blob([JSON.stringify(result, null, 2)], { type:'application/json' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href     = url
-    a.download = `gradeflow-result-${Date.now()}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  function createAndSelectAssignment() {
-    if (!newAssignName.trim()) return
-    const newId = Date.now()
-    addAssignment({
-      id:         newId,
-      classId:    Number(selectedClassId) || classes[0]?.id,
-      name:       newAssignName.trim(),
-      type:       newAssignType,
-      categoryId: 2,
-      weight:     0,
-      date:       new Date().toISOString().split('T')[0],
-      dueDate:    new Date().toISOString().split('T')[0],
-      hasKey:     false,
-    })
-    setSelectedAssignmentId(String(newId))
-    setSyncAssignmentId(String(newId))
-    setNewAssignName('')
-    setShowNewAssign(false)
+  function letterFromPct(pct) {
+    if (pct == null) return '--'
+    if (pct >= 90) return 'A'
+    if (pct >= 80) return 'B'
+    if (pct >= 70) return 'C'
+    if (pct >= 60) return 'D'
+    return 'F'
   }
 
   function resetAll() {
-    setIntent(null); setCapturedImage(null); setCapturedFile(null)
-    setResult(null); setError(''); setMode('intent')
-    setBulkGrades([]); setBulkSyncing(false); setBulkDone(false)
-    setSyncStudentId(''); setSyncAssignmentId('')
-    setSelectedStudentId(''); setShowNewAssign(false); setNewAssignName('')
     stopStream()
+    setCapturedImage(null)
+    setScanResult(null)
+    setScanError(null)
+    setManualScore('')
+    setManualTotal('100')
+    setAssignName('')
+    setMode('menu')
   }
 
-  const availableIntents = INTENTS.filter(i => i.roles.includes(role))
-
-  const S = {
-    shell:   { minHeight:'100vh', background:'#060810', color:'#eef0f8', fontFamily:'Inter, Arial, sans-serif', padding:'0 0 100px' },
-    header:  { padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:20 },
-    backBtn: { background:'#1e2231', border:'none', borderRadius:10, padding:'8px 14px', color:'#eef0f8', cursor:'pointer', fontSize:13, fontWeight:600 },
-    h1:      { fontSize:22, fontWeight:800, color:'#eef0f8', margin:0 },
-    card:    { background:'#161923', border:'1px solid #1e2231', borderRadius:18, padding:16, margin:'0 16px 14px' },
-    btn:     (color) => ({ background:`${color}22`, color, border:'none', borderRadius:12, padding:'10px 18px', fontSize:13, fontWeight:700, cursor:'pointer', flex:1 }),
-    primary: { background:'var(--school-color)', color:'#fff', border:'none', borderRadius:12, padding:'12px 20px', fontSize:14, fontWeight:700, cursor:'pointer', flex:1 },
+  function postToGradebook() {
+    const pct = calcPercentage()
+    if (pct == null) return
+    addAssignment({
+      classId: Number(selectedClass),
+      name: assignName || ('Scanned ' + assignType),
+      type: assignType,
+      weight: typeConfig.find(t => t.id === assignType)?.weight || 30,
+      date: new Date().toISOString().split('T')[0],
+      dueDate: new Date().toISOString().split('T')[0],
+      hasKey: true,
+      scannedScore: pct,
+      aiGraded: !!scanResult,
+      aiConfidence: scanResult?.confidence || 'low',
+    })
+    setMode('posted')
   }
 
-  // ── INTENT PICKER ────────────────────────────────────────────────────────────
-  if (mode === 'intent') return (
-    <div style={S.shell}>
-      <div style={S.header}>
-        <button style={S.backBtn} onClick={onBack}>← Back</button>
-        <h1 style={S.h1}>📷 Scan</h1>
-      </div>
-      <div style={{ padding:'0 16px' }}>
-        {availableIntents.map(i => (
-          <button key={i.id} onClick={() => { setIntent(i.id); setCameraIntent(i.id); setMode('capture') }}
-            style={{ width:'100%', background:'#161923', border:'1px solid #1e2231', borderRadius:16, padding:'16px', marginBottom:10, display:'flex', alignItems:'center', gap:14, cursor:'pointer', textAlign:'left' }}
-            onMouseEnter={e => e.currentTarget.style.borderColor='var(--school-color)'}
-            onMouseLeave={e => e.currentTarget.style.borderColor='#1e2231'}>
-            <span style={{ fontSize:28 }}>{i.icon}</span>
-            <div>
-              <div style={{ fontWeight:700, fontSize:14, color:'#eef0f8', marginBottom:3 }}>{i.label}</div>
-              <div style={{ fontSize:12, color:'#6b7494' }}>{i.desc}</div>
-            </div>
-          </button>
-        ))}
-      </div>
+  if (mode === 'posted') return (
+    <div className="flex flex-col items-center justify-center py-16 text-center">
+      <div className="text-6xl mb-4">&#10003;</div>
+      <h2 className="font-display font-bold text-xl text-text-primary mb-2">Posted to Gradebook</h2>
+      <p className="text-text-muted text-sm mb-6">Assignment added</p>
+      <button onClick={resetAll} className="px-6 py-2.5 rounded-pill font-bold text-white" style={{ background: 'var(--school-color)' }}>
+        Scan Another
+      </button>
     </div>
   )
 
-  // ── CAPTURE ──────────────────────────────────────────────────────────────────
-  const captureClassStudents    = getStudentsForClass(Number(selectedClassId) || 0)
-  const captureClassAssignments = getAssignmentsForClass(Number(selectedClassId) || 0)
-
-  if (mode === 'capture') return (
-    <div style={S.shell}>
-      <div style={S.header}>
-        <button style={S.backBtn} onClick={resetAll}>← Back</button>
-        <h1 style={S.h1}>{INTENTS.find(i => i.id === intent)?.label}</h1>
-      </div>
-
-      {intent === 'grade' && (
-        <div style={S.card}>
-          {/* Class selector */}
-          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>Class</label>
-          <select
-            style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
-            value={selectedClassId}
-            onChange={e => { setSelectedClassId(e.target.value); setSelectedAssignmentId(''); setSelectedStudentId('') }}>
-            {classes.map(c => <option key={c.id} value={c.id}>{c.period} · {c.subject}</option>)}
-          </select>
-
-          {/* Assignment selector + create new */}
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-            <label style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494' }}>Assignment</label>
-            <button onClick={() => setShowNewAssign(v => !v)}
-              style={{ background:'var(--school-color)', border:'none', borderRadius:8, padding:'3px 10px', color:'#fff', fontSize:10, fontWeight:700, cursor:'pointer' }}>
-              {showNewAssign ? '✕ Cancel' : '+ New'}
-            </button>
-          </div>
-
-          {showNewAssign ? (
-            <div style={{ background:'#1e2231', borderRadius:10, padding:10, marginBottom:12 }}>
-              <input
-                value={newAssignName}
-                onChange={e => setNewAssignName(e.target.value)}
-                placeholder="Assignment name..."
-                style={{ width:'100%', background:'#161923', border:'1px solid #2a2f42', borderRadius:8, padding:'8px 10px', color:'#eef0f8', fontSize:13, outline:'none', boxSizing:'border-box', marginBottom:8 }}/>
-              <div style={{ display:'flex', gap:6, marginBottom:8 }}>
-                {['quiz','test','homework','participation'].map(t => (
-                  <button key={t} onClick={() => setNewAssignType(t)}
-                    style={{ flex:1, padding:'5px 4px', borderRadius:8, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
-                      background: newAssignType===t ? 'var(--school-color)' : '#161923',
-                      color:      newAssignType===t ? '#fff' : '#6b7494' }}>
-                    {t}
-                  </button>
-                ))}
-              </div>
-              <button onClick={createAndSelectAssignment} disabled={!newAssignName.trim()}
-                style={{ width:'100%', background: newAssignName.trim() ? 'var(--school-color)' : '#2a2f42', color:'#fff', border:'none', borderRadius:8, padding:'8px', fontSize:12, fontWeight:700, cursor: newAssignName.trim() ? 'pointer' : 'not-allowed' }}>
-                Create &amp; Select
-              </button>
-            </div>
-          ) : (
-            <select
-              style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
-              value={selectedAssignmentId}
-              onChange={e => { setSelectedAssignmentId(e.target.value); setSyncAssignmentId(e.target.value) }}>
-              <option value="">-- Select assignment --</option>
-              {captureClassAssignments.map(a => <option key={a.id} value={a.id}>{a.name} · {a.type}</option>)}
-            </select>
-          )}
-
-          {/* Student selector — optional */}
-          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>
-            Student <span style={{ color:'#3b7ef4', textTransform:'none', fontWeight:400 }}>(optional — AI detects from paper)</span>
-          </label>
-          <select
-            style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13, marginBottom:12 }}
-            value={selectedStudentId}
-            onChange={e => { setSelectedStudentId(e.target.value); setSyncStudentId(e.target.value) }}>
-            <option value="">All students — detect name from paper</option>
-            {captureClassStudents.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-
-          {/* Answer key */}
-          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>Answer Key (optional)</label>
-          <textarea
-            style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:12, resize:'none', boxSizing:'border-box' }}
-            rows={2}
-            placeholder="Paste answer key, or leave blank for AI..."
-            value={answerKey}
-            onChange={e => setAnswerKey(e.target.value)}/>
-        </div>
-      )}
-
-      <div style={S.card}>
-        {/* Camera viewfinder */}
-        <div style={{ position:'relative', borderRadius:14, overflow:'hidden', background:'#000', aspectRatio:'4/3', maxHeight:'50vh', marginBottom:12, display:'flex', alignItems:'center', justifyContent:'center' }}>
-          <video ref={videoRef} autoPlay playsInline muted
-            style={{ width:'100%', height:'100%', objectFit:'cover', display:cameraActive?'block':'none' }}/>
-          {!cameraActive && (
-            <div style={{ textAlign:'center', color:'#3d4460' }}>
-              <div style={{ fontSize:48, marginBottom:8 }}>📷</div>
-              <p style={{ fontSize:12 }}>Start camera or choose a file</p>
-            </div>
-          )}
-        </div>
-
-        {/* Action buttons — Camera, File, Mic */}
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          {!cameraActive ? (
-            <button onClick={startCamera} style={S.primary}>Start Camera</button>
-          ) : (
-            <button onClick={captureFromCamera} style={S.primary}>📸 Capture</button>
-          )}
-
-          <input ref={fileRef} type="file" accept={ACCEPT_ALL} onChange={handleFileChange} style={{ display:'none' }}/>
-          <button onClick={() => fileRef.current?.click()}
-            style={{ ...S.btn('#3b7ef4'), flex:'none', padding:'12px 20px' }}>
-            Choose File
-          </button>
-
-        </div>
-
-        <p style={{ fontSize:10, color:'#6b7494', margin:'8px 0 0', textAlign:'center' }}>
-          Photos &middot; PDF &middot; CSV &middot; Excel &middot; Word &middot; {intent === 'grade' ? '🎤 Voice' : 'Text'}
-        </p>
-      </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0.3; }
-        }
-      `}</style>
-
-      {error && (
-        <div style={{ ...S.card, background:'#1c1012', border:'1px solid #f04a4a30', color:'#f04a4a', fontSize:13 }}>
-          {error}
-        </div>
-      )}
-    </div>
-  )
-
-  // ── PROCESSING ───────────────────────────────────────────────────────────────
   if (mode === 'processing') return (
-    <div style={{ ...S.shell, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'60vh' }}>
+    <div className="flex flex-col items-center justify-center py-16 text-center">
       {capturedImage && (
-        <img src={capturedImage} alt="Captured"
-          style={{ width:120, height:120, objectFit:'cover', borderRadius:14, marginBottom:20, opacity:0.6 }}/>
+        <div className="w-28 h-28 rounded-card overflow-hidden mb-6 border border-elevated opacity-70">
+          <img src={capturedImage} alt="Scanning" className="w-full h-full object-cover" />
+        </div>
       )}
-      <div style={{ width:36, height:36, border:'3px solid var(--school-color)', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', marginBottom:16 }}/>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-      <p style={{ fontWeight:700, color:'#eef0f8', marginBottom:4 }}>
-        Claude is reading this file
-      </p>
-      <p style={{ fontSize:12, color:'#6b7494' }}>
-        Detecting format · Processing...
-      </p>
+      <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+      <p className="font-semibold text-text-primary mb-1">Claude Vision is reading this paper</p>
+      <p className="text-text-muted text-sm">Detecting score format...</p>
     </div>
   )
 
-  // ── RESULT ───────────────────────────────────────────────────────────────────
-  if (mode === 'result' && result) {
-    const pct    = result.percentage || result.score || 0
-    const color  = pct >= 90 ? '#22c97a' : pct >= 80 ? '#3b7ef4' : pct >= 70 ? '#f5a623' : '#f04a4a'
-    const letter = pct >= 90 ? 'A' : pct >= 80 ? 'B' : pct >= 70 ? 'C' : pct >= 60 ? 'D' : 'F'
+  if (mode === 'camera') return (
+    <div>
+      <button onClick={() => { stopStream(); setMode('menu') }} className="flex items-center gap-2 text-text-muted text-sm mb-4 hover:text-text-primary">
+        X Cancel
+      </button>
+      <div className="relative rounded-widget overflow-hidden bg-black mb-4" style={{ aspectRatio: '4/3', maxHeight: '60vh' }}>
+        <video ref={videoCallbackRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ display: 'block' }} />
+        {!cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black">
+            <div className="text-center">
+              <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-white text-sm opacity-60">Starting camera...</p>
+            </div>
+          </div>
+        )}
+        {cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-4/5 h-4/5">
+              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white" />
+              <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white" />
+            </div>
+          </div>
+        )}
+      </div>
+      <canvas ref={canvasRef} className="hidden" />
+      <p className="text-center text-text-muted text-xs mb-4">Fill the frame with the graded paper</p>
+      <button
+        onClick={capturePhoto}
+        disabled={!cameraReady}
+        className="w-full py-4 rounded-widget font-display font-bold text-lg text-white disabled:opacity-40"
+        style={{ background: cameraReady ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231' }}>
+        {cameraReady ? 'Capture and Scan' : 'Starting camera...'}
+      </button>
+    </div>
+  )
+
+  if (mode === 'review') {
+    const pct = calcPercentage()
+    const letter = letterFromPct(pct)
+    const sr = scanResult
+    const scoreColor = pct >= 90 ? '#22c97a' : pct >= 70 ? '#f5a623' : '#f04a4a'
 
     return (
-      <div style={S.shell}>
-        <div style={S.header}>
-          <button style={S.backBtn} onClick={resetAll}>← New Scan</button>
-          <h1 style={S.h1}>Result</h1>
+      <div>
+        <button onClick={resetAll} className="flex items-center gap-2 text-text-muted text-sm mb-4 hover:text-text-primary">
+          &larr; Scan Again
+        </button>
+        <h1 className="font-display font-bold text-xl text-text-primary mb-4">Review and Post</h1>
+
+        {sr && !scanError && (
+          <div className="p-4 rounded-card mb-4" style={{ background: '#0d1520', border: '1px solid #3b7ef430' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-xs px-2 py-0.5 rounded-pill font-bold" style={{ background: '#9b6ef520', color: '#9b6ef5' }}>
+                Claude Vision
+              </span>
+              <span className="text-xs px-2 py-0.5 rounded-pill font-bold" style={{
+                background: sr.confidence === 'high' ? '#22c97a20' : '#f5a62320',
+                color: sr.confidence === 'high' ? '#22c97a' : '#f5a623'
+              }}>
+                {sr.confidence === 'high' ? 'High confidence' : 'Low confidence - verify'}
+              </span>
+            </div>
+            <p className="text-sm text-text-primary">{sr.rawText}</p>
+          </div>
+        )}
+
+        {scanError && (
+          <div className="p-4 rounded-card mb-4" style={{ background: '#1c1012', border: '1px solid #f04a4a30' }}>
+            <p className="font-semibold mb-1" style={{ color: '#f04a4a' }}>Scan error</p>
+            <p className="text-sm" style={{ color: '#f04a4a', opacity: 0.85 }}>{scanError}</p>
+            <p className="text-text-muted text-sm mt-2">Enter score manually below.</p>
+          </div>
+        )}
+
+        <div className="space-y-3 mb-4">
+          <div>
+            <label className="tag-label block mb-1">Assignment name</label>
+            <input value={assignName} onChange={e => setAssignName(e.target.value)}
+              placeholder="e.g. Ch.4 Quiz"
+              className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+              style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="tag-label block mb-1">Points earned</label>
+              <input value={manualScore} onChange={e => setManualScore(e.target.value)}
+                placeholder="e.g. 82" type="number"
+                className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+                style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+            </div>
+            <div>
+              <label className="tag-label block mb-1">Total points</label>
+              <input value={manualTotal} onChange={e => setManualTotal(e.target.value)}
+                placeholder="e.g. 100" type="number"
+                className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+                style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
+            </div>
+          </div>
+          <div>
+            <label className="tag-label block mb-1">Assignment type</label>
+            <div className="flex gap-2">
+              {typeConfig.map(t => (
+                <button key={t.id} onClick={() => setAssignType(t.id)}
+                  className="flex-1 py-1.5 rounded-pill text-xs font-bold transition-all"
+                  style={{
+                    background: assignType === t.id ? t.color + '30' : '#1e2231',
+                    color: assignType === t.id ? t.color : '#6b7494',
+                    border: '1px solid ' + (assignType === t.id ? t.color + '60' : 'transparent')
+                  }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="tag-label block mb-1">Class</label>
+            <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
+              className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
+              style={{ background: '#1e2231', border: '1px solid #2a2f42' }}>
+              {classes.map(c => (
+                <option key={c.id} value={c.id}>{c.period} - {c.subject}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {result.type === 'grade' && (
-          <div style={S.card}>
-
-            {/* Grade display */}
-            <div style={{ textAlign:'center', padding:'12px 0 16px' }}>
-              <div style={{ fontSize:56, fontWeight:900, color, lineHeight:1 }}>{Math.round(pct)}%</div>
-              <div style={{ fontSize:24, fontWeight:700, color, marginTop:4 }}>{letter}</div>
-              {result.format && <div style={{ fontSize:12, color:'#6b7494', marginTop:4 }}>{result.format}</div>}
+        <div className="p-4 rounded-card mb-4" style={{ background: '#0d1520', border: '1px solid ' + (pct != null ? scoreColor + '40' : '#2a2f42') }}>
+          <p className="tag-label mb-1">Calculated Grade</p>
+          {pct != null ? (
+            <div className="flex items-center gap-3">
+              <span className="font-display font-bold text-3xl" style={{ color: scoreColor }}>{pct}%</span>
+              <span className="font-bold text-lg text-text-muted">{letter}</span>
             </div>
-
-            {/* Student picker — pre-filled from AI read */}
-            <div style={{ marginBottom:10 }}>
-              <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>
-                Student {syncStudentId ? '✓' : '⚠ Select student'}
-              </label>
-              <select
-                value={syncStudentId}
-                onChange={e => setSyncStudentId(e.target.value)}
-                style={{ width:'100%', background:'#1e2231', border:`1px solid ${syncStudentId?'#22c97a':'#f5a623'}`, borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13 }}>
-                <option value="">-- Select student --</option>
-                {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-              {result.studentName && !syncStudentId && (
-                <div style={{ fontSize:11, color:'#f5a623', marginTop:4 }}>
-                  AI read: "{result.studentName}" — please confirm above
-                </div>
-              )}
-            </div>
-
-            {/* Assignment picker — pre-filled from selected or AI read */}
-            <div style={{ marginBottom:14 }}>
-              <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:'#6b7494', marginBottom:6 }}>
-                Assignment {syncAssignmentId ? '✓' : '⚠ Select assignment'}
-              </label>
-              <select
-                value={syncAssignmentId}
-                onChange={e => setSyncAssignmentId(e.target.value)}
-                style={{ width:'100%', background:'#1e2231', border:`1px solid ${syncAssignmentId?'#22c97a':'#f5a623'}`, borderRadius:10, padding:'10px 12px', color:'#eef0f8', fontSize:13 }}>
-                <option value="">-- Select assignment --</option>
-                {assignments.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-              </select>
-            </div>
-
-            {result.feedback && (
-              <div style={{ background:'#1e2231', borderRadius:12, padding:12, marginBottom:12 }}>
-                <div style={{ fontSize:10, fontWeight:700, color:'#6b7494', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>
-                  AI Feedback
-                </div>
-                <p style={{ fontSize:13, color:'#c0c8e0', margin:0 }}>{result.feedback}</p>
-              </div>
-            )}
-
-            <div style={{ display:'flex', gap:8 }}>
-              <button
-                onClick={syncToGradebook}
-                disabled={!syncStudentId || !syncAssignmentId}
-                style={{ ...S.btn(syncStudentId && syncAssignmentId ? '#22c97a' : '#6b7494'), padding:'12px 0', cursor: syncStudentId && syncAssignmentId ? 'pointer' : 'not-allowed' }}>
-                {syncStudentId && syncAssignmentId ? '✓ Sync to Gradebook' : 'Select student & assignment'}
-              </button>
-              <button onClick={downloadResult} style={{ ...S.btn('#3b7ef4'), padding:'12px 0' }}>⬇</button>
-            </div>
-          </div>
-        )}
-
-        {result.type === 'roster' && (
-          <div style={S.card}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#eef0f8', marginBottom:12 }}>
-              ✅ {result.students?.length || 0} students found{result.fileName ? ` from ${result.fileName}` : ''}
-            </div>
-            {result.students?.slice(0, 10).map((s, i) => (
-              <div key={i} style={{ background:'#1e2231', borderRadius:8, padding:'8px 12px', marginBottom:6, fontSize:13, color:'#eef0f8' }}>
-                {s.name}{s.id ? ` · ID: ${s.id}` : ''}
-              </div>
-            ))}
-            {result.students?.length > 10 && <div style={{ fontSize:11, color:'#6b7494', marginTop:4 }}>+{result.students.length - 10} more</div>}
-            <button onClick={downloadResult} style={{ ...S.btn('#3b7ef4'), padding:'12px 0', marginTop:8, display:'block', width:'100%' }}>⬇ Download Roster JSON</button>
-          </div>
-        )}
-
-        {result.type === 'answer-key' && (
-          <div style={S.card}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#eef0f8', marginBottom:8 }}>✅ Answer Key Extracted</div>
-            <div style={{ background:'#1e2231', borderRadius:10, padding:12, fontSize:12, color:'#c0c8e0' }}>{result.text}</div>
-          </div>
-        )}
-
-        {result.type === 'upload' && (
-          <div style={S.card}>
-            <div style={{ fontSize:13, fontWeight:700, color:'#22c97a', marginBottom:4 }}>✅ {result.message}</div>
-            {result.fileName && <div style={{ fontSize:12, color:'#6b7494' }}>{result.fileName}</div>}
-          </div>
-        )}
-
-        <div style={{ padding:'0 16px' }}>
-          <button onClick={resetAll} style={{ ...S.btn('#6b7494'), width:'100%', padding:'12px 0' }}>Scan Another</button>
+          ) : (
+            <p className="text-text-muted text-sm">Enter points above to calculate</p>
+          )}
         </div>
+
+        <button onClick={postToGradebook} disabled={pct == null || !assignName.trim()}
+          className="w-full py-3 rounded-widget font-bold text-white disabled:opacity-40 transition-all"
+          style={{ background: pct != null ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231' }}>
+          {pct != null ? 'Post ' + pct + '% (' + letter + ') to Gradebook' : 'Enter score above'}
+        </button>
       </div>
     )
   }
 
-  // ── BULK REVIEW ──────────────────────────────────────────────────────────────
-  if (mode === 'bulk-review') {
-    const readyCount = bulkGrades.filter(g => g.matchedStudentId && g.matchedAssignmentId).length
-    return (
-      <div style={S.shell}>
-        <div style={S.header}>
-          <button style={S.backBtn} onClick={resetAll}>← Back</button>
-          <h1 style={S.h1}>Review Grades</h1>
+  // Menu
+  return (
+    <div>
+      <h1 className="font-display font-bold text-2xl text-text-primary mb-1">Scan and Grade</h1>
+      <p className="text-text-muted text-sm mb-6">AI reads any scoring format: 82/100, -8 missed, 17/20, letter grades, percentages</p>
+
+      {cameraError && (
+        <div className="p-4 rounded-card mb-4" style={{ background: '#1c1012', border: '1px solid #f04a4a30' }}>
+          <p className="font-semibold mb-1" style={{ color: '#f04a4a' }}>Camera unavailable</p>
+          <p className="text-sm" style={{ color: '#f04a4a', opacity: 0.85 }}>{cameraError}</p>
         </div>
+      )}
 
-        {/* Summary bar */}
-        <div style={{ margin:'0 16px 14px', background:'#161923', border:'1px solid #1e2231', borderRadius:14, padding:'12px 16px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-          <div>
-            <div style={{ fontSize:20, fontWeight:900, color:'#22c97a' }}>{readyCount}</div>
-            <div style={{ fontSize:10, color:'#6b7494' }}>ready to sync</div>
-          </div>
-          <div>
-            <div style={{ fontSize:20, fontWeight:900, color:'#f5a623' }}>{bulkGrades.length - readyCount}</div>
-            <div style={{ fontSize:10, color:'#6b7494' }}>need review</div>
-          </div>
-          <div>
-            <div style={{ fontSize:20, fontWeight:900, color:'#3b7ef4' }}>{bulkGrades.length}</div>
-            <div style={{ fontSize:10, color:'#6b7494' }}>total rows</div>
-          </div>
-        </div>
+      <div className="grid gap-4 mb-6">
+        <button onClick={openCamera}
+          className="p-8 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          style={{ background: 'linear-gradient(135deg, #1a2a4a, #0f1a2e)', border: '1px solid #3b7ef440' }}>
+          <span className="text-5xl" role="img" aria-label="camera">&#128247;</span>
+          <p className="font-display font-bold text-lg text-text-primary">Use Camera</p>
+          <p className="text-text-muted text-sm text-center">Point at the graded paper - AI reads the score</p>
+        </button>
 
-        {/* Grade rows */}
-        <div style={{ padding:'0 16px', marginBottom:80 }}>
-          {bulkGrades.map((g, i) => {
-            const pct    = g.percentage || 0
-            const color  = pct >= 90 ? '#22c97a' : pct >= 80 ? '#3b7ef4' : pct >= 70 ? '#f5a623' : '#f04a4a'
-            const letter = pct >= 90 ? 'A' : pct >= 80 ? 'B' : pct >= 70 ? 'C' : pct >= 60 ? 'D' : 'F'
-            const hasIssue = !g.matchedStudentId || !g.matchedAssignmentId
+        <button onClick={() => fileRef.current?.click()}
+          className="p-6 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
+          style={{ background: '#161923', border: '1px solid #2a2f42' }}>
+          <span className="text-4xl" role="img" aria-label="photo">&#128444;</span>
+          <p className="font-bold text-text-primary">Upload Photo or File</p>
+          <p className="text-text-muted text-sm">Photo from camera roll - PDF - Any image</p>
+        </button>
+      </div>
 
-            return (
-              <div key={i} style={{ background:'#161923', border:`1px solid ${hasIssue ? '#f5a62340' : '#1e2231'}`, borderRadius:14, padding:'12px 14px', marginBottom:8 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:hasIssue ? 8 : 0 }}>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:13, fontWeight:700, color: hasIssue ? '#f5a623' : '#eef0f8', marginBottom:2 }}>
-                      {hasIssue ? '⚠ ' : ''}{g.matchedStudentName || g.studentName}
-                    </div>
-                    <div style={{ fontSize:10, color:'#6b7494' }}>
-                      {g.matchedAssignmentName || g.assignmentName || 'Unknown assignment'} &middot; {g.format || `${g.score}/${g.maxScore}`}
-                    </div>
-                  </div>
-                  <div style={{ textAlign:'right', flexShrink:0, marginLeft:12 }}>
-                    <div style={{ fontSize:22, fontWeight:900, color }}>{Math.round(pct)}%</div>
-                    <div style={{ fontSize:11, fontWeight:700, color }}>{letter}</div>
-                  </div>
-                </div>
-
-                {/* Inline fix for unmatched students */}
-                {hasIssue && (
-                  <div style={{ marginTop:6 }}>
-                    <select
-                      value={g.matchedStudentId || ''}
-                      onChange={e => {
-                        const st = students.find(s => s.id === Number(e.target.value))
-                        setBulkGrades(prev => prev.map((row, idx) =>
-                          idx === i ? { ...row, matchedStudentId: st?.id || null, matchedStudentName: st?.name || row.studentName } : row
-                        ))
-                      }}
-                      style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:8, padding:'7px 10px', color:'#eef0f8', fontSize:12, marginBottom:4 }}>
-                      <option value="">-- Match to student --</option>
-                      {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                    </select>
-                    <select
-                      value={g.matchedAssignmentId || ''}
-                      onChange={e => {
-                        const a = assignments.find(a => a.id === Number(e.target.value))
-                        setBulkGrades(prev => prev.map((row, idx) =>
-                          idx === i ? { ...row, matchedAssignmentId: a?.id || null, matchedAssignmentName: a?.name || row.assignmentName } : row
-                        ))
-                      }}
-                      style={{ width:'100%', background:'#1e2231', border:'1px solid #2a2f42', borderRadius:8, padding:'7px 10px', color:'#eef0f8', fontSize:12 }}>
-                      <option value="">-- Match to assignment --</option>
-                      {assignments.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-                    </select>
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        {/* Sticky bottom bar */}
-        <div style={{ position:'fixed', bottom:0, left:0, right:0, padding:'12px 16px max(16px,env(safe-area-inset-bottom))', background:'rgba(6,8,16,0.97)', backdropFilter:'blur(16px)', borderTop:'1px solid #1e2231', display:'flex', gap:8 }}>
-          <button onClick={resetAll}
-            style={{ ...S.btn('#6b7494'), flex:'none', padding:'12px 16px' }}>
-            Retake
-          </button>
-          <button
-            onClick={syncAllToGradebook}
-            disabled={bulkSyncing || readyCount === 0}
-            style={{ flex:1, background: readyCount > 0 ? '#22c97a' : '#1e2231', color: readyCount > 0 ? '#000' : '#6b7494', border:'none', borderRadius:12, padding:'12px', fontSize:14, fontWeight:800, cursor: readyCount > 0 ? 'pointer' : 'not-allowed' }}>
-            {bulkSyncing ? 'Syncing...' : bulkDone ? '✅ Done!' : `Sync ${readyCount} Grade${readyCount !== 1 ? 's' : ''} to Gradebook`}
-          </button>
+      <div className="p-3 rounded-card" style={{ background: '#161923' }}>
+        <p className="tag-label mb-2 text-center">Scoring formats AI understands</p>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {['82 / 100', '-8 missed', '17 / 20', '94%', 'Letter A-F', 'Rubric score', 'Raw points'].map(f => (
+            <span key={f} className="px-2 py-0.5 rounded-pill text-xs" style={{ background: '#1e2231', color: '#6b7494' }}>{f}</span>
+          ))}
         </div>
       </div>
-    )
-  }
 
-  // ── DONE ─────────────────────────────────────────────────────────────────────
-  if (mode === 'done') return (
-    <div style={{ ...S.shell, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'60vh', gap:16 }}>
-      <div style={{ fontSize:64 }}>✅</div>
-      <p style={{ fontWeight:700, color:'#eef0f8', fontSize:18 }}>Synced to Gradebook!</p>
-      <button onClick={resetAll} style={{ ...S.btn('#3b7ef4'), padding:'12px 24px' }}>Scan Another</button>
-      <button onClick={onBack}   style={{ ...S.btn('#6b7494'), padding:'12px 24px' }}>← Back to Dashboard</button>
+      <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileSelect} />
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   )
-
-  return null
 }
