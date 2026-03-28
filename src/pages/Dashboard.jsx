@@ -154,10 +154,16 @@ function TodaysLessonsWidget({ navigate }) {
 }
 
 // ─── EDIT MODE BAR ────────────────────────────────────────────────────────────
-function EditModeBar() {
+function EditModeBar({ isEditMode, setIsEditMode }) {
   return (
     <div style={{ margin:'4px 12px 24px', background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'11px 14px', textAlign:'center' }}>
-      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:3 }}>Edit mode - add or delete widgets</div>
+      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:3 }}>
+        {isEditMode ? 'Edit mode is ON — drag to rearrange and remove widgets' : 'Edit mode is OFF — tap below to start customizing'}
+      </div>
+      <button onClick={() => setIsEditMode(!isEditMode)}
+        style={{ marginBottom:8, padding:'7px 14px', borderRadius:999, border:'1px solid #f5a623', background:isEditMode?'#f5a623':'transparent', color:isEditMode?'#080b13':'#f5a623', fontWeight:700, cursor:'pointer' }}>
+        {isEditMode ? 'Exit edit mode' : 'Enter edit mode'}
+      </button>
       <div style={{ fontSize:10, color:C.muted, lineHeight:1.6 }}>
         Drag to rearrange · Pinch to resize · + to add · All widgets available<br/>
         Saved to your account · Same layout on all devices
@@ -900,7 +906,7 @@ function HomeFeed({ navigate }) {
       <GradebookWidget navigate={navigate}/>
 
       {/* Edit Mode Bar */}
-      <EditModeBar/>
+      <EditModeBar isEditMode={isEditMode} setIsEditMode={setIsEditMode}/>
     </div>
   )
 }
@@ -912,6 +918,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   const routerNav = useNavigate()
 
   const [subPage, setSubPage] = useState(null)
+  const [isEditMode, setIsEditMode] = useState(false)
   const history = useRef([])
 
   useEffect(()=>{ applyTheme('kipp'); scrollTop() },[])
