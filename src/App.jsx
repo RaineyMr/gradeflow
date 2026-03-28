@@ -54,8 +54,9 @@ function AdminHome()    { const u = useStore(s => s.currentUser); return <AdminD
 
 /** / → dashboard if authed, login if not */
 function RootRedirect() {
-  const currentUser = useStore(s => s.currentUser)
-  return <Navigate to={currentUser ? `/${currentUser.role}` : '/login'} replace />
+  // Always open landing/login first, regardless of persisted session.
+  // Authenticated users can still be redirected via /login route behavior.
+  return <Navigate to="/login" replace />
 }
 
 /** /login → dashboard if already authed, otherwise show Login */
