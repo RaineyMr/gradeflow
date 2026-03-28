@@ -918,6 +918,18 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   useEffect(()=>{ applyTheme('kipp'); scrollTop() },[])
   useEffect(()=>{ if(activeScreen==='studentProfile') setSubPage('studentProfile') },[activeScreen])
 
+  useEffect(()=>{
+    const onGradeFlowHome = () => {
+      history.current = []
+      setSubPage(null)
+      setActiveNav('dashboard')
+      store.setScreen('dashboard')
+      scrollTop()
+    }
+    window.addEventListener('gradeflow-home', onGradeFlowHome)
+    return () => window.removeEventListener('gradeflow-home', onGradeFlowHome)
+  }, [store])
+
   // Shared BottomNav emits these IDs for the teacher role.
   // Map them to Dashboard's internal subPage keys.
   const NAV_TO_PAGE = {

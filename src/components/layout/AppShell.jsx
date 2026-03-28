@@ -97,6 +97,13 @@ export default function AppShell() {
     const role = currentUser?.role || 'teacher'
     const homePath = role === 'admin' ? '/admin' : `/${role}`
     setMenuOpen(false)
+
+    if (window.location.pathname === homePath) {
+      // already at home path: trigger app-level home reset rather than full reload
+      window.dispatchEvent(new Event('gradeflow-home'))
+      return
+    }
+
     navigate(homePath)
   }
 
