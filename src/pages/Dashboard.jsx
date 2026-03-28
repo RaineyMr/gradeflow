@@ -946,6 +946,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   function goHome() {
     history.current = []
     setSubPage(null)
+    setActiveNav('dashboard')
     store.setScreen('dashboard')
     scrollTop()
   }
@@ -955,6 +956,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     const prev = history.current[history.current.length - 1] || null
     if (!prev) { goHome(); return }
     setSubPage(prev)
+    setActiveNav(PAGE_TO_NAV[prev] || prev || 'dashboard')
     scrollTop()
   }
 
@@ -965,6 +967,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     if(id==='camera')    { routerNav('/camera'); return }
     history.current.push(id)
     setSubPage(id)
+    setActiveNav(PAGE_TO_NAV[id] || id || 'dashboard')
     scrollTop()
   }
 
@@ -973,10 +976,13 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     const page = NAV_TO_PAGE[id]
     if(page === undefined) return
     if(page === null) { goHome(); return }
+    setActiveNav(id)
     navigate(page)
   }
 
+  const [activeNav, setActiveNav] = useState('dashboard')
   const isSubPage = subPage !== null
+
   const withNav = (node) => (
     <>
       {node}
