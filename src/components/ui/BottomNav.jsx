@@ -10,7 +10,7 @@ export default function BottomNav({ active, onSelect, isSubPage, role: roleProp 
     teacher: [
       { id:'classes',   icon:'📚', label: t('nav_classes')  },
       { id:'messages',  icon:'💬', label: t('nav_messages') },
-      { id:'dashboard', icon:'🏠', label: t('nav_home')     },
+      { id:'widgets',   icon:'🧩', label: 'Widgets'        },
       { id:'reports',   icon:'📊', label: t('nav_reports')  },
       { id:'alerts',    icon:'🔔', label: t('nav_alerts')   },
     ],

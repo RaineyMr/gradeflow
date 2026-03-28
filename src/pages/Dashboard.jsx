@@ -10,6 +10,7 @@ import ClassFeed      from './ClassFeed'
 import StudentProfile from './StudentProfile'
 import ParentMessages from './ParentMessages'
 import Integrations   from './Integrations'
+import Widgets        from './Widgets'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -921,6 +922,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   const NAV_TO_PAGE = {
     classes:   'gradebook',
     messages:  'parentMessages',
+    widgets:   'widgets',
     reports:   'reports',
     alerts:    'alerts',
     dashboard: null,          // home
@@ -937,6 +939,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     feed:           'classes',
     studentProfile: 'classes',
     integrations:   'classes',
+    widgets:        'widgets',
     reminders:      'dashboard',
     attention:      'alerts',
     classes:        'classes',
@@ -998,6 +1001,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   if(subPage==='feed')           return withNav(<SubPage><ClassFeed      onBack={goBack} viewerRole="teacher"/></SubPage>)
   if(subPage==='studentProfile') return withNav(<SubPage><StudentProfile onBack={goBack}/></SubPage>)
   if(subPage==='integrations')   return withNav(<SubPage><Integrations   onBack={goBack}/></SubPage>)
+  if(subPage==='widgets')        return withNav(<SubPage><Widgets       onBack={goBack}/></SubPage>)
   if(subPage==='reminders')      return withNav(<RemindersPage      onBack={goBack}/>)
   if(subPage==='attention')      return withNav(<NeedsAttentionPage  onBack={goBack}/>)
   if(subPage==='alerts')         return withNav(<AlertsPage          onBack={goBack}/>)

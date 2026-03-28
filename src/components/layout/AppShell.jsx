@@ -109,6 +109,7 @@ export default function AppShell() {
       label: t('app_section'),
       items: [
         { icon: '🎥', label: t('tutorials_menu'), action: () => goTo('/tutorials') },
+        { icon: '🧩', label: 'Widgets', action: () => goTo(`/${currentUser.role}/widgets`) },
         { icon: '🏠', label: t('dashboard_menu'), action: () => goTo(`/${currentUser.role}`) },
       ],
     },
@@ -147,24 +148,8 @@ export default function AppShell() {
         fontFamily:     'Inter, Arial, sans-serif',
       }}>
 
-        {/* Left: logo + school name */}
+        {/* Left: school name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            onClick={() => navigate(`/${currentUser.role}`)}
-            style={{
-              padding:      '6px 12px',
-              borderRadius: 12,
-              background:   theme.soft ?? 'rgba(249,115,22,0.14)',
-              color:        theme.primary,
-              fontWeight:   800,
-              fontSize:     14,
-              border:       'none',
-              cursor:       'pointer',
-            }}
-          >
-            ⚡ GradeFlow
-          </button>
-
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontWeight: 800, fontSize: 13, color: '#eef0f8', lineHeight: 1.2 }}>
               {currentUser.schoolName}
@@ -195,6 +180,30 @@ export default function AppShell() {
             }}
           >
             {isEs ? '🇺🇸 EN' : '🇲🇽 ES'}
+          </button>
+
+          {/* GradeFlow / home button (right side) */}
+          <button
+            onClick={() => {
+              const role = currentUser?.role || 'teacher'
+              const homePath = role === 'admin' ? '/admin' : `/${role}`
+              navigate(homePath)
+            }}
+            title="Go to home dashboard"
+            style={{
+              width:        38,
+              height:       38,
+              borderRadius: 10,
+              background:   theme.soft ?? 'rgba(249,115,22,0.14)',
+              border:       'none',
+              cursor:       'pointer',
+              display:      'flex',
+              alignItems:   'center',
+              justifyContent:'center',
+              fontSize:     18,
+            }}
+          >
+            ⚡
           </button>
 
           {/* Camera button */}

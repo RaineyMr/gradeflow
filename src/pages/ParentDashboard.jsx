@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
+import Widgets from './Widgets'
 
 // ─── HISD Theme — IDENTICAL to StudentDashboard ──────────────────────────────
 const T = {
@@ -374,11 +376,10 @@ function Btn({ label, color, onClick, style={} }) {
 
 // ─── Bottom nav ───────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { id:'home',    icon:'🏠',  label:'Home'     },
   { id:'grades',  icon:'📊', label:'Grades'   },
   { id:'feed',    icon:'📢', label:'Feed'     },
   { id:'messages',icon:'💬', label:'Messages' },
-  { id:'settings',icon:'⚙',  label:'Settings' },
+  { id:'widgets', icon:'🧩', label:'Widgets'  },
 ]
 
 function BottomNav({ active, onSelect }) {
@@ -742,10 +743,20 @@ function HomePage({ navigate, childName }) {
 
 // ─── MAIN PARENT DASHBOARD ────────────────────────────────────────────────────
 export default function ParentDashboard({ currentUser }) {
+  const location = useLocation()
   const [page, setPage]           = useState('home')
-  const [activeNav, setActiveNav] = useState('home')
+  const [activeNav, setActiveNav] = useState('grades')
   const parentName = currentUser?.userName || 'Ms. Thompson'
   const childName  = CHILD.name
+
+  useEffect(()=>{
+    const next = location?.state?.open
+    if (next) {
+      setPage(next)
+      setActiveNav(next)
+      window.history.replaceState({ ...window.history.state, usr: null }, '')
+    }
+  }, [location?.state])
 
   useEffect(()=>{ window.scrollTo(0,0) },[page])
 
@@ -755,11 +766,12 @@ export default function ParentDashboard({ currentUser }) {
     window.scrollTo(0,0)
   }
 
-  function goHome() { navigate('home'); setActiveNav('home') }
+  function goHome() { navigate('home'); setActiveNav('grades') }
 
   if (page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navigate}/></>
   if (page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages'   onSelect={navigate}/></>
   if (page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav}  onSelect={navigate}/></>
+  if (page==='widgets')  return <><Widgets      onBack={goHome}/><BottomNav active='widgets' onSelect={navigate}/></>
 
   const now = new Date()
   const hour = now.getHours()

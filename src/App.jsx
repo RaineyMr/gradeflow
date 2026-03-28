@@ -21,6 +21,7 @@ import ParentMessages  from './pages/ParentMessages'
 import Camera          from './pages/Camera'
 import Integrations    from './pages/Integrations'
 import Tutorials       from './pages/Tutorials'
+import Widgets         from './pages/Widgets'
 import ProfileSettings from './components/ProfileSettings'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -138,28 +139,32 @@ export default function App() {
             <Route path="/teacher/messages"     element={<Page Component={ParentMessages} backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
             <Route path="/teacher/testing"      element={<Page Component={TestingSuite}   backTo="/teacher" />} />
             <Route path="/teacher/feed"         element={<Page Component={ClassFeed}      backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
+            <Route path="/teacher/widgets"      element={<Page Component={Widgets}        backTo="/teacher" />} />
             <Route path="/teacher/integrations" element={<Page Component={Integrations}   backTo="/teacher" />} />
           </Route>
 
           {/* ── Student ─────────────────────────────────────────────── */}
           <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-            <Route path="/student"           element={<StudentHome />} />
-            <Route path="/student/messages"  element={<Page Component={ParentMessages} backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
-            <Route path="/student/feed"      element={<Page Component={ClassFeed}      backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
+            <Route path="/student"            element={<StudentHome />} />
+            <Route path="/student/widgets"    element={<Page Component={Widgets}       backTo="/student" />} />
+            <Route path="/student/messages"   element={<Page Component={ParentMessages} backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
+            <Route path="/student/feed"       element={<Page Component={ClassFeed}      backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
           </Route>
 
           {/* ── Parent ──────────────────────────────────────────────── */}
           <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
-            <Route path="/parent"           element={<ParentHome />} />
-            <Route path="/parent/messages"  element={<Page Component={ParentMessages} backTo="/parent" extraProps={{ viewerRole: 'parent' }} />} />
+            <Route path="/parent"            element={<ParentHome />} />
+            <Route path="/parent/widgets"    element={<Page Component={Widgets}       backTo="/parent" />} />
+            <Route path="/parent/messages"   element={<Page Component={ParentMessages} backTo="/parent" extraProps={{ viewerRole: 'parent' }} />} />
           </Route>
 
           {/* ── Admin ───────────────────────────────────────────────── */}
           <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
-            <Route path="/admin"           element={<AdminHome />} />
-            <Route path="/admin/messages"  element={<Page Component={ParentMessages} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
-            <Route path="/admin/feed"      element={<Page Component={ClassFeed}      backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
-            <Route path="/admin/reports"   element={<Page Component={Reports}        backTo="/admin" />} />
+            <Route path="/admin"            element={<AdminHome />} />
+            <Route path="/admin/widgets"    element={<Page Component={Widgets}       backTo="/admin" />} />
+            <Route path="/admin/messages"   element={<Page Component={ParentMessages} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
+            <Route path="/admin/feed"       element={<Page Component={ClassFeed}      backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
+            <Route path="/admin/reports"    element={<Page Component={Reports}        backTo="/admin" />} />
           </Route>
 
         </Route>
