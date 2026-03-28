@@ -157,7 +157,7 @@ function TodaysLessonsWidget({ navigate }) {
 function EditModeBar() {
   return (
     <div style={{ margin:'4px 12px 24px', background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'11px 14px', textAlign:'center' }}>
-      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:3 }}>Edit mode - add or delete widgets</div>
+      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:3 }}>— Hold any widget → Edit Mode</div>
       <div style={{ fontSize:10, color:C.muted, lineHeight:1.6 }}>
         Drag to rearrange · Pinch to resize · + to add · All widgets available<br/>
         Saved to your account · Same layout on all devices
