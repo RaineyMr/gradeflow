@@ -93,6 +93,13 @@ export default function AppShell() {
     setMenuOpen(false)
   }
 
+  function homeClick() {
+    const role = currentUser?.role || 'teacher'
+    const homePath = role === 'admin' ? '/admin' : `/${role}`
+    setMenuOpen(false)
+    navigate(homePath)
+  }
+
   // ── Dropdown sections ─────────────────────────────────────────────────────
 
   const dropdownSections = [
@@ -152,8 +159,9 @@ export default function AppShell() {
         {/* Left: GradeFlow home + school name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
-            onClick={() => navigate(roleHomePath)}
+            onClick={homeClick}
             title="Go to home dashboard"
+            type="button"
             style={{
               fontSize: 13,
               fontWeight: 900,
@@ -203,12 +211,9 @@ export default function AppShell() {
 
           {/* GradeFlow / home button (right side) */}
           <button
-            onClick={() => {
-              const role = currentUser?.role || 'teacher'
-              const homePath = role === 'admin' ? '/admin' : `/${role}`
-              navigate(homePath)
-            }}
+            onClick={homeClick}
             title="Go to home dashboard"
+            type="button"
             style={{
               width:        38,
               height:       38,
@@ -227,8 +232,9 @@ export default function AppShell() {
 
           {/* Camera button */}
           <button
-            onClick={() => navigate('/camera')}
-            title="Scan / Camera"
+            onClick={homeClick}
+            title="Go to home dashboard"
+            type="button"
             style={{
               width:        38,
               height:       38,
