@@ -943,7 +943,19 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     settings:       'dashboard',
   }
 
-  const activeNav = subPage ? (PAGE_TO_NAV[subPage] || 'dashboard') : 'dashboard'
+  import React, { useState, useEffect, useRef } from 'react'
+import { useStore } from '../lib/store'
+import Gradebook      from './Gradebook'
+import LessonPlan     from './LessonPlan'
+import Reports        from './Reports'
+import TestingSuite   from './TestingSuite'
+import ClassFeed      from './ClassFeed'
+import StudentProfile from './StudentProfile'
+import ParentMessages from './ParentMessages'
+import Camera         from './Camera'
+import Integrations   from './Integrations'
+
+const activeNav = subPage ? (PAGE_TO_NAV[subPage] || 'dashboard') : 'dashboard'
 
   function goHome() {
     history.current = []
@@ -1007,17 +1019,6 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     </div>
   )
 }
-import React, { useState, useEffect, useRef } from 'react'
-import { useStore } from '../lib/store'
-import Gradebook      from './Gradebook'
-import LessonPlan     from './LessonPlan'
-import Reports        from './Reports'
-import TestingSuite   from './TestingSuite'
-import ClassFeed      from './ClassFeed'
-import StudentProfile from './StudentProfile'
-import ParentMessages from './ParentMessages'
-import Camera         from './Camera'
-import Integrations   from './Integrations'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
