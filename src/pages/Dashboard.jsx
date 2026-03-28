@@ -157,11 +157,15 @@ function TodaysLessonsWidget({ navigate }) {
 function EditModeBar({ isEditMode, setIsEditMode }) {
   return (
     <div style={{ margin:'4px 12px 24px', background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'11px 14px', textAlign:'center' }}>
-      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:3 }}>— Hold any widget → Edit Mode</div>
-      <div style={{ fontSize:10, color:C.muted, lineHeight:1.6 }}>
-        Drag to rearrange · Pinch to resize · + to add · All widgets available<br/>
-        Saved to your account · Same layout on all devices
-      </div>
+      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:5 }}>Edit Mode</div>
+      <div style={{ fontSize:10, color:C.muted, lineHeight:1.5, marginBottom:8 }}>add or delete widgets</div>
+      <button
+        onClick={() => setIsEditMode(!isEditMode)}
+        type="button"
+        style={{ border:'1px solid var(--school-color)', borderRadius:999, padding:'8px 14px', fontSize:11, fontWeight:700, color:isEditMode?'#fff':'var(--school-color)', background:isEditMode?'var(--school-color)':'transparent', cursor:'pointer' }}
+      >
+        {isEditMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
+      </button>
     </div>
   )
 }
@@ -831,6 +835,19 @@ function HomeFeed({ navigate, isEditMode, setIsEditMode }) {
 
   return (
     <div style={{ padding:'12px 12px 0' }}>
+
+      {isEditMode && (
+        <div style={{ position:'fixed', inset:0, zIndex:250, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px' }}>
+          <div style={{ width:'100%', maxWidth:520, background:'#111520', border:`1px solid ${C.border}`, borderRadius:16, padding:'18px 16px', textAlign:'center', color:C.text }}>
+            <div style={{ fontSize:16, fontWeight:800, marginBottom:10 }}>⚡ Edit mode active</div>
+            <div style={{ fontSize:13, color:C.soft, marginBottom:16 }}>You can now add or delete widgets. Click a widget to remove it, and use the button below to exit.</div>
+            <button onClick={()=>setIsEditMode(false)} type="button"
+              style={{ background:'var(--school-color)', border:'none', borderRadius:10, padding:'10px 18px', color:'#fff', fontWeight:700, cursor:'pointer' }}>
+              Exit edit mode
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* W1: Daily Overview — untouched */}
       <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
