@@ -62,6 +62,11 @@ export async function gradeWork(imageBase64, mediaType, assignmentName, answerKe
   return extractJSON(data)
 }
 
+export async function scanGradedDocument(imageBase64, mediaType) {
+  // Backwards compatible alias used by Camera.jsx
+  return gradeWork(imageBase64, mediaType)
+}
+
 export async function extractRoster(imageBase64, mediaType) {
   const data = await callProxy('extractRoster', { imageBase64, mediaType })
   return extractJSON(data)
