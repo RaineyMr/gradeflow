@@ -42,12 +42,7 @@ export default function Camera({ onBack }) {
   const [newAssignName, setNewAssignName]   = useState('')
   const [newAssignType, setNewAssignType]   = useState('quiz')
 
-  // ── Voice state ──────────────────────────────────────────────────────────────
-  const [recording,    setRecording]    = useState(false)
-  const [transcribing, setTranscribing] = useState(false)
-  const [voiceStatus,  setVoiceStatus]  = useState('')
-
-  // ── Bulk grade sheet state ────────────────────────────────────────────────────
+  // ── Bulk grade sheet state ───────────────────────────────────────────────────
   const [bulkGrades,   setBulkGrades]   = useState([]) // [{studentName, matchedStudentId, assignmentName, score, maxScore, percentage, confidence, editing}]
   const [bulkSyncing,  setBulkSyncing]  = useState(false)
   const [bulkDone,     setBulkDone]     = useState(false)
@@ -59,8 +54,6 @@ export default function Camera({ onBack }) {
   const videoRef    = useRef(null)
   const streamRef   = useRef(null)
   const fileRef     = useRef(null)
-  const mediaRecRef = useRef(null)
-  const audioChunks = useRef([])
 
   useEffect(() => () => stopStream(), [])
 
@@ -116,147 +109,8 @@ export default function Camera({ onBack }) {
     }
   }
 
-  // ── Voice recording ──────────────────────────────────────────────────────────
-  async function startRecording() {
-    setError('')
-    setVoiceStatus('Listening...')
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      audioChunks.current = []
-      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' })
-      mediaRecRef.current = mr
-
-      mr.ondataavailable = e => { if (e.data.size > 0) audioChunks.current.push(e.data) }
-      mr.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop())
-        const blob = new Blob(audioChunks.current, { type: 'audio/webm' })
-        await transcribeAndParse(blob)
-      }
-
-      mr.start()
-      setRecording(true)
-    } catch {
-      setError('Microphone not accessible.')
-      setVoiceStatus('')
-    }
-  }
-
-  function stopRecording() {
-    if (mediaRecRef.current && recording) {
-      mediaRecRef.current.stop()
-      setRecording(false)
-      setVoiceStatus('Transcribing...')
-      setTranscribing(true)
-    }
-  }
-
-  async function transcribeAndParse(audioBlob) {
-    try {
-      // Send audio to /api/transcribe (AssemblyAI server-side)
-      const formData = new FormData()
-      formData.append('audio', audioBlob, 'recording.webm')
-
-      const transcribeRes = await fetch('/api/transcribe', {
-        method: 'POST',
-        body:   formData,
-      })
-
-      const transcribeData = await transcribeRes.json()
-
-      if (!transcribeData.success) {
-        throw new Error(transcribeData.error || 'Transcription failed')
-      }
-
-      const transcript = transcribeData.transcript
-      setVoiceStatus(`Heard: "${transcript.slice(0, 60)}${transcript.length > 60 ? '...' : ''}"`)
-
-      // Use Claude to extract grade info from the transcript
-      await parseTranscriptToGrade(transcript)
-
-    } catch (err) {
-      setError(err.message || 'Voice processing failed. Please try again.')
-      setVoiceStatus('')
-    } finally {
-      setTranscribing(false)
-    }
-  }
-
-  async function parseTranscriptToGrade(transcript) {
-    if (!ANTHROPIC_KEY) {
-      setError('No Anthropic API key configured.')
-      return
-    }
-
-    setMode('processing')
-
-    const assignment = assignments.find(a => a.id === Number(selectedAssignmentId))
-    const studentNames = students.map(s => s.name).join(', ')
-
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': ANTHROPIC_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 300,
-          system: `You extract grade information from a teacher's spoken dictation.
-Known students: ${studentNames || 'unknown'}.
-Current assignment: ${assignment?.name || 'unknown'}.
-Return ONLY valid JSON: {"studentName":"","score":0,"maxScore":100,"percentage":0,"format":"e.g. 17/20","feedback":"","confidence":"high|medium|low"}
-If score and maxScore are given, calculate percentage. If only percentage, set score=percentage and maxScore=100.`,
-          messages: [{ role: 'user', content: `Extract grade from: "${transcript}"` }],
-        }),
-      })
-
-      if (!res.ok) throw new Error(`API error ${res.status}`)
-      const data   = await res.json()
-      const parsed = safeParseJSON(data.content?.[0]?.text || '')
-
-      if (!parsed || parsed.percentage === undefined) {
-        throw new Error('Could not extract a grade from what you said. Try: "Marcus got 17 out of 20"')
-      }
-
-      setResult({
-        type:        'grade',
-        studentName: parsed.studentName,
-        score:       parsed.score,
-        maxScore:    parsed.maxScore,
-        percentage:  parsed.percentage,
-        format:      parsed.format,
-        feedback:    parsed.feedback || `Graded via voice: "${transcript}"`,
-        assignment,
-        source:      'voice',
-      })
-
-      // Auto-match student name
-      const nameLower = (parsed.studentName || '').toLowerCase()
-      const matchedSt = students.find(s => {
-        const sLower = s.name.toLowerCase()
-        return sLower.includes(nameLower) || nameLower.includes(sLower.split(' ')[0])
-      })
-      setSyncStudentId(matchedSt?.id ? String(matchedSt.id) : '')
-      setSyncAssignmentId(assignment?.id ? String(assignment.id) : '')
-
-      setMode('result')
-      setVoiceStatus('')
-
-    } catch (err) {
-      setError(err.message || 'Could not parse grade from voice input.')
-      setMode('capture')
-      setVoiceStatus('')
-    }
-  }
-
   // ── Bulk grade sheet ─────────────────────────────────────────────────────────
   async function gradeSheet(base64, mediaType) {
-    const studentNames   = students.map(s => s.name).join(', ')
-    const assignmentList = assignments.map(a => a.name).join(', ')
-
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:  'POST',
       headers: { 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
@@ -264,13 +118,10 @@ If score and maxScore are given, calculate percentage. If only percentage, set s
         model:      'claude-sonnet-4-20250514',
         max_tokens: 2000,
         system: `You read teacher grade sheets — grids with student names and scores.
-Known students: ${studentNames || 'see image'}.
-Known assignments: ${assignmentList || 'see image'}.
 Extract EVERY student-score pair visible. For each row/student, extract all scores.
 Return ONLY valid JSON:
 {"grades":[{"studentName":"","assignmentName":"","score":0,"maxScore":100,"percentage":0,"confidence":"high|medium|low"}]}
-Calculate percentage = (score/maxScore)*100. If only percentage visible, set score=percentage, maxScore=100.
-Match student names to the known list as closely as possible.`,
+Calculate percentage = (score/maxScore)*100. If only percentage visible, set score=percentage, maxScore=100.`,
         messages: [{
           role:    'user',
           content: [
@@ -456,8 +307,6 @@ Return ONLY valid JSON: {"studentName":"","score":85,"maxScore":100,"percentage"
     const fileName    = file.name
     const text        = await file.text()
     const csvText     = text.slice(0, 8000) // enough for a full class gradebook
-    const studentNames   = students.map(s => s.name).join(', ')
-    const assignmentList = assignments.map(a => a.name).join(', ')
 
     try {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -468,9 +317,6 @@ Return ONLY valid JSON: {"studentName":"","score":85,"maxScore":100,"percentage"
           max_tokens: 3000,
           system: `You parse teacher gradebook spreadsheets exported as CSV.
 The first column is usually student names. Remaining columns are assignment names with scores.
-Known students in system: ${studentNames || 'extract from CSV'}.
-Known assignments in system: ${assignmentList || 'extract from CSV'}.
-
 Extract EVERY student + assignment score pair.
 Return ONLY valid JSON:
 {"grades":[{"studentName":"","assignmentName":"","score":0,"maxScore":100,"percentage":0}]}
@@ -479,8 +325,7 @@ Rules:
 - If a cell has "87/100" parse as score=87, maxScore=100, percentage=87
 - If a cell has just "87" and maxScore is unknown, assume maxScore=100
 - If a cell is empty or "N/A" or "--", skip that pair entirely
-- Calculate percentage = (score/maxScore)*100, round to 1 decimal
-- Match student names to known students as closely as possible`,
+- Calculate percentage = (score/maxScore)*100, round to 1 decimal`,
           messages: [{ role:'user', content:`Parse this gradebook CSV from file "${fileName}":\n\n${csvText}` }],
         }),
       })
@@ -590,7 +435,6 @@ Rules:
   function resetAll() {
     setIntent(null); setCapturedImage(null); setCapturedFile(null)
     setResult(null); setError(''); setMode('intent')
-    setRecording(false); setTranscribing(false); setVoiceStatus('')
     setBulkGrades([]); setBulkSyncing(false); setBulkDone(false)
     setSyncStudentId(''); setSyncAssignmentId('')
     setSelectedStudentId(''); setShowNewAssign(false); setNewAssignName('')
@@ -746,35 +590,7 @@ Rules:
             Choose File
           </button>
 
-          {/* Mic button — only show for Grade intent */}
-          {intent === 'grade' && (
-            <button
-              onClick={recording ? stopRecording : startRecording}
-              disabled={transcribing}
-              style={{
-                background: recording ? '#f04a4a22' : transcribing ? '#1e2231' : '#9b6ef522',
-                color:      recording ? '#f04a4a'   : transcribing ? '#6b7494' : '#9b6ef5',
-                border:     `1px solid ${recording ? '#f04a4a50' : transcribing ? '#2a2f42' : '#9b6ef550'}`,
-                borderRadius:12, padding:'12px 16px', fontSize:20,
-                cursor:     transcribing ? 'not-allowed' : 'pointer',
-                flexShrink: 0,
-                position:   'relative',
-              }}
-              title={recording ? 'Tap to stop recording' : 'Dictate a grade verbally'}>
-              {recording ? '⏹' : transcribing ? '⏳' : '🎤'}
-              {recording && (
-                <span style={{ position:'absolute', top:4, right:4, width:8, height:8, borderRadius:'50%', background:'#f04a4a', animation:'pulse 1s infinite' }}/>
-              )}
-            </button>
-          )}
         </div>
-
-        {/* Voice status message */}
-        {voiceStatus && (
-          <div style={{ marginTop:10, background:'#9b6ef515', border:'1px solid #9b6ef530', borderRadius:10, padding:'8px 12px', fontSize:12, color:'#9b6ef5', fontStyle:'italic' }}>
-            {voiceStatus}
-          </div>
-        )}
 
         <p style={{ fontSize:10, color:'#6b7494', margin:'8px 0 0', textAlign:'center' }}>
           Photos &middot; PDF &middot; CSV &middot; Excel &middot; Word &middot; {intent === 'grade' ? '🎤 Voice' : 'Text'}
@@ -806,10 +622,10 @@ Rules:
       <div style={{ width:36, height:36, border:'3px solid var(--school-color)', borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', marginBottom:16 }}/>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <p style={{ fontWeight:700, color:'#eef0f8', marginBottom:4 }}>
-        {transcribing ? 'Transcribing audio...' : 'Claude is reading this file'}
+        Claude is reading this file
       </p>
       <p style={{ fontSize:12, color:'#6b7494' }}>
-        {transcribing ? 'AssemblyAI speech-to-text' : 'Detecting format · Processing...'}
+        Detecting format · Processing...
       </p>
     </div>
   )
@@ -829,11 +645,6 @@ Rules:
 
         {result.type === 'grade' && (
           <div style={S.card}>
-            {result.source === 'voice' && (
-              <div style={{ background:'#9b6ef515', border:'1px solid #9b6ef530', borderRadius:10, padding:'6px 10px', marginBottom:12, fontSize:11, color:'#9b6ef5', fontWeight:700 }}>
-                🎤 Graded via voice dictation
-              </div>
-            )}
 
             {/* Grade display */}
             <div style={{ textAlign:'center', padding:'12px 0 16px' }}>
@@ -878,7 +689,7 @@ Rules:
             {result.feedback && (
               <div style={{ background:'#1e2231', borderRadius:12, padding:12, marginBottom:12 }}>
                 <div style={{ fontSize:10, fontWeight:700, color:'#6b7494', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:4 }}>
-                  {result.source === 'voice' ? 'Dictation' : 'AI Feedback'}
+                  AI Feedback
                 </div>
                 <p style={{ fontSize:13, color:'#c0c8e0', margin:0 }}>{result.feedback}</p>
               </div>
