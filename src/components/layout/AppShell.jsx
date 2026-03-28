@@ -68,6 +68,7 @@ export default function AppShell() {
   const isEs       = (currentUser.lang || 'en') === 'es'
   const roleLabel  = ROLE_LABELS[currentUser.role] ?? 'User'
   const rolePages  = PAGES_BY_ROLE[currentUser.role] ?? []
+  const roleHomePath = currentUser.role === 'admin' ? '/admin' : `/${currentUser.role}`
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -148,8 +149,26 @@ export default function AppShell() {
         fontFamily:     'Inter, Arial, sans-serif',
       }}>
 
-        {/* Left: school name */}
+        {/* Left: GradeFlow home + school name */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={() => navigate(roleHomePath)}
+            title="Go to home dashboard"
+            style={{
+              fontSize: 13,
+              fontWeight: 900,
+              color: '#eef0f8',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px 6px',
+              borderRadius: 8,
+              textAlign: 'left',
+            }}
+          >
+            ⚡ GradeFlow
+          </button>
+
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             <span style={{ fontWeight: 800, fontSize: 13, color: '#eef0f8', lineHeight: 1.2 }}>
               {currentUser.schoolName}
@@ -275,7 +294,9 @@ export default function AppShell() {
                   borderRadius: 16,
                   boxShadow:  '0 16px 40px rgba(0,0,0,0.5)',
                   zIndex:     999,
-                  overflow:   'hidden',
+                  maxHeight:  '62vh',
+                  overflow:   'auto',
+                  WebkitOverflowScrolling: 'touch',
                 }}>
 
                   {/* User info */}
