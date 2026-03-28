@@ -65,9 +65,8 @@ function LoginRoute() {
   const currentUser = useStore(s => s.currentUser)
   const { setCurrentUser, setLang } = useStore()
 
-  if (currentUser) {
-    return <Navigate to={`/${currentUser.role}`} replace />
-  }
+  // Allow landing to remain accessible even when a session exists.
+  // Do not auto-redirect from /login to dashboard.
 
   function handleLogin(account) {
     if (!account?.role) return
@@ -78,7 +77,7 @@ function LoginRoute() {
     navigate(`/${account.role}`, { replace: true })
   }
 
-  return <Login onLogin={handleLogin} onDemoLogin={handleLogin} />
+  return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={currentUser} />
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
