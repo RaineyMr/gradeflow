@@ -844,17 +844,17 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
 
   // Wraps any widget with a persistent × remove button in the top-right corner
   const wrap = (id, content) => (
-    <div key={id} style={{ position:'relative' }}>
+    <div key={id} style={{ position:'relative', marginTop:16 }}>
       <button
         onClick={e=>{ e.stopPropagation(); removeWidget(id) }}
         title="Remove widget"
         style={{
-          position:'absolute', top:12, right:12, zIndex:20,
-          width:24, height:24, borderRadius:'50%',
-          background:'rgba(0,0,0,0.6)', border:'1px solid rgba(255,255,255,0.22)',
-          color:'rgba(255,255,255,0.85)', fontSize:14, fontWeight:700,
+          position:'absolute', top:-10, right:8, zIndex:20,
+          width:22, height:22, borderRadius:'50%',
+          background:'rgba(240,74,74,0.85)', border:'1px solid rgba(255,255,255,0.3)',
+          color:'#fff', fontSize:13, fontWeight:700,
           cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-          lineHeight:1,
+          lineHeight:1, boxShadow:'0 2px 6px rgba(0,0,0,0.4)',
         }}
       >×</button>
       {content}
