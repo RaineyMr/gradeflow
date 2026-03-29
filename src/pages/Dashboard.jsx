@@ -153,18 +153,13 @@ function TodaysLessonsWidget({ navigate }) {
   )
 }
 
-// ─── EDIT MODE BAR ────────────────────────────────────────────────────────────
-function EditModeBar({ isEditMode, setIsEditMode }) {
+// ─── ADD WIDGETS BAR ─────────────────────────────────────────────────────────
+function AddWidgetsBar({ onOpen }) {
   return (
-    <div style={{ margin:'4px 12px 24px', background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'11px 14px', textAlign:'center' }}>
-      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:5 }}>Edit Mode</div>
-      <div style={{ fontSize:10, color:C.muted, lineHeight:1.5, marginBottom:8 }}>add or delete widgets</div>
-      <button
-        onClick={() => setIsEditMode(!isEditMode)}
-        type="button"
-        style={{ border:'1px solid var(--school-color)', borderRadius:999, padding:'8px 14px', fontSize:11, fontWeight:700, color:isEditMode?'#fff':'var(--school-color)', background:isEditMode?'var(--school-color)':'transparent', cursor:'pointer' }}
-      >
-        {isEditMode ? 'Exit Edit Mode' : 'Enter Edit Mode'}
+    <div style={{ margin:'4px 0 24px', textAlign:'center' }}>
+      <button onClick={onOpen} type="button"
+        style={{ background:'var(--school-color)', border:'none', borderRadius:14, padding:'12px 28px', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+        + Add widgets
       </button>
     </div>
   )
@@ -820,81 +815,93 @@ function SettingsPage({ onBack, navigate }) {
 }
 
 // ─── HOME FEED ────────────────────────────────────────────────────────────────
-function HomeFeed({ navigate, isEditMode, setIsEditMode }) {
-  const store = useStore()
-  const { classes, messages, reminders, getNeedsAttention } = store
-  const pending = messages.filter(m=>m.status==='pending')
-  const atRisk  = getNeedsAttention()
+const WIDGET_CATALOG = [
+  { id:’dailyOverview’,  label:’Daily Overview’,             icon:’📅’, desc:’Class count, messages, alerts’ },
+  { id:’todaysLessons’,  label:"Today’s Lessons",            icon:’📘’, desc:’Lesson plan and class schedule’ },
+  { id:’classes’,        label:’My Classes’,                 icon:’🏫’, desc:’Quick class cards and progress’ },
+  { id:’needsAttention’, label:’Needs Attention’,            icon:’⚑’,  desc:’At-risk students’ },
+  { id:’messages’,       label:’Messages’,                   icon:’💬’, desc:’Teacher, parent, student chat’ },
+  { id:’reports’,        label:’Reports’,                    icon:’📊’, desc:’Analytics and trends’ },
+  { id:’grading’,        label:’Grading’,                    icon:’🧮’, desc:’Gradebook metrics and actions’ },
+  { id:’lessonPlan’,     label:’Lesson Planner’,             icon:’📝’, desc:’Plan lessons and unit links’ },
+  { id:’sketch’,         label:’Sketch & Annotate’,          icon:’📌’, desc:’Annotate and send back to students’ },
+  { id:’testingSuite’,   label:’Testing Suite’,              icon:’🧪’, desc:’Assessments and rubric tools’ },
+  { id:’scanGradeSheet’, label:’Scan Grade Sheet’,           icon:’📷’, desc:’Add grades from photos or PDFs’ },
+  { id:’gradebook’,      label:’Gradebook + Student Profile’,icon:’📚’, desc:’Full gradebook view with profiles’ },
+]
 
-  const WIDGET_CATALOG = [
-    { id:'dailyOverview',     label:'Daily Overview',        icon:'📅', desc:'Class count, messages, insights, alerts' },
-    { id:'todaysLessons',     label:'Today’s Lessons',       icon:'📘', desc:'Lesson plan and class schedule' },
-    { id:'classes',           label:'My Classes',            icon:'🏫', desc:'Quick class cards and progress' },
-    { id:'needsAttention',    label:'Needs Attention',       icon:'⚑', desc:'At-risk students and alerts' },
-    { id:'messages',          label:'Messages',              icon:'💬', desc:'Teacher, parent, student chat' },
-    { id:'reports',           label:'Reports',               icon:'📊', desc:'Analytics and trends' },
-    { id:'grading',           label:'Grading',               icon:'🧮', desc:'Gradebook metrics and actions' },
-    { id:'lessonPlan',        label:'Lesson Planner',        icon:'📝', desc:'Plan lessons and unit links' },
-    { id:'sketch',           label:'Sketch & Annotate',     icon:'✏️', desc:'Start sketching and annotation' },
-    { id:'testingSuite',      label:'Testing Suite',         icon:'🧪', desc:'Assessments and rubric tools' },
-    { id:'scanGradeSheet',    label:'Scan Grade Sheet',      icon:'📷', desc:'Add grades from photos or PDFs' },
-    { id:'gradebook',         label:'Gradebook',             icon:'📚', desc:'Full gradebook view with profiles' },
-  ]
+function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
+  const store = useStore()
+  const { classes, messages, getNeedsAttention } = store
+  const pending = messages.filter(m=>m.status===’pending’)
+  const atRisk  = getNeedsAttention()
 
   const [activeWidgets, setActiveWidgets] = useState(WIDGET_CATALOG.map(w=>w.id))
 
-  const removeWidget = (id) => setActiveWidgets(widgets => widgets.filter(widget => widget !== id))
-  const addWidget = (id) => setActiveWidgets(widgets => widgets.includes(id) ? widgets : [...widgets, id])
+  const removeWidget = (id) => setActiveWidgets(prev => prev.filter(w => w !== id))
+  const addWidget    = (id) => setActiveWidgets(prev => prev.includes(id) ? prev : [...prev, id])
+  const show         = (id) => activeWidgets.includes(id)
 
-  const maybeRemovable = (id, content) => (
-    <div style={{ position: 'relative' }}>
-      {isEditMode && activeWidgets.includes(id) && (
-        <button
-          onClick={(e)=>{ e.stopPropagation(); removeWidget(id) }}
-          title="Remove widget"
-          style={{
-            position:'absolute', top:10, right:10,
-            width:24, height:24, borderRadius:'50%', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.35)', color:'#fff', fontWeight:700, cursor:'pointer', zIndex:10,
-          }}
-        >×</button>
-      )}
+  // Wraps any widget with a persistent × remove button in the top-right corner
+  const wrap = (id, content) => (
+    <div key={id} style={{ position:’relative’ }}>
+      <button
+        onClick={e=>{ e.stopPropagation(); removeWidget(id) }}
+        title="Remove widget"
+        style={{
+          position:’absolute’, top:12, right:12, zIndex:20,
+          width:24, height:24, borderRadius:’50%’,
+          background:’rgba(0,0,0,0.6)’, border:’1px solid rgba(255,255,255,0.22)’,
+          color:’rgba(255,255,255,0.85)’, fontSize:14, fontWeight:700,
+          cursor:’pointer’, display:’flex’, alignItems:’center’, justifyContent:’center’,
+          lineHeight:1,
+        }}
+      >×</button>
       {content}
     </div>
   )
 
   const overviewTiles = [
-    { icon:'📚', val:classes.length,    label:'Classes',      page:'classes',        color:C.blue   },
-    { icon:'💬', val:pending.length||'',label:'Messages',     page:'parentMessages', color:C.purple },
-    { icon:'📋', val:'',                label:'Lesson Plans', page:'lessonPlan',     color:C.teal   },
-    { icon:'🔔', val:atRisk.length||'', label:'Alerts',       page:'alerts',         color:C.red    },
+    { icon:’📚’, val:classes.length,     label:’Classes’,      page:’classes’,        color:C.blue   },
+    { icon:’💬’, val:pending.length||’’, label:’Messages’,     page:’parentMessages’, color:C.purple },
+    { icon:’📋’, val:’’,                 label:’Lesson Plans’, page:’lessonPlan’,     color:C.teal   },
+    { icon:’🔔’, val:atRisk.length||’’,  label:’Alerts’,       page:’alerts’,         color:C.red    },
   ]
 
   return (
-    <div style={{ padding:'12px 12px 0' }}>
+    <div style={{ padding:’12px 12px 0’ }}>
 
-      {isEditMode && (
-        <div style={{ position:'fixed', inset:0, zIndex:250, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', padding:'12px' }}>
-          <div style={{ width:'100%', maxWidth:920, maxHeight:'84vh', overflow:'auto', background:'#111520', border:`1px solid ${C.border}`, borderRadius:16, padding:'18px 18px', color:C.text }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+      {/* ── Add Widgets Modal ── */}
+      {showAddWidgets && (
+        <div
+          onClick={()=>setShowAddWidgets(false)}
+          style={{ position:’fixed’, inset:0, zIndex:250, background:’rgba(0,0,0,0.75)’, display:’flex’, alignItems:’flex-end’, justifyContent:’center’ }}>
+          <div
+            onClick={e=>e.stopPropagation()}
+            style={{ width:’100%’, maxWidth:600, maxHeight:’82vh’, overflowY:’auto’, background:C.card, border:`1px solid ${C.border}`, borderRadius:’20px 20px 0 0’, padding:’20px 16px 36px’ }}>
+            <div style={{ display:’flex’, alignItems:’center’, justifyContent:’space-between’, marginBottom:16 }}>
               <div>
-                <div style={{ fontSize:18, fontWeight:800 }}>➕ Add Widgets</div>
-                <div style={{ fontSize:13, color:C.soft, marginTop:4 }}>Select widgets to add to your dashboard. Remove widgets with the × control on each widget card.</div>
+                <div style={{ fontSize:17, fontWeight:800, color:C.text }}>+ Add Widgets</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Tap a widget to add it to your dashboard</div>
               </div>
-              <button onClick={()=>setIsEditMode(false)} type="button"
-                style={{ background:'var(--school-color)', border:'none', borderRadius:10, padding:'10px 16px', color:'#fff', fontWeight:700, cursor:'pointer' }}>
-                Done
+              <button onClick={()=>setShowAddWidgets(false)}
+                style={{ background:C.inner, border:’none’, borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:’pointer’, display:’flex’, alignItems:’center’, justifyContent:’center’ }}>
+                ×
               </button>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,minmax(0,1fr))', gap:10 }}>
-              {WIDGET_CATALOG.map(w=>{
+            <div style={{ display:’grid’, gridTemplateColumns:’1fr 1fr’, gap:10 }}>
+              {WIDGET_CATALOG.map(w => {
                 const isActive = activeWidgets.includes(w.id)
                 return (
-                  <button key={w.id} disabled={isActive} onClick={()=>addWidget(w.id)} type="button"
-                    style={{ textAlign:'left', background:isActive?'rgba(37,99,235,0.2)':'rgba(255,255,255,0.04)', border:`1px solid ${isActive?'rgba(37,99,235,0.7)':'rgba(255,255,255,0.16)'}`, color:'#eef0f8', borderRadius:12, padding:10, cursor:isActive?'not-allowed':'pointer' }}>
-                    <div style={{ fontSize:18 }}>{w.icon}</div>
-                    <div style={{ fontWeight:700, margin:'6px 0 2px' }}>{w.label}</div>
-                    <div style={{ fontSize:11, color:'#9aa4c5' }}>{w.desc}</div>
-                    <div style={{ marginTop:8, fontSize:11, color:isActive?'#6b7494':'#a5b8ff' }}>{isActive?'Added':'Add widget'}</div>
+                  <button key={w.id}
+                    onClick={()=>{ if(!isActive){ addWidget(w.id); setShowAddWidgets(false) } }}
+                    style={{ textAlign:’left’, background:isActive?`${C.green}12`:C.inner, border:`1px solid ${isActive?`${C.green}35`:C.border}`, borderRadius:14, padding:’12px 12px’, cursor:isActive?’default’:’pointer’, opacity:isActive?0.55:1 }}>
+                    <div style={{ fontSize:22, marginBottom:6 }}>{w.icon}</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{w.label}</div>
+                    <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{w.desc}</div>
+                    <div style={{ marginTop:8, fontSize:10, fontWeight:700, color:isActive?C.green:C.teal }}>
+                      {isActive ? ‘✓ On dashboard’ : ‘+ Add’}
+                    </div>
                   </button>
                 )
               })}
@@ -903,78 +910,79 @@ function HomeFeed({ navigate, isEditMode, setIsEditMode }) {
         </div>
       )}
 
-      {/* W1: Daily Overview — optional */}
-      {activeWidgets.includes('dailyOverview') && maybeRemovable('dailyOverview', (
-        <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+      {/* W1: Daily Overview */}
+      {show(‘dailyOverview’) && wrap(‘dailyOverview’,
+        <Widget style={{ background:’var(--school-surface,#1a0008)’, border:’1px solid rgba(255,255,255,0.06)’ }}>
+          <div style={{ fontSize:9, fontWeight:700, letterSpacing:’0.1em’, textTransform:’uppercase’, color:’rgba(255,255,255,0.4)’, marginBottom:12 }}>DAILY OVERVIEW</div>
+          <div style={{ display:’grid’, gridTemplateColumns:’repeat(4,1fr)’, gap:8 }}>
             {overviewTiles.map(tile=>(
               <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
-                style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'background 0.15s' }}
+                style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:’10px 4px’, cursor:’pointer’, display:’flex’, flexDirection:’column’, alignItems:’center’, gap:3, transition:’background 0.15s’ }}
                 onMouseEnter={e=>(e.currentTarget.style.background=`${tile.color}30`)}
                 onMouseLeave={e=>(e.currentTarget.style.background=`${tile.color}18`)}>
                 <span style={{ fontSize:16 }}>{tile.icon}</span>
-                {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
-                <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
+                {tile.val!==’’ && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
+                <span style={{ fontSize:8, color:’rgba(255,255,255,0.5)’, textAlign:’center’, fontWeight:600 }}>{tile.label}</span>
               </button>
             ))}
           </div>
         </Widget>
-      ))}
+      )}
 
-      {/* W2: Today's Lessons — optional */}
-      {activeWidgets.includes('todaysLessons') && maybeRemovable('todaysLessons', <TodaysLessonsWidget navigate={navigate}/>)}
+      {/* W2: Today’s Lessons */}
+      {show(‘todaysLessons’) && wrap(‘todaysLessons’, <TodaysLessonsWidget navigate={navigate}/>)}
 
       {/* W3: My Classes */}
-      {activeWidgets.includes('classes') && maybeRemovable('classes', (
-        <Widget onClick={()=>navigate('classes')} title="📚 My Classes" titleRight={<ActionBtn label="+ Add" color={C.blue} onClick={()=>navigate('gradebook')}/>}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-          {classes.map(cls=>(
-            <button key={cls.id} onClick={e=>{ e.stopPropagation(); store.setActiveClass(cls); navigate('gradebook') }}
-              style={{ background:C.inner, borderRadius:14, padding:'12px 14px', border:'none', borderLeft:`3px solid ${cls.color}`, cursor:'pointer', textAlign:'left', transition:'background 0.15s' }}
-              onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
-              onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
-              <div style={{ fontWeight:700, fontSize:12, color:C.text, marginBottom:2 }}>{cls.period} · {cls.subject}</div>
-              <div style={{ fontSize:10, color:C.muted, marginBottom:8 }}>{cls.students} students</div>
-              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                <span style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{cls.gpa}</span>
-                <TrendBadge trend={cls.trend}/>
-              </div>
-              {cls.needsAttention>0 && <div style={{ fontSize:9, color:C.red, marginTop:4, fontWeight:700 }}>⚑ {cls.needsAttention} need attention</div>}
-            </button>
-          ))}
-        </div>
-      </Widget>
+      {show(‘classes’) && wrap(‘classes’,
+        <Widget onClick={()=>navigate(‘classes’)} title="📚 My Classes" titleRight={<ActionBtn label="+ Add" color={C.blue} onClick={()=>navigate(‘gradebook’)}/>}>
+          <div style={{ display:’grid’, gridTemplateColumns:’1fr 1fr’, gap:8 }}>
+            {classes.map(cls=>(
+              <button key={cls.id} onClick={e=>{ e.stopPropagation(); store.setActiveClass(cls); navigate(‘gradebook’) }}
+                style={{ background:C.inner, borderRadius:14, padding:’12px 14px’, border:’none’, borderLeft:`3px solid ${cls.color}`, cursor:’pointer’, textAlign:’left’, transition:’background 0.15s’ }}
+                onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
+                onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
+                <div style={{ fontWeight:700, fontSize:12, color:C.text, marginBottom:2 }}>{cls.period} · {cls.subject}</div>
+                <div style={{ fontSize:10, color:C.muted, marginBottom:8 }}>{cls.students} students</div>
+                <div style={{ display:’flex’, alignItems:’center’, gap:6 }}>
+                  <span style={{ fontSize:22, fontWeight:900, color:’#fff’ }}>{cls.gpa}</span>
+                  <TrendBadge trend={cls.trend}/>
+                </div>
+                {cls.needsAttention>0 && <div style={{ fontSize:9, color:C.red, marginTop:4, fontWeight:700 }}>⚑ {cls.needsAttention} need attention</div>}
+              </button>
+            ))}
+          </div>
+        </Widget>
+      )}
 
       {/* W4: Needs Attention */}
-      <NeedsAttentionWidget atRisk={atRisk} navigate={navigate}/>
+      {show(‘needsAttention’) && wrap(‘needsAttention’, <NeedsAttentionWidget atRisk={atRisk} navigate={navigate}/>)}
 
-      {/* W5: Messages (admin-style widget) */}
-      <MessagesWidget navigate={navigate}/>
+      {/* W5: Messages */}
+      {show(‘messages’) && wrap(‘messages’, <MessagesWidget navigate={navigate}/>)}
 
       {/* W6: Reports */}
-      <ReportsWidget navigate={navigate}/>
+      {show(‘reports’) && wrap(‘reports’, <ReportsWidget navigate={navigate}/>)}
 
       {/* W7: Grading */}
-      <GradingWidget navigate={navigate}/>
+      {show(‘grading’) && wrap(‘grading’, <GradingWidget navigate={navigate}/>)}
 
       {/* W8: Lesson Plan Builder */}
-      <LessonPlanWidget navigate={navigate}/>
+      {show(‘lessonPlan’) && wrap(‘lessonPlan’, <LessonPlanWidget navigate={navigate}/>)}
 
       {/* W9: Sketch & Annotate */}
-      <SketchAnnotateWidget navigate={navigate}/>
+      {show(‘sketch’) && wrap(‘sketch’, <SketchAnnotateWidget navigate={navigate}/>)}
 
       {/* W10: Testing Suite */}
-      <TestingSuiteWidget navigate={navigate}/>
+      {show(‘testingSuite’) && wrap(‘testingSuite’, <TestingSuiteWidget navigate={navigate}/>)}
 
       {/* W11: Scan Grade Sheet */}
-      <ScanGradeSheetWidget navigate={navigate}/>
+      {show(‘scanGradeSheet’) && wrap(‘scanGradeSheet’, <ScanGradeSheetWidget navigate={navigate}/>)}
 
       {/* W12: Gradebook + Student Profile */}
-      <GradebookWidget navigate={navigate}/>
+      {show(‘gradebook’) && wrap(‘gradebook’, <GradebookWidget navigate={navigate}/>)}
 
-      {/* Edit Mode Bar */}
-      <EditModeBar isEditMode={isEditMode} setIsEditMode={setIsEditMode}/>
+      {/* Add Widgets Bar */}
+      <AddWidgetsBar onOpen={()=>setShowAddWidgets(true)}/>
     </div>
   )
 }
@@ -986,7 +994,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   const routerNav = useNavigate()
 
   const [subPage, setSubPage] = useState(null)
-  const [isEditMode, setIsEditMode] = useState(false)
+  const [showAddWidgets, setShowAddWidgets] = useState(false)
   const history = useRef([])
 
   useEffect(()=>{ applyTheme('kipp'); scrollTop() },[])
@@ -1098,7 +1106,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   return withNav(
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
       <StickyHeader teacher={teacher}/>
-      <HomeFeed navigate={navigate} isEditMode={isEditMode} setIsEditMode={setIsEditMode}/>
+      <HomeFeed navigate={navigate} showAddWidgets={showAddWidgets} setShowAddWidgets={setShowAddWidgets}/>
     </div>
   )
 }
