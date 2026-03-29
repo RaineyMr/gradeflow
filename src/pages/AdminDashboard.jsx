@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import ParentMessages from './ParentMessages'
 import ClassFeed from './ClassFeed'
+import Reports from './Reports'
+import Widgets from './Widgets'
+import SharedBottomNav from '../components/ui/BottomNav'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -53,6 +56,13 @@ const ALERTS = [
   { id:4, type:'info',    msg:'Science scores dropped 4.2 pts this quarter',            time:'3 days ago',  urgent:false },
 ]
 
+const ADMIN_WIDGET_CATALOG = [
+  { id:'analytics', label:'School Analytics', icon:'📈', desc:'Subject GPA and performance trends' },
+  { id:'teachers',  label:'Teachers',         icon:'👩‍🏫', desc:'Roster, status, and verification' },
+  { id:'messages',  label:'Messages',         icon:'💬', desc:'Parent and staff communications' },
+  { id:'alerts',    label:'Alerts',           icon:'🔔', desc:'Urgent school-wide notifications' },
+]
+
 const MESSAGES_DEMO = [
   { id:1, from:'Principal Davis', role:'admin',   subject:'Budget approval needed', unread:true,  time:'1h ago',    avatar:'🏫' },
   { id:2, from:'Ms. Thompson',    role:'parent',  subject:'Bullying concern',       unread:true,  time:'3h ago',    avatar:'👩' },
@@ -67,81 +77,7 @@ function StatBar({ value, color }) {
   )
 }
 
-// ─── BOTTOM NAV ───────────────────────────────────────────────────────────────
-// Home: Teachers · Messages · 🏠 Home (center) · Reports · 🔔 Alerts
-// Sub:  ← Back · Teachers · Messages · Reports · 🔔 Alerts
-function BottomNav({ active, onSelect, isSubPage }) {
-  const homeItems = [
-    { id:'teachers',  icon:'👩‍🏫', label:'Teachers' },
-    { id:'messages',  icon:'💬',  label:'Messages' },
-    { id:'home',      icon:'🏠',  label:'Home'     },
-    { id:'feed',      icon:'📢',  label:'Feed'     },
-    { id:'alerts',    icon:'🔔',  label:'Alerts'   },
-  ]
-  const subItems = [
-    { id:'__back__',  icon:'←',   label:'Back'     },
-    { id:'teachers',  icon:'👩‍🏫', label:'Teachers' },
-    { id:'messages',  icon:'💬',  label:'Messages' },
-    { id:'feed',      icon:'📢',  label:'Feed'     },
-    { id:'alerts',    icon:'🔔',  label:'Alerts'   },
-  ]
-  const items = isSubPage ? subItems : homeItems
-  return (
-    <nav style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:`${C.bg}f5`, backdropFilter:'blur(14px)', borderTop:`1px solid ${C.border}`, display:'grid', gridTemplateColumns:`repeat(${items.length},1fr)`, padding:'8px 0 max(8px,env(safe-area-inset-bottom))' }}>
-      {items.map(item=>{
-        const isActive = item.id===active && item.id!=='__back__'
-        return (
-          <button key={item.id} onClick={()=>onSelect(item.id)}
-            style={{ flex:1, background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, color:isActive?T.secondary:C.muted, fontSize:10, fontWeight:isActive?700:500, padding:'5px 2px', position:'relative' }}>
-            <span style={{ fontSize:item.id==='__back__'?20:18, filter:isActive?`drop-shadow(0 0 4px ${T.secondary}80)`:'none', color:item.id==='__back__'?C.soft:'inherit' }}>{item.icon}</span>
-            {item.label}
-            {isActive && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:2, background:T.secondary, borderRadius:1 }}/>}
-          </button>
-        )
-      })}
-    </nav>
-  )
-}
 
-// ─── ADD WIDGETS BAR ──────────────────────────────────────────────────────────
-function AddWidgetsBar() {
-  const [open, setOpen] = useState(false)
-  const WIDGETS = [
-    { icon:'📊', name:'Daily Overview'     }, { icon:'👩‍🏫', name:'Teachers'         },
-    { icon:'📈', name:'School Analytics'   }, { icon:'💬', name:'Messages'           },
-    { icon:'📋', name:'Reports'            }, { icon:'📢', name:'Communication Hub'  },
-    { icon:'⚙',  name:'School Settings'   }, { icon:'🎨', name:'Branding'           },
-    { icon:'📉', name:'Progress Graph'     }, { icon:'🔔', name:'Alerts'             },
-  ]
-  return (
-    <div style={{ margin:'8px 16px 0', marginBottom:open?16:24 }}>
-      {open ? (
-        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:16 }}>
-          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:C.text }}>＋ Widget Library</div>
-            <button onClick={()=>setOpen(false)} style={{ background:C.inner, border:'none', borderRadius:8, padding:'5px 10px', color:C.muted, cursor:'pointer', fontSize:13 }}>✕</button>
-          </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
-            {WIDGETS.map(w=>(
-              <button key={w.name} style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'10px 6px', cursor:'pointer', textAlign:'center' }}
-                onMouseEnter={e=>(e.currentTarget.style.borderColor=T.secondary)}
-                onMouseLeave={e=>(e.currentTarget.style.borderColor=C.border)}>
-                <div style={{ fontSize:20, marginBottom:4 }}>{w.icon}</div>
-                <div style={{ fontSize:9, color:C.muted, fontWeight:600 }}>{w.name}</div>
-              </button>
-            ))}
-          </div>
-          <div style={{ fontSize:10, color:C.muted, textAlign:'center', marginTop:12 }}>Drag · Resize · Save to account</div>
-        </div>
-      ) : (
-        <button onClick={()=>setOpen(true)}
-          style={{ width:'100%', background:C.inner, border:`1px dashed ${C.border}`, borderRadius:14, padding:'10px', color:C.muted, cursor:'pointer', fontSize:12, fontWeight:600 }}>
-          ＋ Add Widgets
-        </button>
-      )}
-    </div>
-  )
-}
 
 // ─── SUB-PAGES ────────────────────────────────────────────────────────────────
 function TeachersPage({ onBack }) {
@@ -323,37 +259,58 @@ function SettingsPage({ onBack }) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function AdminDashboard({ currentUser }) {
-  const [activeNav, setActiveNav] = useState('home')
-  const [subPage,   setSubPage]   = useState(null)
+  const [activeNav, setActiveNav]         = useState('dashboard')
+  const [subPage,   setSubPage]           = useState(null)
+  const [showAddWidgets, setShowAddWidgets] = useState(false)
+  const [activeWidgets,  setActiveWidgets]  = useState(ADMIN_WIDGET_CATALOG.map(w=>w.id))
+
+  const removeWidget = id => setActiveWidgets(ws => ws.filter(w => w !== id))
+  const addWidget    = id => setActiveWidgets(ws => ws.includes(id) ? ws : [...ws, id])
+  const show = id => activeWidgets.includes(id)
+  const wrap = (id, content) => (
+    <div key={id} style={{ position:'relative', marginTop:12, margin:'12px 16px 0' }}>
+      <button
+        onClick={e=>{ e.stopPropagation(); removeWidget(id) }}
+        title="Remove widget"
+        style={{
+          position:'absolute', top:-10, right:8, zIndex:20,
+          width:22, height:22, borderRadius:'50%',
+          background:C.bg, border:'1px solid rgba(255,255,255,0.3)',
+          color:'#fff', fontSize:13, fontWeight:700,
+          cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+          lineHeight:1, boxShadow:'0 2px 6px rgba(0,0,0,0.4)',
+        }}
+      >{'\u00d7'}</button>
+      {content}
+    </div>
+  )
 
   useEffect(()=>{ applyTheme() },[])
 
   function navigate(page) {
     setSubPage(page)
-    if(['teachers','messages','alerts','settings','feed'].includes(page)) setActiveNav(page)
+    if(['teachers','messages','alerts','reports','widgets'].includes(page)) setActiveNav(page)
     window.scrollTo(0,0)
   }
 
   function goBack() {
     setSubPage(null)
-    setActiveNav('home')
+    setActiveNav('dashboard')
     window.scrollTo(0,0)
   }
 
-  const isSubPage = subPage !== null
-
   function navSelect(id) {
     if(id==='__back__') { goBack(); return }
-    if(id==='home') { goBack(); return }
     navigate(id)
     setActiveNav(id)
   }
 
-  if(subPage==='teachers') return <><TeachersPage   onBack={goBack}/><BottomNav active='teachers' onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(subPage==='alerts')   return <><AlertsPage     onBack={goBack}/><BottomNav active='alerts'   onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(subPage==='settings') return <><SettingsPage   onBack={goBack}/><BottomNav active='settings' onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(subPage==='messages') return <><ParentMessages onBack={goBack}/><BottomNav active='messages' onSelect={navSelect} isSubPage={isSubPage}/></>
-  if(subPage==='feed')     return <><ClassFeed      onBack={goBack} viewerRole="admin"/><BottomNav active='feed' onSelect={navSelect} isSubPage={isSubPage}/></>
+  if(subPage==='teachers') return <><TeachersPage   onBack={goBack}/><SharedBottomNav role="admin" active='teachers' onSelect={navSelect} isSubPage={true}/></>
+  if(subPage==='alerts')   return <><AlertsPage     onBack={goBack}/><SharedBottomNav role="admin" active='alerts'   onSelect={navSelect} isSubPage={true}/></>
+  if(subPage==='settings') return <><SettingsPage   onBack={goBack}/><SharedBottomNav role="admin" active='settings' onSelect={navSelect} isSubPage={true}/></>
+  if(subPage==='messages') return <><ParentMessages onBack={goBack}/><SharedBottomNav role="admin" active='messages' onSelect={navSelect} isSubPage={true}/></>
+  if(subPage==='reports')  return <><Reports        onBack={goBack}/><SharedBottomNav role="admin" active='reports'  onSelect={navSelect} isSubPage={true}/></>
+  if(subPage==='widgets')  return <><Widgets        onBack={goBack}/><SharedBottomNav role="admin" active='widgets'  onSelect={navSelect} isSubPage={true}/></>
 
   const unreadCount = MESSAGES_DEMO.filter(m=>m.unread).length
 
@@ -402,95 +359,145 @@ export default function AdminDashboard({ currentUser }) {
         </div>
       </div>
 
-      {/* School-wide Analytics */}
-      <div style={{ margin:'12px 16px 0', background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px' }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
-          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📈 School-wide Analytics</div>
-          <span style={{ fontSize:10, color:C.muted }}>No individual grades</span>
-        </div>
-        {ANALYTICS.map(row=>(
-          <div key={row.subject} style={{ marginBottom:12 }}>
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
-              <span style={{ fontSize:12, color:C.soft }}>{row.subject}</span>
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                {row.alert && <span style={{ fontSize:9, color:C.red }}>⚠ {row.alert}</span>}
-                <span style={{ fontSize:12, fontWeight:700, color:row.color }}>{row.avg}</span>
+      {/* Add Widgets Modal */}
+      {showAddWidgets && (
+        <div onClick={()=>setShowAddWidgets(false)}
+          style={{ position:'fixed', inset:0, zIndex:250, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{ width:'100%', maxWidth:600, maxHeight:'82vh', overflowY:'auto', background:C.card, border:`1px solid ${C.border}`, borderRadius:'20px 20px 0 0', padding:'20px 16px 36px' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+              <div>
+                <div style={{ fontSize:17, fontWeight:800, color:C.text }}>+ Add Widgets</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Tap a widget to add or remove from your dashboard</div>
               </div>
+              <button onClick={()=>setShowAddWidgets(false)}
+                style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {'\u00d7'}
+              </button>
             </div>
-            <StatBar value={row.avg} color={row.color}/>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              {ADMIN_WIDGET_CATALOG.map(w => {
+                const isActive = activeWidgets.includes(w.id)
+                return (
+                  <button key={w.id}
+                    onClick={()=>{ isActive ? removeWidget(w.id) : addWidget(w.id) }}
+                    style={{ textAlign:'left', background:isActive?`${C.green}12`:C.inner, border:`1px solid ${isActive?`${C.green}35`:C.border}`, borderRadius:14, padding:'12px', cursor:'pointer' }}>
+                    <div style={{ fontSize:22, marginBottom:6 }}>{w.icon}</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{w.label}</div>
+                    <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{w.desc}</div>
+                    <div style={{ marginTop:8, fontSize:10, fontWeight:700, color:isActive?C.red:C.teal }}>
+                      {isActive ? '\u2715 Remove' : '+ Add'}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* School-wide Analytics */}
+      {show('analytics') && wrap('analytics',
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📈 School-wide Analytics</div>
+            <span style={{ fontSize:10, color:C.muted }}>No individual grades</span>
+          </div>
+          {ANALYTICS.map(row=>(
+            <div key={row.subject} style={{ marginBottom:12 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
+                <span style={{ fontSize:12, color:C.soft }}>{row.subject}</span>
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                  {row.alert && <span style={{ fontSize:9, color:C.red }}>⚠ {row.alert}</span>}
+                  <span style={{ fontSize:12, fontWeight:700, color:row.color }}>{row.avg}</span>
+                </div>
+              </div>
+              <StatBar value={row.avg} color={row.color}/>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Teachers widget */}
-      <div style={{ margin:'12px 16px 0', background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px', cursor:'pointer' }} onClick={()=>navigate('teachers')}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>👩‍🏫 Teachers</div>
-          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            <span style={{ fontSize:10, fontWeight:700, color:C.amber, background:`${C.amber}18`, borderRadius:999, padding:'2px 7px' }}>{TEACHERS.filter(t=>t.status==='pending').length} pending</span>
-            <span style={{ color:C.muted, fontSize:16 }}>›</span>
+      {show('teachers') && wrap('teachers',
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px', cursor:'pointer' }} onClick={()=>navigate('teachers')}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:C.text }}>👩‍🏫 Teachers</div>
+            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+              <span style={{ fontSize:10, fontWeight:700, color:C.amber, background:`${C.amber}18`, borderRadius:999, padding:'2px 7px' }}>{TEACHERS.filter(t=>t.status==='pending').length} pending</span>
+              <span style={{ color:C.muted, fontSize:16 }}>›</span>
+            </div>
           </div>
+          {TEACHERS.slice(0,3).map(teacher=>(
+            <div key={teacher.id} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10, padding:'8px 0', borderBottom:`1px solid ${C.border}` }}>
+              <div style={{ width:34, height:34, borderRadius:'50%', background:T.primary, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{teacher.avatar}</div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{teacher.name}</div>
+                <div style={{ fontSize:10, color:C.muted }}>{teacher.subject} · {teacher.classes} classes</div>
+              </div>
+              <div style={{ textAlign:'right', flexShrink:0 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:teacher.status==='active'?C.green:C.amber }}>{teacher.status==='active'?'✓ Active':'⚠ Verify'}</div>
+                <div style={{ fontSize:10, color:C.muted }}>{teacher.gpa}% GPA</div>
+              </div>
+            </div>
+          ))}
+          <div style={{ textAlign:'center', fontSize:11, color:T.secondary, fontWeight:700, marginTop:4 }}>+ {TEACHERS.length-3} more teachers →</div>
         </div>
-        {TEACHERS.slice(0,3).map(teacher=>(
-          <div key={teacher.id} style={{ display:'flex', alignItems:'center', gap:12, marginBottom:10, padding:'8px 0', borderBottom:`1px solid ${C.border}` }}>
-            <div style={{ width:34, height:34, borderRadius:'50%', background:T.primary, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>{teacher.avatar}</div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{teacher.name}</div>
-              <div style={{ fontSize:10, color:C.muted }}>{teacher.subject} · {teacher.classes} classes</div>
-            </div>
-            <div style={{ textAlign:'right', flexShrink:0 }}>
-              <div style={{ fontSize:12, fontWeight:700, color:teacher.status==='active'?C.green:C.amber }}>{teacher.status==='active'?'✓ Active':'⚠ Verify'}</div>
-              <div style={{ fontSize:10, color:C.muted }}>{teacher.gpa}% GPA</div>
-            </div>
-          </div>
-        ))}
-        <div style={{ textAlign:'center', fontSize:11, color:T.secondary, fontWeight:700, marginTop:4 }}>+ {TEACHERS.length-3} more teachers →</div>
-      </div>
+      )}
 
       {/* Messages widget */}
-      <div style={{ margin:'12px 16px 0', background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px', cursor:'pointer' }} onClick={()=>navigate('messages')}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>💬 Messages</div>
-          <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-            {unreadCount>0 && <span style={{ fontSize:10, fontWeight:700, color:C.red, background:`${C.red}18`, borderRadius:999, padding:'2px 7px' }}>{unreadCount} unread</span>}
-            <span style={{ color:C.muted, fontSize:16 }}>›</span>
+      {show('messages') && wrap('messages',
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px', cursor:'pointer' }} onClick={()=>navigate('messages')}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:C.text }}>💬 Messages</div>
+            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+              {unreadCount>0 && <span style={{ fontSize:10, fontWeight:700, color:C.red, background:`${C.red}18`, borderRadius:999, padding:'2px 7px' }}>{unreadCount} unread</span>}
+              <span style={{ color:C.muted, fontSize:16 }}>›</span>
+            </div>
           </div>
+          {MESSAGES_DEMO.slice(0,3).map(msg=>(
+            <div key={msg.id} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10, padding:'8px 0', borderBottom:`1px solid ${C.border}` }}>
+              <div style={{ width:34, height:34, borderRadius:'50%', background:msg.unread?T.primary:C.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0, position:'relative' }}>
+                {msg.avatar}
+                {msg.unread && <div style={{ position:'absolute', top:-1, right:-1, width:8, height:8, borderRadius:'50%', background:C.red, border:`1px solid ${C.bg}` }}/>}
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontSize:12, fontWeight:msg.unread?700:500, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{msg.from}</div>
+                <div style={{ fontSize:10, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{msg.subject}</div>
+              </div>
+              <span style={{ fontSize:10, color:C.muted, flexShrink:0 }}>{msg.time}</span>
+            </div>
+          ))}
         </div>
-        {MESSAGES_DEMO.slice(0,3).map(msg=>(
-          <div key={msg.id} style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10, padding:'8px 0', borderBottom:`1px solid ${C.border}` }}>
-            <div style={{ width:34, height:34, borderRadius:'50%', background:msg.unread?T.primary:C.inner, display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0, position:'relative' }}>
-              {msg.avatar}
-              {msg.unread && <div style={{ position:'absolute', top:-1, right:-1, width:8, height:8, borderRadius:'50%', background:C.red, border:`1px solid ${C.bg}` }}/>}
-            </div>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontSize:12, fontWeight:msg.unread?700:500, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{msg.from}</div>
-              <div style={{ fontSize:10, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{msg.subject}</div>
-            </div>
-            <span style={{ fontSize:10, color:C.muted, flexShrink:0 }}>{msg.time}</span>
-          </div>
-        ))}
-      </div>
+      )}
 
       {/* Alerts widget */}
-      <div style={{ margin:'12px 16px 0', background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px', cursor:'pointer' }} onClick={()=>navigate('alerts')}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>🔔 Alerts</div>
-          <span style={{ color:C.muted, fontSize:16 }}>›</span>
-        </div>
-        {ALERTS.slice(0,2).map(alert=>(
-          <div key={alert.id} style={{ display:'flex', gap:10, alignItems:'flex-start', marginBottom:10 }}>
-            <span style={{ fontSize:16, marginTop:1 }}>{alert.urgent?'🚨':'ℹ️'}</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:12, color:C.soft, lineHeight:1.4 }}>{alert.msg}</div>
-              <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{alert.time}</div>
-            </div>
+      {show('alerts') && wrap('alerts',
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px', cursor:'pointer' }} onClick={()=>navigate('alerts')}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:C.text }}>🔔 Alerts</div>
+            <span style={{ color:C.muted, fontSize:16 }}>›</span>
           </div>
-        ))}
+          {ALERTS.slice(0,2).map(alert=>(
+            <div key={alert.id} style={{ display:'flex', gap:10, alignItems:'flex-start', marginBottom:10 }}>
+              <span style={{ fontSize:16, marginTop:1 }}>{alert.urgent?'🚨':'ℹ️'}</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:12, color:C.soft, lineHeight:1.4 }}>{alert.msg}</div>
+                <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{alert.time}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ margin:'16px 16px 0', textAlign:'center' }}>
+        <button onClick={()=>setShowAddWidgets(true)} type="button"
+          style={{ background:'var(--school-color)', border:'none', borderRadius:14, padding:'12px 28px', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+          + Add widgets
+        </button>
       </div>
 
-      <AddWidgetsBar/>
-
-      <BottomNav active={activeNav} onSelect={navSelect} isSubPage={false}/>
+      <SharedBottomNav role="admin" active={activeNav} onSelect={navSelect} isSubPage={false}/>
     </div>
   )
 }
