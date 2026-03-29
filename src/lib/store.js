@@ -559,9 +559,42 @@ export const useStore = create((set, get) => ({
     },
   })),
 
+  syncGradebookToDistrict: async () => {
+    const triggeredBy = 'teacher'
+    useStore.setState({ isSyncingGradebook: true })
+
+    try {
+      const res = await fetch('/api/sync-gradebook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ triggeredBy }),
+      })
+
+      if (!res.ok) {
+        console.error('District Gradebook sync failed')
+        useStore.setState({ isSyncingGradebook: false })
+        return false
+      }
+
+      useStore.setState({
+        isSyncingGradebook: false,
+        lastDistrictGradebookSync: new Date().toISOString(),
+      })
+      return true
+    } catch (err) {
+      console.error('District Gradebook sync error:', err)
+      useStore.setState({ isSyncingGradebook: false })
+      return false
+    }
+  },
+
   // ── Onboarding ──────────────────────────────────────────────────────────────
   onboardingComplete: false,
   onboardingStep:     0,
+
+  // ── District Gradebook Sync ──────────────────────────────────────────────
+  isSyncingGradebook: false,
+  lastDistrictGradebookSync: null,
 
   setOnboardingStep:  (step) => set({ onboardingStep: step }),
   completeOnboarding: ()     => set({ onboardingComplete: true }),
