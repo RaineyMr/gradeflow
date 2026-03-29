@@ -117,11 +117,6 @@ function Avatar({ emoji, size=32 }) {
 }
 
 // ─── Auto-grade logic ─────────────────────────────────────────────────────────
-// Spec (confirmed by user):
-//   - Score = post.pointValue (full points)
-//   - Never override graded:true (manual grades are sacred)
-//   - Must have replied + met wordCount + met classmateReplies
-// Returns updated progress array + { graded, skipped } counts
 function applyAutoGrade(progress, post, updateGrade) {
   if (!post.engagement) return { updated: progress, graded: 0, skipped: 0 }
   const { minWords = 0, mustReplyToClassmates = 0 } = post.engagement
@@ -129,11 +124,10 @@ function applyAutoGrade(progress, post, updateGrade) {
   let skipped = 0
 
   const updated = progress.map(s => {
-    if (s.graded)                            { skipped++; return s } // never override manual
+    if (s.graded)                            { skipped++; return s }
     if (!s.replied)                          { skipped++; return s }
     if (s.wordCount < minWords)              { skipped++; return s }
     if (s.classmateReplies < mustReplyToClassmates) { skipped++; return s }
-    // Passes all checks — assign full points
     updateGrade(s.studentId, post.id, post.pointValue)
     graded++
     return { ...s, grade: post.pointValue, graded: true }
@@ -147,7 +141,6 @@ function EngagementPanel({ post, onClose, onGrade }) {
   const { updateGrade } = useStore()
   const [filter,   setFilter]   = useState('all')
   const [toast,    setToast]    = useState(null)
-  // Local progress copy so auto-grade reflects immediately without a page reload
   const [progress, setProgress] = useState(post.studentProgress || [])
 
   const replied    = progress.filter(s=>s.replied).length
@@ -183,7 +176,6 @@ function EngagementPanel({ post, onClose, onGrade }) {
       onClick={e=>{ if(e.target===e.currentTarget) onClose() }}>
       <div style={{ background:C.card, borderRadius:'24px 24px 0 0', width:'100%', maxHeight:'90vh', overflow:'auto', padding:'20px 16px 40px' }}>
 
-        {/* Header */}
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 }}>
           <div>
             <div style={{ fontSize:16, fontWeight:800, color:C.text, marginBottom:4 }}>📊 Engagement Analytics</div>
@@ -192,14 +184,12 @@ function EngagementPanel({ post, onClose, onGrade }) {
           <button onClick={onClose} style={{ background:C.inner, border:'none', borderRadius:10, padding:'7px 12px', color:C.muted, cursor:'pointer', fontSize:14 }}>✕</button>
         </div>
 
-        {/* Toast */}
         {toast && (
           <div style={{ background:`${C.teal}15`, border:`1px solid ${C.teal}40`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.teal, fontWeight:600 }}>
             {toast}
           </div>
         )}
 
-        {/* Summary stats */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:16 }}>
           {[
             { label:'Replied',   val:replied,    total:progress.length, color:C.green  },
@@ -214,7 +204,6 @@ function EngagementPanel({ post, onClose, onGrade }) {
           ))}
         </div>
 
-        {/* Class progress bar */}
         <div style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:16 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
             <span style={{ fontSize:11, color:C.muted }}>Class completion</span>
@@ -232,14 +221,12 @@ function EngagementPanel({ post, onClose, onGrade }) {
           </div>
         </div>
 
-        {/* Requirements reminder */}
         {post.engagement && (
           <div style={{ background:`${C.blue}12`, border:`1px solid ${C.blue}30`, borderRadius:12, padding:'10px 12px', marginBottom:14, fontSize:11, color:C.soft }}>
             <strong>Requirements:</strong> Min {post.engagement.minWords} words · Reply to {post.engagement.mustReplyToClassmates}+ classmates
           </div>
         )}
 
-        {/* Filter tabs */}
         <div style={{ display:'flex', gap:6, marginBottom:12, overflowX:'auto' }}>
           {[['all','All'],['done','✓ Done'],['partial','⚠ Partial'],['missing','✕ Missing']].map(([v,l])=>(
             <button key={v} onClick={()=>setFilter(v)}
@@ -251,7 +238,6 @@ function EngagementPanel({ post, onClose, onGrade }) {
           ))}
         </div>
 
-        {/* Per-student rows */}
         {filtered.map(s=>{
           const meetsMin     = s.wordCount        >= (post.engagement?.minWords              || 0)
           const meetsReplies = s.classmateReplies >= (post.engagement?.mustReplyToClassmates || 0)
@@ -286,12 +272,12 @@ function EngagementPanel({ post, onClose, onGrade }) {
               {s.replied && (
                 <div style={{ display:'flex', gap:12, marginTop:6 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                    <span style={{ fontSize:10, color:meetsMin?C.green:C.amber }}>📝 {s.wordCount} words</span>
+                    <span style={{ fontSize:10, color:meetsMin?C.green:C.amber }}>{s.wordCount} words</span>
                     {post.engagement?.minWords && !meetsMin && <span style={{ fontSize:9, color:C.amber }}>({post.engagement.minWords} req)</span>}
                   </div>
                   <div>
-                    <span style={{ fontSize:10, color:meetsReplies?C.green:C.amber }}>💬 {s.classmateReplies} classmate replies</span>
-                    {post.engagement?.mustReplyToClassmates && !meetsReplies && <span style={{ fontSize:9, color:C.amber }}> ({post.engagement.mustReplyToClassmates} req)</span>}
+                    <span style={{ fontSize:10, color:meetsReplies?C.green:C.amber }}>{s.classmateReplies} classmate replies</span>
+                    {post.engagement?.mustReplyToClassmates && !meetsReplies && <span style={{ fontSize:9, color:C.amber }}>({post.engagement.mustReplyToClassmates} req)</span>}
                   </div>
                 </div>
               )}
@@ -299,7 +285,6 @@ function EngagementPanel({ post, onClose, onGrade }) {
           )
         })}
 
-        {/* ── Auto-grade button — was alert(), now wired to updateGrade ─── */}
         {eligibleForAutoGrade.length > 0 ? (
           <button onClick={handleAutoGrade}
             style={{ width:'100%', background:`${C.teal}20`, color:C.teal, border:`1px solid ${C.teal}40`, borderRadius:14, padding:12, fontSize:13, fontWeight:700, cursor:'pointer', marginTop:4 }}>
@@ -467,17 +452,30 @@ function ComposePost({ onPost, onClose }) {
 }
 
 // ─── COMMENT THREAD ───────────────────────────────────────────────────────────
-function CommentThread({ comment, viewer, canReply, depth=0 }) {
+function CommentThread({ comment, viewer, canReply, depth=0, classId, addParticipationEvent }) {
   const [showReplyBox,  setShowReplyBox]  = useState(false)
   const [replyText,     setReplyText]     = useState('')
   const [reactions,     setReactions]     = useState(comment.reactions||{})
   const [localReplies,  setLocalReplies]  = useState(comment.replies||[])
   const [showReactions, setShowReactions] = useState(false)
 
+  const studentId = DEMO_STUDENTS.find(s => s.name === viewer.name)?.id
+
+  function handleReaction(emoji) {
+    if (viewer.role === 'student' && studentId && classId) {
+      const eventType = emoji === '❓' ? 'question' : 'reaction'
+      addParticipationEvent(classId, studentId, eventType)
+    }
+    setReactions(r => ({...r, [emoji]: (r[emoji] || 0) + 1}))
+  }
+
   function sendReply() {
     if (!replyText.trim()) return
     const r = { id:Date.now(), author:viewer.name, authorRole:viewer.role, avatar:viewer.avatar, text:replyText.trim(), time:'Just now', reactions:{} }
     setLocalReplies(rs=>[...rs,r])
+    if (viewer.role === 'student' && studentId && classId) {
+      addParticipationEvent(classId, studentId, 'comment')
+    }
     setReplyText('')
     setShowReplyBox(false)
   }
@@ -503,7 +501,7 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
 
           <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:6, flexWrap:'wrap' }}>
             {Object.entries(reactions).filter(([,c])=>c>0).map(([emoji,count])=>(
-              <button key={emoji} onClick={()=>setReactions(r=>({...r,[emoji]:(r[emoji]||0)+1}))}
+              <button key={emoji} onClick={()=>handleReaction(emoji)}
                 style={{ background:`${C.blue}15`, border:'none', borderRadius:999, padding:'3px 8px', cursor:'pointer', fontSize:12, display:'flex', alignItems:'center', gap:3 }}>
                 {emoji}<span style={{ fontSize:10, fontWeight:700, color:C.blue }}>{count}</span>
               </button>
@@ -519,7 +517,7 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
           {showReactions && (
             <div style={{ display:'flex', gap:4, flexWrap:'wrap', marginTop:4, background:C.raised, borderRadius:10, padding:'6px 8px' }}>
               {REACTIONS.map(e=>(
-                <button key={e} onClick={()=>{ setReactions(r=>({...r,[e]:(r[e]||0)+1})); setShowReactions(false) }}
+                <button key={e} onClick={()=> {handleReaction(e); setShowReactions(false)}}
                   style={{ background:'none', border:'none', cursor:'pointer', fontSize:18 }}>{e}</button>
               ))}
             </div>
@@ -542,7 +540,7 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
           {localReplies.length>0 && (
             <div style={{ marginTop:8 }}>
               {localReplies.map(r=>(
-                <CommentThread key={r.id} comment={r} viewer={viewer} canReply={false} depth={depth+1}/>
+                <CommentThread key={r.id} comment={r} viewer={viewer} canReply={false} depth={depth+1} classId={classId} addParticipationEvent={addParticipationEvent}/>
               ))}
             </div>
           )}
@@ -553,25 +551,25 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
 }
 
 // ─── POST CARD ────────────────────────────────────────────────────────────────
-function PostCard({ post, viewer, onOpenAnalytics }) {
+function PostCard({ post, viewer, onOpenAnalytics, addParticipationEvent }) {
   const [expanded,      setExpanded]      = useState(false)
   const [postReactions, setPostReactions] = useState(post.reactions||{})
   const [comments,      setComments]      = useState(post.comments||[])
   const [commentText,   setCommentText]   = useState('')
   const [showReactions, setShowReactions] = useState(false)
-  // Local progress so the badge count stays fresh after panel auto-grades
   const [localProgress, setLocalProgress] = useState(post.studentProgress || [])
 
   const isTeacher    = viewer.role==='teacher'||viewer.role==='admin'
   const canReply     = post.permissions==='open' || (post.permissions==='teacher_only' && isTeacher)
   const isAssignment = post.type==='assignment'
 
+  const studentId = DEMO_STUDENTS.find(s => s.name === viewer.name)?.id
+
   const studentProgress = isAssignment && localProgress?.find(s=>s.name===viewer.name)
   const meetingReqs = studentProgress && post.engagement
     ? studentProgress.wordCount>=(post.engagement.minWords||0) && studentProgress.classmateReplies>=(post.engagement.mustReplyToClassmates||0)
     : false
 
-  // Badge: how many are eligible to auto-grade (replied + meets reqs + not yet graded)
   const eligibleCount = isAssignment
     ? localProgress.filter(s =>
         s.replied &&
@@ -583,14 +581,24 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
 
   const repliedCount = localProgress.filter(s=>s.replied).length
 
+  function handlePostReaction(emoji) {
+    if (viewer.role === 'student' && studentId) {
+      const eventType = emoji === '❓' ? 'question' : 'reaction'
+      addParticipationEvent(post.classId, studentId, eventType)
+    }
+    setPostReactions(r => ({...r, [emoji]: (r[emoji] || 0) + 1}))
+  }
+
   function addComment() {
     if (!commentText.trim()) return
     const c = { id:Date.now(), author:viewer.name, authorRole:viewer.role, avatar:viewer.avatar, text:commentText.trim(), time:'Just now', reactions:{}, replies:[] }
     setComments(cs=>[...cs,c])
+    if (viewer.role === 'student' && studentId) {
+      addParticipationEvent(post.classId, studentId, 'comment')
+    }
     setCommentText('')
   }
 
-  // Opens analytics panel — passes current localProgress so panel and card stay in sync
   function openAnalytics(e) {
     e.stopPropagation()
     onOpenAnalytics({ ...post, studentProgress: localProgress })
@@ -624,7 +632,6 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
             <div style={{ fontSize:10, color:C.muted }}>{post.time}</div>
           </div>
         </div>
-        {/* Analytics button — same as before, now also shows "X to grade" badge */}
         {isTeacher && isAssignment && (
           <button onClick={openAnalytics}
             style={{ background:`${C.teal}18`, color:C.teal, border:'none', borderRadius:10, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
@@ -658,19 +665,19 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
 
       <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', borderTop:`1px solid ${C.border}`, paddingTop:10, marginBottom:10 }}>
         {Object.entries(postReactions).filter(([,c])=>c>0).map(([emoji,count])=>(
-          <button key={emoji} onClick={()=>setPostReactions(r=>({...r,[emoji]:(r[emoji]||0)+1}))}
+          <button key={emoji} onClick={()=>handlePostReaction(emoji)}
             style={{ background:`${C.blue}15`, border:'none', borderRadius:999, padding:'4px 10px', cursor:'pointer', fontSize:13, display:'flex', alignItems:'center', gap:4 }}>
             {emoji}<span style={{ fontSize:10, fontWeight:700, color:C.blue }}>{count}</span>
           </button>
         ))}
         <button onClick={()=>setShowReactions(s=>!s)}
           style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:999, padding:'4px 10px', cursor:'pointer', fontSize:13 }}>
-          + 😊
+          + 😊 
         </button>
         {showReactions && (
           <div style={{ display:'flex', gap:4, flexWrap:'wrap', background:C.raised, borderRadius:10, padding:'6px 8px', width:'100%' }}>
             {REACTIONS.map(e=>(
-              <button key={e} onClick={()=>{ setPostReactions(r=>({...r,[e]:(r[e]||0)+1})); setShowReactions(false) }}
+              <button key={e} onClick={()=> {handlePostReaction(e); setShowReactions(false)}}
                 style={{ background:'none', border:'none', cursor:'pointer', fontSize:18 }}>{e}</button>
             ))}
           </div>
@@ -689,7 +696,7 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
             </div>
           )}
           {comments.map(comment=>(
-            <CommentThread key={comment.id} comment={comment} viewer={viewer} canReply={canReply}/>
+            <CommentThread key={comment.id} comment={comment} viewer={viewer} canReply={canReply} classId={post.classId} addParticipationEvent={addParticipationEvent}/>
           ))}
 
           {canReply && (
@@ -731,7 +738,7 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
 
 // ─── MAIN CLASS FEED ──────────────────────────────────────────────────────────
 export default function ClassFeed({ onBack, viewerRole='teacher' }) {
-  const { feed, classes, activeClass, addFeedPost, teacher, goBack } = useStore()
+  const { addParticipationEvent, classes, teacher, goBack } = useStore()
   const handleBack = onBack || goBack
 
   const viewer = viewerRole==='student'
@@ -774,7 +781,6 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:80 }}>
 
-      {/* Header */}
       <div style={{ background:'linear-gradient(135deg, var(--school-color,#BA0C2F) 0%, rgba(0,0,0,0.85) 100%)', padding:'16px 16px 20px', position:'sticky', top:0, zIndex:50 }}>
         <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:14 }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -816,7 +822,6 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
         </div>
       </div>
 
-      {/* Type filter */}
       <div style={{ display:'flex', gap:6, padding:'12px 16px 0', overflowX:'auto' }}>
         {[['all','All'],['post','📢 Posts'],['announcement','📌 Pinned'],['assignment','🗣️ Discussions']].map(([v,l])=>(
           <button key={v} onClick={()=>setFilterType(v)}
@@ -827,7 +832,6 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
         ))}
       </div>
 
-      {/* Pending approvals (mod mode) */}
       {modMode && pendingList.length>0 && (
         <div style={{ margin:'12px 16px 0', background:'#1a1800', border:`1px solid ${C.amber}30`, borderRadius:18, padding:16 }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:12 }}>
@@ -851,7 +855,6 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
         </div>
       )}
 
-      {/* Posts */}
       <div style={{ padding:'12px 16px 0' }}>
         {displayedPosts.length===0 ? (
           <div style={{ textAlign:'center', padding:'60px 20px', color:C.muted }}>
@@ -860,7 +863,7 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
             <div style={{ fontSize:13 }}>{isTeacher ? 'Create a post or discussion assignment to get started.' : 'Nothing posted for this class yet.'}</div>
           </div>
         ) : displayedPosts.map(post=>(
-          <PostCard key={post.id} post={post} viewer={viewer} onOpenAnalytics={setAnalyticsPost}/>
+          <PostCard key={post.id} post={post} viewer={viewer} onOpenAnalytics={setAnalyticsPost} addParticipationEvent={addParticipationEvent}/>
         ))}
       </div>
 
@@ -876,3 +879,4 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
     </div>
   )
 }
+
