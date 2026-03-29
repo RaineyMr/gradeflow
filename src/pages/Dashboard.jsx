@@ -850,7 +850,7 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
         style={{
           position:'absolute', top:-10, right:8, zIndex:20,
           width:22, height:22, borderRadius:'50%',
-          background:'rgba(240,74,74,0.85)', border:'1px solid rgba(255,255,255,0.3)',
+          background:C.bg, border:'1px solid rgba(255,255,255,0.3)',
           color:'#fff', fontSize:13, fontWeight:700,
           cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
           lineHeight:1, boxShadow:'0 2px 6px rgba(0,0,0,0.4)',
