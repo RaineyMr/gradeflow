@@ -23,10 +23,10 @@ const DEMO_STUDENTS = [
 ]
 
 const DEMO_ASSIGNMENTS = [
-  { id: 1, classId: 1, name: 'Ch.3 Quiz',     type: 'quiz',         categoryId: 2, date: '2024-10-14', dueDate: '2024-10-14', hasKey: true  },
-  { id: 2, classId: 1, name: 'Ch.3 Homework', type: 'homework',     categoryId: 3, date: '2024-10-12', dueDate: '2024-10-12', hasKey: true  },
-  { id: 3, classId: 1, name: 'Unit Test 1',   type: 'test',         categoryId: 1, date: '2024-10-10', dueDate: '2024-10-10', hasKey: false },
-  { id: 4, classId: 1, name: 'Participation', type: 'participation', categoryId: 4, date: '2024-10-01', dueDate: '2024-10-31', hasKey: false },
+  { id: 1, classId: 1, name: 'Ch.3 Quiz',     type: 'quiz',         categoryId: 2, date: '2024-10-14', dueDate: '2024-10-14', hasKey: true,  options: {} },
+  { id: 2, classId: 1, name: 'Ch.3 Homework', type: 'homework',     categoryId: 3, date: '2024-10-12', dueDate: '2024-10-12', hasKey: true,  options: {} },
+  { id: 3, classId: 1, name: 'Unit Test 1',   type: 'test',         categoryId: 1, date: '2024-10-10', dueDate: '2024-10-10', hasKey: false, options: {} },
+  { id: 4, classId: 1, name: 'Participation', type: 'participation', categoryId: 4, date: '2024-10-01', dueDate: '2024-10-31', hasKey: false, options: { max_points: 10 } },
 ]
 
 const DEMO_GRADES = [
@@ -218,9 +218,10 @@ function mapStudent(row) {
 
 function mapAssignment(row) {
   const categoryId =
-    row.type === 'test'     ? 1 :
-    row.type === 'quiz'     ? 2 :
-    row.type === 'homework' ? 3 : 4
+    row.type === 'test'         ? 1 :
+    row.type === 'quiz'         ? 2 :
+    row.type === 'homework'     ? 3 :
+    row.type === 'participation'? 4 : 4
 
   return {
     id:         row.id,
@@ -232,6 +233,7 @@ function mapAssignment(row) {
     date:       row.assign_date,
     dueDate:    row.due_date,
     hasKey:     false,
+    options:    row.options || {},
   }
 }
 
@@ -291,6 +293,13 @@ function mapFeedPost(row) {
   }
 }
 
+// ─── Participation helpers ────────────────────────────────────────────────────
+function getParticipationPointsForEventType(eventType) {
+  if (eventType === 'comment' || eventType === 'question') return 2
+  if (eventType === 'reaction') return 1
+  return 0
+}
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 export const useStore = create((set, get) => ({
 
@@ -333,6 +342,63 @@ export const useStore = create((set, get) => ({
   lessonPlans: [],
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
+
+  // ── Participation events (real-time, plus Supabase) ────────────────────────
+  participationEvents: [],
+
+  addParticipationEvent: async (classId, studentId, eventType) => {
+    const points = getParticipationPointsForEventType(eventType)
+    if (!points) return
+
+    const event = {
+      id:        Date.now(),
+      classId,
+      studentId,
+      eventType,
+      points,
+      createdAt: new Date().toISOString(),
+    }
+
+    // Update local state immediately (real-time UI)
+    set(state => ({
+      participationEvents: [...state.participationEvents, event],
+    }))
+
+    // Persist to Supabase (history / analytics)
+    try {
+      const { error } = await supabase
+        .from('participation_events')
+        .insert({
+          class_id:   classId,
+          student_id: studentId,
+          event_type: eventType,
+          points,
+        })
+      if (error) console.error('Participation event sync failed:', error)
+    } catch (err) {
+      console.error('Participation event error:', err)
+    }
+
+    // Recalculate participation grade for this student in this class
+    const { assignments, participationEvents } = get()
+
+    const participationAssignment = assignments.find(
+      a => a.classId === classId && a.type === 'participation'
+    )
+    if (!participationAssignment) return
+
+    const maxPoints =
+      (participationAssignment.options && participationAssignment.options.max_points) ?? 10
+
+    const totalPoints = participationEvents
+      .filter(e => e.classId === classId && e.studentId === studentId)
+      .reduce((sum, e) => sum + e.points, 0)
+
+    const score = Math.min(100, Math.round((totalPoints / maxPoints) * 100))
+
+    // Update grade in local state + Supabase
+    await get().updateGrade(studentId, participationAssignment.id, score)
+  },
 
   // ── Student Accommodations ──────────────────────────────────────────────────
   studentAccommodations: {},
@@ -635,21 +701,29 @@ export const useStore = create((set, get) => ({
   // ── Mutations (local + write-through to Supabase) ───────────────────────────
   updateGrade: async (studentId, assignmentId, score) => {
     set(state => ({
-      grades: state.grades.map(g =>
-        g.studentId === studentId && g.assignmentId === assignmentId
-          ? { ...g, score }
-          : g
-      ),
+      grades: state.grades.some(
+        g => g.studentId === studentId && g.assignmentId === assignmentId
+      )
+        ? state.grades.map(g =>
+            g.studentId === studentId && g.assignmentId === assignmentId
+              ? { ...g, score }
+              : g
+          )
+        : [...state.grades, { studentId, assignmentId, score }],
     }))
 
-    const { error } = await supabase
-      .from('grades')
-      .upsert(
-        { student_id: studentId, assignment_id: assignmentId, score, graded: true },
-        { onConflict: 'student_id,assignment_id' }
-      )
+    try {
+      const { error } = await supabase
+        .from('grades')
+        .upsert(
+          { student_id: studentId, assignment_id: assignmentId, score, graded: true },
+          { onConflict: 'student_id,assignment_id' }
+        )
 
-    if (error) console.error('Grade sync failed:', error)
+      if (error) console.error('Grade sync failed:', error)
+    } catch (err) {
+      console.error('Grade sync error:', err)
+    }
   },
 
   updateMessage: (id, changes) => set(state => ({
@@ -673,7 +747,7 @@ export const useStore = create((set, get) => ({
   addAssignment: (assignment) => set(state => ({
     assignments: [
       ...state.assignments,
-      { ...assignment, id: Date.now() },
+      { ...assignment, id: Date.now(), options: assignment.options || {} },
     ],
   })),
 
@@ -728,15 +802,19 @@ export const useStore = create((set, get) => ({
       ],
     }))
 
-    const { error } = await supabase.from('feed_posts').insert({
-      class_id: classId,
-      author_name: authorName,
-      content,
-      approved: false,
-      reactions: {},
-    })
+    try {
+      const { error } = await supabase.from('feed_posts').insert({
+        class_id: classId,
+        author_name: authorName,
+        content,
+        approved: false,
+        reactions: {},
+      })
 
-    if (error) console.error('Feed post sync failed:', error)
+      if (error) console.error('Feed post sync failed:', error)
+    } catch (err) {
+      console.error('Feed post error:', err)
+    }
   },
 
   quickCreateAssignment:      (a) => get().addAssignment(a),
