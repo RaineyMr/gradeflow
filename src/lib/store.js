@@ -44,8 +44,8 @@ const DEMO_GRADES = [
 
 const DEMO_MESSAGES = [
   { id: 1, studentName: 'Marcus Thompson', subject: 'Math',    trigger: 'Failed 58%',      status: 'pending', tone: 'Warm & Friendly', draft: "Dear Parent, Marcus received 58% on his Math assessment. I'd love to connect this week to discuss support options.", positiveDraft: "Hi! Just wanted to share that Marcus is showing real effort in class. Let's keep building on that momentum!", dayOld: false },
-  { id: 2, studentName: 'Aaliyah Brooks',  subject: 'Reading', trigger: 'Improved +12pts', status: 'sent',    tone: 'Celebrating',     draft: "Great news! Aaliyah improved her Reading score by 12 points. She's working so hard!",                              positiveDraft: "Aaliyah is doing amazing work. Her dedication is really paying off!", dayOld: false },
-  { id: 3, studentName: 'Liam Martinez',   subject: 'Science', trigger: 'Failed 61%',      status: 'pending', tone: 'Warm & Friendly', draft: "Dear Parent, I wanted to reach out regarding Liam's recent Science assessment.",                                    positiveDraft: "Liam is showing curiosity in Science class. Here are some ways to support at home!",               dayOld: true  },
+  { id: 2, studentName: 'Aaliyah Brooks',  subject: 'Reading', trigger: 'Improved +12pts', status: 'sent',    tone: 'Celebrating',     draft: "Great news! Aaliyah improved her Reading score by 12 points. She's working so hard!", positiveDraft: "Aaliyah is doing amazing work. Her dedication is really paying off!", dayOld: false },
+  { id: 3, studentName: 'Liam Martinez',   subject: 'Science', trigger: 'Failed 61%',      status: 'pending', tone: 'Warm & Friendly', draft: "Dear Parent, I wanted to reach out regarding Liam's recent Science assessment.", positiveDraft: "Liam is showing curiosity in Science class. Here are some ways to support at home!", dayOld: true  },
 ]
 
 const DEMO_LESSONS = {
@@ -107,8 +107,7 @@ const DEFAULT_CONNECTIONS = {
   tpt:             { connected: false, label: 'Teachers Pay Teachers', url: 'https://teacherspayteachers.com', category: 'lessons', icon: '💼', description: 'Import purchased lesson resources'   },
   googleDrive:     { connected: true,  label: 'Google Drive',          url: 'https://drive.google.com',        category: 'lessons', icon: '📁', description: 'Upload docs & lesson materials',     lastSync: 'Today 9:01am' },
   clever:          { connected: false, label: 'Clever',                url: 'https://clever.com',              category: 'roster',  icon: '🔗', description: 'Single sign-on + roster sync'        },
-}
-
+};
 // ─── Supabase row mappers ─────────────────────────────────────────────────────
 function mapClass(row) {
   return {
@@ -125,7 +124,12 @@ function mapClass(row) {
 
 function mapStudent(row) {
   const score  = row.avg_score ?? row.grade ?? 0
-  const letter = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F'
+  const letter = score >= 90 ? 'A'
+               : score >= 80 ? 'B'
+               : score >= 70 ? 'C'
+               : score >= 60 ? 'D'
+               : 'F'
+
   return {
     id:             row.id,
     classId:        row.class_id,
@@ -140,7 +144,11 @@ function mapStudent(row) {
 }
 
 function mapAssignment(row) {
-  const categoryId = row.type === 'test' ? 1 : row.type === 'quiz' ? 2 : row.type === 'homework' ? 3 : 4
+  const categoryId =
+    row.type === 'test'    ? 1 :
+    row.type === 'quiz'    ? 2 :
+    row.type === 'homework'? 3 : 4
+
   return {
     id:         row.id,
     classId:    row.class_id,
@@ -178,6 +186,7 @@ function mapMessage(row) {
 
 function mapLesson(row) {
   const plan = row.plan_data || {}
+
   return {
     id:         row.id,
     classId:    row.class_id,
@@ -208,7 +217,6 @@ function mapFeedPost(row) {
     approved:  row.approved,
   }
 }
-
 // ─── Store ────────────────────────────────────────────────────────────────────
 export const useStore = create((set, get) => ({
 
@@ -218,24 +226,30 @@ export const useStore = create((set, get) => ({
 
   // ── Auth / User ───────────────────────────────────────────────────────────────
   currentUser: null,
-  // TOP-LEVEL lang field — this is what useT() subscribes to for instant re-renders
-  lang: 'en',
+  lang: 'en', // top-level lang for instant re-renders
 
   setCurrentUser: (user) => set({
     currentUser: user,
     lang: user?.lang || 'en',
   }),
 
-  // setLang updates BOTH the top-level lang AND currentUser.lang
   setLang: (lang) => set(state => ({
     lang,
-    currentUser: state.currentUser ? { ...state.currentUser, lang } : state.currentUser,
+    currentUser: state.currentUser
+      ? { ...state.currentUser, lang }
+      : state.currentUser,
   })),
 
   // ── Teacher profile ───────────────────────────────────────────────────────────
-  teacher: { id: 1, name: 'Ms. Johnson', school: 'KIPP New Orleans', schoolColor: '#BA0C2F', avatar: '👩‍🏫' },
+  teacher: {
+    id: 1,
+    name: 'Ms. Johnson',
+    school: 'KIPP New Orleans',
+    schoolColor: '#BA0C2F',
+    avatar: '👩‍🏫'
+  },
 
-  // ── Data (starts as fallback, replaced by loadFromDB) ────────────────────────
+  // ── Data (fallback until Supabase loads) ─────────────────────────────────────
   classes:     DEMO_CLASSES,
   students:    DEMO_STUDENTS,
   assignments: DEMO_ASSIGNMENTS,
@@ -246,15 +260,14 @@ export const useStore = create((set, get) => ({
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
 
-  // ── Student Accommodations ───────────────────────────────────────────────────
-  // Keyed by student name (string) for demo compatibility.
-  // In production this should key by studentId / UUID.
+  // ── Student Accommodations (CORRECT LOCATION — Option A) ─────────────────────
+  // Keyed by student name for demo compatibility.
   studentAccommodations: {
     // [studentName]: {
     //   name: string,
     //   accommodationType: 'IEP' | '504' | 'ELL' | 'Gifted' | 'Other',
-    //   specificNeeds: string[],       // e.g. ['Extended time', 'Preferential seating']
-    //   lessonAdjustments: string[],   // AI-generated per lesson, refreshed each time
+    //   specificNeeds: string[],
+    //   lessonAdjustments: string[],
     //   notes: string,
     // }
   },
@@ -274,17 +287,17 @@ export const useStore = create((set, get) => ({
     return { studentAccommodations: keyed }
   }),
 
-  // Edit a single student's accommodations (type, needs, notes, etc.)
+  // Edit a single student's accommodations
   updateAccommodation: (studentName, changes) => set(state => ({
     studentAccommodations: {
       ...state.studentAccommodations,
       [studentName]: {
         ...(state.studentAccommodations[studentName] || {
-          name:              studentName,
+          name: studentName,
           accommodationType: 'Other',
-          specificNeeds:     [],
+          specificNeeds: [],
           lessonAdjustments: [],
-          notes:             '',
+          notes: '',
         }),
         ...changes,
       },
@@ -298,11 +311,11 @@ export const useStore = create((set, get) => ({
       studentAccommodations: {
         ...state.studentAccommodations,
         [studentName]: {
-          name:              studentName,
+          name: studentName,
           accommodationType: 'Other',
-          specificNeeds:     [],
+          specificNeeds: [],
           lessonAdjustments: [],
-          notes:             '',
+          notes: '',
         },
       },
     }
@@ -315,9 +328,8 @@ export const useStore = create((set, get) => ({
     return { studentAccommodations: next }
   }),
 
-  // Per-lesson AI adjustments (called after lesson plan generation)
+  // Per-lesson AI adjustments
   setLessonAdjustments: (adjustments) => set(state => {
-    // adjustments: [{ studentName, adjustments: string[] }]
     const next = { ...state.studentAccommodations }
     for (const { studentName, adjustments: adj } of adjustments) {
       if (next[studentName]) {
@@ -372,88 +384,15 @@ export const useStore = create((set, get) => ({
         if (!lessonsById[row.class_id]) lessonsById[row.class_id] = []
         lessonsById[row.class_id].push(lesson)
       }
-// ── Student Accommodations ────────────────────────────────────────────────────
-// Keyed by student name (string) for demo compatibility.
-// In production this should key by student UUID.
-// Shape per entry:
-//   {
-//     name: string,
-//     accommodationType: 'IEP' | '504' | 'ELL' | 'Gifted' | 'Other',
-//     specificNeeds: string[],          // e.g. ['Extended time', 'Preferential seating']
-//     lessonAdjustments: string[],      // AI-generated per lesson, refreshed each time
-//     notes: string,
-//   }
-
-studentAccommodations: {},   // { [studentName]: accommodationObject }
-
-setAccommodations: (accommodations) => set(() => {
-  // accommodations is an array from extractAccommodations()
-  // Convert to keyed object by student name
-  const keyed = {}
-  for (const s of accommodations) {
-    keyed[s.name] = {
-      name:               s.name,
-      accommodationType:  s.accommodationType || 'Other',
-      specificNeeds:      s.specificNeeds     || [],
-      lessonAdjustments:  [],
-      notes:              s.notes             || '',
-    }
-  }
-  return { studentAccommodations: keyed }
-}),
-
-updateAccommodation: (studentName, changes) => set(state => ({
-  studentAccommodations: {
-    ...state.studentAccommodations,
-    [studentName]: {
-      ...(state.studentAccommodations[studentName] || { name: studentName, accommodationType: 'Other', specificNeeds: [], lessonAdjustments: [], notes: '' }),
-      ...changes,
-    },
-  },
-})),
-
-addAccommodation: (studentName) => set(state => {
-  if (state.studentAccommodations[studentName]) return {}  // already exists
-  return {
-    studentAccommodations: {
-      ...state.studentAccommodations,
-      [studentName]: {
-        name:              studentName,
-        accommodationType: 'Other',
-        specificNeeds:     [],
-        lessonAdjustments: [],
-        notes:             '',
-      },
-    },
-  }
-}),
-
-removeAccommodation: (studentName) => set(state => {
-  const next = { ...state.studentAccommodations }
-  delete next[studentName]
-  return { studentAccommodations: next }
-}),
-
-setLessonAdjustments: (adjustments) => set(state => {
-  // adjustments is the array from generateLessonAccommodations()
-  // Merges into existing accommodation entries without overwriting other fields
-  const next = { ...state.studentAccommodations }
-  for (const { studentName, adjustments: adj } of adjustments) {
-    if (next[studentName]) {
-      next[studentName] = { ...next[studentName], lessonAdjustments: adj }
-    }
-  }
-  return { studentAccommodations: next }
-}),
 
       set({
-        classes:     classes.length     > 0 ? classes     : DEMO_CLASSES,
-        students:    students.length    > 0 ? students    : DEMO_STUDENTS,
-        assignments: assignments.length > 0 ? assignments : DEMO_ASSIGNMENTS,
-        grades:      grades.length      > 0 ? grades      : DEMO_GRADES,
-        messages:    messages.length    > 0 ? messages    : DEMO_MESSAGES,
-        feed:        feed.length        > 0 ? feed        : DEMO_FEED,
-        lessons:     Object.keys(lessonsById).length > 0 ? lessonsById : DEMO_LESSONS,
+        classes:     classes.length     ? classes     : DEMO_CLASSES,
+        students:    students.length    ? students    : DEMO_STUDENTS,
+        assignments: assignments.length ? assignments : DEMO_ASSIGNMENTS,
+        grades:      grades.length      ? grades      : DEMO_GRADES,
+        messages:    messages.length    ? messages    : DEMO_MESSAGES,
+        feed:        feed.length        ? feed        : DEMO_FEED,
+        lessons:     Object.keys(lessonsById).length ? lessonsById : DEMO_LESSONS,
         dbLoaded: true,
         dbError:  null,
       })
@@ -463,33 +402,40 @@ setLessonAdjustments: (adjustments) => set(state => {
       set({ dbLoaded: true, dbError: err })
     }
   },
-
   // ── Grade categories ──────────────────────────────────────────────────────────
   categories:           DEFAULT_CATEGORIES,
   gradingMethod:        'weighted',
   allowTeacherOverride: true,
-  setCategories:        (cats)   => set({ categories: cats }),
-  setGradingMethod:     (method) => set({ gradingMethod: method }),
+
+  setCategories:    (cats)   => set({ categories: cats }),
+  setGradingMethod: (method) => set({ gradingMethod: method }),
 
   // ── Curriculum syncing ────────────────────────────────────────────────────────
   curriculumSources:  CURRICULUM_SOURCES,
   connectedCurricula: {},
+
   setConnectedCurriculum: (subject, sourceId) => set(state => ({
     connectedCurricula: { ...state.connectedCurricula, [subject]: sourceId }
   })),
 
   // ── External integrations ─────────────────────────────────────────────────────
   connections: DEFAULT_CONNECTIONS,
+
   setConnection: (key, connected) => set(state => ({
     connections: {
       ...state.connections,
-      [key]: { ...state.connections[key], connected, lastSync: connected ? 'Just now' : undefined }
+      [key]: {
+        ...state.connections[key],
+        connected,
+        lastSync: connected ? 'Just now' : undefined
+      }
     }
   })),
 
   // ── Onboarding ────────────────────────────────────────────────────────────────
   onboardingComplete: false,
   onboardingStep:     0,
+
   setOnboardingStep:  (step) => set({ onboardingStep: step }),
   completeOnboarding: ()     => set({ onboardingComplete: true }),
 
@@ -534,17 +480,24 @@ setLessonAdjustments: (adjustments) => set(state => {
   setLessonStatus: (classId, status) => set(state => {
     const classLessons = [...(state.lessons[classId] || [])]
     if (!classLessons.length) return {}
+
     if (status === 'done') {
       classLessons[0] = { ...classLessons[0], status: 'done', dayLabel: 'Previous' }
       const [completed, ...rest] = classLessons
       const reordered = [...rest, completed]
-      if (reordered[0]) reordered[0] = { ...reordered[0], dayLabel: 'Today', status: 'pending' }
+
+      if (reordered[0]) {
+        reordered[0] = { ...reordered[0], dayLabel: 'Today', status: 'pending' }
+      }
+
       return { lessons: { ...state.lessons, [classId]: reordered } }
     }
+
     if (status === 'tbd') {
       classLessons[0] = { ...classLessons[0], status: 'tbd' }
       return { lessons: { ...state.lessons, [classId]: classLessons } }
     }
+
     return {}
   }),
 
@@ -553,16 +506,28 @@ setLessonAdjustments: (adjustments) => set(state => {
     return {
       lessons: {
         ...state.lessons,
-        [classId]: [...existing, { ...lesson, id: `custom-${Date.now()}`, status: 'pending' }]
+        [classId]: [
+          ...existing,
+          { ...lesson, id: `custom-${Date.now()}`, status: 'pending' }
+        ]
       }
     }
   }),
 
   // ── Computed ──────────────────────────────────────────────────────────────────
-  getStudentsForClass:          (classId)        => get().students.filter(s => s.classId === classId),
-  getAssignmentsForClass:       (classId)        => get().assignments.filter(a => a.classId === classId),
-  getGradeForStudentAssignment: (studentId, aId) => get().grades.find(g => g.studentId === studentId && g.assignmentId === aId),
-  getNeedsAttention:            ()               => get().students.filter(s => s.grade < 70 || s.flagged || s.submitUngraded),
+  getStudentsForClass: (classId) =>
+    get().students.filter(s => s.classId === classId),
+
+  getAssignmentsForClass: (classId) =>
+    get().assignments.filter(a => a.classId === classId),
+
+  getGradeForStudentAssignment: (studentId, aId) =>
+    get().grades.find(g => g.studentId === studentId && g.assignmentId === aId),
+
+  getNeedsAttention: () =>
+    get().students.filter(s =>
+      s.grade < 70 || s.flagged || s.submitUngraded
+    ),
 
   getTodayLesson: (classId) => {
     const lessons = get().lessons[classId] || []
@@ -572,74 +537,110 @@ setLessonAdjustments: (adjustments) => set(state => {
   calcWeightedGrade: (studentId, classId) => {
     const { assignments, grades, categories, gradingMethod } = get()
     const clsAssigns = assignments.filter(a => a.classId === classId)
+
     if (gradingMethod === 'total_points') {
       const scored = clsAssigns
         .map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id))
         .filter(Boolean)
+
       if (!scored.length) return null
-      return Math.round(scored.reduce((s, g) => s + g.score, 0) / scored.length)
+
+      return Math.round(
+        scored.reduce((s, g) => s + g.score, 0) / scored.length
+      )
     }
-    let total = 0, totalWeight = 0
+
+    let total = 0
+    let totalWeight = 0
+
     categories.forEach(cat => {
       const catAssigns = clsAssigns.filter(a => a.categoryId === cat.id)
       const catGrades  = catAssigns
         .map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id))
         .filter(Boolean)
+
       if (catGrades.length) {
         const avg = catGrades.reduce((s, g) => s + g.score, 0) / catGrades.length
         total       += avg * (cat.weight / 100)
         totalWeight += cat.weight
       }
     })
-    return totalWeight > 0 ? Math.round(total * 100 / totalWeight) : null
+
+    return totalWeight > 0
+      ? Math.round((total * 100) / totalWeight)
+      : null
   },
 
   // ── Mutations (local + write-through to Supabase) ─────────────────────────────
   updateGrade: async (studentId, assignmentId, score) => {
     set(state => ({
       grades: state.grades.map(g =>
-        g.studentId === studentId && g.assignmentId === assignmentId ? { ...g, score } : g
+        g.studentId === studentId && g.assignmentId === assignmentId
+          ? { ...g, score }
+          : g
       ),
     }))
+
     const { error } = await supabase
       .from('grades')
       .upsert(
         { student_id: studentId, assignment_id: assignmentId, score, graded: true },
         { onConflict: 'student_id,assignment_id' }
       )
+
     if (error) console.error('Grade sync failed:', error)
   },
 
   updateMessage: (id, changes) => set(state => ({
-    messages: state.messages.map(m => m.id === id ? { ...m, ...changes } : m),
+    messages: state.messages.map(m =>
+      m.id === id ? { ...m, ...changes } : m
+    ),
   })),
 
   dismissMessage: (id) => set(state => ({
-    messages: state.messages.map(m => m.id === id ? { ...m, status: 'dismissed' } : m),
+    messages: state.messages.map(m =>
+      m.id === id ? { ...m, status: 'dismissed' } : m
+    ),
   })),
 
   sendMessage: (id) => set(state => ({
-    messages: state.messages.map(m => m.id === id ? { ...m, status: 'sent' } : m),
+    messages: state.messages.map(m =>
+      m.id === id ? { ...m, status: 'sent' } : m
+    ),
   })),
 
   addAssignment: (assignment) => set(state => ({
-    assignments: [...state.assignments, { ...assignment, id: Date.now() }],
+    assignments: [
+      ...state.assignments,
+      { ...assignment, id: Date.now() }
+    ],
   })),
 
   saveLessonPlan: (plan) => set(state => ({
-    lessonPlans: [...state.lessonPlans, { ...plan, id: Date.now(), createdAt: new Date().toISOString() }],
+    lessonPlans: [
+      ...state.lessonPlans,
+      { ...plan, id: Date.now(), createdAt: new Date().toISOString() }
+    ],
   })),
 
   dismissKeyAlert: (assignmentId) => set(state => ({
-    keyAlertsDismissed: [...state.keyAlertsDismissed, assignmentId],
+    keyAlertsDismissed: [
+      ...state.keyAlertsDismissed,
+      assignmentId
+    ],
   })),
 
   addReminder: (text) => set(state => ({
-    reminders: [...state.reminders, { id: Date.now(), text, due: 'Today', done: false, priority: 'medium' }],
+    reminders: [
+      ...state.reminders,
+      { id: Date.now(), text, due: 'Today', done: false, priority: 'medium' }
+    ],
   })),
 
   toggleReminder: (id) => set(state => ({
-    reminders: state.reminders.map(r => r.id === id ? { ...r, done: !r.done } : r),
+    reminders: state.reminders.map(r =>
+      r.id === id ? { ...r, done: !r.done } : r
+    ),
   })),
 
   deleteReminder: (id) => set(state => ({
@@ -648,6 +649,7 @@ setLessonAdjustments: (adjustments) => set(state => {
 
   addFeedPost: async (classId, content) => {
     const authorName = useStore.getState().teacher.name
+
     set(state => ({
       feed: [
         {
@@ -664,6 +666,7 @@ setLessonAdjustments: (adjustments) => set(state => {
         ...state.feed,
       ],
     }))
+
     const { error } = await supabase.from('feed_posts').insert({
       class_id: classId,
       author_name: authorName,
@@ -671,6 +674,7 @@ setLessonAdjustments: (adjustments) => set(state => {
       approved: false,
       reactions: {},
     })
+
     if (error) console.error('Feed post sync failed:', error)
   },
 
@@ -680,4 +684,5 @@ setLessonAdjustments: (adjustments) => set(state => {
   // Legacy compat
   weights: { test: 40, quiz: 30, homework: 20, participation: 10 },
   setWeights: (w) => set({ weights: w }),
-}))
+
+})) // ← CLOSES THE STORE CLEANLY
