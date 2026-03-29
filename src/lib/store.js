@@ -97,17 +97,90 @@ const CURRICULUM_SOURCES = [
 ]
 
 const DEFAULT_CONNECTIONS = {
-  powerSchool:     { connected: false, label: 'PowerSchool',           url: 'https://powerschool.com',         category: 'roster',  icon: '🏫', description: 'Pull rosters + sync grades'         },
-  infiniteCampus:  { connected: false, label: 'Infinite Campus',       url: 'https://infinitecampus.com',      category: 'roster',  icon: '🎓', description: 'Roster sync + grade passback'        },
-  skyward:         { connected: false, label: 'Skyward',               url: 'https://skyward.com',             category: 'roster',  icon: '🌤', description: 'Student info + gradebook sync'       },
-  canvas:          { connected: false, label: 'Canvas LMS',            url: 'https://canvas.instructure.com',  category: 'lms',     icon: '🖼', description: 'Assignments, grades, submissions'    },
-  googleClassroom: { connected: false, label: 'Google Classroom',      url: 'https://classroom.google.com',    category: 'lms',     icon: '🟢', description: 'Assignments + roster import',        lastSync: 'Today 8:42am' },
-  planbook:        { connected: false, label: 'Planbook',              url: 'https://planbook.com',            category: 'lessons', icon: '📅', description: 'Import your lesson plan calendar'    },
-  chalk:           { connected: false, label: 'Chalk',                 url: 'https://chalk.com',               category: 'lessons', icon: '🖊', description: 'Curriculum maps + lesson plans'     },
-  tpt:             { connected: false, label: 'Teachers Pay Teachers', url: 'https://teacherspayteachers.com', category: 'lessons', icon: '💼', description: 'Import purchased lesson resources'   },
-  googleDrive:     { connected: true,  label: 'Google Drive',          url: 'https://drive.google.com',        category: 'lessons', icon: '📁', description: 'Upload docs & lesson materials',     lastSync: 'Today 9:01am' },
-  clever:          { connected: false, label: 'Clever',                url: 'https://clever.com',              category: 'roster',  icon: '🔗', description: 'Single sign-on + roster sync'        },
-};
+  powerSchool: {
+    connected: false,
+    label: 'PowerSchool',
+    url: 'https://powerschool.com',
+    category: 'roster',
+    icon: '🏫',
+    description: 'Pull rosters + sync grades',
+  },
+  infiniteCampus: {
+    connected: false,
+    label: 'Infinite Campus',
+    url: 'https://infinitecampus.com',
+    category: 'roster',
+    icon: '🎓',
+    description: 'Roster sync + grade passback',
+  },
+  skyward: {
+    connected: false,
+    label: 'Skyward',
+    url: 'https://skyward.com',
+    category: 'roster',
+    icon: '🌤',
+    description: 'Student info + gradebook sync',
+  },
+  canvas: {
+    connected: false,
+    label: 'Canvas LMS',
+    url: 'https://canvas.instructure.com',
+    category: 'lms',
+    icon: '🖼',
+    description: 'Assignments, grades, submissions',
+  },
+  googleClassroom: {
+    connected: false,
+    label: 'Google Classroom',
+    url: 'https://classroom.google.com',
+    category: 'lms',
+    icon: '🟢',
+    description: 'Assignments + roster import',
+    lastSync: null,
+  },
+  planbook: {
+    connected: false,
+    label: 'Planbook',
+    url: 'https://planbook.com',
+    category: 'lessons',
+    icon: '📅',
+    description: 'Import your lesson plan calendar',
+  },
+  chalk: {
+    connected: false,
+    label: 'Chalk',
+    url: 'https://chalk.com',
+    category: 'lessons',
+    icon: '🖊',
+    description: 'Curriculum maps + lesson plans',
+  },
+  tpt: {
+    connected: false,
+    label: 'Teachers Pay Teachers',
+    url: 'https://teacherspayteachers.com',
+    category: 'lessons',
+    icon: '💼',
+    description: 'Import purchased lesson resources',
+  },
+  googleDrive: {
+    connected: true,
+    label: 'Google Drive',
+    url: 'https://drive.google.com',
+    category: 'lessons',
+    icon: '📁',
+    description: 'Upload docs & lesson materials',
+    lastSync: 'Today 9:01am',
+  },
+  clever: {
+    connected: false,
+    label: 'Clever',
+    url: 'https://clever.com',
+    category: 'roster',
+    icon: '🔗',
+    description: 'Single sign-on + roster sync',
+  },
+}
+
 // ─── Supabase row mappers ─────────────────────────────────────────────────────
 function mapClass(row) {
   return {
@@ -145,9 +218,9 @@ function mapStudent(row) {
 
 function mapAssignment(row) {
   const categoryId =
-    row.type === 'test'    ? 1 :
-    row.type === 'quiz'    ? 2 :
-    row.type === 'homework'? 3 : 4
+    row.type === 'test'     ? 1 :
+    row.type === 'quiz'     ? 2 :
+    row.type === 'homework' ? 3 : 4
 
   return {
     id:         row.id,
@@ -217,16 +290,17 @@ function mapFeedPost(row) {
     approved:  row.approved,
   }
 }
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 export const useStore = create((set, get) => ({
 
-  // ── Loading state ─────────────────────────────────────────────────────────────
+  // ── Loading state ───────────────────────────────────────────────────────────
   dbLoaded: false,
   dbError:  null,
 
-  // ── Auth / User ───────────────────────────────────────────────────────────────
+  // ── Auth / User ─────────────────────────────────────────────────────────────
   currentUser: null,
-  lang: 'en', // top-level lang for instant re-renders
+  lang: 'en',
 
   setCurrentUser: (user) => set({
     currentUser: user,
@@ -240,16 +314,16 @@ export const useStore = create((set, get) => ({
       : state.currentUser,
   })),
 
-  // ── Teacher profile ───────────────────────────────────────────────────────────
+  // ── Teacher profile ─────────────────────────────────────────────────────────
   teacher: {
     id: 1,
     name: 'Ms. Johnson',
     school: 'KIPP New Orleans',
     schoolColor: '#BA0C2F',
-    avatar: '👩‍🏫'
+    avatar: '👩‍🏫',
   },
 
-  // ── Data (fallback until Supabase loads) ─────────────────────────────────────
+  // ── Data (fallback until Supabase loads) ────────────────────────────────────
   classes:     DEMO_CLASSES,
   students:    DEMO_STUDENTS,
   assignments: DEMO_ASSIGNMENTS,
@@ -260,19 +334,9 @@ export const useStore = create((set, get) => ({
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
 
-  // ── Student Accommodations (CORRECT LOCATION — Option A) ─────────────────────
-  // Keyed by student name for demo compatibility.
-  studentAccommodations: {
-    // [studentName]: {
-    //   name: string,
-    //   accommodationType: 'IEP' | '504' | 'ELL' | 'Gifted' | 'Other',
-    //   specificNeeds: string[],
-    //   lessonAdjustments: string[],
-    //   notes: string,
-    // }
-  },
+  // ── Student Accommodations ──────────────────────────────────────────────────
+  studentAccommodations: {},
 
-  // Bulk set from AI extraction or roster upload
   setAccommodations: (accommodations) => set(() => {
     const keyed = {}
     for (const s of accommodations) {
@@ -287,7 +351,6 @@ export const useStore = create((set, get) => ({
     return { studentAccommodations: keyed }
   }),
 
-  // Edit a single student's accommodations
   updateAccommodation: (studentName, changes) => set(state => ({
     studentAccommodations: {
       ...state.studentAccommodations,
@@ -304,7 +367,6 @@ export const useStore = create((set, get) => ({
     },
   })),
 
-  // Add a student manually
   addAccommodation: (studentName) => set(state => {
     if (state.studentAccommodations[studentName]) return {}
     return {
@@ -321,14 +383,12 @@ export const useStore = create((set, get) => ({
     }
   }),
 
-  // Remove a student
   removeAccommodation: (studentName) => set(state => {
     const next = { ...state.studentAccommodations }
     delete next[studentName]
     return { studentAccommodations: next }
   }),
 
-  // Per-lesson AI adjustments
   setLessonAdjustments: (adjustments) => set(state => {
     const next = { ...state.studentAccommodations }
     for (const { studentName, adjustments: adj } of adjustments) {
@@ -342,7 +402,7 @@ export const useStore = create((set, get) => ({
     return { studentAccommodations: next }
   }),
 
-  // ── Load all data from Supabase ───────────────────────────────────────────────
+  // ── Load all data from Supabase ─────────────────────────────────────────────
   loadFromDB: async () => {
     try {
       const today = new Date().toISOString().split('T')[0]
@@ -371,12 +431,12 @@ export const useStore = create((set, get) => ({
         return
       }
 
-      const classes     = (classesRes.data    || []).map(mapClass)
-      const students    = (studentsRes.data   || []).map(mapStudent)
+      const classes     = (classesRes.data     || []).map(mapClass)
+      const students    = (studentsRes.data    || []).map(mapStudent)
       const assignments = (assignmentsRes.data || []).map(mapAssignment)
-      const grades      = (gradesRes.data     || []).map(mapGrade)
-      const messages    = (messagesRes.data   || []).map(mapMessage)
-      const feed        = (feedRes.data       || []).map(mapFeedPost)
+      const grades      = (gradesRes.data      || []).map(mapGrade)
+      const messages    = (messagesRes.data    || []).map(mapMessage)
+      const feed        = (feedRes.data        || []).map(mapFeedPost)
 
       const lessonsById = {}
       for (const row of (lessonsRes.data || [])) {
@@ -402,7 +462,8 @@ export const useStore = create((set, get) => ({
       set({ dbLoaded: true, dbError: err })
     }
   },
-  // ── Grade categories ──────────────────────────────────────────────────────────
+
+  // ── Grade categories ────────────────────────────────────────────────────────
   categories:           DEFAULT_CATEGORIES,
   gradingMethod:        'weighted',
   allowTeacherOverride: true,
@@ -410,15 +471,15 @@ export const useStore = create((set, get) => ({
   setCategories:    (cats)   => set({ categories: cats }),
   setGradingMethod: (method) => set({ gradingMethod: method }),
 
-  // ── Curriculum syncing ────────────────────────────────────────────────────────
+  // ── Curriculum syncing ──────────────────────────────────────────────────────
   curriculumSources:  CURRICULUM_SOURCES,
   connectedCurricula: {},
 
   setConnectedCurriculum: (subject, sourceId) => set(state => ({
-    connectedCurricula: { ...state.connectedCurricula, [subject]: sourceId }
+    connectedCurricula: { ...state.connectedCurricula, [subject]: sourceId },
   })),
 
-  // ── External integrations ─────────────────────────────────────────────────────
+  // ── External integrations ───────────────────────────────────────────────────
   connections: DEFAULT_CONNECTIONS,
 
   setConnection: (key, connected) => set(state => ({
@@ -427,19 +488,19 @@ export const useStore = create((set, get) => ({
       [key]: {
         ...state.connections[key],
         connected,
-        lastSync: connected ? 'Just now' : undefined
-      }
-    }
+        lastSync: connected ? 'Just now' : null,
+      },
+    },
   })),
 
-  // ── Onboarding ────────────────────────────────────────────────────────────────
+  // ── Onboarding ──────────────────────────────────────────────────────────────
   onboardingComplete: false,
   onboardingStep:     0,
 
   setOnboardingStep:  (step) => set({ onboardingStep: step }),
   completeOnboarding: ()     => set({ onboardingComplete: true }),
 
-  // ── Navigation ────────────────────────────────────────────────────────────────
+  // ── Navigation ──────────────────────────────────────────────────────────────
   activeScreen:        'dashboard',
   previousScreen:      null,
   activeClass:         null,
@@ -476,7 +537,7 @@ export const useStore = create((set, get) => ({
   setCameraIntent:      (intent)  => set({ cameraIntent: intent }),
   setLessonPlanMode:    (mode)    => set({ lessonPlanMode: mode }),
 
-  // ── Lesson status mutations ───────────────────────────────────────────────────
+  // ── Lesson status mutations ─────────────────────────────────────────────────
   setLessonStatus: (classId, status) => set(state => {
     const classLessons = [...(state.lessons[classId] || [])]
     if (!classLessons.length) return {}
@@ -508,13 +569,13 @@ export const useStore = create((set, get) => ({
         ...state.lessons,
         [classId]: [
           ...existing,
-          { ...lesson, id: `custom-${Date.now()}`, status: 'pending' }
-        ]
-      }
+          { ...lesson, id: `custom-${Date.now()}`, status: 'pending' },
+        ],
+      },
     }
   }),
 
-  // ── Computed ──────────────────────────────────────────────────────────────────
+  // ── Computed ────────────────────────────────────────────────────────────────
   getStudentsForClass: (classId) =>
     get().students.filter(s => s.classId === classId),
 
@@ -571,7 +632,7 @@ export const useStore = create((set, get) => ({
       : null
   },
 
-  // ── Mutations (local + write-through to Supabase) ─────────────────────────────
+  // ── Mutations (local + write-through to Supabase) ───────────────────────────
   updateGrade: async (studentId, assignmentId, score) => {
     set(state => ({
       grades: state.grades.map(g =>
@@ -612,28 +673,28 @@ export const useStore = create((set, get) => ({
   addAssignment: (assignment) => set(state => ({
     assignments: [
       ...state.assignments,
-      { ...assignment, id: Date.now() }
+      { ...assignment, id: Date.now() },
     ],
   })),
 
   saveLessonPlan: (plan) => set(state => ({
     lessonPlans: [
       ...state.lessonPlans,
-      { ...plan, id: Date.now(), createdAt: new Date().toISOString() }
+      { ...plan, id: Date.now(), createdAt: new Date().toISOString() },
     ],
   })),
 
   dismissKeyAlert: (assignmentId) => set(state => ({
     keyAlertsDismissed: [
       ...state.keyAlertsDismissed,
-      assignmentId
+      assignmentId,
     ],
   })),
 
   addReminder: (text) => set(state => ({
     reminders: [
       ...state.reminders,
-      { id: Date.now(), text, due: 'Today', done: false, priority: 'medium' }
+      { id: Date.now(), text, due: 'Today', done: false, priority: 'medium' },
     ],
   })),
 
@@ -681,8 +742,7 @@ export const useStore = create((set, get) => ({
   quickCreateAssignment:      (a) => get().addAssignment(a),
   clearQuickCreateAssignment: ()  => {},
 
-  // Legacy compat
   weights: { test: 40, quiz: 30, homework: 20, participation: 10 },
   setWeights: (w) => set({ weights: w }),
 
-})) // ← CLOSES THE STORE CLEANLY
+})) // closes store
