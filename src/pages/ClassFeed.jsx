@@ -10,10 +10,6 @@ const C = {
 
 const REACTIONS = ['👍','❤️','😂','🙌','😮','🔥','❓','😕']
 
-// ─── Demo data ────────────────────────────────────────────────────────────────
-// role: 'teacher' | 'student' | 'parent' | 'admin'
-const VIEWER = { role:'teacher', name:'Ms. Johnson', avatar:'👩‍🏫' }
-
 const DEMO_STUDENTS = [
   { id:1,  name:'Aaliyah Brooks',  avatar:'👧' },
   { id:2,  name:'Marcus Thompson', avatar:'👦' },
@@ -35,13 +31,13 @@ const INITIAL_POSTS = [
     time: '2 hours ago', timestamp: Date.now() - 7200000,
     reactions: { '👍':12, '❤️':5, '🔥':3 },
     pinned: true,
-    permissions: 'open', // open | closed | teacher_only
+    permissions: 'open',
     comments: [
       { id:1, author:'Marcus Thompson', authorRole:'student', avatar:'👦', text:'Will the test cover the worksheet from Tuesday?', time:'1hr 45min ago', reactions:{'👍':3}, replies:[] },
-      { id:2, author:'Ms. Johnson',     authorRole:'teacher', avatar:'👩‍🏫', text:'Yes, Marcus! The worksheet problems are great practice. Everything from pages 84–102 is fair game.', time:'1hr 30min ago', reactions:{'👍':8,'❤️':2}, replies:[] },
-      { id:3, author:'Aaliyah Brooks',  authorRole:'student', avatar:'👧', text:'Can we work in groups to study?', time:'1hr ago', reactions:{'👍':5}, replies:[
-        { id:31, author:'Ms. Johnson', authorRole:'teacher', avatar:'👩‍🏫', text:'Study groups are a great idea! I\'ll open the classroom Thursday after school.', time:'55min ago', reactions:{'❤️':6} },
-        { id:32, author:'Sofia Rodriguez', authorRole:'student', avatar:'👧', text:'I\'m in! @Aaliyah want to study together?', time:'50min ago', reactions:{'👍':2} },
+      { id:2, author:'Ms. Johnson', authorRole:'teacher', avatar:'👩‍🏫', text:'Yes, Marcus! Everything from pages 84–102 is fair game.', time:'1hr 30min ago', reactions:{'👍':8,'❤️':2}, replies:[] },
+      { id:3, author:'Aaliyah Brooks', authorRole:'student', avatar:'👧', text:'Can we work in groups to study?', time:'1hr ago', reactions:{'👍':5}, replies:[
+        { id:31, author:'Ms. Johnson', authorRole:'teacher', avatar:'👩‍🏫', text:"Study groups are a great idea! I'll open the classroom Thursday after school.", time:'55min ago', reactions:{'❤️':6} },
+        { id:32, author:'Sofia Rodriguez', authorRole:'student', avatar:'👧', text:"I'm in! @Aaliyah want to study together?", time:'50min ago', reactions:{'👍':2} },
       ]},
       { id:4, author:'Priya Patel', authorRole:'student', avatar:'👧', text:'Is there a review sheet we can print?', time:'45min ago', reactions:{}, replies:[] },
     ],
@@ -54,7 +50,7 @@ const INITIAL_POSTS = [
     author: 'Ms. Johnson', authorRole: 'teacher', authorAvatar: '👩‍🏫',
     classId: 1, subject: '3rd Period · Math',
     content: '🗣️ Discussion Assignment: In your own words, explain how you convert a fraction to a decimal. Reply with at least 2 sentences. Then reply to at least 2 classmates and add to their explanation or give an example.',
-    time: 'Yesterday',  timestamp: Date.now() - 86400000,
+    time: 'Yesterday', timestamp: Date.now() - 86400000,
     reactions: { '👍':8, '😮':2 },
     pinned: false,
     permissions: 'open',
@@ -65,9 +61,8 @@ const INITIAL_POSTS = [
       mustReplyToClassmates: 2,
       trackWordCount: true,
       trackReplies: true,
-      gradeCategory: 4, // Participation
+      gradeCategory: 4,
     },
-    // Per-student engagement data (teacher view)
     studentProgress: [
       { studentId:1, name:'Aaliyah Brooks',  avatar:'👧', viewed:true,  replied:true,  wordCount:34, classmateReplies:2, grade:10,  graded:true  },
       { studentId:2, name:'Marcus Thompson', avatar:'👦', viewed:true,  replied:true,  wordCount:18, classmateReplies:1, grade:null, graded:false },
@@ -79,7 +74,7 @@ const INITIAL_POSTS = [
       { studentId:8, name:'Liam Martinez',   avatar:'👦', viewed:true,  replied:false, wordCount:0,  classmateReplies:0, grade:null, graded:false },
     ],
     comments: [
-      { id:10, author:'Aaliyah Brooks',  authorRole:'student', avatar:'👧', text:'To convert a fraction to a decimal, you divide the top number by the bottom number. So 3/4 means 3 divided by 4, which equals 0.75. I think of it like money — 3 quarters is 75 cents!', time:'Yesterday 4pm', reactions:{'👍':5,'❤️':2}, replies:[
+      { id:10, author:'Aaliyah Brooks', authorRole:'student', avatar:'👧', text:'To convert a fraction to a decimal, you divide the top number by the bottom number. So 3/4 means 3 divided by 4, which equals 0.75. I think of it like money — 3 quarters is 75 cents!', time:'Yesterday 4pm', reactions:{'👍':5,'❤️':2}, replies:[
         { id:101, author:'Sofia Rodriguez', authorRole:'student', avatar:'👧', text:'I love the money example! That makes it so much easier to remember.', time:'Yesterday 4:15pm', reactions:{'👍':3} },
         { id:102, author:'Marcus Thompson', authorRole:'student', avatar:'👦', text:'So for 1/2 it would be 0.50 which is like 50 cents. Cool!', time:'Yesterday 4:30pm', reactions:{'👍':2} },
       ]},
@@ -96,7 +91,7 @@ const INITIAL_POSTS = [
     type: 'post',
     author: 'Ms. Johnson', authorRole: 'teacher', authorAvatar: '👩‍🏫',
     classId: 1, subject: '3rd Period · Math',
-    content: '🎉 Great work on yesterday\'s homework! The class average was 87%. Special shoutout to everyone who turned it in early! Keep up the amazing effort.',
+    content: "🎉 Great work on yesterday's homework! The class average was 87%. Special shoutout to everyone who turned it in early! Keep up the amazing effort.",
     time: '2 days ago', timestamp: Date.now() - 172800000,
     reactions: { '👍':18, '❤️':9, '🔥':6 },
     pinned: false,
@@ -121,22 +116,67 @@ function Avatar({ emoji, size=32 }) {
   return <div style={{ width:size, height:size, borderRadius:'50%', background:'var(--school-color,#BA0C2F)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:size*0.5, flexShrink:0 }}>{emoji}</div>
 }
 
+// ─── Auto-grade logic ─────────────────────────────────────────────────────────
+// Spec (confirmed by user):
+//   - Score = post.pointValue (full points)
+//   - Never override graded:true (manual grades are sacred)
+//   - Must have replied + met wordCount + met classmateReplies
+// Returns updated progress array + { graded, skipped } counts
+function applyAutoGrade(progress, post, updateGrade) {
+  if (!post.engagement) return { updated: progress, graded: 0, skipped: 0 }
+  const { minWords = 0, mustReplyToClassmates = 0 } = post.engagement
+  let graded = 0
+  let skipped = 0
+
+  const updated = progress.map(s => {
+    if (s.graded)                            { skipped++; return s } // never override manual
+    if (!s.replied)                          { skipped++; return s }
+    if (s.wordCount < minWords)              { skipped++; return s }
+    if (s.classmateReplies < mustReplyToClassmates) { skipped++; return s }
+    // Passes all checks — assign full points
+    updateGrade(s.studentId, post.id, post.pointValue)
+    graded++
+    return { ...s, grade: post.pointValue, graded: true }
+  })
+
+  return { updated, graded, skipped }
+}
+
 // ─── ENGAGEMENT ANALYTICS PANEL ──────────────────────────────────────────────
 function EngagementPanel({ post, onClose, onGrade }) {
-  const [filter, setFilter] = useState('all')
-  const progress = post.studentProgress || []
+  const { updateGrade } = useStore()
+  const [filter,   setFilter]   = useState('all')
+  const [toast,    setToast]    = useState(null)
+  // Local progress copy so auto-grade reflects immediately without a page reload
+  const [progress, setProgress] = useState(post.studentProgress || [])
 
   const replied    = progress.filter(s=>s.replied).length
   const notReplied = progress.filter(s=>!s.replied).length
   const notViewed  = progress.filter(s=>!s.viewed).length
   const avgWords   = replied ? Math.round(progress.filter(s=>s.replied).reduce((sum,s)=>sum+s.wordCount,0)/replied) : 0
-  const graded     = progress.filter(s=>s.graded).length
-  const meetsReqs  = progress.filter(s=>s.replied && s.wordCount>=(post.engagement?.minWords||0) && s.classmateReplies>=(post.engagement?.mustReplyToClassmates||0))
 
-  const filtered = filter==='all' ? progress
-    : filter==='done'    ? progress.filter(s=>s.replied&&s.wordCount>=(post.engagement?.minWords||0)&&s.classmateReplies>=(post.engagement?.mustReplyToClassmates||0))
-    : filter==='partial' ? progress.filter(s=>s.replied&&(s.wordCount<(post.engagement?.minWords||0)||s.classmateReplies<(post.engagement?.mustReplyToClassmates||0)))
-    : progress.filter(s=>!s.replied)
+  const meetsReqs = progress.filter(s=>
+    s.replied &&
+    s.wordCount        >= (post.engagement?.minWords              || 0) &&
+    s.classmateReplies >= (post.engagement?.mustReplyToClassmates || 0)
+  )
+
+  const eligibleForAutoGrade = meetsReqs.filter(s => !s.graded)
+
+  const filtered = filter==='all'     ? progress
+    : filter==='done'    ? progress.filter(s => s.replied && s.wordCount>=(post.engagement?.minWords||0) && s.classmateReplies>=(post.engagement?.mustReplyToClassmates||0))
+    : filter==='partial' ? progress.filter(s => s.replied && (s.wordCount<(post.engagement?.minWords||0) || s.classmateReplies<(post.engagement?.mustReplyToClassmates||0)))
+    : progress.filter(s => !s.replied)
+
+  function handleAutoGrade() {
+    const { updated, graded, skipped } = applyAutoGrade(progress, post, updateGrade)
+    setProgress(updated)
+    const msg = graded > 0
+      ? `✅ Graded ${graded} student${graded !== 1 ? 's' : ''} — full points for completion${skipped > 0 ? ` · ${skipped} skipped (already graded or incomplete)` : ''}`
+      : "No eligible students — all either already graded or haven't met requirements yet"
+    setToast(msg)
+    setTimeout(() => setToast(null), 4500)
+  }
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.7)', backdropFilter:'blur(4px)', display:'flex', alignItems:'flex-end' }}
@@ -151,6 +191,13 @@ function EngagementPanel({ post, onClose, onGrade }) {
           </div>
           <button onClick={onClose} style={{ background:C.inner, border:'none', borderRadius:10, padding:'7px 12px', color:C.muted, cursor:'pointer', fontSize:14 }}>✕</button>
         </div>
+
+        {/* Toast */}
+        {toast && (
+          <div style={{ background:`${C.teal}15`, border:`1px solid ${C.teal}40`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.teal, fontWeight:600 }}>
+            {toast}
+          </div>
+        )}
 
         {/* Summary stats */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:16 }}>
@@ -206,12 +253,12 @@ function EngagementPanel({ post, onClose, onGrade }) {
 
         {/* Per-student rows */}
         {filtered.map(s=>{
-          const meetsMin   = s.wordCount >= (post.engagement?.minWords||0)
-          const meetsReplies = s.classmateReplies >= (post.engagement?.mustReplyToClassmates||0)
-          const complete   = s.replied && meetsMin && meetsReplies
-          const partial    = s.replied && (!meetsMin || !meetsReplies)
-          const statusColor = complete ? C.green : partial ? C.amber : C.red
-          const statusLabel = complete ? '✓ Complete' : partial ? '⚠ Partial' : s.viewed ? '✕ Viewed, not done' : '✕ Not seen'
+          const meetsMin     = s.wordCount        >= (post.engagement?.minWords              || 0)
+          const meetsReplies = s.classmateReplies >= (post.engagement?.mustReplyToClassmates || 0)
+          const complete     = s.replied && meetsMin && meetsReplies
+          const partial      = s.replied && (!meetsMin || !meetsReplies)
+          const statusColor  = complete ? C.green : partial ? C.amber : C.red
+          const statusLabel  = complete ? '✓ Complete' : partial ? '⚠ Partial' : s.viewed ? '✕ Viewed, not done' : '✕ Not seen'
 
           return (
             <div key={s.studentId} style={{ background:C.inner, border:`1px solid ${statusColor}20`, borderRadius:14, padding:'12px 14px', marginBottom:8 }}>
@@ -238,7 +285,7 @@ function EngagementPanel({ post, onClose, onGrade }) {
 
               {s.replied && (
                 <div style={{ display:'flex', gap:12, marginTop:6 }}>
-                  <div style={{ display:'flex', align:'center', gap:4 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:4 }}>
                     <span style={{ fontSize:10, color:meetsMin?C.green:C.amber }}>📝 {s.wordCount} words</span>
                     {post.engagement?.minWords && !meetsMin && <span style={{ fontSize:9, color:C.amber }}>({post.engagement.minWords} req)</span>}
                   </div>
@@ -252,13 +299,18 @@ function EngagementPanel({ post, onClose, onGrade }) {
           )
         })}
 
-        {/* Quick grade all */}
-        {progress.some(s=>s.replied&&!s.graded) && (
-          <button onClick={()=>alert('Auto-grade by completion: assigns full points to students meeting all requirements')}
+        {/* ── Auto-grade button — was alert(), now wired to updateGrade ─── */}
+        {eligibleForAutoGrade.length > 0 ? (
+          <button onClick={handleAutoGrade}
             style={{ width:'100%', background:`${C.teal}20`, color:C.teal, border:`1px solid ${C.teal}40`, borderRadius:14, padding:12, fontSize:13, fontWeight:700, cursor:'pointer', marginTop:4 }}>
-            ⚡ Auto-grade all who meet requirements
+            ⚡ Auto-grade {eligibleForAutoGrade.length} student{eligibleForAutoGrade.length !== 1 ? 's' : ''} who meet requirements — full points
           </button>
-        )}
+        ) : progress.some(s=>s.replied) ? (
+          <div style={{ textAlign:'center', padding:'10px 0 0', fontSize:11, color:C.muted }}>
+            ✓ All eligible students have been graded
+          </div>
+        ) : null}
+
       </div>
     </div>
   )
@@ -267,25 +319,25 @@ function EngagementPanel({ post, onClose, onGrade }) {
 // ─── COMPOSE POST MODAL ───────────────────────────────────────────────────────
 function ComposePost({ onPost, onClose }) {
   const { classes, categories } = useStore()
-  const [postType, setPostType]       = useState('post')
-  const [content,  setContent]        = useState('')
+  const [postType,      setPostType]      = useState('post')
+  const [content,       setContent]       = useState('')
   const [selectedClass, setSelectedClass] = useState(1)
-  const [permissions, setPermissions] = useState('open')
-  const [dueDate,  setDueDate]        = useState('')
-  const [points,   setPoints]         = useState(10)
-  const [minWords, setMinWords]       = useState(20)
-  const [minReplies, setMinReplies]   = useState(2)
+  const [permissions,   setPermissions]   = useState('open')
+  const [dueDate,       setDueDate]       = useState('')
+  const [points,        setPoints]        = useState(10)
+  const [minWords,      setMinWords]      = useState(20)
+  const [minReplies,    setMinReplies]    = useState(2)
   const [gradeCategory, setGradeCategory] = useState(4)
 
   const typeMap = {
-    post:         { icon:'📢', label:'Announcement',  color:C.blue   },
+    post:         { icon:'📢', label:'Announcement',   color:C.blue  },
     assignment:   { icon:'🗣️', label:'Discussion Post', color:C.teal  },
-    announcement: { icon:'📌', label:'Pinned Notice',  color:C.amber  },
+    announcement: { icon:'📌', label:'Pinned Notice',   color:C.amber },
   }
 
   function handlePost() {
     if (!content.trim()) return
-    const t = typeMap[postType]
+    const t   = typeMap[postType]
     const cls = classes.find(c=>c.id===selectedClass)
     onPost({
       id: Date.now(),
@@ -301,10 +353,10 @@ function ComposePost({ onPost, onClose }) {
       comments: [],
       readBy: [],
       ...(postType==='assignment' ? {
-        dueDate, pointValue:points,
-        engagement:{ minWords, mustReplyToClassmates:minReplies, trackWordCount:true, trackReplies:true, gradeCategory },
-        studentProgress: DEMO_STUDENTS.map(s=>({ studentId:s.id, name:s.name, avatar:s.avatar, viewed:false, replied:false, wordCount:0, classmateReplies:0, grade:null, graded:false })),
-      } : { engagement:null }),
+        dueDate, pointValue: points,
+        engagement: { minWords, mustReplyToClassmates: minReplies, trackWordCount: true, trackReplies: true, gradeCategory },
+        studentProgress: DEMO_STUDENTS.map(s => ({ studentId:s.id, name:s.name, avatar:s.avatar, viewed:false, replied:false, wordCount:0, classmateReplies:0, grade:null, graded:false })),
+      } : { engagement: null }),
     })
     onClose()
   }
@@ -319,7 +371,6 @@ function ComposePost({ onPost, onClose }) {
           <button onClick={onClose} style={{ background:C.inner, border:'none', borderRadius:10, padding:'7px 12px', color:C.muted, cursor:'pointer' }}>✕</button>
         </div>
 
-        {/* Post type */}
         <div style={{ display:'flex', gap:6, marginBottom:14 }}>
           {Object.entries(typeMap).map(([k,v])=>(
             <button key={k} onClick={()=>setPostType(k)}
@@ -330,7 +381,6 @@ function ComposePost({ onPost, onClose }) {
           ))}
         </div>
 
-        {/* Class selector */}
         <div style={{ marginBottom:12 }}>
           <label style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, display:'block', marginBottom:6 }}>Post to</label>
           <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
@@ -345,17 +395,12 @@ function ComposePost({ onPost, onClose }) {
           </div>
         </div>
 
-        {/* Content */}
         <textarea
           autoFocus rows={4} value={content} onChange={e=>setContent(e.target.value)}
-          placeholder={postType==='assignment'
-            ? 'Write your discussion prompt... e.g. "In your own words, explain..."'
-            : postType==='announcement' ? 'Write an important notice...'
-            : 'Share an announcement with your class...'}
+          placeholder={postType==='assignment' ? 'Write your discussion prompt...' : postType==='announcement' ? 'Write an important notice...' : 'Share an announcement with your class...'}
           style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'12px 14px', color:C.text, fontSize:13, resize:'none', boxSizing:'border-box', lineHeight:1.6, outline:'none', marginBottom:12 }}
         />
 
-        {/* Permissions */}
         <div style={{ marginBottom:14 }}>
           <label style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, display:'block', marginBottom:6 }}>Who can reply</label>
           <div style={{ display:'flex', gap:6 }}>
@@ -370,7 +415,6 @@ function ComposePost({ onPost, onClose }) {
           </div>
         </div>
 
-        {/* Assignment-specific settings */}
         {postType==='assignment' && (
           <div style={{ background:C.inner, border:`1px solid ${C.teal}30`, borderRadius:16, padding:14, marginBottom:14 }}>
             <div style={{ fontSize:12, fontWeight:700, color:C.teal, marginBottom:12 }}>📊 Engagement Parameters</div>
@@ -424,10 +468,10 @@ function ComposePost({ onPost, onClose }) {
 
 // ─── COMMENT THREAD ───────────────────────────────────────────────────────────
 function CommentThread({ comment, viewer, canReply, depth=0 }) {
-  const [showReplyBox, setShowReplyBox] = useState(false)
-  const [replyText,    setReplyText]    = useState('')
-  const [reactions,    setReactions]    = useState(comment.reactions||{})
-  const [localReplies, setLocalReplies] = useState(comment.replies||[])
+  const [showReplyBox,  setShowReplyBox]  = useState(false)
+  const [replyText,     setReplyText]     = useState('')
+  const [reactions,     setReactions]     = useState(comment.reactions||{})
+  const [localReplies,  setLocalReplies]  = useState(comment.replies||[])
   const [showReactions, setShowReactions] = useState(false)
 
   function sendReply() {
@@ -438,7 +482,7 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
     setShowReplyBox(false)
   }
 
-  const isTeacher = comment.authorRole==='teacher'
+  const isTeacher   = comment.authorRole==='teacher'
   const borderColor = isTeacher ? 'var(--school-color,#BA0C2F)' : C.border
 
   return (
@@ -446,7 +490,7 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
       <div style={{ display:'flex', gap:10 }}>
         <Avatar emoji={comment.avatar} size={30}/>
         <div style={{ flex:1 }}>
-          <div style={{ background:isTeacher?`${C.card}`:C.inner, border:`1px solid ${borderColor}30`, borderRadius:14, padding:'10px 12px' }}>
+          <div style={{ background:isTeacher?C.card:C.inner, border:`1px solid ${borderColor}30`, borderRadius:14, padding:'10px 12px' }}>
             <div style={{ display:'flex', justifyContent:'space-between', marginBottom:4 }}>
               <div>
                 <span style={{ fontWeight:700, fontSize:12, color:C.text }}>{comment.author}</span>
@@ -457,7 +501,6 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
             <p style={{ fontSize:13, color:C.text, lineHeight:1.6, margin:0 }}>{comment.text}</p>
           </div>
 
-          {/* Reactions + actions */}
           <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:6, flexWrap:'wrap' }}>
             {Object.entries(reactions).filter(([,c])=>c>0).map(([emoji,count])=>(
               <button key={emoji} onClick={()=>setReactions(r=>({...r,[emoji]:(r[emoji]||0)+1}))}
@@ -469,9 +512,7 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
               style={{ background:'none', border:'none', cursor:'pointer', fontSize:12, color:C.muted }}>😊</button>
             {canReply && depth===0 && (
               <button onClick={()=>setShowReplyBox(s=>!s)}
-                style={{ background:'none', border:'none', cursor:'pointer', fontSize:11, color:C.muted, fontWeight:600 }}>
-                Reply
-              </button>
+                style={{ background:'none', border:'none', cursor:'pointer', fontSize:11, color:C.muted, fontWeight:600 }}>Reply</button>
             )}
           </div>
 
@@ -498,7 +539,6 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
             </div>
           )}
 
-          {/* Nested replies */}
           {localReplies.length>0 && (
             <div style={{ marginTop:8 }}>
               {localReplies.map(r=>(
@@ -514,27 +554,46 @@ function CommentThread({ comment, viewer, canReply, depth=0 }) {
 
 // ─── POST CARD ────────────────────────────────────────────────────────────────
 function PostCard({ post, viewer, onOpenAnalytics }) {
-  const [expanded,     setExpanded]     = useState(false)
+  const [expanded,      setExpanded]      = useState(false)
   const [postReactions, setPostReactions] = useState(post.reactions||{})
-  const [comments,     setComments]     = useState(post.comments||[])
-  const [commentText,  setCommentText]  = useState('')
+  const [comments,      setComments]      = useState(post.comments||[])
+  const [commentText,   setCommentText]   = useState('')
   const [showReactions, setShowReactions] = useState(false)
+  // Local progress so the badge count stays fresh after panel auto-grades
+  const [localProgress, setLocalProgress] = useState(post.studentProgress || [])
 
-  const isTeacher  = viewer.role==='teacher'||viewer.role==='admin'
-  const canReply   = post.permissions==='open' || (post.permissions==='teacher_only' && isTeacher)
+  const isTeacher    = viewer.role==='teacher'||viewer.role==='admin'
+  const canReply     = post.permissions==='open' || (post.permissions==='teacher_only' && isTeacher)
   const isAssignment = post.type==='assignment'
 
-  // Student engagement tracking
-  const studentProgress = isAssignment && post.studentProgress?.find(s=>s.name===viewer.name)
+  const studentProgress = isAssignment && localProgress?.find(s=>s.name===viewer.name)
   const meetingReqs = studentProgress && post.engagement
     ? studentProgress.wordCount>=(post.engagement.minWords||0) && studentProgress.classmateReplies>=(post.engagement.mustReplyToClassmates||0)
     : false
+
+  // Badge: how many are eligible to auto-grade (replied + meets reqs + not yet graded)
+  const eligibleCount = isAssignment
+    ? localProgress.filter(s =>
+        s.replied &&
+        s.wordCount        >= (post.engagement?.minWords              || 0) &&
+        s.classmateReplies >= (post.engagement?.mustReplyToClassmates || 0) &&
+        !s.graded
+      ).length
+    : 0
+
+  const repliedCount = localProgress.filter(s=>s.replied).length
 
   function addComment() {
     if (!commentText.trim()) return
     const c = { id:Date.now(), author:viewer.name, authorRole:viewer.role, avatar:viewer.avatar, text:commentText.trim(), time:'Just now', reactions:{}, replies:[] }
     setComments(cs=>[...cs,c])
     setCommentText('')
+  }
+
+  // Opens analytics panel — passes current localProgress so panel and card stay in sync
+  function openAnalytics(e) {
+    e.stopPropagation()
+    onOpenAnalytics({ ...post, studentProgress: localProgress })
   }
 
   const typeColors = { post:C.blue, assignment:C.teal, announcement:C.amber }
@@ -544,7 +603,6 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
   return (
     <div style={{ background:C.card, border:`1px solid ${post.pinned?C.amber+'40':C.border}`, borderRadius:20, padding:'16px', marginBottom:12 }}>
 
-      {/* Post type badge + class */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
         <div style={{ display:'flex', gap:6, alignItems:'center' }}>
           <Chip label={`${typeIcons[post.type]} ${typeLabels[post.type]}`} color={typeColors[post.type]||C.blue}/>
@@ -558,7 +616,6 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
         )}
       </div>
 
-      {/* Author */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
           <Avatar emoji={post.authorAvatar} size={36}/>
@@ -567,19 +624,22 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
             <div style={{ fontSize:10, color:C.muted }}>{post.time}</div>
           </div>
         </div>
-        {/* Analytics button for teacher on assignment posts */}
+        {/* Analytics button — same as before, now also shows "X to grade" badge */}
         {isTeacher && isAssignment && (
-          <button onClick={()=>onOpenAnalytics(post)}
-            style={{ background:`${C.teal}18`, color:C.teal, border:'none', borderRadius:10, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-            📊 {post.studentProgress?.filter(s=>s.replied).length||0}/{post.studentProgress?.length||0} done
+          <button onClick={openAnalytics}
+            style={{ background:`${C.teal}18`, color:C.teal, border:'none', borderRadius:10, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', gap:6 }}>
+            📊 {repliedCount}/{localProgress.length} done
+            {eligibleCount > 0 && (
+              <span style={{ background:`${C.amber}30`, color:C.amber, borderRadius:999, padding:'1px 7px', fontSize:9, fontWeight:800 }}>
+                {eligibleCount} to grade
+              </span>
+            )}
           </button>
         )}
       </div>
 
-      {/* Content */}
       <p style={{ fontSize:13, color:C.text, lineHeight:1.7, margin:'0 0 12px' }}>{post.content}</p>
 
-      {/* Student progress indicator (student view of their own) */}
       {isAssignment && viewer.role==='student' && studentProgress && (
         <div style={{ background: meetingReqs?`${C.green}12`:`${C.amber}12`, border:`1px solid ${meetingReqs?C.green:C.amber}30`, borderRadius:10, padding:'8px 12px', marginBottom:12 }}>
           <div style={{ fontSize:11, fontWeight:700, color:meetingReqs?C.green:C.amber, marginBottom:3 }}>
@@ -596,7 +656,6 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
         </div>
       )}
 
-      {/* Reactions row */}
       <div style={{ display:'flex', alignItems:'center', gap:6, flexWrap:'wrap', borderTop:`1px solid ${C.border}`, paddingTop:10, marginBottom:10 }}>
         {Object.entries(postReactions).filter(([,c])=>c>0).map(([emoji,count])=>(
           <button key={emoji} onClick={()=>setPostReactions(r=>({...r,[emoji]:(r[emoji]||0)+1}))}
@@ -622,7 +681,6 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
         </button>
       </div>
 
-      {/* Comments */}
       {expanded && (
         <div>
           {comments.length===0 && (
@@ -634,7 +692,6 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
             <CommentThread key={comment.id} comment={comment} viewer={viewer} canReply={canReply}/>
           ))}
 
-          {/* Reply box */}
           {canReply && (
             <div style={{ display:'flex', gap:10, marginTop:10, alignItems:'flex-end' }}>
               <Avatar emoji={viewer.avatar} size={30}/>
@@ -643,11 +700,7 @@ function PostCard({ post, viewer, onOpenAnalytics }) {
                   value={commentText}
                   onChange={e=>setCommentText(e.target.value)}
                   onKeyDown={e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); addComment() }}}
-                  placeholder={
-                    isAssignment
-                      ? `Write your response (min ${post.engagement?.minWords||0} words)...`
-                      : 'Add a comment...'
-                  }
+                  placeholder={isAssignment ? `Write your response (min ${post.engagement?.minWords||0} words)...` : 'Add a comment...'}
                   rows={2}
                   style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'9px 12px', color:C.text, fontSize:13, resize:'none', outline:'none', boxSizing:'border-box', fontFamily:'inherit' }}
                 />
@@ -681,7 +734,6 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
   const { feed, classes, activeClass, addFeedPost, teacher, goBack } = useStore()
   const handleBack = onBack || goBack
 
-  // Viewer identity — adapt to role
   const viewer = viewerRole==='student'
     ? { role:'student', name:'Marcus Thompson', avatar:'👦' }
     : viewerRole==='parent'
@@ -690,36 +742,32 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
     ? { role:'admin', name:'Principal Davis', avatar:'🏫' }
     : { role:'teacher', name:teacher?.name||'Ms. Johnson', avatar:'👩‍🏫' }
 
-  const [posts,          setPosts]          = useState(INITIAL_POSTS)
-  const [filterClass,    setFilterClass]    = useState('all')
-  const [filterType,     setFilterType]     = useState('all')
-  const [composing,      setComposing]      = useState(false)
-  const [analyticsPost,  setAnalyticsPost]  = useState(null)
-  const [pendingList,    setPendingList]    = useState([
-    { id:'p1', author:'Marcus T.',  authorRole:'student', content:'Can we get extra credit on the test?',         time:'10 min ago' },
-    { id:'p2', author:'Sofia R.',   authorRole:'student', content:'Worksheet question 3 is confusing — help?',   time:'5 min ago'  },
+  const [posts,         setPosts]         = useState(INITIAL_POSTS)
+  const [filterClass,   setFilterClass]   = useState('all')
+  const [filterType,    setFilterType]    = useState('all')
+  const [composing,     setComposing]     = useState(false)
+  const [analyticsPost, setAnalyticsPost] = useState(null)
+  const [pendingList,   setPendingList]   = useState([
+    { id:'p1', author:'Marcus T.',  authorRole:'student', content:'Can we get extra credit on the test?',       time:'10 min ago' },
+    { id:'p2', author:'Sofia R.',   authorRole:'student', content:'Worksheet question 3 is confusing — help?', time:'5 min ago'  },
   ])
-  const [modMode,  setModMode]  = useState(false)
-  const [cls] = useState(activeClass || classes[0])
+  const [modMode, setModMode] = useState(false)
 
   const isTeacher = viewer.role==='teacher'||viewer.role==='admin'
 
   const displayedPosts = posts.filter(p=>{
     if (filterClass!=='all' && p.classId!==filterClass) return false
-    if (filterType!=='all' && p.type!==filterType) return false
+    if (filterType!=='all'  && p.type!==filterType)     return false
     return true
   }).sort((a,b)=>{
     if (a.pinned && !b.pinned) return -1
     if (!a.pinned && b.pinned) return 1
-    return b.timestamp-a.timestamp
+    return b.timestamp - a.timestamp
   })
 
-  function handleNewPost(post) {
-    setPosts(ps=>[post,...ps])
-  }
+  function handleNewPost(post) { setPosts(ps=>[post,...ps]) }
 
   function handleGradeStudent(student) {
-    // In production: open grade entry modal
     alert(`Grade ${student.name} for this discussion post — opens grade entry modal`)
   }
 
@@ -752,7 +800,6 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
           </div>
         </div>
 
-        {/* Filter tabs */}
         <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:2 }}>
           <button onClick={()=>setFilterClass('all')}
             style={{ padding:'5px 12px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700, whiteSpace:'nowrap',
@@ -812,23 +859,20 @@ export default function ClassFeed({ onBack, viewerRole='teacher' }) {
             <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No posts yet</div>
             <div style={{ fontSize:13 }}>{isTeacher ? 'Create a post or discussion assignment to get started.' : 'Nothing posted for this class yet.'}</div>
           </div>
-        ) : (
-          displayedPosts.map(post=>(
-            <PostCard
-              key={post.id}
-              post={post}
-              viewer={viewer}
-              onOpenAnalytics={setAnalyticsPost}
-            />
-          ))
-        )}
+        ) : displayedPosts.map(post=>(
+          <PostCard key={post.id} post={post} viewer={viewer} onOpenAnalytics={setAnalyticsPost}/>
+        ))}
       </div>
 
-      {/* Compose modal */}
       {composing && <ComposePost onPost={handleNewPost} onClose={()=>setComposing(false)}/>}
 
-      {/* Analytics panel */}
-      {analyticsPost && <EngagementPanel post={analyticsPost} onClose={()=>setAnalyticsPost(null)} onGrade={handleGradeStudent}/>}
+      {analyticsPost && (
+        <EngagementPanel
+          post={analyticsPost}
+          onClose={()=>setAnalyticsPost(null)}
+          onGrade={handleGradeStudent}
+        />
+      )}
     </div>
   )
 }
