@@ -282,16 +282,32 @@ export const useStore = create((set, get) => ({
       const messages    = (messagesRes.data    || []).map(mapMessage)
       const feed        = (feedRes.data        || []).map(mapFeedPost)
 
-      const lessonsById = {}
-      for (const row of (lessonsRes.data || [])) {
-        const lesson = mapLesson(row)
-        if (!lessonsById[row.class_id]) lessonsById[row.class_id] = []
-        lessonsById[row.class_id].push(lesson)
-      }
-// ── Student Accommodations ────────────────────────────────────────────────────
+     // Build lessonsById as a dictionary keyed by class_id
+const lessonsById = {}
+
+for (const row of (lessonsRes.data || [])) {
+  const lesson = mapLesson(row)
+  const classId = row.class_id
+
+  if (!lessonsById[classId]) {
+    lessonsById[classId] = []
+  }
+
+  lessonsById[classId].push(lesson)
+}
+
+// ── Student Accommodations ───────────────────────────────────────────────
 // Keyed by student name (string) for demo compatibility.
 // In production this should key by student UUID.
 // Shape per entry:
+// {
+//   name: string,
+//   accommodationType: 'IEP' | '504' | 'ELL' | 'Gifted' | 'Other',
+//   specificNeeds: string[],        // e.g. ['Extended time', 'Preferential seating']
+//   lessonAdjustments: string[],    // AI-generated per lesson, refreshed each time
+//   notes: string,
+// }
+
 //   {
 //     name: string,
 //     accommodationType: 'IEP' | '504' | 'ELL' | 'Gifted' | 'Other',
