@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import Widgets from './Widgets'
+import SharedBottomNav from '../components/ui/BottomNav'
 
 // ─── HISD Theme ─────────────────────────────────────────────────────────────
 const T = {
@@ -118,31 +119,6 @@ function Btn({ label, color, onClick, style={} }) {
   )
 }
 
-// ─── Bottom nav ───────────────────────────────────────────────────────────────
-const NAV_ITEMS = [
-  { id:'grades',  icon:'📊', label:'Grades'   },
-  { id:'scan',    icon:'📷', label:'Scan'     },
-  { id:'messages',icon:'💬', label:'Messages' },
-  { id:'widgets', icon:'🧩', label:'Widgets'  },
-]
-
-function BottomNav({ active, onSelect }) {
-  return (
-    <div style={{ position:'fixed', bottom:0, left:0, right:0, zIndex:200, background:'rgba(0,13,31,0.97)', backdropFilter:'blur(20px)', borderTop:`1px solid ${T.border}`, padding:'8px 0 max(14px,env(safe-area-inset-bottom))', display:'grid', gridTemplateColumns:`repeat(${NAV_ITEMS.length},1fr)` }}>
-      {NAV_ITEMS.map(item => {
-        const isActive = item.id === active
-        return (
-          <button key={item.id} onClick={()=>onSelect(item.id)}
-            style={{ background:'none', border:'none', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, padding:'5px 2px', position:'relative' }}>
-            <span style={{ fontSize:18, transition:'transform 0.15s', transform:isActive?'scale(1.15)':'scale(1)' }}>{item.icon}</span>
-            <span style={{ fontSize:9, fontWeight:isActive?700:400, color:isActive?T.secondary:T.muted, transition:'color 0.15s' }}>{item.label}</span>
-            {isActive && <div style={{ position:'absolute', top:0, left:'50%', transform:'translateX(-50%)', width:24, height:2, background:T.secondary, borderRadius:1 }}/>}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
 
 // ─── Modal shell ──────────────────────────────────────────────────────────────
 function ModalShell({ onClose, children }) {
@@ -622,8 +598,35 @@ function AlertsPage({ onBack }) {
 }
 
 // ─── HOME PAGE ────────────────────────────────────────────────────────────────
+const STUDENT_WIDGET_CATALOG = [
+  { id:'alerts',   label:'Alerts',            icon:'🔔', desc:'Important notifications and flags' },
+  { id:'lessons',  label:"Today's Lessons",   icon:'📖', desc:'Your lesson plan and worksheet' },
+  { id:'classes',  label:'My Classes',        icon:'📚', desc:'Class grades and progress' },
+  { id:'messages', label:'Messages',          icon:'💬', desc:'Messages from teachers' },
+  { id:'feed',     label:'Class Feed',        icon:'📢', desc:'Announcements and updates' },
+  { id:'aiTips',   label:'AI Study Tips',     icon:'✨', desc:'Personalized study recommendations' },
+  { id:'upload',   label:'Upload Assignment', icon:'📤', desc:'Submit photos, files, and notes' },
+]
+
 function HomePage({ navigate }) {
   const [voiceOpen, setVoiceOpen] = useState(false)
+  const [activeWidgets,  setActiveWidgets]  = useState(STUDENT_WIDGET_CATALOG.map(w=>w.id))
+  const [showAddWidgets, setShowAddWidgets] = useState(false)
+  const removeWidget = id => setActiveWidgets(ws => ws.filter(w => w !== id))
+  const addWidget    = id => setActiveWidgets(ws => ws.includes(id) ? ws : [...ws, id])
+  const show = id => activeWidgets.includes(id)
+  const wrap = (id, content) => (
+    <div key={id} style={{ position:'relative', marginTop:12 }}>
+      <button onClick={e=>{ e.stopPropagation(); removeWidget(id) }} title="Remove widget"
+        style={{ position:'absolute', top:-10, right:8, zIndex:20, width:22, height:22, borderRadius:'50%',
+          background:T.bg, border:'1px solid rgba(255,255,255,0.3)', color:'#fff', fontSize:13, fontWeight:700,
+          cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+          lineHeight:1, boxShadow:'0 2px 6px rgba(0,0,0,0.4)' }}>
+        {'\u00d7'}
+      </button>
+      {content}
+    </div>
+  )
   const pendingCount = STUDENT.assignments.filter(a=>a.status==='pending').length
   const unreadCount  = STUDENT.threads.filter(t=>t.unread).length
 
@@ -639,7 +642,43 @@ function HomePage({ navigate }) {
   return (
     <div style={{ padding:'12px 12px 0' }}>
 
-      {/* W1: Daily Overview — GPA · Messages · Assignments · Alerts */}
+      {/* Add Widgets Modal */}
+      {showAddWidgets && (
+        <div onClick={()=>setShowAddWidgets(false)}
+          style={{ position:'fixed', inset:0, zIndex:250, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+          <div onClick={e=>e.stopPropagation()}
+            style={{ width:'100%', maxWidth:600, maxHeight:'82vh', overflowY:'auto', background:T.card, border:`1px solid ${T.border}`, borderRadius:'20px 20px 0 0', padding:'20px 16px 36px' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+              <div>
+                <div style={{ fontSize:17, fontWeight:800, color:T.text }}>+ Add Widgets</div>
+                <div style={{ fontSize:11, color:T.muted, marginTop:3 }}>Tap a widget to add or remove</div>
+              </div>
+              <button onClick={()=>setShowAddWidgets(false)}
+                style={{ background:T.inner, border:'none', borderRadius:999, width:32, height:32, color:T.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                {'\u00d7'}
+              </button>
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              {STUDENT_WIDGET_CATALOG.map(w => {
+                const isActive = activeWidgets.includes(w.id)
+                return (
+                  <button key={w.id} onClick={()=>{ isActive ? removeWidget(w.id) : addWidget(w.id) }}
+                    style={{ textAlign:'left', background:isActive?`${T.green}12`:T.inner, border:`1px solid ${isActive?`${T.green}35`:T.border}`, borderRadius:14, padding:'12px', cursor:'pointer' }}>
+                    <div style={{ fontSize:22, marginBottom:6 }}>{w.icon}</div>
+                    <div style={{ fontSize:12, fontWeight:700, color:T.text }}>{w.label}</div>
+                    <div style={{ fontSize:10, color:T.muted, marginTop:2 }}>{w.desc}</div>
+                    <div style={{ marginTop:8, fontSize:10, fontWeight:700, color:isActive?T.red:T.teal }}>
+                      {isActive ? '\u2715 Remove' : '+ Add'}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* W1: Daily Overview — always present */}
       <Widget style={{ background:`linear-gradient(135deg,${T.primary} 0%,#001020 100%)`, border:'none' }}>
         <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
@@ -655,7 +694,7 @@ function HomePage({ navigate }) {
       </Widget>
 
       {/* W2: Alerts */}
-      {STUDENT.alerts.length>0 && (
+      {show('alerts') && STUDENT.alerts.length>0 && wrap('alerts',
         <Widget onClick={()=>navigate('alerts')} style={{ border:`1px solid ${T.red}25` }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
             <div style={{ fontSize:13, fontWeight:700 }}>🔔 Alerts</div>
@@ -669,89 +708,107 @@ function HomePage({ navigate }) {
         </Widget>
       )}
 
-      {/* W3: Today's Lesson */}
-      <Widget onClick={()=>navigate('lessons')} style={{ background:'linear-gradient(135deg,#001830,#000d1f)', border:`1px solid #003a6a` }}>
-        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:8 }}>TODAY'S LESSONS 📖</div>
-        <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:4 }}>Ch.4 · Fractions & Decimals</div>
-        <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:10 }}>Math · Pages 84–91 · Ms. Johnson</div>
-        <Btn label="View Worksheet 📄" color={T.teal} onClick={()=>navigate('lessons')}/>
-      </Widget>
+      {/* W3: Today's Lessons */}
+      {show('lessons') && wrap('lessons',
+        <Widget onClick={()=>navigate('lessons')} style={{ background:'linear-gradient(135deg,#001830,#000d1f)', border:`1px solid #003a6a` }}>
+          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:8 }}>TODAY'S LESSONS 📖</div>
+          <div style={{ fontSize:15, fontWeight:800, color:'#fff', marginBottom:4 }}>Ch.4 · Fractions &amp; Decimals</div>
+          <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:10 }}>Math · Pages 84–91 · Ms. Johnson</div>
+          <Btn label="View Worksheet 📄" color={T.teal} onClick={()=>navigate('lessons')}/>
+        </Widget>
+      )}
 
       {/* W4: My Classes */}
-      <Widget onClick={()=>navigate('grades')}>
-        <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>📚 My Classes</div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-          {STUDENT.classes.map(c=>(
-            <button key={c.id} onClick={e=>{e.stopPropagation();navigate('grades')}}
-              style={{ background:T.inner, borderLeft:`3px solid ${c.color}`, borderRadius:12, padding:'10px 12px', border:'none', cursor:'pointer', textAlign:'left' }}>
-              <div style={{ fontWeight:700, fontSize:12, color:T.text, marginBottom:2 }}>{c.subject}</div>
-              <div style={{ fontSize:10, color:T.muted, marginBottom:6 }}>{c.teacher}</div>
-              <div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}%</div>
-            </button>
-          ))}
-        </div>
-      </Widget>
+      {show('classes') && wrap('classes',
+        <Widget onClick={()=>navigate('grades')}>
+          <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>📚 My Classes</div>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            {STUDENT.classes.map(c=>(
+              <button key={c.id} onClick={e=>{e.stopPropagation();navigate('grades')}}
+                style={{ background:T.inner, borderLeft:`3px solid ${c.color}`, borderRadius:12, padding:'10px 12px', border:'none', cursor:'pointer', textAlign:'left' }}>
+                <div style={{ fontWeight:700, fontSize:12, color:T.text, marginBottom:2 }}>{c.subject}</div>
+                <div style={{ fontSize:10, color:T.muted, marginBottom:6 }}>{c.teacher}</div>
+                <div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}%</div>
+              </button>
+            ))}
+          </div>
+        </Widget>
+      )}
 
       {/* W5: Messages preview */}
-      <Widget onClick={()=>navigate('messages')}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-          <div style={{ fontSize:13, fontWeight:700 }}>💬 Messages</div>
-          <Btn label="+ New" color={T.secondary} onClick={()=>navigate('messages')}/>
-        </div>
-        {STUDENT.threads.filter(t=>t.unread).slice(0,2).map(t=>(
-          <div key={t.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', alignItems:'center', gap:10 }}>
-            <span style={{ fontSize:20 }}>{t.avatar}</span>
-            <div style={{ flex:1, minWidth:0 }}>
-              <div style={{ fontWeight:700, fontSize:12, color:T.text }}>{t.from}</div>
-              <div style={{ fontSize:10, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.messages[t.messages.length-1]?.text}</div>
-            </div>
-            <div style={{ width:8, height:8, borderRadius:'50%', background:T.red, flexShrink:0 }}/>
+      {show('messages') && wrap('messages',
+        <Widget onClick={()=>navigate('messages')}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div style={{ fontSize:13, fontWeight:700 }}>💬 Messages</div>
+            <Btn label="+ New" color={T.secondary} onClick={()=>navigate('messages')}/>
           </div>
-        ))}
-        {!STUDENT.threads.some(t=>t.unread) && <div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}
-      </Widget>
+          {STUDENT.threads.filter(t=>t.unread).slice(0,2).map(t=>(
+            <div key={t.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', alignItems:'center', gap:10 }}>
+              <span style={{ fontSize:20 }}>{t.avatar}</span>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ fontWeight:700, fontSize:12, color:T.text }}>{t.from}</div>
+                <div style={{ fontSize:10, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.messages[t.messages.length-1]?.text}</div>
+              </div>
+              <div style={{ width:8, height:8, borderRadius:'50%', background:T.red, flexShrink:0 }}/>
+            </div>
+          ))}
+          {!STUDENT.threads.some(t=>t.unread) && <div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}
+        </Widget>
+      )}
 
       {/* W6: Class Feed */}
-      <Widget onClick={()=>navigate('feed')}>
-        <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>📢 Class Feed</div>
-        {STUDENT.feed.slice(0,1).map(p=>(
-          <div key={p.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px' }}>
-            <div style={{ fontSize:11, fontWeight:600, color:T.secondary, marginBottom:4 }}>{p.author}</div>
-            <div style={{ fontSize:12, color:T.text, lineHeight:1.5 }}>{p.content}</div>
-            <div style={{ fontSize:10, color:T.muted, marginTop:6 }}>{p.time}</div>
-          </div>
-        ))}
-      </Widget>
+      {show('feed') && wrap('feed',
+        <Widget onClick={()=>navigate('feed')}>
+          <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>📢 Class Feed</div>
+          {STUDENT.feed.slice(0,1).map(p=>(
+            <div key={p.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, fontWeight:600, color:T.secondary, marginBottom:4 }}>{p.author}</div>
+              <div style={{ fontSize:12, color:T.text, lineHeight:1.5 }}>{p.content}</div>
+              <div style={{ fontSize:10, color:T.muted, marginTop:6 }}>{p.time}</div>
+            </div>
+          ))}
+        </Widget>
+      )}
 
-      {/* W7: AI Study Tips — mic pinned far right */}
-      <Widget style={{ background:'linear-gradient(135deg,#0d1a3a 0%,#000d1f 100%)', border:`1px solid ${T.purple}30` }}>
-        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:T.purple }}>✨ AI Study Tips</div>
-          <button
-            onClick={e=>{ e.stopPropagation(); setVoiceOpen(true) }}
-            title="Start voice session with Spark"
-            style={{ background:`${T.purple}25`, border:`1px solid ${T.purple}50`, borderRadius:8, width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:15, padding:0, flexShrink:0 }}>
-            🎤
-          </button>
-        </div>
-        <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:4 }}>Science needs your focus! 📚</div>
-        <div style={{ fontSize:11, color:T.muted }}>10 min flashcards tonight · same strategy that boosted Reading +8pts</div>
-      </Widget>
+      {/* W7: AI Study Tips */}
+      {show('aiTips') && wrap('aiTips',
+        <Widget style={{ background:'linear-gradient(135deg,#0d1a3a 0%,#000d1f 100%)', border:`1px solid ${T.purple}30` }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:6 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:T.purple }}>✨ AI Study Tips</div>
+            <button onClick={e=>{ e.stopPropagation(); setVoiceOpen(true) }} title="Start voice session with Spark"
+              style={{ background:`${T.purple}25`, border:`1px solid ${T.purple}50`, borderRadius:8, width:30, height:30, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:15, padding:0, flexShrink:0 }}>
+              🎤
+            </button>
+          </div>
+          <div style={{ fontSize:13, fontWeight:700, color:T.text, marginBottom:4 }}>Science needs your focus! 📚</div>
+          <div style={{ fontSize:11, color:T.muted }}>10 min flashcards tonight · same strategy that boosted Reading +8pts</div>
+        </Widget>
+      )}
+
+      {/* W8: Upload Assignment */}
+      {show('upload') && wrap('upload',
+        <Widget onClick={()=>navigate('scan')} style={{ background:'linear-gradient(135deg,#0a1a0a,#000d1f)', border:`1px solid ${T.green}20` }}>
+          <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+            <span style={{ fontSize:28 }}>📤</span>
+            <div>
+              <div style={{ fontSize:13, fontWeight:700, color:T.green, marginBottom:2 }}>Upload Assignment</div>
+              <div style={{ fontSize:11, color:T.muted }}>Photo · File · Link · Note to teacher</div>
+            </div>
+            <span style={{ color:T.green, fontSize:18, marginLeft:'auto' }}>›</span>
+          </div>
+        </Widget>
+      )}
 
       {/* Voice Tutor Modal */}
       {voiceOpen && <VoiceTutorModal onClose={()=>setVoiceOpen(false)}/>}
 
-      {/* W8: Upload Assignment */}
-      <Widget onClick={()=>navigate('scan')} style={{ background:'linear-gradient(135deg,#0a1a0a,#000d1f)', border:`1px solid ${T.green}20` }}>
-        <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-          <span style={{ fontSize:28 }}>📤</span>
-          <div>
-            <div style={{ fontSize:13, fontWeight:700, color:T.green, marginBottom:2 }}>Upload Assignment</div>
-            <div style={{ fontSize:11, color:T.muted }}>Photo · File · Link · Note to teacher</div>
-          </div>
-          <span style={{ color:T.green, fontSize:18, marginLeft:'auto' }}>›</span>
-        </div>
-      </Widget>
+      {/* Add Widgets button */}
+      <div style={{ marginTop:16, textAlign:'center', paddingBottom:8 }}>
+        <button onClick={()=>setShowAddWidgets(true)} type="button"
+          style={{ background:'var(--school-color)', border:'none', borderRadius:14, padding:'12px 28px', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer' }}>
+          + Add widgets
+        </button>
+      </div>
     </div>
   )
 }
@@ -760,7 +817,7 @@ function HomePage({ navigate }) {
 export default function StudentDashboard({ currentUser }) {
   const location = useLocation()
   const [page, setPage]           = useState('home')
-  const [activeNav, setActiveNav] = useState('grades')
+  const [activeNav, setActiveNav] = useState('dashboard')
 
   useEffect(()=>{
     const next = location?.state?.open
@@ -773,18 +830,20 @@ export default function StudentDashboard({ currentUser }) {
 
   useEffect(()=>{ window.scrollTo(0,0) },[page])
 
+  function goHome() { setPage('home'); setActiveNav('dashboard'); window.scrollTo(0,0) }
+
   function navigate(id) {
+    if (id === '__back__') { goHome(); return }
     setPage(id)
-    if(NAV_ITEMS.find(n=>n.id===id)) setActiveNav(id)
+    setActiveNav(id)
     window.scrollTo(0,0)
   }
 
-  function goHome() { navigate('home'); setActiveNav('grades') }
-
-  if (page==='grades')   return <><GradesPage   onBack={goHome}/><BottomNav active={activeNav} onSelect={navigate}/></>
-  if (page==='messages') return <><MessagesPage onBack={goHome}/><BottomNav active='messages'  onSelect={navigate}/></>
-  if (page==='alerts')   return <><AlertsPage   onBack={goHome}/><BottomNav active={activeNav} onSelect={navigate}/></>
-  if (page==='widgets')  return <><Widgets      onBack={goHome}/><BottomNav active='widgets' onSelect={navigate}/></>
+  if (page==='classes')  return <><GradesPage   onBack={goHome}/><SharedBottomNav role="student" active="classes"  onSelect={navigate}/></>
+  if (page==='grades')   return <><GradesPage   onBack={goHome}/><SharedBottomNav role="student" active="classes"  onSelect={navigate}/></>
+  if (page==='messages') return <><MessagesPage onBack={goHome}/><SharedBottomNav role="student" active="messages" onSelect={navigate}/></>
+  if (page==='alerts')   return <><AlertsPage   onBack={goHome}/><SharedBottomNav role="student" active="alerts"   onSelect={navigate}/></>
+  if (page==='widgets')  return <><Widgets      onBack={goHome}/><SharedBottomNav role="student" active={activeNav} onSelect={navigate}/></>
 
   const now = new Date()
   const hour = now.getHours()
@@ -813,7 +872,7 @@ export default function StudentDashboard({ currentUser }) {
       </div>
 
       <HomePage navigate={navigate}/>
-      <BottomNav active={activeNav} onSelect={navigate}/>
+      <SharedBottomNav role="student" active={activeNav} onSelect={navigate}/>
     </div>
   )
 }
