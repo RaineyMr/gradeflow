@@ -101,7 +101,7 @@ const DEFAULT_CONNECTIONS = {
   infiniteCampus:  { connected: false, label: 'Infinite Campus',      url: 'https://infinitecampus.com',     category: 'roster',  icon: '🎓', description: 'Roster sync + grade passback'        },
   skyward:         { connected: false, label: 'Skyward',              url: 'https://skyward.com',            category: 'roster',  icon: '🌤', description: 'Student info + gradebook sync'       },
   canvas:          { connected: false, label: 'Canvas LMS',           url: 'https://canvas.instructure.com', category: 'lms',     icon: '🖼', description: 'Assignments, grades, submissions'    },
-  googleClassroom: { connected: true,  label: 'Google Classroom',     url: 'https://classroom.google.com',   category: 'lms',     icon: '🟢', description: 'Assignments + roster import',        lastSync: 'Today 8:42am' },
+  googleClassroom: { connected: false,  label: 'Google Classroom',     url: 'https://classroom.google.com',   category: 'lms',     icon: '🟢', description: 'Assignments + roster import',        lastSync: 'Today 8:42am' },
   planbook:        { connected: false, label: 'Planbook',             url: 'https://planbook.com',           category: 'lessons', icon: '📅', description: 'Import your lesson plan calendar'    },
   chalk:           { connected: false, label: 'Chalk',                url: 'https://chalk.com',              category: 'lessons', icon: '🖊', description: 'Curriculum maps + lesson plans'     },
   tpt:             { connected: false, label: 'Teachers Pay Teachers', url: 'https://teacherspayteachers.com',category: 'lessons', icon: '💼', description: 'Import purchased lesson resources'   },

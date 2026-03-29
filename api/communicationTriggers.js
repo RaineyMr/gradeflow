@@ -1,6 +1,14 @@
-// src/lib/communicationTriggers.js
+// api/communicationTriggers.js
 // Auto-send logic for grade-triggered parent communications.
 // Called by store.js updateGrade() after writing to Supabase.
+//
+// IMPORTANT: This file runs server-side (called from within /api/ routes).
+// It uses process.env.ANTHROPIC_API_KEY — NOT import.meta.env.
+// It calls Anthropic directly (server-to-server is fine) rather than
+// routing through the /api/ai proxy (which would be an HTTP loop).
+
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
+const MODEL         = 'claude-sonnet-4-20250514'
 
 // ─── Default trigger settings (used if teacher hasn't configured yet) ─────────
 export const DEFAULT_TRIGGER_SETTINGS = {
@@ -22,38 +30,47 @@ export function getLetter(pct) {
   return 'F'
 }
 
-// ─── Translate message via Claude ─────────────────────────────────────────────
+// ─── Server-side Anthropic helper ─────────────────────────────────────────────
+// FIXED: uses process.env.ANTHROPIC_API_KEY (server env), not import.meta.env
+async function callAnthropic(messages, system, max_tokens = 300) {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    console.warn('[communicationTriggers] ANTHROPIC_API_KEY not set — skipping AI draft')
+    return null
+  }
+  try {
+    const res = await fetch(ANTHROPIC_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type':      'application/json',
+        'x-api-key':         apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({ model: MODEL, max_tokens, system, messages }),
+    })
+    const data = await res.json()
+    return data.content?.[0]?.text || null
+  } catch (err) {
+    console.error('[communicationTriggers] Anthropic call failed:', err.message)
+    return null
+  }
+}
+
+// ─── Translate message via Claude (server-side) ───────────────────────────────
 async function translateMessage(text, targetLang) {
   if (targetLang === 'en' || !targetLang) return text
   const langNames = { es: 'Spanish', fr: 'French', zh: 'Chinese', pt: 'Portuguese', ar: 'Arabic' }
   const langName  = langNames[targetLang] || targetLang
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'x-api-key':       import.meta.env.VITE_ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 500,
-        messages: [{
-          role:    'user',
-          content: `Translate this school communication to ${langName}. Return only the translated text, no explanation:\n\n${text}`,
-        }],
-      }),
-    })
-    const data = await response.json()
-    return data.content?.[0]?.text || text
-  } catch {
-    return text // fall back to English on error
-  }
+  const result = await callAnthropic(
+    [{ role: 'user', content: `Translate this school communication to ${langName}. Return only the translated text, no explanation:\n\n${text}` }],
+    'You translate school communications accurately and naturally.',
+    500
+  )
+  return result || text
 }
 
-// ─── Generate AI draft for a trigger ──────────────────────────────────────────
+// ─── Generate AI draft for a trigger (server-side) ────────────────────────────
 async function generateDraft(trigger, studentName, subject, score, teacherName, channel) {
   const isShort = channel === 'sms'
   const lengthGuide = isShort
@@ -70,30 +87,11 @@ async function generateDraft(trigger, studentName, subject, score, teacherName, 
 
   const situation = triggerDescriptions[trigger] || `update about ${studentName} in ${subject}`
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'x-api-key':       import.meta.env.VITE_ANTHROPIC_KEY,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        system:     `You write school-to-parent communications for ${teacherName}. ${lengthGuide} Return only the message text.`,
-        messages: [{
-          role:    'user',
-          content: `Write a parent notification: ${situation}.`,
-        }],
-      }),
-    })
-    const data = await response.json()
-    return data.content?.[0]?.text || null
-  } catch {
-    return null
-  }
+  return callAnthropic(
+    [{ role: 'user', content: `Write a parent notification: ${situation}.` }],
+    `You write school-to-parent communications for ${teacherName}. ${lengthGuide} Return only the message text.`,
+    200
+  )
 }
 
 // ─── Main trigger function — call this from store.updateGrade() ───────────────

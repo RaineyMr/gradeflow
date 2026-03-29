@@ -1,13 +1,12 @@
 import React, { useRef, useState } from 'react'
 import { useStore } from '../lib/store'
+import { generateLessonPlan, callAI } from '../lib/ai'
 
 const C = {
   bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8',
   muted:'#6b7494', border:'#2a2f42', green:'#22c97a', blue:'#3b7ef4',
   amber:'#f5a623', purple:'#9b6ef5', teal:'#0fb8a0',
 }
-
-const ANTHROPIC_KEY = import.meta.env.VITE_ANTHROPIC_KEY
 
 function safeParseJSON(text) {
   try { return JSON.parse(text.replace(/```json|```/g, '').trim()) } catch {}
@@ -70,6 +69,7 @@ function LessonView({ lesson, onBack, onEdit }) {
 }
 
 // ─── AI Generator ─────────────────────────────────────────────────────────────
+// FIXED: routes through /api/ai via src/lib/ai.js — no direct Anthropic calls
 function AIGenerator({ onBack }) {
   const [form, setForm] = useState({ state:'Texas', subject:'', grade:'', textbook:'', topic:'', standard:'' })
   const [loading, setLoading] = useState(false)
@@ -80,25 +80,35 @@ function AIGenerator({ onBack }) {
 
   async function handleGenerate() {
     if (!form.subject || !form.topic) { setError('Subject and topic are required.'); return }
-    if (!ANTHROPIC_KEY) { setError('Add VITE_ANTHROPIC_KEY to your .env file.'); return }
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'x-api-key':ANTHROPIC_KEY, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:2000,
-          system:'You are an expert curriculum designer. Return ONLY valid JSON with no markdown.',
-          messages:[{ role:'user', content:`Create a complete lesson plan. State: ${form.state}, Subject: ${form.subject}, Grade: ${form.grade || 'not specified'}, Topic: ${form.topic}, Standard: ${form.standard || 'not specified'}, Textbook: ${form.textbook || 'not specified'}. Return JSON: {"title":"","objectives":[""],"materials":[""],"steps":[""],"assessment":[""],"homework":[""],"notes":""}` }]
-        })
+      // Route through the secure proxy — generateLessonPlan calls /api/ai with intent:'lessonPlan'
+      const result = await generateLessonPlan({
+        subject:   `${form.subject}${form.state ? ' (' + form.state + ')' : ''}`,
+        grade:     form.grade || 'Not specified',
+        topic:     form.topic,
+        duration:  50,
+        standards: [form.standard, form.textbook].filter(Boolean).join(', '),
       })
-      const data = await res.json()
-      const parsed = safeParseJSON(data.content?.[0]?.text || '')
-      if (parsed) setPlan(parsed)
-      else setError('AI returned unexpected format. Try again.')
+      // generateLessonPlan returns structured JSON — map to the display shape
+      const mapped = {
+        title:       result.title || `${form.topic} — ${form.subject}`,
+        objectives:  result.objective ? [result.objective] : [],
+        materials:   result.materials || [],
+        steps:       [
+          result.warmup?.activity && `Warm-Up (${result.warmup.duration} min): ${result.warmup.activity}`,
+          ...(result.instruction?.steps || []),
+          result.practice?.activity && `Practice (${result.practice.duration} min): ${result.practice.activity}`,
+          result.assessment?.method && `Assessment (${result.assessment.duration} min): ${result.assessment.method}`,
+        ].filter(Boolean),
+        assessment:  result.assessment?.method ? [result.assessment.method] : [],
+        homework:    result.homework ? [result.homework] : [],
+        notes:       '',
+      }
+      setPlan(mapped)
     } catch (err) {
-      setError('Generation failed. Check your API key.')
+      setError(err.message || 'Generation failed. Please try again.')
     }
     setLoading(false)
   }
@@ -243,7 +253,6 @@ function UploadDoc({ onBack }) {
       <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 6px' }}>📄 Upload Lesson Plan</h1>
       <p style={{ color:C.muted, fontSize:13, marginBottom:20 }}>PDF · Word · CSV · Excel · Google Doc · Any format</p>
-      {/* UPDATED: now accepts CSV and Excel in addition to existing formats */}
       <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,image/*" onChange={handleFile} style={{ display:'none' }} />
       <button onClick={() => fileRef.current?.click()}
         style={{ width:'100%', background:C.card, border:`2px dashed ${C.border}`, borderRadius:18, padding:'40px 20px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
@@ -275,9 +284,9 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
       <p style={{ color:C.muted, fontSize:13, margin:'0 0 24px' }}>Create · Upload · AI-generate</p>
 
       {[
-        { id:'ai',     icon:'✨', label:'AI Generate',      desc:'Fill in subject, grade, topic → full lesson plan',         color:C.purple },
-        { id:'build',  icon:'📝', label:'Build from Scratch', desc:'Write your own lesson plan with guided sections',         color:C.blue   },
-        { id:'upload', icon:'📤', label:'Upload Document',  desc:'PDF · Word · CSV · Excel · Image — AI imports it',         color:C.teal   },
+        { id:'ai',     icon:'✨', label:'AI Generate',      desc:'Fill in subject, grade, topic → full lesson plan',    color:C.purple },
+        { id:'build',  icon:'📝', label:'Build from Scratch', desc:'Write your own lesson plan with guided sections',   color:C.blue   },
+        { id:'upload', icon:'📤', label:'Upload Document',  desc:'PDF · Word · CSV · Excel · Image — AI imports it',   color:C.teal   },
       ].map(item => (
         <button key={item.id} onClick={() => setMode(item.id)}
           style={{ width:'100%', background:C.card, border:`1px solid ${item.color}22`, borderRadius:16, padding:16, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14, marginBottom:12 }}

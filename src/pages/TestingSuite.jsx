@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { useStore } from '../lib/store'
+import { callAI } from '../lib/ai'
 
 const C = {
   bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8',
@@ -110,24 +111,24 @@ export default function TestingSuite({ onBack }) {
     setQuestions(q => [...q, { id:Date.now(), type, text:'', options:{A:'',B:'',C:'',D:''}, correct:'', answer:'' }])
   }
 
+  // FIXED: routes through /api/ai via callAI() — no direct Anthropic calls, no VITE_ANTHROPIC_KEY exposure
   async function aiGenerateQuestions() {
-    const key = import.meta.env.VITE_ANTHROPIC_KEY
-    if (!key) { alert('Add VITE_ANTHROPIC_KEY to use AI question generation.'); return }
     setGenerating(true)
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
-        body: JSON.stringify({
-          model:'claude-sonnet-4-20250514', max_tokens:1500,
-          messages:[{ role:'user', content:`Generate 5 multiple choice questions for a ${activeClass?.subject||'Math'} test, grade level appropriate. Return ONLY valid JSON: {"questions":[{"type":"mc","text":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A"}]}` }]
-        })
-      })
-      const data = await res.json()
-      const text = data.content?.[0]?.text || ''
-      const parsed = safeJSON(text)
-      if (parsed?.questions) setQuestions(q => [...q, ...parsed.questions.map((q,i) => ({ ...q, id:Date.now()+i }))])
-    } catch { alert('Generation failed. Check your API key.') }
+      const subject = activeClass?.subject || 'Math'
+      const prompt = `Generate 5 multiple choice questions for a ${subject} test, grade level appropriate. Return ONLY valid JSON with no markdown: {"questions":[{"type":"mc","text":"...","options":{"A":"...","B":"...","C":"...","D":"..."},"correct":"A"}]}`
+      const system = 'You are an expert educator. Generate clear, appropriate test questions. Return ONLY valid JSON, no markdown fences.'
+
+      const responseText = await callAI(prompt, system, 1500)
+      const parsed = safeJSON(responseText)
+      if (parsed?.questions) {
+        setQuestions(q => [...q, ...parsed.questions.map((q, i) => ({ ...q, id: Date.now() + i }))])
+      } else {
+        alert('AI returned unexpected format. Try again.')
+      }
+    } catch (err) {
+      alert('Generation failed: ' + (err.message || 'Unknown error'))
+    }
     setGenerating(false)
   }
 
@@ -216,8 +217,8 @@ export default function TestingSuite({ onBack }) {
               </button>
             ))}
             <button onClick={aiGenerateQuestions} disabled={generating}
-              style={{ background:`${C.purple}22`, border:`1px solid ${C.purple}33`, borderRadius:10, padding:'8px 14px', color:C.purple, cursor:'pointer', fontSize:12, fontWeight:700 }}>
-              {generating ? '...' : '✨ AI Generate'}
+              style={{ background:`${C.purple}22`, border:`1px solid ${C.purple}33`, borderRadius:10, padding:'8px 14px', color:C.purple, cursor:generating?'not-allowed':'pointer', fontSize:12, fontWeight:700, opacity:generating?0.6:1 }}>
+              {generating ? '⟳ Generating...' : '✨ AI Generate'}
             </button>
           </div>
           {questions.length > 0 && (
@@ -256,7 +257,6 @@ export default function TestingSuite({ onBack }) {
       <button onClick={() => setMode('menu')} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 6px' }}>📄 File Import</h1>
       <p style={{ color:C.muted, fontSize:13, margin:'0 0 20px' }}>Upload any test file · AI digitizes it · All questions become editable.</p>
-      {/* UPDATED: now accepts CSV, Excel, Word, images in addition to PDF */}
       <input type="file" accept=".pdf,.csv,.xlsx,.xls,.doc,.docx,image/*"
         onChange={e => { setPdfFile(e.target.files?.[0]); setTimeout(() => setMode('builder'), 2000) }}
         style={{ display:'none' }} id="pdf-upload" />
