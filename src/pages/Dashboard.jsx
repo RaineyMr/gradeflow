@@ -816,7 +816,6 @@ function SettingsPage({ onBack, navigate }) {
 
 // ─── HOME FEED ────────────────────────────────────────────────────────────────
 const WIDGET_CATALOG = [
-  { id:'dailyOverview',  label:'Daily Overview',             icon:'📅', desc:'Class count, messages, alerts' },
   { id:'todaysLessons',  label:"Today's Lessons",            icon:'📘', desc:'Lesson plan and class schedule' },
   { id:'classes',        label:'My Classes',                 icon:'🏫', desc:'Quick class cards and progress' },
   { id:'needsAttention', label:'Needs Attention',            icon:'⚑',  desc:'At-risk students' },
@@ -910,24 +909,22 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
         </div>
       )}
 
-      {/* W1: Daily Overview */}
-      {show('dailyOverview') && wrap('dailyOverview',
-        <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
-            {overviewTiles.map(tile=>(
-              <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
-                style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'background 0.15s' }}
-                onMouseEnter={e=>(e.currentTarget.style.background=`${tile.color}30`)}
-                onMouseLeave={e=>(e.currentTarget.style.background=`${tile.color}18`)}>
-                <span style={{ fontSize:16 }}>{tile.icon}</span>
-                {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
-                <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
-              </button>
-            ))}
-          </div>
-        </Widget>
-      )}
+      {/* W1: Daily Overview — always present, no remove button */}
+      <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+          {overviewTiles.map(tile=>(
+            <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
+              style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'background 0.15s' }}
+              onMouseEnter={e=>(e.currentTarget.style.background=`${tile.color}30`)}
+              onMouseLeave={e=>(e.currentTarget.style.background=`${tile.color}18`)}>
+              <span style={{ fontSize:16 }}>{tile.icon}</span>
+              {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
+              <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
+            </button>
+          ))}
+        </div>
+      </Widget>
 
       {/* W2: Today's Lessons */}
       {show('todaysLessons') && wrap('todaysLessons', <TodaysLessonsWidget navigate={navigate}/>)}
