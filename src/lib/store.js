@@ -366,16 +366,85 @@ export const useStore = create((set, get) => ({
       const messages    = (messagesRes.data   || []).map(mapMessage)
       const feed        = (feedRes.data       || []).map(mapFeedPost)
 
-      // Build lessonsById as a dictionary keyed by class_id
       const lessonsById = {}
       for (const row of (lessonsRes.data || [])) {
         const lesson = mapLesson(row)
-        const classId = row.class_id
-        if (!lessonsById[classId]) {
-          lessonsById[classId] = []
-        }
-        lessonsById[classId].push(lesson)
+        if (!lessonsById[row.class_id]) lessonsById[row.class_id] = []
+        lessonsById[row.class_id].push(lesson)
       }
+// ── Student Accommodations ────────────────────────────────────────────────────
+// Keyed by student name (string) for demo compatibility.
+// In production this should key by student UUID.
+// Shape per entry:
+//   {
+//     name: string,
+//     accommodationType: 'IEP' | '504' | 'ELL' | 'Gifted' | 'Other',
+//     specificNeeds: string[],          // e.g. ['Extended time', 'Preferential seating']
+//     lessonAdjustments: string[],      // AI-generated per lesson, refreshed each time
+//     notes: string,
+//   }
+
+studentAccommodations: {},   // { [studentName]: accommodationObject }
+
+setAccommodations: (accommodations) => set(() => {
+  // accommodations is an array from extractAccommodations()
+  // Convert to keyed object by student name
+  const keyed = {}
+  for (const s of accommodations) {
+    keyed[s.name] = {
+      name:               s.name,
+      accommodationType:  s.accommodationType || 'Other',
+      specificNeeds:      s.specificNeeds     || [],
+      lessonAdjustments:  [],
+      notes:              s.notes             || '',
+    }
+  }
+  return { studentAccommodations: keyed }
+}),
+
+updateAccommodation: (studentName, changes) => set(state => ({
+  studentAccommodations: {
+    ...state.studentAccommodations,
+    [studentName]: {
+      ...(state.studentAccommodations[studentName] || { name: studentName, accommodationType: 'Other', specificNeeds: [], lessonAdjustments: [], notes: '' }),
+      ...changes,
+    },
+  },
+})),
+
+addAccommodation: (studentName) => set(state => {
+  if (state.studentAccommodations[studentName]) return {}  // already exists
+  return {
+    studentAccommodations: {
+      ...state.studentAccommodations,
+      [studentName]: {
+        name:              studentName,
+        accommodationType: 'Other',
+        specificNeeds:     [],
+        lessonAdjustments: [],
+        notes:             '',
+      },
+    },
+  }
+}),
+
+removeAccommodation: (studentName) => set(state => {
+  const next = { ...state.studentAccommodations }
+  delete next[studentName]
+  return { studentAccommodations: next }
+}),
+
+setLessonAdjustments: (adjustments) => set(state => {
+  // adjustments is the array from generateLessonAccommodations()
+  // Merges into existing accommodation entries without overwriting other fields
+  const next = { ...state.studentAccommodations }
+  for (const { studentName, adjustments: adj } of adjustments) {
+    if (next[studentName]) {
+      next[studentName] = { ...next[studentName], lessonAdjustments: adj }
+    }
+  }
+  return { studentAccommodations: next }
+}),
 
       set({
         classes:     classes.length     > 0 ? classes     : DEMO_CLASSES,
