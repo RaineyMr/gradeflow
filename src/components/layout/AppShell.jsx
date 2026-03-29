@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useStore } from '../../lib/store'
 import { useT } from '../../lib/i18n'
+import { GradebookSyncButton } from '../GradebookSyncButton.jsx'
 
 const ROLE_LABELS = {
   teacher: 'Teacher',
@@ -236,6 +237,9 @@ export default function AppShell() {
           >
             📷
           </button>
+
+          {/* Sync button */}
+          <GradebookSyncButton />
 
           {/* Hamburger menu */}
           <div ref={menuRef} style={{ position: 'relative' }}>
