@@ -38,6 +38,37 @@ function Section({ title, items }) {
   )
 }
 
+// ─── Lesson View ──────────────────────────────────────────────────────────────
+function LessonView({ lesson, onBack, onEdit }) {
+  const STATUS_COLOR = { done: C.green, tbd: C.amber, pending: C.teal }
+  const STATUS_LABEL = { done: 'Done', tbd: 'TBD', pending: 'Pending' }
+  const sc = STATUS_COLOR[lesson.status] || C.teal
+
+  return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
+        <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>{'<'} Back</button>
+        <button onClick={onEdit} style={{ background:'var(--school-color)', border:'none', borderRadius:10, padding:'8px 16px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700 }}>Edit</button>
+      </div>
+
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+        <span style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em' }}>{lesson.dayLabel}</span>
+        <span style={{ fontSize:11, color:C.muted }}>{'\u00b7'}</span>
+        <span style={{ fontSize:11, color:C.muted }}>{lesson.date}</span>
+        <span style={{ marginLeft:'auto', background:`${sc}22`, color:sc, borderRadius:6, padding:'2px 8px', fontSize:11, fontWeight:700 }}>{STATUS_LABEL[lesson.status]}</span>
+      </div>
+      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{lesson.title}</h1>
+      <p style={{ color:C.muted, fontSize:12, margin:'0 0 20px' }}>{lesson.duration}{lesson.pages ? ` ${'\u00b7'} ${lesson.pages}` : ''}</p>
+
+      <Section title="Objective" items={[lesson.objective]} />
+      {lesson.warmup?.length > 0      && <Section title="Warm-Up"    items={lesson.warmup} />}
+      {lesson.activities?.length > 0  && <Section title="Activities" items={lesson.activities} />}
+      {lesson.materials?.length > 0   && <Section title="Materials"  items={lesson.materials} />}
+      {lesson.homework && <Section title="Homework" items={[lesson.homework]} />}
+    </div>
+  )
+}
+
 // ─── AI Generator ─────────────────────────────────────────────────────────────
 function AIGenerator({ onBack }) {
   const [form, setForm] = useState({ state:'Texas', subject:'', grade:'', textbook:'', topic:'', standard:'' })
@@ -225,11 +256,14 @@ function UploadDoc({ onBack }) {
 }
 
 // ─── Main Menu ────────────────────────────────────────────────────────────────
-export default function LessonPlan({ initialMode, onBack }) {
-  const { goBack } = useStore()
+export default function LessonPlan({ initialMode, classId, onBack }) {
+  const { goBack, getTodayLesson } = useStore()
   const handleBack = onBack || goBack
-  const [mode, setMode] = useState(initialMode || 'menu')
+  const todayLesson = classId ? getTodayLesson(classId) : null
+  const startMode = initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu')
+  const [mode, setMode] = useState(startMode)
 
+  if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
   if (mode === 'ai')     return <AIGenerator      onBack={() => setMode('menu')} />
   if (mode === 'build')  return <BuildFromScratch  onBack={() => setMode('menu')} />
   if (mode === 'upload') return <UploadDoc         onBack={() => setMode('menu')} />
