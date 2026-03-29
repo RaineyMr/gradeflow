@@ -299,7 +299,7 @@ export default function AdminDashboard({ currentUser }) {
     <div key={id} style={{ position:'relative', marginTop:16, margin:'16px 16px 0' }}>
       <button onClick={e=>{ e.stopPropagation(); removeWidget(id) }} title="Remove widget"
         style={{ position:'absolute', top:-10, right:8, zIndex:20, width:22, height:22, borderRadius:'50%', background:C.bg, border:'1px solid rgba(255,255,255,0.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1, boxShadow:'0 2px 6px rgba(0,0,0,0.4)' }}>
-        {\'\u00d7\'}
+        x
       </button>
       {content}
     </div>
@@ -387,7 +387,7 @@ export default function AdminDashboard({ currentUser }) {
                 <div style={{ fontSize:17, fontWeight:800, color:C.text }}>+ Add Widgets</div>
                 <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Tap a widget to add or remove from your dashboard</div>
               </div>
-              <button onClick={()=>setShowAddWidgets(false)} style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{'\u00d7'}</button>
+              <button onClick={()=>setShowAddWidgets(false)} style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>{'x'}</button>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
               {ADMIN_WIDGET_CATALOG.map(w=>{
