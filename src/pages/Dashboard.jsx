@@ -894,13 +894,13 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
                 const isActive = activeWidgets.includes(w.id)
                 return (
                   <button key={w.id}
-                    onClick={()=>{ if(!isActive){ addWidget(w.id); setShowAddWidgets(false) } }}
-                    style={{ textAlign:'left', background:isActive?`${C.green}12`:C.inner, border:`1px solid ${isActive?`${C.green}35`:C.border}`, borderRadius:14, padding:'12px 12px', cursor:isActive?'default':'pointer', opacity:isActive?0.55:1 }}>
+                    onClick={()=>{ isActive ? removeWidget(w.id) : addWidget(w.id) }}
+                    style={{ textAlign:'left', background:isActive?`${C.green}12`:C.inner, border:`1px solid ${isActive?`${C.green}35`:C.border}`, borderRadius:14, padding:'12px 12px', cursor:'pointer' }}>
                     <div style={{ fontSize:22, marginBottom:6 }}>{w.icon}</div>
                     <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{w.label}</div>
                     <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{w.desc}</div>
-                    <div style={{ marginTop:8, fontSize:10, fontWeight:700, color:isActive?C.green:C.teal }}>
-                      {isActive ? '✓ On dashboard' : '+ Add'}
+                    <div style={{ marginTop:8, fontSize:10, fontWeight:700, color:isActive?C.red:C.teal }}>
+                      {isActive ? '✕ Remove' : '+ Add'}
                     </div>
                   </button>
                 )
