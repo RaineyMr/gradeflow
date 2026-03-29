@@ -97,16 +97,16 @@ const CURRICULUM_SOURCES = [
 ]
 
 const DEFAULT_CONNECTIONS = {
-  powerSchool:     { connected: false, label: 'PowerSchool',          url: 'https://powerschool.com',        category: 'roster',  icon: '🏫', description: 'Pull rosters + sync grades'         },
-  infiniteCampus:  { connected: false, label: 'Infinite Campus',      url: 'https://infinitecampus.com',     category: 'roster',  icon: '🎓', description: 'Roster sync + grade passback'        },
-  skyward:         { connected: false, label: 'Skyward',              url: 'https://skyward.com',            category: 'roster',  icon: '🌤', description: 'Student info + gradebook sync'       },
-  canvas:          { connected: false, label: 'Canvas LMS',           url: 'https://canvas.instructure.com', category: 'lms',     icon: '🖼', description: 'Assignments, grades, submissions'    },
-  googleClassroom: { connected: false,  label: 'Google Classroom',     url: 'https://classroom.google.com',   category: 'lms',     icon: '🟢', description: 'Assignments + roster import',        lastSync: 'Today 8:42am' },
-  planbook:        { connected: false, label: 'Planbook',             url: 'https://planbook.com',           category: 'lessons', icon: '📅', description: 'Import your lesson plan calendar'    },
-  chalk:           { connected: false, label: 'Chalk',                url: 'https://chalk.com',              category: 'lessons', icon: '🖊', description: 'Curriculum maps + lesson plans'     },
-  tpt:             { connected: false, label: 'Teachers Pay Teachers', url: 'https://teacherspayteachers.com',category: 'lessons', icon: '💼', description: 'Import purchased lesson resources'   },
-  googleDrive:     { connected: true,  label: 'Google Drive',         url: 'https://drive.google.com',       category: 'lessons', icon: '📁', description: 'Upload docs & lesson materials',     lastSync: 'Today 9:01am' },
-  clever:          { connected: false, label: 'Clever',               url: 'https://clever.com',             category: 'roster',  icon: '🔗', description: 'Single sign-on + roster sync'        },
+  powerSchool:     { connected: false, label: 'PowerSchool',           url: 'https://powerschool.com',         category: 'roster',  icon: '🏫', description: 'Pull rosters + sync grades'         },
+  infiniteCampus:  { connected: false, label: 'Infinite Campus',       url: 'https://infinitecampus.com',      category: 'roster',  icon: '🎓', description: 'Roster sync + grade passback'        },
+  skyward:         { connected: false, label: 'Skyward',               url: 'https://skyward.com',             category: 'roster',  icon: '🌤', description: 'Student info + gradebook sync'       },
+  canvas:          { connected: false, label: 'Canvas LMS',            url: 'https://canvas.instructure.com',  category: 'lms',     icon: '🖼', description: 'Assignments, grades, submissions'    },
+  googleClassroom: { connected: false, label: 'Google Classroom',      url: 'https://classroom.google.com',    category: 'lms',     icon: '🟢', description: 'Assignments + roster import',        lastSync: 'Today 8:42am' },
+  planbook:        { connected: false, label: 'Planbook',              url: 'https://planbook.com',            category: 'lessons', icon: '📅', description: 'Import your lesson plan calendar'    },
+  chalk:           { connected: false, label: 'Chalk',                 url: 'https://chalk.com',               category: 'lessons', icon: '🖊', description: 'Curriculum maps + lesson plans'     },
+  tpt:             { connected: false, label: 'Teachers Pay Teachers', url: 'https://teacherspayteachers.com', category: 'lessons', icon: '💼', description: 'Import purchased lesson resources'   },
+  googleDrive:     { connected: true,  label: 'Google Drive',          url: 'https://drive.google.com',        category: 'lessons', icon: '📁', description: 'Upload docs & lesson materials',     lastSync: 'Today 9:01am' },
+  clever:          { connected: false, label: 'Clever',                url: 'https://clever.com',              category: 'roster',  icon: '🔗', description: 'Single sign-on + roster sync'        },
 }
 
 // ─── Supabase row mappers ─────────────────────────────────────────────────────
@@ -115,10 +115,10 @@ function mapClass(row) {
     id:             row.id,
     period:         row.period,
     subject:        row.subject,
-    color:          row.color          || '#3b7ef4',
-    students:       row.student_count  || 0,
-    gpa:            row.gpa            || 0,
-    trend:          row.trend          || 'stable',
+    color:          row.color           || '#3b7ef4',
+    students:       row.student_count   || 0,
+    gpa:            row.gpa             || 0,
+    trend:          row.trend           || 'stable',
     needsAttention: row.needs_attention || 0,
   }
 }
@@ -133,7 +133,7 @@ function mapStudent(row) {
     email:          row.email          || '',
     grade:          Math.round(score),
     letter,
-    submitted:      row.submitted      ?? false,
+    submitted:      row.submitted       ?? false,
     submitUngraded: row.submit_ungraded ?? false,
     flagged:        score < 70,
   }
@@ -164,15 +164,15 @@ function mapGrade(row) {
 
 function mapMessage(row) {
   return {
-    id:           row.id,
-    studentName:  row.students?.name  || 'Unknown',
-    subject:      'General',
-    trigger:      row.trigger_type    || '',
-    status:       row.status,
-    tone:         row.tone,
-    draft:        row.draft_negative  || '',
-    positiveDraft:row.draft_positive  || '',
-    dayOld:       false,
+    id:            row.id,
+    studentName:   row.students?.name || 'Unknown',
+    subject:       'General',
+    trigger:       row.trigger_type   || '',
+    status:        row.status,
+    tone:          row.tone,
+    draft:         row.draft_negative || '',
+    positiveDraft: row.draft_positive || '',
+    dayOld:        false,
   }
 }
 
@@ -246,6 +246,90 @@ export const useStore = create((set, get) => ({
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
 
+  // ── Student Accommodations ───────────────────────────────────────────────────
+  // Keyed by student name (string) for demo compatibility.
+  // In production this should key by studentId / UUID.
+  studentAccommodations: {
+    // [studentName]: {
+    //   name: string,
+    //   accommodationType: 'IEP' | '504' | 'ELL' | 'Gifted' | 'Other',
+    //   specificNeeds: string[],       // e.g. ['Extended time', 'Preferential seating']
+    //   lessonAdjustments: string[],   // AI-generated per lesson, refreshed each time
+    //   notes: string,
+    // }
+  },
+
+  // Bulk set from AI extraction or roster upload
+  setAccommodations: (accommodations) => set(() => {
+    const keyed = {}
+    for (const s of accommodations) {
+      keyed[s.name] = {
+        name:              s.name,
+        accommodationType: s.accommodationType || 'Other',
+        specificNeeds:     s.specificNeeds     || [],
+        lessonAdjustments: [],
+        notes:             s.notes             || '',
+      }
+    }
+    return { studentAccommodations: keyed }
+  }),
+
+  // Edit a single student's accommodations (type, needs, notes, etc.)
+  updateAccommodation: (studentName, changes) => set(state => ({
+    studentAccommodations: {
+      ...state.studentAccommodations,
+      [studentName]: {
+        ...(state.studentAccommodations[studentName] || {
+          name:              studentName,
+          accommodationType: 'Other',
+          specificNeeds:     [],
+          lessonAdjustments: [],
+          notes:             '',
+        }),
+        ...changes,
+      },
+    },
+  })),
+
+  // Add a student manually
+  addAccommodation: (studentName) => set(state => {
+    if (state.studentAccommodations[studentName]) return {}
+    return {
+      studentAccommodations: {
+        ...state.studentAccommodations,
+        [studentName]: {
+          name:              studentName,
+          accommodationType: 'Other',
+          specificNeeds:     [],
+          lessonAdjustments: [],
+          notes:             '',
+        },
+      },
+    }
+  }),
+
+  // Remove a student
+  removeAccommodation: (studentName) => set(state => {
+    const next = { ...state.studentAccommodations }
+    delete next[studentName]
+    return { studentAccommodations: next }
+  }),
+
+  // Per-lesson AI adjustments (called after lesson plan generation)
+  setLessonAdjustments: (adjustments) => set(state => {
+    // adjustments: [{ studentName, adjustments: string[] }]
+    const next = { ...state.studentAccommodations }
+    for (const { studentName, adjustments: adj } of adjustments) {
+      if (next[studentName]) {
+        next[studentName] = {
+          ...next[studentName],
+          lessonAdjustments: adj,
+        }
+      }
+    }
+    return { studentAccommodations: next }
+  }),
+
   // ── Load all data from Supabase ───────────────────────────────────────────────
   loadFromDB: async () => {
     try {
@@ -276,91 +360,22 @@ export const useStore = create((set, get) => ({
       }
 
       const classes     = (classesRes.data    || []).map(mapClass)
-      const students    = (studentsRes.data    || []).map(mapStudent)
+      const students    = (studentsRes.data   || []).map(mapStudent)
       const assignments = (assignmentsRes.data || []).map(mapAssignment)
-      const grades      = (gradesRes.data      || []).map(mapGrade)
-      const messages    = (messagesRes.data    || []).map(mapMessage)
-      const feed        = (feedRes.data        || []).map(mapFeedPost)
+      const grades      = (gradesRes.data     || []).map(mapGrade)
+      const messages    = (messagesRes.data   || []).map(mapMessage)
+      const feed        = (feedRes.data       || []).map(mapFeedPost)
 
+      // Build lessonsById as a dictionary keyed by class_id
       const lessonsById = {}
       for (const row of (lessonsRes.data || [])) {
         const lesson = mapLesson(row)
-        if (!lessonsById[row.class_id]) lessonsById[row.class_id] = []
-        lessonsById[row.class_id].push(lesson)
+        const classId = row.class_id
+        if (!lessonsById[classId]) {
+          lessonsById[classId] = []
+        }
+        lessonsById[classId].push(lesson)
       }
-// ── Student Accommodations ────────────────────────────────────────────────────
-// Keyed by student name (string) for demo compatibility.
-// In production this should key by student UUID.
-// Shape per entry:
-//   {
-//     name: string,
-//     accommodationType: 'IEP' | '504' | 'ELL' | 'Gifted' | 'Other',
-//     specificNeeds: string[],          // e.g. ['Extended time', 'Preferential seating']
-//     lessonAdjustments: string[],      // AI-generated per lesson, refreshed each time
-//     notes: string,
-//   }
-
-studentAccommodations: {},   // { [studentName]: accommodationObject }
-
-setAccommodations: (accommodations) => set(() => {
-  // accommodations is an array from extractAccommodations()
-  // Convert to keyed object by student name
-  const keyed = {}
-  for (const s of accommodations) {
-    keyed[s.name] = {
-      name:               s.name,
-      accommodationType:  s.accommodationType || 'Other',
-      specificNeeds:      s.specificNeeds     || [],
-      lessonAdjustments:  [],
-      notes:              s.notes             || '',
-    }
-  }
-  return { studentAccommodations: keyed }
-}),
-
-updateAccommodation: (studentName, changes) => set(state => ({
-  studentAccommodations: {
-    ...state.studentAccommodations,
-    [studentName]: {
-      ...(state.studentAccommodations[studentName] || { name: studentName, accommodationType: 'Other', specificNeeds: [], lessonAdjustments: [], notes: '' }),
-      ...changes,
-    },
-  },
-})),
-
-addAccommodation: (studentName) => set(state => {
-  if (state.studentAccommodations[studentName]) return {}  // already exists
-  return {
-    studentAccommodations: {
-      ...state.studentAccommodations,
-      [studentName]: {
-        name:              studentName,
-        accommodationType: 'Other',
-        specificNeeds:     [],
-        lessonAdjustments: [],
-        notes:             '',
-      },
-    },
-  }
-}),
-
-removeAccommodation: (studentName) => set(state => {
-  const next = { ...state.studentAccommodations }
-  delete next[studentName]
-  return { studentAccommodations: next }
-}),
-
-setLessonAdjustments: (adjustments) => set(state => {
-  // adjustments is the array from generateLessonAccommodations()
-  // Merges into existing accommodation entries without overwriting other fields
-  const next = { ...state.studentAccommodations }
-  for (const { studentName, adjustments: adj } of adjustments) {
-    if (next[studentName]) {
-      next[studentName] = { ...next[studentName], lessonAdjustments: adj }
-    }
-  }
-  return { studentAccommodations: next }
-}),
 
       set({
         classes:     classes.length     > 0 ? classes     : DEMO_CLASSES,
@@ -489,14 +504,18 @@ setLessonAdjustments: (adjustments) => set(state => {
     const { assignments, grades, categories, gradingMethod } = get()
     const clsAssigns = assignments.filter(a => a.classId === classId)
     if (gradingMethod === 'total_points') {
-      const scored = clsAssigns.map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id)).filter(Boolean)
+      const scored = clsAssigns
+        .map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id))
+        .filter(Boolean)
       if (!scored.length) return null
       return Math.round(scored.reduce((s, g) => s + g.score, 0) / scored.length)
     }
     let total = 0, totalWeight = 0
     categories.forEach(cat => {
       const catAssigns = clsAssigns.filter(a => a.categoryId === cat.id)
-      const catGrades  = catAssigns.map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id)).filter(Boolean)
+      const catGrades  = catAssigns
+        .map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id))
+        .filter(Boolean)
       if (catGrades.length) {
         const avg = catGrades.reduce((s, g) => s + g.score, 0) / catGrades.length
         total       += avg * (cat.weight / 100)
@@ -561,10 +580,27 @@ setLessonAdjustments: (adjustments) => set(state => {
   addFeedPost: async (classId, content) => {
     const authorName = useStore.getState().teacher.name
     set(state => ({
-      feed: [{ id: Date.now(), classId, author: authorName, content, time: 'Just now', reactions: {}, confused: 0, questions: 0, approved: false }, ...state.feed],
+      feed: [
+        {
+          id: Date.now(),
+          classId,
+          author: authorName,
+          content,
+          time: 'Just now',
+          reactions: {},
+          confused: 0,
+          questions: 0,
+          approved: false,
+        },
+        ...state.feed,
+      ],
     }))
     const { error } = await supabase.from('feed_posts').insert({
-      class_id: classId, author_name: authorName, content, approved: false, reactions: {},
+      class_id: classId,
+      author_name: authorName,
+      content,
+      approved: false,
+      reactions: {},
     })
     if (error) console.error('Feed post sync failed:', error)
   },
