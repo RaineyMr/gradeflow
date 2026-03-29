@@ -103,6 +103,94 @@ Return ONLY valid JSON:
       }
     }
 
+    // ── NEW: Extract student accommodations from a roster document ───────────
+    // Accepts either an image/PDF (base64) or plain text content of a roster.
+    // Returns a structured list of students with their accommodation data.
+    case 'extractAccommodations': {
+      const { imageBase64, mediaType, textContent } = body
+
+      // Build content array — support both image uploads and plain text
+      const content = []
+
+      if (imageBase64 && mediaType) {
+        content.push({ type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } })
+      }
+
+      const textPrompt = textContent
+        ? `Here is the roster content:\n\n${textContent}\n\n`
+        : ''
+
+      content.push({
+        type: 'text',
+        text: `${textPrompt}Extract student accommodation information from this roster document.
+
+Look for any indicators of: IEP (Individualized Education Program), 504 Plan, ELL/ESL (English Language Learner), gifted, or other special accommodations. These may appear as column headers, codes, checkboxes, or notes next to student names.
+
+For each student found, extract their name and any accommodation data present. If no accommodation data is visible for a student, omit them from the results — only include students who have some accommodation indicator.
+
+Return ONLY valid JSON with no markdown:
+{
+  "students": [
+    {
+      "name": "Student Full Name",
+      "accommodationType": "IEP",
+      "specificNeeds": ["Extended time on tests", "Preferential seating", "Reduced assignments"],
+      "notes": "Any additional context found in the document"
+    }
+  ]
+}
+
+accommodationType must be one of: "IEP", "504", "ELL", "Gifted", "Other"
+specificNeeds should be an array of plain-language strings describing what the student needs.
+If the document contains no accommodation data at all, return: {"students": [], "noAccommodationsFound": true}`,
+      })
+
+      return {
+        ...base, max_tokens: 2000,
+        system: 'You are an expert at reading school roster documents and identifying student accommodation data. Extract accurately and conservatively — only include what is explicitly stated in the document.',
+        messages: [{ role: 'user', content }],
+      }
+    }
+
+    // ── NEW: Generate lesson-specific accommodation adjustments ──────────────
+    // Given a lesson topic + a list of students with their accommodation types
+    // and needs, generate specific instructional adjustments for this lesson.
+    case 'lessonAccommodations': {
+      const { topic, subject, grade, students } = body
+
+      const studentList = students.map(s =>
+        `- ${s.name} (${s.accommodationType}): ${(s.specificNeeds || []).join(', ')}`
+      ).join('\n')
+
+      return {
+        ...base, max_tokens: 1500,
+        system: 'You are an expert special education consultant. Generate practical, specific instructional adjustments for individual students based on their accommodation needs and the current lesson.',
+        messages: [{
+          role: 'user',
+          content: `Generate lesson-specific accommodation adjustments for the following lesson and students.
+
+Lesson: ${topic}
+Subject: ${subject}
+Grade: ${grade || 'Not specified'}
+
+Students needing accommodations:
+${studentList}
+
+For each student, generate 1-3 specific, actionable instructional adjustments the teacher should make during THIS lesson — not generic advice, but concrete steps tied to the lesson topic.
+
+Return ONLY valid JSON with no markdown:
+{
+  "adjustments": [
+    {
+      "studentName": "Student Full Name",
+      "adjustments": ["Specific adjustment 1 for this lesson", "Specific adjustment 2"]
+    }
+  ]
+}`,
+        }],
+      }
+    }
+
     case 'lessonPlan': {
       const { subject, grade, topic, duration = 50, standards = '' } = body
       return {
