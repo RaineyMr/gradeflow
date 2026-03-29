@@ -763,4 +763,3 @@ export default function StudentDashboard({ currentUser }) {
       <HomePage navigate={navigate}/>
     </div>
   )
-}
