@@ -816,24 +816,24 @@ function SettingsPage({ onBack, navigate }) {
 
 // ─── HOME FEED ────────────────────────────────────────────────────────────────
 const WIDGET_CATALOG = [
-  { id:’dailyOverview’,  label:’Daily Overview’,             icon:’📅’, desc:’Class count, messages, alerts’ },
-  { id:’todaysLessons’,  label:"Today’s Lessons",            icon:’📘’, desc:’Lesson plan and class schedule’ },
-  { id:’classes’,        label:’My Classes’,                 icon:’🏫’, desc:’Quick class cards and progress’ },
-  { id:’needsAttention’, label:’Needs Attention’,            icon:’⚑’,  desc:’At-risk students’ },
-  { id:’messages’,       label:’Messages’,                   icon:’💬’, desc:’Teacher, parent, student chat’ },
-  { id:’reports’,        label:’Reports’,                    icon:’📊’, desc:’Analytics and trends’ },
-  { id:’grading’,        label:’Grading’,                    icon:’🧮’, desc:’Gradebook metrics and actions’ },
-  { id:’lessonPlan’,     label:’Lesson Planner’,             icon:’📝’, desc:’Plan lessons and unit links’ },
-  { id:’sketch’,         label:’Sketch & Annotate’,          icon:’📌’, desc:’Annotate and send back to students’ },
-  { id:’testingSuite’,   label:’Testing Suite’,              icon:’🧪’, desc:’Assessments and rubric tools’ },
-  { id:’scanGradeSheet’, label:’Scan Grade Sheet’,           icon:’📷’, desc:’Add grades from photos or PDFs’ },
-  { id:’gradebook’,      label:’Gradebook + Student Profile’,icon:’📚’, desc:’Full gradebook view with profiles’ },
+  { id:'dailyOverview',  label:'Daily Overview',             icon:'📅', desc:'Class count, messages, alerts' },
+  { id:'todaysLessons',  label:"Today's Lessons",            icon:'📘', desc:'Lesson plan and class schedule' },
+  { id:'classes',        label:'My Classes',                 icon:'🏫', desc:'Quick class cards and progress' },
+  { id:'needsAttention', label:'Needs Attention',            icon:'⚑',  desc:'At-risk students' },
+  { id:'messages',       label:'Messages',                   icon:'💬', desc:'Teacher, parent, student chat' },
+  { id:'reports',        label:'Reports',                    icon:'📊', desc:'Analytics and trends' },
+  { id:'grading',        label:'Grading',                    icon:'🧮', desc:'Gradebook metrics and actions' },
+  { id:'lessonPlan',     label:'Lesson Planner',             icon:'📝', desc:'Plan lessons and unit links' },
+  { id:'sketch',         label:'Sketch & Annotate',          icon:'📌', desc:'Annotate and send back to students' },
+  { id:'testingSuite',   label:'Testing Suite',              icon:'🧪', desc:'Assessments and rubric tools' },
+  { id:'scanGradeSheet', label:'Scan Grade Sheet',           icon:'📷', desc:'Add grades from photos or PDFs' },
+  { id:'gradebook',      label:'Gradebook + Student Profile',icon:'📚', desc:'Full gradebook view with profiles' },
 ]
 
 function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
   const store = useStore()
   const { classes, messages, getNeedsAttention } = store
-  const pending = messages.filter(m=>m.status===’pending’)
+  const pending = messages.filter(m=>m.status==='pending')
   const atRisk  = getNeedsAttention()
 
   const [activeWidgets, setActiveWidgets] = useState(WIDGET_CATALOG.map(w=>w.id))
@@ -844,16 +844,16 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
 
   // Wraps any widget with a persistent × remove button in the top-right corner
   const wrap = (id, content) => (
-    <div key={id} style={{ position:’relative’ }}>
+    <div key={id} style={{ position:'relative' }}>
       <button
         onClick={e=>{ e.stopPropagation(); removeWidget(id) }}
         title="Remove widget"
         style={{
-          position:’absolute’, top:12, right:12, zIndex:20,
-          width:24, height:24, borderRadius:’50%’,
-          background:’rgba(0,0,0,0.6)’, border:’1px solid rgba(255,255,255,0.22)’,
-          color:’rgba(255,255,255,0.85)’, fontSize:14, fontWeight:700,
-          cursor:’pointer’, display:’flex’, alignItems:’center’, justifyContent:’center’,
+          position:'absolute', top:12, right:12, zIndex:20,
+          width:24, height:24, borderRadius:'50%',
+          background:'rgba(0,0,0,0.6)', border:'1px solid rgba(255,255,255,0.22)',
+          color:'rgba(255,255,255,0.85)', fontSize:14, fontWeight:700,
+          cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
           lineHeight:1,
         }}
       >×</button>
@@ -862,45 +862,45 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
   )
 
   const overviewTiles = [
-    { icon:’📚’, val:classes.length,     label:’Classes’,      page:’classes’,        color:C.blue   },
-    { icon:’💬’, val:pending.length||’’, label:’Messages’,     page:’parentMessages’, color:C.purple },
-    { icon:’📋’, val:’’,                 label:’Lesson Plans’, page:’lessonPlan’,     color:C.teal   },
-    { icon:’🔔’, val:atRisk.length||’’,  label:’Alerts’,       page:’alerts’,         color:C.red    },
+    { icon:'📚', val:classes.length,     label:'Classes',      page:'classes',        color:C.blue   },
+    { icon:'💬', val:pending.length||'', label:'Messages',     page:'parentMessages', color:C.purple },
+    { icon:'📋', val:'',                 label:'Lesson Plans', page:'lessonPlan',     color:C.teal   },
+    { icon:'🔔', val:atRisk.length||'',  label:'Alerts',       page:'alerts',         color:C.red    },
   ]
 
   return (
-    <div style={{ padding:’12px 12px 0’ }}>
+    <div style={{ padding:'12px 12px 0' }}>
 
       {/* ── Add Widgets Modal ── */}
       {showAddWidgets && (
         <div
           onClick={()=>setShowAddWidgets(false)}
-          style={{ position:’fixed’, inset:0, zIndex:250, background:’rgba(0,0,0,0.75)’, display:’flex’, alignItems:’flex-end’, justifyContent:’center’ }}>
+          style={{ position:'fixed', inset:0, zIndex:250, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
           <div
             onClick={e=>e.stopPropagation()}
-            style={{ width:’100%’, maxWidth:600, maxHeight:’82vh’, overflowY:’auto’, background:C.card, border:`1px solid ${C.border}`, borderRadius:’20px 20px 0 0’, padding:’20px 16px 36px’ }}>
-            <div style={{ display:’flex’, alignItems:’center’, justifyContent:’space-between’, marginBottom:16 }}>
+            style={{ width:'100%', maxWidth:600, maxHeight:'82vh', overflowY:'auto', background:C.card, border:`1px solid ${C.border}`, borderRadius:'20px 20px 0 0', padding:'20px 16px 36px' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
                 <div style={{ fontSize:17, fontWeight:800, color:C.text }}>+ Add Widgets</div>
                 <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Tap a widget to add it to your dashboard</div>
               </div>
               <button onClick={()=>setShowAddWidgets(false)}
-                style={{ background:C.inner, border:’none’, borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:’pointer’, display:’flex’, alignItems:’center’, justifyContent:’center’ }}>
+                style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
                 ×
               </button>
             </div>
-            <div style={{ display:’grid’, gridTemplateColumns:’1fr 1fr’, gap:10 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
               {WIDGET_CATALOG.map(w => {
                 const isActive = activeWidgets.includes(w.id)
                 return (
                   <button key={w.id}
                     onClick={()=>{ if(!isActive){ addWidget(w.id); setShowAddWidgets(false) } }}
-                    style={{ textAlign:’left’, background:isActive?`${C.green}12`:C.inner, border:`1px solid ${isActive?`${C.green}35`:C.border}`, borderRadius:14, padding:’12px 12px’, cursor:isActive?’default’:’pointer’, opacity:isActive?0.55:1 }}>
+                    style={{ textAlign:'left', background:isActive?`${C.green}12`:C.inner, border:`1px solid ${isActive?`${C.green}35`:C.border}`, borderRadius:14, padding:'12px 12px', cursor:isActive?'default':'pointer', opacity:isActive?0.55:1 }}>
                     <div style={{ fontSize:22, marginBottom:6 }}>{w.icon}</div>
                     <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{w.label}</div>
                     <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{w.desc}</div>
                     <div style={{ marginTop:8, fontSize:10, fontWeight:700, color:isActive?C.green:C.teal }}>
-                      {isActive ? ‘✓ On dashboard’ : ‘+ Add’}
+                      {isActive ? '✓ On dashboard' : '+ Add'}
                     </div>
                   </button>
                 )
@@ -911,40 +911,40 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
       )}
 
       {/* W1: Daily Overview */}
-      {show(‘dailyOverview’) && wrap(‘dailyOverview’,
-        <Widget style={{ background:’var(--school-surface,#1a0008)’, border:’1px solid rgba(255,255,255,0.06)’ }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:’0.1em’, textTransform:’uppercase’, color:’rgba(255,255,255,0.4)’, marginBottom:12 }}>DAILY OVERVIEW</div>
-          <div style={{ display:’grid’, gridTemplateColumns:’repeat(4,1fr)’, gap:8 }}>
+      {show('dailyOverview') && wrap('dailyOverview',
+        <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
             {overviewTiles.map(tile=>(
               <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
-                style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:’10px 4px’, cursor:’pointer’, display:’flex’, flexDirection:’column’, alignItems:’center’, gap:3, transition:’background 0.15s’ }}
+                style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'background 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget.style.background=`${tile.color}30`)}
                 onMouseLeave={e=>(e.currentTarget.style.background=`${tile.color}18`)}>
                 <span style={{ fontSize:16 }}>{tile.icon}</span>
-                {tile.val!==’’ && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
-                <span style={{ fontSize:8, color:’rgba(255,255,255,0.5)’, textAlign:’center’, fontWeight:600 }}>{tile.label}</span>
+                {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
+                <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
               </button>
             ))}
           </div>
         </Widget>
       )}
 
-      {/* W2: Today’s Lessons */}
-      {show(‘todaysLessons’) && wrap(‘todaysLessons’, <TodaysLessonsWidget navigate={navigate}/>)}
+      {/* W2: Today's Lessons */}
+      {show('todaysLessons') && wrap('todaysLessons', <TodaysLessonsWidget navigate={navigate}/>)}
 
       {/* W3: My Classes */}
-      {show(‘classes’) && wrap(‘classes’,
-        <Widget onClick={()=>navigate(‘classes’)} title="📚 My Classes" titleRight={<ActionBtn label="+ Add" color={C.blue} onClick={()=>navigate(‘gradebook’)}/>}>
-          <div style={{ display:’grid’, gridTemplateColumns:’1fr 1fr’, gap:8 }}>
+      {show('classes') && wrap('classes',
+        <Widget onClick={()=>navigate('classes')} title="📚 My Classes" titleRight={<ActionBtn label="+ Add" color={C.blue} onClick={()=>navigate('gradebook')}/>}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
             {classes.map(cls=>(
-              <button key={cls.id} onClick={e=>{ e.stopPropagation(); store.setActiveClass(cls); navigate(‘gradebook’) }}
-                style={{ background:C.inner, borderRadius:14, padding:’12px 14px’, border:’none’, borderLeft:`3px solid ${cls.color}`, cursor:’pointer’, textAlign:’left’, transition:’background 0.15s’ }}
+              <button key={cls.id} onClick={e=>{ e.stopPropagation(); store.setActiveClass(cls); navigate('gradebook') }}
+                style={{ background:C.inner, borderRadius:14, padding:'12px 14px', border:'none', borderLeft:`3px solid ${cls.color}`, cursor:'pointer', textAlign:'left', transition:'background 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
                 onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
                 <div style={{ fontWeight:700, fontSize:12, color:C.text, marginBottom:2 }}>{cls.period} · {cls.subject}</div>
                 <div style={{ fontSize:10, color:C.muted, marginBottom:8 }}>{cls.students} students</div>
-                <div style={{ display:’flex’, alignItems:’center’, gap:6 }}>
-                  <span style={{ fontSize:22, fontWeight:900, color:’#fff’ }}>{cls.gpa}</span>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <span style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{cls.gpa}</span>
                   <TrendBadge trend={cls.trend}/>
                 </div>
                 {cls.needsAttention>0 && <div style={{ fontSize:9, color:C.red, marginTop:4, fontWeight:700 }}>⚑ {cls.needsAttention} need attention</div>}
@@ -955,31 +955,31 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
       )}
 
       {/* W4: Needs Attention */}
-      {show(‘needsAttention’) && wrap(‘needsAttention’, <NeedsAttentionWidget atRisk={atRisk} navigate={navigate}/>)}
+      {show('needsAttention') && wrap('needsAttention', <NeedsAttentionWidget atRisk={atRisk} navigate={navigate}/>)}
 
       {/* W5: Messages */}
-      {show(‘messages’) && wrap(‘messages’, <MessagesWidget navigate={navigate}/>)}
+      {show('messages') && wrap('messages', <MessagesWidget navigate={navigate}/>)}
 
       {/* W6: Reports */}
-      {show(‘reports’) && wrap(‘reports’, <ReportsWidget navigate={navigate}/>)}
+      {show('reports') && wrap('reports', <ReportsWidget navigate={navigate}/>)}
 
       {/* W7: Grading */}
-      {show(‘grading’) && wrap(‘grading’, <GradingWidget navigate={navigate}/>)}
+      {show('grading') && wrap('grading', <GradingWidget navigate={navigate}/>)}
 
       {/* W8: Lesson Plan Builder */}
-      {show(‘lessonPlan’) && wrap(‘lessonPlan’, <LessonPlanWidget navigate={navigate}/>)}
+      {show('lessonPlan') && wrap('lessonPlan', <LessonPlanWidget navigate={navigate}/>)}
 
       {/* W9: Sketch & Annotate */}
-      {show(‘sketch’) && wrap(‘sketch’, <SketchAnnotateWidget navigate={navigate}/>)}
+      {show('sketch') && wrap('sketch', <SketchAnnotateWidget navigate={navigate}/>)}
 
       {/* W10: Testing Suite */}
-      {show(‘testingSuite’) && wrap(‘testingSuite’, <TestingSuiteWidget navigate={navigate}/>)}
+      {show('testingSuite') && wrap('testingSuite', <TestingSuiteWidget navigate={navigate}/>)}
 
       {/* W11: Scan Grade Sheet */}
-      {show(‘scanGradeSheet’) && wrap(‘scanGradeSheet’, <ScanGradeSheetWidget navigate={navigate}/>)}
+      {show('scanGradeSheet') && wrap('scanGradeSheet', <ScanGradeSheetWidget navigate={navigate}/>)}
 
       {/* W12: Gradebook + Student Profile */}
-      {show(‘gradebook’) && wrap(‘gradebook’, <GradebookWidget navigate={navigate}/>)}
+      {show('gradebook') && wrap('gradebook', <GradebookWidget navigate={navigate}/>)}
 
       {/* Add Widgets Bar */}
       <AddWidgetsBar onOpen={()=>setShowAddWidgets(true)}/>
