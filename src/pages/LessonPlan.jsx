@@ -1,11 +1,21 @@
 import React, { useRef, useState } from 'react'
 import { useStore } from '../lib/store'
-import { generateLessonPlan, callAI } from '../lib/ai'
+import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
 
 const C = {
   bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8',
   muted:'#6b7494', border:'#2a2f42', green:'#22c97a', blue:'#3b7ef4',
-  amber:'#f5a623', purple:'#9b6ef5', teal:'#0fb8a0',
+  amber:'#f5a623', purple:'#9b6ef5', teal:'#0fb8a0', red:'#f04a4a',
+}
+
+const ACCOM_TYPES = ['IEP', '504', 'ELL', 'Gifted', 'Other']
+
+const ACCOM_TYPE_COLORS = {
+  IEP:    C.purple,
+  '504':  C.blue,
+  ELL:    C.teal,
+  Gifted: C.green,
+  Other:  C.amber,
 }
 
 function safeParseJSON(text) {
@@ -14,16 +24,16 @@ function safeParseJSON(text) {
   return null
 }
 
-function LoadingSpinner() {
+function LoadingSpinner({ label = 'Loading...' }) {
   return (
-    <>
-      <div style={{ width:36, height:36, border:`3px solid var(--school-color)`, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite' }} />
+    <div style={{ textAlign:'center', padding:'32px 0' }}>
+      <div style={{ width:36, height:36, border:`3px solid var(--school-color)`, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 12px' }} />
+      <p style={{ color:C.muted, fontSize:13 }}>{label}</p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </>
+    </div>
   )
 }
 
-// ─── Section helper ───────────────────────────────────────────────────────────
 function Section({ title, items }) {
   return (
     <div style={{ marginBottom:16 }}>
@@ -37,6 +47,209 @@ function Section({ title, items }) {
   )
 }
 
+// ─── Accommodations Section ───────────────────────────────────────────────────
+// Collapsible. Shows all students with accommodations.
+// Every field is editable. Teacher can add students manually.
+// lessonAdjustments are AI-generated per lesson.
+function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGrade = '' }) {
+  const { studentAccommodations, updateAccommodation, addAccommodation, removeAccommodation, setLessonAdjustments } = useStore()
+  const [open,         setOpen]         = useState(false)
+  const [newName,      setNewName]      = useState('')
+  const [generating,   setGenerating]   = useState(false)
+  const [editingNeeds, setEditingNeeds] = useState({}) // { studentName: string (comma-sep draft) }
+
+  const students = Object.values(studentAccommodations)
+
+  async function handleGenerateAdjustments() {
+    if (students.length === 0) return
+    setGenerating(true)
+    try {
+      const result = await generateLessonAccommodations({
+        topic:    lessonTopic,
+        subject:  lessonSubject,
+        grade:    lessonGrade,
+        students: students.map(s => ({
+          name:              s.name,
+          accommodationType: s.accommodationType,
+          specificNeeds:     s.specificNeeds,
+        })),
+      })
+      if (result?.adjustments?.length > 0) {
+        setLessonAdjustments(result.adjustments)
+      }
+    } catch (err) {
+      console.error('Failed to generate adjustments:', err)
+    }
+    setGenerating(false)
+  }
+
+  function handleAddStudent() {
+    const name = newName.trim()
+    if (!name) return
+    addAccommodation(name)
+    setNewName('')
+    setOpen(true)
+  }
+
+  function handleNeedsSave(studentName) {
+    const draft = editingNeeds[studentName]
+    if (draft === undefined) return
+    const needs = draft.split(',').map(s => s.trim()).filter(Boolean)
+    updateAccommodation(studentName, { specificNeeds: needs })
+    setEditingNeeds(prev => { const n = {...prev}; delete n[studentName]; return n })
+  }
+
+  const count = students.length
+
+  return (
+    <div style={{ marginBottom:16 }}>
+      {/* Collapsible header */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', marginBottom: open ? 8 : 0 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:16 }}>♿</span>
+          <span style={{ fontSize:13, fontWeight:700, color:C.text }}>Accommodations</span>
+          {count > 0 && (
+            <span style={{ background:`${C.purple}22`, color:C.purple, borderRadius:999, padding:'2px 8px', fontSize:10, fontWeight:700 }}>
+              {count} student{count !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+        <span style={{ color:C.muted, fontSize:13, fontWeight:700 }}>{open ? '▲ Hide' : '▼ Show'}</span>
+      </button>
+
+      {open && (
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:'14px' }}>
+
+          {count === 0 && (
+            <div style={{ textAlign:'center', padding:'16px 0', color:C.muted, fontSize:12 }}>
+              No accommodations recorded yet. Add students below or upload a roster to auto-extract.
+            </div>
+          )}
+
+          {/* Student rows */}
+          {students.map(s => {
+            const typeColor = ACCOM_TYPE_COLORS[s.accommodationType] || C.amber
+            const needsDraft = editingNeeds[s.name]
+            const isEditingNeeds = needsDraft !== undefined
+
+            return (
+              <div key={s.name} style={{ background:C.inner, border:`1px solid ${typeColor}25`, borderRadius:12, padding:'12px 14px', marginBottom:10 }}>
+
+                {/* Student name + type badge + remove */}
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:C.text, flex:1 }}>{s.name}</div>
+
+                  {/* Type selector */}
+                  <div style={{ display:'flex', gap:4 }}>
+                    {ACCOM_TYPES.map(type => (
+                      <button key={type} onClick={() => updateAccommodation(s.name, { accommodationType: type })}
+                        style={{ padding:'2px 8px', borderRadius:999, border:'none', cursor:'pointer', fontSize:9, fontWeight:700,
+                          background: s.accommodationType === type ? `${ACCOM_TYPE_COLORS[type]}30` : C.raised,
+                          color:      s.accommodationType === type ? ACCOM_TYPE_COLORS[type] : C.muted,
+                          outline:    s.accommodationType === type ? `1px solid ${ACCOM_TYPE_COLORS[type]}` : 'none' }}>
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button onClick={() => removeAccommodation(s.name)}
+                    style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:16, padding:'0 2px', lineHeight:1 }}>×</button>
+                </div>
+
+                {/* Specific needs — tap chips to edit as comma-separated */}
+                <div style={{ marginBottom: s.lessonAdjustments?.length > 0 ? 10 : 0 }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>Specific Needs</div>
+                  {isEditingNeeds ? (
+                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+                      <input
+                        value={needsDraft}
+                        onChange={e => setEditingNeeds(prev => ({ ...prev, [s.name]: e.target.value }))}
+                        onBlur={() => handleNeedsSave(s.name)}
+                        onKeyDown={e => e.key === 'Enter' && handleNeedsSave(s.name)}
+                        placeholder="Extended time, Preferential seating..."
+                        autoFocus
+                        style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', color:C.text, fontSize:12, outline:'none' }}
+                      />
+                      <button onClick={() => handleNeedsSave(s.name)}
+                        style={{ background:`${C.green}20`, color:C.green, border:'none', borderRadius:8, padding:'6px 10px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+                        Save
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => setEditingNeeds(prev => ({ ...prev, [s.name]: (s.specificNeeds || []).join(', ') }))}
+                      style={{ cursor:'text', minHeight:28, display:'flex', flexWrap:'wrap', gap:5, alignItems:'center' }}>
+                      {(s.specificNeeds || []).length > 0
+                        ? s.specificNeeds.map((need, i) => (
+                            <span key={i} style={{ background:`${typeColor}18`, color:typeColor, borderRadius:999, padding:'3px 9px', fontSize:10, fontWeight:600 }}>
+                              {need}
+                            </span>
+                          ))
+                        : <span style={{ fontSize:11, color:C.muted, fontStyle:'italic' }}>Tap to add needs...</span>
+                      }
+                      <span style={{ fontSize:10, color:C.muted, marginLeft:4 }}>✏</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Lesson-specific adjustments (AI-generated) */}
+                {s.lessonAdjustments?.length > 0 && (
+                  <div>
+                    <div style={{ fontSize:10, fontWeight:700, color:C.teal, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6, marginTop:10 }}>
+                      ✨ Adjustments for This Lesson
+                    </div>
+                    {s.lessonAdjustments.map((adj, i) => (
+                      <div key={i} style={{ background:`${C.teal}10`, border:`1px solid ${C.teal}20`, borderRadius:8, padding:'7px 10px', marginBottom:5, fontSize:12, color:C.text, lineHeight:1.5 }}>
+                        {adj}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Notes */}
+                {s.notes && (
+                  <div style={{ marginTop:8, fontSize:11, color:C.muted, fontStyle:'italic' }}>{s.notes}</div>
+                )}
+              </div>
+            )
+          })}
+
+          {/* Add student manually */}
+          <div style={{ display:'flex', gap:8, marginBottom: count > 0 ? 12 : 4 }}>
+            <input
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleAddStudent()}
+              placeholder="Add student by name..."
+              style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, padding:'8px 12px', color:C.text, fontSize:12, outline:'none' }}
+            />
+            <button onClick={handleAddStudent} disabled={!newName.trim()}
+              style={{ background:newName.trim()?`${C.blue}22`:'transparent', color:newName.trim()?C.blue:C.muted, border:`1px solid ${newName.trim()?C.blue:C.border}`, borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:newName.trim()?'pointer':'not-allowed' }}>
+              + Add
+            </button>
+          </div>
+
+          {/* Generate lesson adjustments button */}
+          {count > 0 && lessonTopic && (
+            <button onClick={handleGenerateAdjustments} disabled={generating}
+              style={{ width:'100%', background:generating?C.inner:`${C.purple}20`, color:generating?C.muted:C.purple, border:`1px solid ${generating?C.border:`${C.purple}40`}`, borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, cursor:generating?'not-allowed':'pointer' }}>
+              {generating ? '⟳ Generating adjustments...' : `✨ Generate lesson adjustments for ${count} student${count !== 1 ? 's' : ''}`}
+            </button>
+          )}
+
+          {count > 0 && !lessonTopic && (
+            <div style={{ fontSize:11, color:C.muted, textAlign:'center', padding:'4px 0' }}>
+              Generate a lesson plan first to get AI adjustments for each student.
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Lesson View ──────────────────────────────────────────────────────────────
 function LessonView({ lesson, onBack, onEdit }) {
   const STATUS_COLOR = { done: C.green, tbd: C.amber, pending: C.teal }
@@ -46,44 +259,53 @@ function LessonView({ lesson, onBack, onEdit }) {
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-        <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>{'<'} Back</button>
+        <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
         <button onClick={onEdit} style={{ background:'var(--school-color)', border:'none', borderRadius:10, padding:'8px 16px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700 }}>Edit</button>
       </div>
 
       <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
         <span style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em' }}>{lesson.dayLabel}</span>
-        <span style={{ fontSize:11, color:C.muted }}>{'\u00b7'}</span>
+        <span style={{ fontSize:11, color:C.muted }}>·</span>
         <span style={{ fontSize:11, color:C.muted }}>{lesson.date}</span>
         <span style={{ marginLeft:'auto', background:`${sc}22`, color:sc, borderRadius:6, padding:'2px 8px', fontSize:11, fontWeight:700 }}>{STATUS_LABEL[lesson.status]}</span>
       </div>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{lesson.title}</h1>
-      <p style={{ color:C.muted, fontSize:12, margin:'0 0 20px' }}>{lesson.duration}{lesson.pages ? ` ${'\u00b7'} ${lesson.pages}` : ''}</p>
+      <p style={{ color:C.muted, fontSize:12, margin:'0 0 20px' }}>{lesson.duration}{lesson.pages ? ` · ${lesson.pages}` : ''}</p>
 
       <Section title="Objective" items={[lesson.objective]} />
-      {lesson.warmup?.length > 0      && <Section title="Warm-Up"    items={lesson.warmup} />}
-      {lesson.activities?.length > 0  && <Section title="Activities" items={lesson.activities} />}
-      {lesson.materials?.length > 0   && <Section title="Materials"  items={lesson.materials} />}
-      {lesson.homework && <Section title="Homework" items={[lesson.homework]} />}
+      {lesson.warmup?.length > 0     && <Section title="Warm-Up"    items={lesson.warmup} />}
+      {lesson.activities?.length > 0 && <Section title="Activities" items={lesson.activities} />}
+      {lesson.materials?.length > 0  && <Section title="Materials"  items={lesson.materials} />}
+      {lesson.homework               && <Section title="Homework"   items={[lesson.homework]} />}
+
+      {/* Accommodations section — always shown in lesson view */}
+      <AccommodationsSection
+        lessonTopic={lesson.title}
+        lessonSubject={lesson.subject || ''}
+        lessonGrade={lesson.grade || ''}
+      />
     </div>
   )
 }
 
 // ─── AI Generator ─────────────────────────────────────────────────────────────
-// FIXED: routes through /api/ai via src/lib/ai.js — no direct Anthropic calls
 function AIGenerator({ onBack }) {
+  const { studentAccommodations, setLessonAdjustments } = useStore()
   const [form, setForm] = useState({ state:'Texas', subject:'', grade:'', textbook:'', topic:'', standard:'' })
-  const [loading, setLoading] = useState(false)
-  const [plan, setPlan] = useState(null)
-  const [error, setError] = useState('')
+  const [loading,             setLoading]             = useState(false)
+  const [generatingAdjust,    setGeneratingAdjust]    = useState(false)
+  const [plan,                setPlan]                = useState(null)
+  const [error,               setError]               = useState('')
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]:v }))
+  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+
+  const accommodationStudents = Object.values(studentAccommodations)
 
   async function handleGenerate() {
     if (!form.subject || !form.topic) { setError('Subject and topic are required.'); return }
     setError('')
     setLoading(true)
     try {
-      // Route through the secure proxy — generateLessonPlan calls /api/ai with intent:'lessonPlan'
       const result = await generateLessonPlan({
         subject:   `${form.subject}${form.state ? ' (' + form.state + ')' : ''}`,
         grade:     form.grade || 'Not specified',
@@ -91,48 +313,82 @@ function AIGenerator({ onBack }) {
         duration:  50,
         standards: [form.standard, form.textbook].filter(Boolean).join(', '),
       })
-      // generateLessonPlan returns structured JSON — map to the display shape
+
       const mapped = {
-        title:       result.title || `${form.topic} — ${form.subject}`,
-        objectives:  result.objective ? [result.objective] : [],
-        materials:   result.materials || [],
-        steps:       [
-          result.warmup?.activity && `Warm-Up (${result.warmup.duration} min): ${result.warmup.activity}`,
+        title:      result.title || `${form.topic} — ${form.subject}`,
+        objectives: result.objective ? [result.objective] : [],
+        materials:  result.materials || [],
+        steps: [
+          result.warmup?.activity     && `Warm-Up (${result.warmup.duration} min): ${result.warmup.activity}`,
           ...(result.instruction?.steps || []),
-          result.practice?.activity && `Practice (${result.practice.duration} min): ${result.practice.activity}`,
-          result.assessment?.method && `Assessment (${result.assessment.duration} min): ${result.assessment.method}`,
+          result.practice?.activity   && `Practice (${result.practice.duration} min): ${result.practice.activity}`,
+          result.assessment?.method   && `Assessment (${result.assessment.duration} min): ${result.assessment.method}`,
         ].filter(Boolean),
-        assessment:  result.assessment?.method ? [result.assessment.method] : [],
-        homework:    result.homework ? [result.homework] : [],
-        notes:       '',
+        assessment: result.assessment?.method ? [result.assessment.method] : [],
+        homework:   result.homework ? [result.homework] : [],
+        notes:      '',
       }
       setPlan(mapped)
+
+      // After plan is generated, auto-generate lesson adjustments for any students
+      // who have accommodations already loaded in the store
+      if (accommodationStudents.length > 0) {
+        setGeneratingAdjust(true)
+        try {
+          const adjResult = await generateLessonAccommodations({
+            topic:    form.topic,
+            subject:  form.subject,
+            grade:    form.grade,
+            students: accommodationStudents.map(s => ({
+              name:              s.name,
+              accommodationType: s.accommodationType,
+              specificNeeds:     s.specificNeeds,
+            })),
+          })
+          if (adjResult?.adjustments?.length > 0) {
+            setLessonAdjustments(adjResult.adjustments)
+          }
+        } catch (adjErr) {
+          console.error('Adjustment generation failed:', adjErr)
+          // Non-fatal — plan still shows, teacher can generate adjustments manually
+        }
+        setGeneratingAdjust(false)
+      }
+
     } catch (err) {
       setError(err.message || 'Generation failed. Please try again.')
     }
     setLoading(false)
   }
 
-  if (loading) return (
-    <div style={{ padding:40, textAlign:'center', fontFamily:'Inter, Arial, sans-serif' }}>
-      <LoadingSpinner />
-      <p style={{ color:C.muted, fontSize:13, marginTop:12 }}>Generating your lesson plan...</p>
-    </div>
-  )
+  if (loading) return <LoadingSpinner label="Generating your lesson plan..." />
 
   if (plan) return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
       <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
       <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{form.subject} · {form.grade} · {form.topic}</p>
-      {plan.objectives?.length > 0    && <Section title="Objectives"    items={plan.objectives} />}
-      {plan.materials?.length > 0     && <Section title="Materials"     items={plan.materials} />}
-      {plan.steps?.length > 0         && <Section title="Steps"         items={plan.steps} />}
-      {plan.assessment?.length > 0    && <Section title="Assessment"    items={plan.assessment} />}
-      {plan.homework?.length > 0      && <Section title="Homework"      items={plan.homework} />}
+
+      {plan.objectives?.length > 0  && <Section title="Objectives"  items={plan.objectives} />}
+      {plan.materials?.length > 0   && <Section title="Materials"   items={plan.materials} />}
+      {plan.steps?.length > 0       && <Section title="Steps"       items={plan.steps} />}
+      {plan.assessment?.length > 0  && <Section title="Assessment"  items={plan.assessment} />}
+      {plan.homework?.length > 0    && <Section title="Homework"    items={plan.homework} />}
       {plan.notes && (
-        <div style={{ background:C.inner, borderRadius:12, padding:'12px 14px', fontSize:13, color:C.muted }}>{plan.notes}</div>
+        <div style={{ background:C.inner, borderRadius:12, padding:'12px 14px', fontSize:13, color:C.muted, marginBottom:16 }}>{plan.notes}</div>
       )}
+
+      {/* Accommodations section */}
+      {generatingAdjust && (
+        <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
+          ✨ Generating lesson adjustments for {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''}...
+        </div>
+      )}
+      <AccommodationsSection
+        lessonTopic={form.topic}
+        lessonSubject={form.subject}
+        lessonGrade={form.grade}
+      />
     </div>
   )
 
@@ -142,12 +398,12 @@ function AIGenerator({ onBack }) {
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>✨ AI Lesson Plan Generator</h1>
 
       {[
-        ['state',    'State / Region',    'Texas'],
-        ['subject',  'Subject *',         'Math, Science, ELA...'],
-        ['grade',    'Grade Level',       '3rd Grade, High School...'],
+        ['state',    'State / Region',      'Texas'],
+        ['subject',  'Subject *',           'Math, Science, ELA...'],
+        ['grade',    'Grade Level',         '3rd Grade, High School...'],
         ['textbook', 'Textbook (optional)', 'Publisher or title...'],
-        ['topic',    'Topic *',           'Fractions, Photosynthesis...'],
-        ['standard', 'Standard / TEKS',  'TEKS 4.3A, CCSS.MATH...'],
+        ['topic',    'Topic *',             'Fractions, Photosynthesis...'],
+        ['standard', 'Standard / TEKS',    'TEKS 4.3A, CCSS.MATH...'],
       ].map(([key, label, placeholder]) => (
         <div key={key} style={{ marginBottom:12 }}>
           <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>{label}</label>
@@ -159,7 +415,13 @@ function AIGenerator({ onBack }) {
         </div>
       ))}
 
-      {error && <p style={{ color:'#f04a4a', fontSize:12, marginBottom:12 }}>{error}</p>}
+      {accommodationStudents.length > 0 && (
+        <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
+          ✨ {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations — adjustments will be auto-generated after the lesson plan.
+        </div>
+      )}
+
+      {error && <p style={{ color:C.red, fontSize:12, marginBottom:12 }}>{error}</p>}
 
       <button onClick={handleGenerate}
         style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
@@ -185,19 +447,22 @@ function BuildFromScratch({ onBack }) {
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>📝 Build Lesson Plan</h1>
 
       {[
-        ['title',      'Lesson Title *',          'Ch. 4 · Fractions...'],
-        ['objectives', 'Learning Objectives',     'Students will be able to...'],
+        ['title',      'Lesson Title *',           'Ch. 4 · Fractions...'],
+        ['objectives', 'Learning Objectives',      'Students will be able to...'],
         ['steps',      'Step-by-Step Instructions', 'Step 1: ...\nStep 2: ...'],
-        ['supplies',   'Supplies Needed',          'Pencils, worksheets...'],
-        ['notes',      'Teacher Notes',            'Additional notes...'],
+        ['supplies',   'Supplies Needed',           'Pencils, worksheets...'],
+        ['notes',      'Teacher Notes',             'Additional notes...'],
       ].map(([key, label, ph]) => (
         <div key={key} style={{ marginBottom:12 }}>
           <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>{label}</label>
           <textarea
             style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, resize:'none', boxSizing:'border-box' }}
-            rows={3} placeholder={ph} value={sections[key]} onChange={e => setSections(s => ({ ...s, [key]:e.target.value }))} />
+            rows={3} placeholder={ph} value={sections[key]} onChange={e => setSections(s => ({ ...s, [key]: e.target.value }))} />
         </div>
       ))}
+
+      {/* Accommodations in scratch-built plans too */}
+      <AccommodationsSection lessonTopic={sections.title} />
 
       {saved && <div style={{ background:'#0f2a1a', border:`1px solid ${C.green}40`, borderRadius:10, padding:'10px 14px', color:C.green, fontSize:13, marginBottom:12 }}>✅ Lesson saved!</div>}
 
@@ -211,29 +476,74 @@ function BuildFromScratch({ onBack }) {
 
 // ─── Upload Doc ───────────────────────────────────────────────────────────────
 function UploadDoc({ onBack }) {
+  const { setAccommodations } = useStore()
   const fileRef = useRef()
-  const [file,    setFile]    = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [done,    setDone]    = useState(false)
+  const [file,           setFile]           = useState(null)
+  const [loading,        setLoading]        = useState(false)
+  const [extracting,     setExtracting]     = useState(false)
+  const [done,           setDone]           = useState(false)
+  const [extractResult,  setExtractResult]  = useState(null) // { count, noAccommodationsFound }
+  const [extractError,   setExtractError]   = useState('')
 
-  function handleFile(e) {
+  async function handleFile(e) {
     const f = e.target.files?.[0]
     if (!f) return
     setFile(f)
     setLoading(true)
-    setTimeout(() => { setLoading(false); setDone(true) }, 2000)
+    setExtractError('')
+    setExtractResult(null)
+
+    // Simulate document processing
+    await new Promise(r => setTimeout(r, 1500))
+    setLoading(false)
+    setDone(true)
+
+    // Attempt AI accommodation extraction
+    setExtracting(true)
+    try {
+      const reader = new FileReader()
+      reader.onload = async (ev) => {
+        try {
+          const dataUrl   = ev.target.result
+          const base64    = dataUrl.split(',')[1]
+          const mediaType = f.type || 'image/jpeg'
+
+          // For text files (CSV, plain text), pass as textContent instead
+          const isText = f.type.includes('text') || f.name.endsWith('.csv') || f.name.endsWith('.txt')
+
+          let result
+          if (isText) {
+            // Decode base64 back to text for CSV/txt files
+            const textContent = atob(base64)
+            result = await extractAccommodations({ textContent })
+          } else {
+            result = await extractAccommodations({ imageBase64: base64, mediaType })
+          }
+
+          if (result?.noAccommodationsFound || !result?.students?.length) {
+            setExtractResult({ count: 0, noAccommodationsFound: true })
+          } else {
+            setAccommodations(result.students)
+            setExtractResult({ count: result.students.length })
+          }
+        } catch (err) {
+          setExtractError('Could not extract accommodation data. You can add it manually in any lesson plan.')
+        }
+        setExtracting(false)
+      }
+      reader.readAsDataURL(f)
+    } catch (err) {
+      setExtractError('Could not read file for accommodation extraction.')
+      setExtracting(false)
+    }
   }
 
-  if (loading) return (
-    <div style={{ padding:40, textAlign:'center', fontFamily:'Inter, Arial, sans-serif' }}>
-      <LoadingSpinner />
-      <p style={{ color:C.muted, fontSize:13, marginTop:12 }}>Reading your document...</p>
-    </div>
-  )
+  if (loading) return <LoadingSpinner label="Reading your document..." />
 
   if (done) return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px' }}>
       <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
+
       <div style={{ background:'#0f2a1a', border:`1px solid ${C.green}40`, borderRadius:14, padding:'14px 16px', marginBottom:16, display:'flex', alignItems:'center', gap:12 }}>
         <span style={{ fontSize:24 }}>📄</span>
         <div>
@@ -241,7 +551,42 @@ function UploadDoc({ onBack }) {
           <div style={{ color:C.green, fontSize:11 }}>✓ Uploaded successfully</div>
         </div>
       </div>
-      <p style={{ color:C.muted, fontSize:13 }}>Your document has been imported and is ready to use.</p>
+
+      {/* Accommodation extraction result */}
+      {extracting && (
+        <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'12px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
+          ✨ Scanning for student accommodations...
+        </div>
+      )}
+
+      {!extracting && extractResult && extractResult.count > 0 && (
+        <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'12px 14px', marginBottom:14 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:C.purple, marginBottom:4 }}>
+            ✨ Found {extractResult.count} student{extractResult.count !== 1 ? 's' : ''} with accommodations
+          </div>
+          <div style={{ fontSize:11, color:C.muted }}>
+            Accommodation data has been loaded. Open any lesson plan to review, edit, and get AI-suggested adjustments.
+          </div>
+        </div>
+      )}
+
+      {!extracting && extractResult?.noAccommodationsFound && (
+        <div style={{ background:`${C.amber}10`, border:`1px solid ${C.amber}25`, borderRadius:12, padding:'12px 14px', marginBottom:14 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:C.amber, marginBottom:4 }}>No accommodation data found</div>
+          <div style={{ fontSize:11, color:C.muted }}>
+            The document doesn't appear to contain accommodation indicators (IEP, 504, ELL). You can add students and their needs manually in any lesson plan.
+          </div>
+        </div>
+      )}
+
+      {!extracting && extractError && (
+        <div style={{ background:`${C.red}10`, border:`1px solid ${C.red}25`, borderRadius:12, padding:'12px 14px', marginBottom:14, fontSize:12, color:C.red }}>
+          {extractError}
+        </div>
+      )}
+
+      <p style={{ color:C.muted, fontSize:13, marginBottom:20 }}>Your document has been imported and is ready to use.</p>
+
       <button onClick={onBack} style={{ background:'var(--school-color)', border:'none', borderRadius:999, padding:'12px 24px', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer' }}>
         Go to Lesson Plans
       </button>
@@ -251,8 +596,11 @@ function UploadDoc({ onBack }) {
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px' }}>
       <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 6px' }}>📄 Upload Lesson Plan</h1>
-      <p style={{ color:C.muted, fontSize:13, marginBottom:20 }}>PDF · Word · CSV · Excel · Google Doc · Any format</p>
+      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 6px' }}>📄 Upload Lesson Plan / Roster</h1>
+      <p style={{ color:C.muted, fontSize:13, marginBottom:8 }}>PDF · Word · CSV · Excel · Google Doc · Any format</p>
+      <p style={{ color:C.purple, fontSize:12, fontWeight:600, marginBottom:20 }}>
+        ✨ GradeFlow will automatically scan for student accommodations (IEP, 504, ELL) and load them into your lesson plans.
+      </p>
       <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.xls,image/*" onChange={handleFile} style={{ display:'none' }} />
       <button onClick={() => fileRef.current?.click()}
         style={{ width:'100%', background:C.card, border:`2px dashed ${C.border}`, borderRadius:18, padding:'40px 20px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:12 }}>
@@ -267,15 +615,15 @@ function UploadDoc({ onBack }) {
 // ─── Main Menu ────────────────────────────────────────────────────────────────
 export default function LessonPlan({ initialMode, classId, onBack }) {
   const { goBack, getTodayLesson } = useStore()
-  const handleBack = onBack || goBack
+  const handleBack  = onBack || goBack
   const todayLesson = classId ? getTodayLesson(classId) : null
-  const startMode = initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu')
+  const startMode   = initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu')
   const [mode, setMode] = useState(startMode)
 
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
-  if (mode === 'ai')     return <AIGenerator      onBack={() => setMode('menu')} />
-  if (mode === 'build')  return <BuildFromScratch  onBack={() => setMode('menu')} />
-  if (mode === 'upload') return <UploadDoc         onBack={() => setMode('menu')} />
+  if (mode === 'ai')     return <AIGenerator     onBack={() => setMode('menu')} />
+  if (mode === 'build')  return <BuildFromScratch onBack={() => setMode('menu')} />
+  if (mode === 'upload') return <UploadDoc        onBack={() => setMode('menu')} />
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
@@ -284,9 +632,9 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
       <p style={{ color:C.muted, fontSize:13, margin:'0 0 24px' }}>Create · Upload · AI-generate</p>
 
       {[
-        { id:'ai',     icon:'✨', label:'AI Generate',      desc:'Fill in subject, grade, topic → full lesson plan',    color:C.purple },
+        { id:'ai',     icon:'✨', label:'AI Generate',       desc:'Fill in subject, grade, topic → full lesson plan',  color:C.purple },
         { id:'build',  icon:'📝', label:'Build from Scratch', desc:'Write your own lesson plan with guided sections',   color:C.blue   },
-        { id:'upload', icon:'📤', label:'Upload Document',  desc:'PDF · Word · CSV · Excel · Image — AI imports it',   color:C.teal   },
+        { id:'upload', icon:'📤', label:'Upload Document',   desc:'PDF · Word · CSV · Image — AI scans for accommodations', color:C.teal },
       ].map(item => (
         <button key={item.id} onClick={() => setMode(item.id)}
           style={{ width:'100%', background:C.card, border:`1px solid ${item.color}22`, borderRadius:16, padding:16, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14, marginBottom:12 }}
