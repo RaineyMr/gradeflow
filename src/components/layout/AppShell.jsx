@@ -238,8 +238,7 @@ export default function AppShell() {
             📷
           </button>
 
-          {/* Sync button */}
-          <GradebookSyncButton />
+          {currentUser.role === 'teacher' && <GradebookSyncButton />}
 
           {/* Hamburger menu */}
           <div ref={menuRef} style={{ position: 'relative' }}>
