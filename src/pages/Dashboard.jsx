@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
-import BottomNav      from '../components/ui/BottomNav'
+import { useDashboard } from '../hooks/useDashboard'
+import DashboardShell from '../components/layout/DashboardShell'
 import Gradebook      from './Gradebook'
 import LessonPlan     from './LessonPlan'
 import Reports        from './Reports'
@@ -17,22 +18,6 @@ const C = {
   text:'#eef0f8', soft:'#c8cce0', muted:'#6b7494', border:'#252b3d',
   green:'#22c97a', blue:'#3b7ef4', red:'#f04a4a', amber:'#f5a623',
   teal:'#0fb8a0', purple:'#9b6ef5',
-}
-
-const SCHOOL_THEMES = {
-  kipp:     { primary:'#BA0C2F', secondary:'#000000', surface:'#1a0008', text:'#ffe8ed' },
-  hisd:     { primary:'#003057', secondary:'#B3A369', surface:'#000d1a', text:'#e8f0ff' },
-  bellaire: { primary:'#B3A369', secondary:'#003057', surface:'#1a1800', text:'#faf7ee' },
-  lamar:    { primary:'#461D7C', secondary:'#FDD023', surface:'#0e0718', text:'#f3e8ff' },
-}
-
-function applyTheme(key) {
-  const t = SCHOOL_THEMES[key] || SCHOOL_THEMES.kipp
-  const r = document.documentElement
-  r.style.setProperty('--school-color',     t.primary)
-  r.style.setProperty('--school-secondary', t.secondary)
-  r.style.setProperty('--school-surface',   t.surface)
-  r.style.setProperty('--school-text',      t.text)
 }
 
 const scrollTop = () => {
@@ -88,7 +73,6 @@ function SubPage({ children }) {
   return <div style={{ minHeight:'100vh', background:C.bg, paddingBottom:80 }}>{children}</div>
 }
 
-// ─── STICKY HEADER ────────────────────────────────────────────────────────────
 function StickyHeader({ teacher }) {
   const now = new Date()
   const hour = now.getHours()
@@ -110,7 +94,6 @@ function StickyHeader({ teacher }) {
   )
 }
 
-// ─── TODAY'S LESSONS WIDGET — UNTOUCHED ───────────────────────────────────────
 function TodaysLessonsWidget({ navigate }) {
   const { classes, setActiveLessonClass, setLessonStatus, getTodayLesson } = useStore()
   const [activeClassId, setActiveClassId] = useState(classes[0]?.id||1)
@@ -153,7 +136,6 @@ function TodaysLessonsWidget({ navigate }) {
   )
 }
 
-// ─── ADD WIDGETS BAR ─────────────────────────────────────────────────────────
 function AddWidgetsBar({ onOpen }) {
   return (
     <div style={{ margin:'4px 0 24px', textAlign:'center' }}>
@@ -165,7 +147,6 @@ function AddWidgetsBar({ onOpen }) {
   )
 }
 
-// ─── MESSAGES WIDGET (admin-style thread list) ────────────────────────────────
 const MSG_THREADS = [
   { id:1, name:'Ms. Thompson', role:'parent', avatar:'👩', subject:'Marcus — Math Assessment', unread:true,  aiDrafted:true,  status:'pending', preview:"Dear Ms. Thompson, Marcus received 58% on his Math assessment. I'd love to connect this week." },
   { id:2, name:'Ms. Brooks',   role:'parent', avatar:'👩', subject:'Aaliyah — Outstanding Progress!', unread:false, aiDrafted:true, status:'sent', preview:"Great news! Aaliyah improved her Reading score by 12 points this month." },
@@ -196,18 +177,15 @@ function MessagesWidget({ navigate }) {
           </button>
         </div>
       </div>
-
       {MSG_THREADS.slice(0,3).map(t=>(
         <div key={t.id} onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
           style={{ background:t.unread?C.raised:C.inner, border:`1px solid ${t.unread?'var(--school-color)28':C.border}`, borderRadius:13, padding:'10px 12px', marginBottom:8, cursor:'pointer', display:'flex', gap:11, alignItems:'flex-start' }}
           onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
           onMouseLeave={e=>(e.currentTarget.style.background=t.unread?C.raised:C.inner)}>
-          {/* Avatar */}
           <div style={{ position:'relative', flexShrink:0 }}>
             <div style={{ width:36, height:36, borderRadius:'50%', background:'var(--school-color)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18 }}>{t.avatar}</div>
             {t.unread && <div style={{ position:'absolute', top:-1, right:-1, width:9, height:9, borderRadius:'50%', background:C.red, border:`2px solid ${C.bg}` }}/>}
           </div>
-          {/* Content */}
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
               <span style={{ fontSize:12, fontWeight:700, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.name}</span>
@@ -217,11 +195,9 @@ function MessagesWidget({ navigate }) {
             </div>
             <div style={{ fontSize:11, color:C.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.preview}</div>
           </div>
-          {/* Reply arrow */}
           <span style={{ color:C.teal, fontSize:11, fontWeight:700, flexShrink:0, alignSelf:'center' }}>Reply →</span>
         </div>
       ))}
-
       <div style={{ fontSize:10, color:C.muted, textAlign:'center', padding:'6px 0 0', borderTop:`1px solid ${C.border}` }}>
         ✨ AI writes every message · Every negative has a positive version · Multilingual
       </div>
@@ -229,7 +205,6 @@ function MessagesWidget({ navigate }) {
   )
 }
 
-// ─── NEEDS ATTENTION WIDGET ───────────────────────────────────────────────────
 function NeedsAttentionWidget({ atRisk, navigate }) {
   if (atRisk.length === 0) return null
   return (
@@ -238,7 +213,6 @@ function NeedsAttentionWidget({ atRisk, navigate }) {
         <div style={{ fontSize:13, fontWeight:800, color:C.text }}>⚑ Needs Attention</div>
         <span style={{ background:`${C.red}18`, color:C.red, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999 }}>{atRisk.length} students</span>
       </div>
-      {/* Inline student names like layout */}
       <div style={{ fontSize:12, color:C.soft, lineHeight:1.8, marginBottom:10 }}>
         {atRisk.slice(0,2).map((s,i)=>(
           <span key={s.id}>
@@ -263,7 +237,6 @@ function NeedsAttentionWidget({ atRisk, navigate }) {
   )
 }
 
-// ─── REPORTS WIDGET ───────────────────────────────────────────────────────────
 function ReportsWidget({ navigate }) {
   const reportLinks = ['Class Mastery', 'Student Report', 'Grade Distribution', 'Needs Attention', 'Comm. Log', 'Progress']
   return (
@@ -275,7 +248,6 @@ function ReportsWidget({ navigate }) {
           See all →
         </button>
       </div>
-      {/* Text link list */}
       <div style={{ display:'flex', flexWrap:'wrap', gap:'6px 12px', marginBottom:14 }}>
         {reportLinks.map(l=>(
           <button key={l} onClick={e=>{ e.stopPropagation(); navigate('reports') }}
@@ -284,7 +256,6 @@ function ReportsWidget({ navigate }) {
           </button>
         ))}
       </div>
-      {/* Export buttons */}
       <div style={{ display:'flex', gap:8, borderTop:`1px solid ${C.border}`, paddingTop:12 }}>
         {[['🖨 Print',C.muted],['↑ PDF',C.blue],['⬛ Spreadsheet',C.green]].map(([label,color])=>(
           <button key={label} onClick={e=>{ e.stopPropagation(); navigate('reports') }}
@@ -297,7 +268,6 @@ function ReportsWidget({ navigate }) {
   )
 }
 
-// ─── GRADING WIDGET ───────────────────────────────────────────────────────────
 function GradingWidget({ navigate }) {
   const weights = [
     { label:'Test',  pct:'40%', color:C.red   },
@@ -311,10 +281,7 @@ function GradingWidget({ navigate }) {
         <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📷 Grading</div>
         <span style={{ fontSize:10, color:C.green, fontWeight:700 }}>Synced: PowerSchool ✓</span>
       </div>
-      <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>
-        Last: Today 8:42am · 24 grades · Tap 📷 to scan
-      </div>
-      {/* Weight chips */}
+      <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>Last: Today 8:42am · 24 grades · Tap 📷 to scan</div>
       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
         <span style={{ fontSize:10, color:C.muted, alignSelf:'center' }}>Weights:</span>
         {weights.map(w=>(
@@ -331,7 +298,6 @@ function GradingWidget({ navigate }) {
   )
 }
 
-// ─── LESSON PLAN BUILDER WIDGET ───────────────────────────────────────────────
 const LESSON_LIST = [
   { id:1, title:'Algorithms',       status:'done',    chips:['Standards','TPAS'] },
   { id:2, title:'Standards / TPAS', status:'pending', chips:['Reminders'] },
@@ -351,14 +317,8 @@ function LessonPlanWidget({ navigate }) {
           Open →
         </button>
       </div>
-
-      {/* Action buttons */}
       <div style={{ display:'flex', gap:7, marginBottom:14, flexWrap:'wrap' }}>
-        {[
-          { icon:'📤', label:'Upload lesson plan',  color:C.blue   },
-          { icon:'✨', label:'AI Generate',          color:C.purple },
-          { icon:'📝', label:'Build from scratch',   color:C.teal   },
-        ].map(b=>(
+        {[{ icon:'📤', label:'Upload lesson plan', color:C.blue },{ icon:'✨', label:'AI Generate', color:C.purple },{ icon:'📝', label:'Build from scratch', color:C.teal }].map(b=>(
           <button key={b.label} onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
             style={{ flex:1, minWidth:80, background:`${b.color}15`, color:b.color, border:`1px solid ${b.color}30`, borderRadius:10, padding:'8px 6px', fontSize:10, fontWeight:700, cursor:'pointer', textAlign:'center' }}>
             <div style={{ fontSize:16, marginBottom:2 }}>{b.icon}</div>
@@ -366,21 +326,15 @@ function LessonPlanWidget({ navigate }) {
           </button>
         ))}
       </div>
-
-      {/* Connect textbook */}
       <div style={{ background:C.inner, borderRadius:10, padding:'8px 12px', marginBottom:12, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <span style={{ fontSize:11, color:C.muted }}>Connect textbook:</span>
         <div style={{ display:'flex', gap:6 }}>
           {[['+ PDF',C.red],['Google',C.blue]].map(([l,c])=>(
             <button key={l} onClick={e=>e.stopPropagation()}
-              style={{ background:`${c}18`, color:c, border:`1px solid ${c}30`, borderRadius:8, padding:'4px 9px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
-              {l}
-            </button>
+              style={{ background:`${c}18`, color:c, border:`1px solid ${c}30`, borderRadius:8, padding:'4px 9px', fontSize:10, fontWeight:700, cursor:'pointer' }}>{l}</button>
           ))}
         </div>
       </div>
-
-      {/* Lesson list */}
       <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Recent Plans</div>
       {LESSON_LIST.map(l=>{
         const statusColor = l.status==='done'?C.green:l.status==='tbd'?C.amber:C.muted
@@ -393,9 +347,7 @@ function LessonPlanWidget({ navigate }) {
             <div>
               <div style={{ fontSize:12, fontWeight:600, color:C.text, marginBottom:3 }}>{l.title}</div>
               <div style={{ display:'flex', gap:4 }}>
-                {l.chips.map(c=>(
-                  <span key={c} style={{ fontSize:9, color:C.muted, background:C.raised, borderRadius:6, padding:'2px 6px' }}>{c}</span>
-                ))}
+                {l.chips.map(c=>(<span key={c} style={{ fontSize:9, color:C.muted, background:C.raised, borderRadius:6, padding:'2px 6px' }}>{c}</span>))}
               </div>
             </div>
             <span style={{ fontSize:10, fontWeight:700, color:statusColor, background:`${statusColor}18`, borderRadius:999, padding:'3px 8px', flexShrink:0, marginLeft:8 }}>{statusLabel}</span>
@@ -406,15 +358,10 @@ function LessonPlanWidget({ navigate }) {
   )
 }
 
-// ─── SKETCH & ANNOTATE WIDGET ─────────────────────────────────────────────────
 function SketchAnnotateWidget({ navigate }) {
-  const [uploaded, setUploaded] = useState(false)
   const tools = [
-    { icon:'🖊', label:'Highlight' },
-    { icon:'✏', label:'Free draw' },
-    { icon:'◻', label:'Box'       },
-    { icon:'➤', label:'Arrow'     },
-    { icon:'T',  label:'Text'      },
+    { icon:'🖊', label:'Highlight' },{ icon:'✏', label:'Free draw' },
+    { icon:'◻', label:'Box' },{ icon:'➤', label:'Arrow' },{ icon:'T', label:'Text' },
   ]
   return (
     <Widget style={{ background:'linear-gradient(135deg,#0a0a1a 0%,#060810 100%)', border:`1px solid ${C.amber}20` }}>
@@ -424,8 +371,6 @@ function SketchAnnotateWidget({ navigate }) {
           <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Annotate student work · Send back with push notification</div>
         </div>
       </div>
-
-      {/* Upload / Camera area */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
         <button onClick={e=>{ e.stopPropagation(); navigate('camera') }}
           style={{ background:`${C.blue}15`, border:`1px dashed ${C.blue}40`, borderRadius:12, padding:'14px 8px', cursor:'pointer', textAlign:'center' }}>
@@ -440,8 +385,6 @@ function SketchAnnotateWidget({ navigate }) {
           <div style={{ fontSize:9, color:C.muted }}>Canvas · Upload image or doc</div>
         </button>
       </div>
-
-      {/* Annotation tools */}
       <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Annotation Tools</div>
       <div style={{ display:'flex', gap:6, marginBottom:12 }}>
         {tools.map(t=>(
@@ -454,8 +397,6 @@ function SketchAnnotateWidget({ navigate }) {
           </button>
         ))}
       </div>
-
-      {/* Actions */}
       <div style={{ display:'flex', gap:8 }}>
         <button onClick={e=>e.stopPropagation()}
           style={{ flex:1, background:C.inner, color:C.muted, border:`1px solid ${C.border}`, borderRadius:10, padding:'9px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
@@ -466,23 +407,19 @@ function SketchAnnotateWidget({ navigate }) {
           Send Back ›
         </button>
       </div>
-      <div style={{ fontSize:10, color:C.muted, marginTop:6, textAlign:'center' }}>
-        🔔 Push notification sent to student on send back
-      </div>
+      <div style={{ fontSize:10, color:C.muted, marginTop:6, textAlign:'center' }}>🔔 Push notification sent to student on send back</div>
     </Widget>
   )
 }
 
-// ─── TESTING SUITE WIDGET ─────────────────────────────────────────────────────
 function TestingSuiteWidget({ navigate }) {
   const modes = [
     { icon:'🔒', label:'Lockdown',      sub:'Browser · External test from any ed site · locked', color:C.blue   },
     { icon:'🏗',  label:'Native Builder', sub:'Build in GradeFlow · MC · Short ans · T/F · Essay · Fill blank', color:C.green  },
     { icon:'📄', label:'PDF Convert',   sub:'Upload any PDF · AI digitizes it · Questions editable', color:C.purple },
   ]
-  const sources = ['Take photo of test', '↑ Upload any format', '🔵 Search database', '✨ AI-generate by grade level + subject + standard', '↗ Pull from ed site']
+  const sources  = ['Take photo of test', '↑ Upload any format', '🔵 Search database', '✨ AI-generate by grade level + subject + standard', '↗ Pull from ed site']
   const features = ['Timer + auto-submit', '👁 Real-time monitoring', '✕ Randomize order', '🚩 Flag exit attempts', '✨ AI auto-grade short answers', '📋 Flag essays']
-
   return (
     <Widget style={{ background:'linear-gradient(135deg,#0d0a1e 0%,#060810 100%)', border:`1px solid ${C.purple}25` }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
@@ -495,8 +432,6 @@ function TestingSuiteWidget({ navigate }) {
           Create Test →
         </button>
       </div>
-
-      {/* 3 mode cards */}
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, margin:'12px 0' }}>
         {modes.map(m=>(
           <button key={m.label} onClick={e=>{ e.stopPropagation(); navigate('testingSuite') }}
@@ -509,30 +444,20 @@ function TestingSuiteWidget({ navigate }) {
           </button>
         ))}
       </div>
-
-      {/* Test sources */}
       <div style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:8 }}>
         <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>Test Sources</div>
         <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 12px' }}>
-          {sources.map(s=>(
-            <span key={s} style={{ fontSize:10, color:C.soft }}>· {s}</span>
-          ))}
+          {sources.map(s=>(<span key={s} style={{ fontSize:10, color:C.soft }}>· {s}</span>))}
         </div>
         <div style={{ fontSize:10, color:C.muted, marginTop:6 }}>All questions editable after upload/photo · AI suggests grade-appropriate answers if no key found</div>
       </div>
-
-      {/* Features */}
       <div style={{ background:C.inner, borderRadius:12, padding:'10px 12px', marginBottom:8 }}>
         <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>Features</div>
         <div style={{ display:'flex', flexWrap:'wrap', gap:'4px 12px' }}>
-          {features.map(f=>(
-            <span key={f} style={{ fontSize:10, color:C.soft }}>· {f}</span>
-          ))}
+          {features.map(f=>(<span key={f} style={{ fontSize:10, color:C.soft }}>· {f}</span>))}
         </div>
         <div style={{ fontSize:10, color:C.muted, marginTop:6 }}>Answer key: upload · photo · AI finds online · AI generates if not found · Teacher edits</div>
       </div>
-
-      {/* Grade posting */}
       <div style={{ fontSize:10, color:C.muted, borderTop:`1px solid ${C.border}`, paddingTop:8 }}>
         Grade posting: Auto · Review first · Teacher chooses per test → posts to gradebook at correct weight
       </div>
@@ -540,7 +465,6 @@ function TestingSuiteWidget({ navigate }) {
   )
 }
 
-// ─── SCAN GRADE SHEET WIDGET ──────────────────────────────────────────────────
 function ScanGradeSheetWidget({ navigate }) {
   const weights = [
     { label:'Test',  pct:'40%', color:C.red    },
@@ -576,14 +500,11 @@ function ScanGradeSheetWidget({ navigate }) {
           </span>
         ))}
       </div>
-      <div style={{ fontSize:10, color:C.muted, marginTop:8 }}>
-        Weights auto-pulled from school system · teacher editable anytime in Settings
-      </div>
+      <div style={{ fontSize:10, color:C.muted, marginTop:8 }}>Weights auto-pulled from school system · teacher editable anytime in Settings</div>
     </Widget>
   )
 }
 
-// ─── GRADEBOOK WIDGET ─────────────────────────────────────────────────────────
 function GradebookWidget({ navigate }) {
   const { classes, setActiveClass } = useStore()
   const [activeId, setActiveId] = useState(classes[0]?.id||1)
@@ -594,7 +515,6 @@ function GradebookWidget({ navigate }) {
     { id:3, name:'Sofia Rodriguez', grade:82, letter:'B', bar:C.blue  },
     { id:4, name:'Jordan Williams', grade:74, letter:'C', bar:C.amber },
   ]
-
   return (
     <Widget style={{ background:'linear-gradient(135deg,#0a0f1e 0%,#060810 100%)', border:`1px solid ${C.blue}20` }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
@@ -607,8 +527,6 @@ function GradebookWidget({ navigate }) {
           Open →
         </button>
       </div>
-
-      {/* Class tabs */}
       <div style={{ display:'flex', gap:6, marginBottom:12, overflowX:'auto' }}>
         {classes.map(c=>(
           <button key={c.id} onClick={e=>{ e.stopPropagation(); setActiveId(c.id) }}
@@ -618,8 +536,6 @@ function GradebookWidget({ navigate }) {
           </button>
         ))}
       </div>
-
-      {/* Student list */}
       {STUDENTS.map(s=>(
         <div key={s.id} onClick={e=>{ e.stopPropagation(); navigate('gradebook') }}
           style={{ display:'flex', alignItems:'center', gap:10, background:C.inner, borderRadius:10, padding:'9px 12px', marginBottom:6, cursor:'pointer' }}
@@ -637,8 +553,6 @@ function GradebookWidget({ navigate }) {
           </div>
         </div>
       ))}
-
-      {/* Action buttons */}
       <div style={{ display:'flex', gap:8, marginTop:10, borderTop:`1px solid ${C.border}`, paddingTop:10 }}>
         {[['✨ AI Insights',C.purple],['📊 Student Report',C.green],['📩 Message Parent',C.amber]].map(([l,c])=>(
           <button key={l} onClick={e=>{ e.stopPropagation(); navigate(l.includes('Message')?'parentMessages':'gradebook') }}
@@ -834,73 +748,47 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
   const { classes, messages, getNeedsAttention } = store
   const pending = messages.filter(m=>m.status==='pending')
   const atRisk  = getNeedsAttention()
-
   const [activeWidgets, setActiveWidgets] = useState(WIDGET_CATALOG.map(w=>w.id))
-
-  const removeWidget = (id) => setActiveWidgets(prev => prev.filter(w => w !== id))
-  const addWidget    = (id) => setActiveWidgets(prev => prev.includes(id) ? prev : [...prev, id])
+  const removeWidget = (id) => setActiveWidgets(prev=>prev.filter(w=>w!==id))
+  const addWidget    = (id) => setActiveWidgets(prev=>prev.includes(id)?prev:[...prev,id])
   const show         = (id) => activeWidgets.includes(id)
-
-  // Wraps any widget with a persistent × remove button in the top-right corner
   const wrap = (id, content) => (
     <div key={id} style={{ position:'relative', marginTop:16 }}>
-      <button
-        onClick={e=>{ e.stopPropagation(); removeWidget(id) }}
-        title="Remove widget"
-        style={{
-          position:'absolute', top:-10, right:8, zIndex:20,
-          width:22, height:22, borderRadius:'50%',
-          background:C.bg, border:'1px solid rgba(255,255,255,0.3)',
-          color:'#fff', fontSize:13, fontWeight:700,
-          cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-          lineHeight:1, boxShadow:'0 2px 6px rgba(0,0,0,0.4)',
-        }}
-      >×</button>
+      <button onClick={e=>{ e.stopPropagation(); removeWidget(id) }} title="Remove widget"
+        style={{ position:'absolute', top:-10, right:8, zIndex:20, width:22, height:22, borderRadius:'50%', background:C.bg, border:'1px solid rgba(255,255,255,0.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1, boxShadow:'0 2px 6px rgba(0,0,0,0.4)' }}>
+        ×
+      </button>
       {content}
     </div>
   )
-
   const overviewTiles = [
     { icon:'📚', val:classes.length,     label:'Classes',      page:'classes',        color:C.blue   },
     { icon:'💬', val:pending.length||'', label:'Messages',     page:'parentMessages', color:C.purple },
     { icon:'📋', val:'',                 label:'Lesson Plans', page:'lessonPlan',     color:C.teal   },
     { icon:'🔔', val:atRisk.length||'',  label:'Alerts',       page:'alerts',         color:C.red    },
   ]
-
   return (
     <div style={{ padding:'12px 12px 0' }}>
-
-      {/* ── Add Widgets Modal ── */}
       {showAddWidgets && (
-        <div
-          onClick={()=>setShowAddWidgets(false)}
-          style={{ position:'fixed', inset:0, zIndex:250, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-          <div
-            onClick={e=>e.stopPropagation()}
-            style={{ width:'100%', maxWidth:600, maxHeight:'82vh', overflowY:'auto', background:C.card, border:`1px solid ${C.border}`, borderRadius:'20px 20px 0 0', padding:'20px 16px 36px' }}>
+        <div onClick={()=>setShowAddWidgets(false)} style={{ position:'fixed', inset:0, zIndex:250, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+          <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:600, maxHeight:'82vh', overflowY:'auto', background:C.card, border:`1px solid ${C.border}`, borderRadius:'20px 20px 0 0', padding:'20px 16px 36px' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
                 <div style={{ fontSize:17, fontWeight:800, color:C.text }}>+ Add Widgets</div>
                 <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Tap a widget to add it to your dashboard</div>
               </div>
-              <button onClick={()=>setShowAddWidgets(false)}
-                style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                ×
-              </button>
+              <button onClick={()=>setShowAddWidgets(false)} style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-              {WIDGET_CATALOG.map(w => {
-                const isActive = activeWidgets.includes(w.id)
+              {WIDGET_CATALOG.map(w=>{
+                const isActive=activeWidgets.includes(w.id)
                 return (
-                  <button key={w.id}
-                    onClick={()=>{ isActive ? removeWidget(w.id) : addWidget(w.id) }}
+                  <button key={w.id} onClick={()=>{ isActive?removeWidget(w.id):addWidget(w.id) }}
                     style={{ textAlign:'left', background:isActive?`${C.green}12`:C.inner, border:`1px solid ${isActive?`${C.green}35`:C.border}`, borderRadius:14, padding:'12px 12px', cursor:'pointer' }}>
                     <div style={{ fontSize:22, marginBottom:6 }}>{w.icon}</div>
                     <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{w.label}</div>
                     <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{w.desc}</div>
-                    <div style={{ marginTop:8, fontSize:10, fontWeight:700, color:isActive?C.red:C.teal }}>
-                      {isActive ? '✕ Remove' : '+ Add'}
-                    </div>
+                    <div style={{ marginTop:8, fontSize:10, fontWeight:700, color:isActive?C.red:C.teal }}>{isActive?'✕ Remove':'+ Add'}</div>
                   </button>
                 )
               })}
@@ -908,8 +796,6 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
           </div>
         </div>
       )}
-
-      {/* W1: Daily Overview — always present, no remove button */}
       <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
@@ -925,11 +811,7 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
           ))}
         </div>
       </Widget>
-
-      {/* W2: Today's Lessons */}
       {show('todaysLessons') && wrap('todaysLessons', <TodaysLessonsWidget navigate={navigate}/>)}
-
-      {/* W3: My Classes */}
       {show('classes') && wrap('classes',
         <Widget onClick={()=>navigate('classes')} title="📚 My Classes" titleRight={<ActionBtn label="+ Add" color={C.blue} onClick={()=>navigate('gradebook')}/>}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
@@ -950,160 +832,91 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
           </div>
         </Widget>
       )}
-
-      {/* W4: Needs Attention */}
       {show('needsAttention') && wrap('needsAttention', <NeedsAttentionWidget atRisk={atRisk} navigate={navigate}/>)}
-
-      {/* W5: Messages */}
-      {show('messages') && wrap('messages', <MessagesWidget navigate={navigate}/>)}
-
-      {/* W6: Reports */}
-      {show('reports') && wrap('reports', <ReportsWidget navigate={navigate}/>)}
-
-      {/* W7: Grading */}
-      {show('grading') && wrap('grading', <GradingWidget navigate={navigate}/>)}
-
-      {/* W8: Lesson Plan Builder */}
-      {show('lessonPlan') && wrap('lessonPlan', <LessonPlanWidget navigate={navigate}/>)}
-
-      {/* W9: Sketch & Annotate */}
-      {show('sketch') && wrap('sketch', <SketchAnnotateWidget navigate={navigate}/>)}
-
-      {/* W10: Testing Suite */}
-      {show('testingSuite') && wrap('testingSuite', <TestingSuiteWidget navigate={navigate}/>)}
-
-      {/* W11: Scan Grade Sheet */}
+      {show('messages')       && wrap('messages',       <MessagesWidget navigate={navigate}/>)}
+      {show('reports')        && wrap('reports',        <ReportsWidget navigate={navigate}/>)}
+      {show('grading')        && wrap('grading',        <GradingWidget navigate={navigate}/>)}
+      {show('lessonPlan')     && wrap('lessonPlan',     <LessonPlanWidget navigate={navigate}/>)}
+      {show('sketch')         && wrap('sketch',         <SketchAnnotateWidget navigate={navigate}/>)}
+      {show('testingSuite')   && wrap('testingSuite',   <TestingSuiteWidget navigate={navigate}/>)}
       {show('scanGradeSheet') && wrap('scanGradeSheet', <ScanGradeSheetWidget navigate={navigate}/>)}
-
-      {/* W12: Gradebook + Student Profile */}
-      {show('gradebook') && wrap('gradebook', <GradebookWidget navigate={navigate}/>)}
-
-      {/* Add Widgets Bar */}
+      {show('gradebook')      && wrap('gradebook',      <GradebookWidget navigate={navigate}/>)}
       <AddWidgetsBar onOpen={()=>setShowAddWidgets(true)}/>
     </div>
   )
 }
 
 // ─── MAIN EXPORT ──────────────────────────────────────────────────────────────
-export default function Dashboard({ currentUser, onCameraClick }) {
+export default function Dashboard({ currentUser }) {
   const store = useStore()
   const { teacher, activeScreen, activeLessonClassId } = store
   const routerNav = useNavigate()
 
-  const [subPage, setSubPage] = useState(null)
-  const [showAddWidgets, setShowAddWidgets] = useState(false)
-  const history = useRef([])
-
-  useEffect(()=>{ applyTheme('kipp'); scrollTop() },[])
-  useEffect(()=>{ if(activeScreen==='studentProfile') setSubPage('studentProfile') },[activeScreen])
-
-  useEffect(()=>{
-    const onGradeFlowHome = () => {
-      history.current = []
-      setSubPage(null)
-      setActiveNav('dashboard')
-      store.setScreen('dashboard')
-      scrollTop()
-    }
-    window.addEventListener('gradeflow-home', onGradeFlowHome)
-    return () => window.removeEventListener('gradeflow-home', onGradeFlowHome)
-  }, [store])
-
-  // Shared BottomNav emits these IDs for the teacher role.
-  // Map them to Dashboard's internal subPage keys.
+  // ── Nav maps (teacher-specific, stay here) ────────────────────────────────
   const NAV_TO_PAGE = {
     classes:   'gradebook',
     messages:  'parentMessages',
     widgets:   'widgets',
     reports:   'reports',
     alerts:    'alerts',
-    dashboard: null,          // home
+    dashboard: null,
   }
-
-  // Reverse map: which BottomNav item should be highlighted per subPage.
   const PAGE_TO_NAV = {
-    gradebook:      'classes',
-    parentMessages: 'messages',
-    lessonPlan:     'classes',
-    reports:        'reports',
-    alerts:         'alerts',
-    testingSuite:   'classes',
-    feed:           'classes',
-    studentProfile: 'classes',
-    integrations:   'classes',
-    widgets:        'widgets',
-    reminders:      'dashboard',
-    attention:      'alerts',
-    classes:        'classes',
-    settings:       'dashboard',
+    gradebook:'classes', parentMessages:'messages', lessonPlan:'classes',
+    reports:'reports', alerts:'alerts', testingSuite:'classes', feed:'classes',
+    studentProfile:'classes', integrations:'classes', widgets:'widgets',
+    reminders:'dashboard', attention:'alerts', classes:'classes', settings:'dashboard',
   }
 
-  function goHome() {
-    history.current = []
-    setSubPage(null)
-    setActiveNav('dashboard')
-    store.setScreen('dashboard')
-    scrollTop()
+  // ── Shared navigation hook ────────────────────────────────────────────────
+  const {
+    subPage, setSubPage,
+    activeNav, isSubPage,
+    showAddWidgets, setShowAddWidgets,
+    navigate, goBack, goHome, navSelect,
+  } = useDashboard({
+    navToPage: NAV_TO_PAGE,
+    pageToNav: PAGE_TO_NAV,
+    onGoHome: () => store.setScreen('dashboard'),
+  })
+
+  // Teacher-only: camera nav goes to router, not internal subPage
+  function teacherNavigate(id) {
+    if (id === 'camera') { routerNav('/camera'); return }
+    navigate(id)
   }
 
-  function goBack() {
-    history.current.pop()
-    const prev = history.current[history.current.length - 1] || null
-    if (!prev) { goHome(); return }
-    setSubPage(prev)
-    setActiveNav(PAGE_TO_NAV[prev] || prev || 'dashboard')
-    scrollTop()
-  }
+  // Teacher-only: sync store's activeScreen → subPage
+  useEffect(()=>{
+    if (activeScreen === 'studentProfile') setSubPage('studentProfile')
+  }, [activeScreen, setSubPage])
 
-  function navigate(id) {
-    if(!id) return
-    if(id==='dashboard') { goHome(); return }
-    if(id==='logout')    { goHome(); return }
-    if(id==='camera')    { routerNav('/camera'); return }
-    history.current.push(id)
-    setSubPage(id)
-    setActiveNav(PAGE_TO_NAV[id] || id || 'dashboard')
-    scrollTop()
-  }
-
-  function navSelect(id) {
-    if(id==='__back__') { goBack(); return }
-    const page = NAV_TO_PAGE[id]
-    if(page === undefined) return
-    if(page === null) { goHome(); return }
-    setActiveNav(id)
-    navigate(page)
-  }
-
-  const [activeNav, setActiveNav] = useState('dashboard')
-  const isSubPage = subPage !== null
-
-  const withNav = (node) => (
-    <>
+  // ── Shell wrapper ─────────────────────────────────────────────────────────
+  const shell = (node) => (
+    <DashboardShell role="teacher" activeNav={activeNav} onNavSelect={navSelect} isSubPage={isSubPage} themeKey="kipp">
       {node}
-      <BottomNav active={activeNav} onSelect={navSelect} isSubPage={isSubPage} role="teacher"/>
-    </>
+    </DashboardShell>
   )
 
-  if(subPage==='gradebook')      return withNav(<SubPage><Gradebook      onBack={goBack}/></SubPage>)
-  if(subPage==='lessonPlan')     return withNav(<SubPage><LessonPlan     initialMode="view" classId={activeLessonClassId} onBack={goBack}/></SubPage>)
-  if(subPage==='parentMessages') return withNav(<SubPage><ParentMessages onBack={goBack} viewerRole="teacher"/></SubPage>)
-  if(subPage==='reports')        return withNav(<SubPage><Reports        onBack={goBack}/></SubPage>)
-  if(subPage==='testingSuite')   return withNav(<SubPage><TestingSuite   onBack={goBack}/></SubPage>)
-  if(subPage==='feed')           return withNav(<SubPage><ClassFeed      onBack={goBack} viewerRole="teacher"/></SubPage>)
-  if(subPage==='studentProfile') return withNav(<SubPage><StudentProfile onBack={goBack}/></SubPage>)
-  if(subPage==='integrations')   return withNav(<SubPage><Integrations   onBack={goBack}/></SubPage>)
-  if(subPage==='widgets')        return withNav(<SubPage><Widgets       onBack={goBack}/></SubPage>)
-  if(subPage==='reminders')      return withNav(<RemindersPage      onBack={goBack}/>)
-  if(subPage==='attention')      return withNav(<NeedsAttentionPage  onBack={goBack}/>)
-  if(subPage==='alerts')         return withNav(<AlertsPage          onBack={goBack}/>)
-  if(subPage==='classes')        return withNav(<ClassesPage   onBack={goBack} navigate={navigate}/>)
-  if(subPage==='settings')       return withNav(<SettingsPage  onBack={goBack} navigate={navigate}/>)
+  if(subPage==='gradebook')      return shell(<SubPage><Gradebook      onBack={goBack}/></SubPage>)
+  if(subPage==='lessonPlan')     return shell(<SubPage><LessonPlan     initialMode="view" classId={activeLessonClassId} onBack={goBack}/></SubPage>)
+  if(subPage==='parentMessages') return shell(<SubPage><ParentMessages onBack={goBack} viewerRole="teacher"/></SubPage>)
+  if(subPage==='reports')        return shell(<SubPage><Reports        onBack={goBack}/></SubPage>)
+  if(subPage==='testingSuite')   return shell(<SubPage><TestingSuite   onBack={goBack}/></SubPage>)
+  if(subPage==='feed')           return shell(<SubPage><ClassFeed      onBack={goBack} viewerRole="teacher"/></SubPage>)
+  if(subPage==='studentProfile') return shell(<SubPage><StudentProfile onBack={goBack}/></SubPage>)
+  if(subPage==='integrations')   return shell(<SubPage><Integrations   onBack={goBack}/></SubPage>)
+  if(subPage==='widgets')        return shell(<SubPage><Widgets        onBack={goBack}/></SubPage>)
+  if(subPage==='reminders')      return shell(<RemindersPage     onBack={goBack}/>)
+  if(subPage==='attention')      return shell(<NeedsAttentionPage onBack={goBack}/>)
+  if(subPage==='alerts')         return shell(<AlertsPage         onBack={goBack}/>)
+  if(subPage==='classes')        return shell(<ClassesPage  onBack={goBack} navigate={teacherNavigate}/>)
+  if(subPage==='settings')       return shell(<SettingsPage onBack={goBack} navigate={teacherNavigate}/>)
 
-  return withNav(
+  return shell(
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
       <StickyHeader teacher={teacher}/>
-      <HomeFeed navigate={navigate} showAddWidgets={showAddWidgets} setShowAddWidgets={setShowAddWidgets}/>
+      <HomeFeed navigate={teacherNavigate} showAddWidgets={showAddWidgets} setShowAddWidgets={setShowAddWidgets}/>
     </div>
   )
 }

@@ -717,50 +717,47 @@ function HomePage({ navigate }) {
 }
 
 // ─── MAIN STUDENT DASHBOARD ───────────────────────────────────────────────────
+import { useDashboard } from '../hooks/useDashboard'
+import DashboardShell from '../components/layout/DashboardShell'
+
 export default function StudentDashboard({ currentUser }) {
   const location = useLocation()
-  const [page,      setPage]      = useState('home')
-  const [activeNav, setActiveNav] = useState('dashboard')
 
-  // ── gradeflow-home event (matches Dashboard.jsx) ─────────────────────────
-  useEffect(()=>{
-    const onGradeFlowHome = () => {
-      setPage('home')
-      setActiveNav('dashboard')
-      window.scrollTo(0,0)
-    }
-    window.addEventListener('gradeflow-home', onGradeFlowHome)
-    return () => window.removeEventListener('gradeflow-home', onGradeFlowHome)
-  },[])
+  const NAV_TO_PAGE = {
+    classes:   'grades',
+    messages:  'messages',
+    alerts:    'alerts',
+    widgets:   'widgets',
+    dashboard: null,
+  }
+  const PAGE_TO_NAV = {
+    grades:'classes', classes:'classes', messages:'messages',
+    alerts:'alerts', widgets:'widgets',
+  }
+
+  const { subPage, activeNav, isSubPage, navigate, goBack, goHome, navSelect } = useDashboard({
+    navToPage: NAV_TO_PAGE,
+    pageToNav: PAGE_TO_NAV,
+  })
 
   useEffect(()=>{
     const next = location?.state?.open
-    if(next){ setPage(next); setActiveNav(next); window.history.replaceState({ ...window.history.state, usr:null },'') }
+    if(next){ navigate(next); window.history.replaceState({ ...window.history.state, usr:null },'') }
   },[location?.state])
 
-  useEffect(()=>{ window.scrollTo(0,0) },[page])
-
-  function goHome() { setPage('home'); setActiveNav('dashboard'); window.scrollTo(0,0) }
-
-  function navigate(id) {
-    if(id==='__back__'){ goHome(); return }
-    setPage(id); setActiveNav(id); window.scrollTo(0,0)
-  }
-
-  const withNav = (node) => (
-    <>
+  const shell = (node) => (
+    <DashboardShell role="student" activeNav={activeNav} onNavSelect={navSelect} isSubPage={isSubPage} themeKey="hisd">
       {node}
-      <SharedBottomNav role="student" active={activeNav} onSelect={navigate} isSubPage={page!=='home'}/>
-    </>
+    </DashboardShell>
   )
 
-  if(page==='classes')  return withNav(<SubPage><GradesPage   onBack={goHome}/></SubPage>)
-  if(page==='grades')   return withNav(<SubPage><GradesPage   onBack={goHome}/></SubPage>)
-  if(page==='messages') return <MessagesPage onBack={goHome}/>
-  if(page==='alerts')   return withNav(<SubPage><AlertsPage   onBack={goHome}/></SubPage>)
-  if(page==='widgets')  return withNav(<SubPage><Widgets      onBack={goHome}/></SubPage>)
+  if(subPage==='classes')  return shell(<SubPage><GradesPage   onBack={goHome}/></SubPage>)
+  if(subPage==='grades')   return shell(<SubPage><GradesPage   onBack={goHome}/></SubPage>)
+  if(subPage==='messages') return <MessagesPage onBack={goHome}/>
+  if(subPage==='alerts')   return shell(<SubPage><AlertsPage   onBack={goHome}/></SubPage>)
+  if(subPage==='widgets')  return shell(<SubPage><Widgets      onBack={goHome}/></SubPage>)
 
-  return withNav(
+  return shell(
     <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
       <StickyHeader name={STUDENT.name} grade={STUDENT.grade}/>
       <HomePage navigate={navigate}/>
