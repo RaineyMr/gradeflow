@@ -6,7 +6,7 @@ const ROLES = [
   { id: 'student',      label: 'Student',       icon: '🎓'   },
   { id: 'parent',       label: 'Parent',        icon: '👪'   },
   { id: 'admin',        label: 'Admin',         icon: '🏫'   },
-  { id: 'supportStaff', label: 'Support Staff', icon: '🩺'   },
+  { id: 'supportStaff', label: 'Support Staff', icon: '📣'   },
 ]
 
 const BRAND = {
