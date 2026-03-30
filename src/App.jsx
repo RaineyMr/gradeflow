@@ -25,9 +25,8 @@ import Widgets         from '@pages/Widgets'
 import ProfileSettings from '@components/ProfileSettings'
 import SupportStaffDashboard from '@pages/SupportStaffDashboard'
 import SupportStaffGroupScreen from '@pages/SupportStaffGroupScreen'
+import StudentProfile from '@pages/StudentProfile'
 import StudentTrends from '@pages/StudentTrends'
-
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
