@@ -98,88 +98,16 @@ const CURRICULUM_SOURCES = [
 ]
 
 const DEFAULT_CONNECTIONS = {
-  powerSchool: {
-    connected: false,
-    label: 'PowerSchool',
-    url: 'https://powerschool.com',
-    category: 'roster',
-    icon: '🏫',
-    description: 'Pull rosters + sync grades',
-  },
-  infiniteCampus: {
-    connected: false,
-    label: 'Infinite Campus',
-    url: 'https://infinitecampus.com',
-    category: 'roster',
-    icon: '🎓',
-    description: 'Roster sync + grade passback',
-  },
-  skyward: {
-    connected: false,
-    label: 'Skyward',
-    url: 'https://skyward.com',
-    category: 'roster',
-    icon: '🌤',
-    description: 'Student info + gradebook sync',
-  },
-  canvas: {
-    connected: false,
-    label: 'Canvas LMS',
-    url: 'https://canvas.instructure.com',
-    category: 'lms',
-    icon: '🖼',
-    description: 'Assignments, grades, submissions',
-  },
-  googleClassroom: {
-    connected: false,
-    label: 'Google Classroom',
-    url: 'https://classroom.google.com',
-    category: 'lms',
-    icon: '🟢',
-    description: 'Assignments + roster import',
-    lastSync: null,
-  },
-  planbook: {
-    connected: false,
-    label: 'Planbook',
-    url: 'https://planbook.com',
-    category: 'lessons',
-    icon: '📅',
-    description: 'Import your lesson plan calendar',
-  },
-  chalk: {
-    connected: false,
-    label: 'Chalk',
-    url: 'https://chalk.com',
-    category: 'lessons',
-    icon: '🖊',
-    description: 'Curriculum maps + lesson plans',
-  },
-  tpt: {
-    connected: false,
-    label: 'Teachers Pay Teachers',
-    url: 'https://teacherspayteachers.com',
-    category: 'lessons',
-    icon: '💼',
-    description: 'Import purchased lesson resources',
-  },
-  googleDrive: {
-    connected: true,
-    label: 'Google Drive',
-    url: 'https://drive.google.com',
-    category: 'lessons',
-    icon: '📁',
-    description: 'Upload docs & lesson materials',
-    lastSync: 'Today 9:01am',
-  },
-  clever: {
-    connected: false,
-    label: 'Clever',
-    url: 'https://clever.com',
-    category: 'roster',
-    icon: '🔗',
-    description: 'Single sign-on + roster sync',
-  },
+  powerSchool:    { connected: false, label: 'PowerSchool',        url: 'https://powerschool.com',        category: 'roster',  icon: '🏫', description: 'Pull rosters + sync grades'         },
+  infiniteCampus: { connected: false, label: 'Infinite Campus',    url: 'https://infinitecampus.com',     category: 'roster',  icon: '🎓', description: 'Roster sync + grade passback'       },
+  skyward:        { connected: false, label: 'Skyward',            url: 'https://skyward.com',            category: 'roster',  icon: '🌤', description: 'Student info + gradebook sync'      },
+  canvas:         { connected: false, label: 'Canvas LMS',         url: 'https://canvas.instructure.com', category: 'lms',     icon: '🖼', description: 'Assignments, grades, submissions'   },
+  googleClassroom:{ connected: false, label: 'Google Classroom',   url: 'https://classroom.google.com',   category: 'lms',     icon: '🟢', description: 'Assignments + roster import', lastSync: null },
+  planbook:       { connected: false, label: 'Planbook',           url: 'https://planbook.com',           category: 'lessons', icon: '📅', description: 'Import your lesson plan calendar'  },
+  chalk:          { connected: false, label: 'Chalk',              url: 'https://chalk.com',              category: 'lessons', icon: '🖊', description: 'Curriculum maps + lesson plans'    },
+  tpt:            { connected: false, label: 'Teachers Pay Teachers', url: 'https://teacherspayteachers.com', category: 'lessons', icon: '💼', description: 'Import purchased lesson resources' },
+  googleDrive:    { connected: true,  label: 'Google Drive',       url: 'https://drive.google.com',       category: 'lessons', icon: '📁', description: 'Upload docs & lesson materials', lastSync: 'Today 9:01am' },
+  clever:         { connected: false, label: 'Clever',             url: 'https://clever.com',             category: 'roster',  icon: '🔗', description: 'Single sign-on + roster sync'       },
 }
 
 // ─── Supabase row mappers ─────────────────────────────────────────────────────
@@ -198,12 +126,7 @@ function mapClass(row) {
 
 function mapStudent(row) {
   const score  = row.avg_score ?? row.grade ?? 0
-  const letter = score >= 90 ? 'A'
-               : score >= 80 ? 'B'
-               : score >= 70 ? 'C'
-               : score >= 60 ? 'D'
-               : 'F'
-
+  const letter = score >= 90 ? 'A' : score >= 80 ? 'B' : score >= 70 ? 'C' : score >= 60 ? 'D' : 'F'
   return {
     id:             row.id,
     classId:        row.class_id,
@@ -219,11 +142,10 @@ function mapStudent(row) {
 
 function mapAssignment(row) {
   const categoryId =
-    row.type === 'test'         ? 1 :
-    row.type === 'quiz'         ? 2 :
-    row.type === 'homework'     ? 3 :
-    row.type === 'participation'? 4 : 4
-
+    row.type === 'test'          ? 1 :
+    row.type === 'quiz'          ? 2 :
+    row.type === 'homework'      ? 3 :
+    row.type === 'participation' ? 4 : 4
   return {
     id:         row.id,
     classId:    row.class_id,
@@ -239,11 +161,7 @@ function mapAssignment(row) {
 }
 
 function mapGrade(row) {
-  return {
-    studentId:    row.student_id,
-    assignmentId: row.assignment_id,
-    score:        row.score,
-  }
+  return { studentId: row.student_id, assignmentId: row.assignment_id, score: row.score }
 }
 
 function mapMessage(row) {
@@ -262,7 +180,6 @@ function mapMessage(row) {
 
 function mapLesson(row) {
   const plan = row.plan_data || {}
-
   return {
     id:         row.id,
     classId:    row.class_id,
@@ -301,37 +218,40 @@ function getParticipationPointsForEventType(eventType) {
   return 0
 }
 
+// ─── Trend computation helper (used by support staff analytics) ───────────────
+function computeTrendFromValues(values) {
+  if (!values || values.length < 2) return 'flat'
+  const recent = values.slice(-3)
+  const first  = recent[0]
+  const last   = recent[recent.length - 1]
+  if (last > first + 2) return 'up'
+  if (last < first - 2) return 'down'
+  return 'flat'
+}
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 export const useStore = create((set, get) => ({
 
   // ── Loading state ───────────────────────────────────────────────────────────
-  dbLoaded: false,
-  isHydrated: false,
-  dbError:  null,
+  dbLoaded:    false,
+  isHydrated:  false,
+  dbError:     null,
 
   // ── Auth / User ─────────────────────────────────────────────────────────────
   currentUser: null,
-  lang: 'en',
+  lang:        'en',
 
-  setCurrentUser: (user) => set({
-    currentUser: user,
-    lang: user?.lang || 'en',
-  }),
+  setCurrentUser: (user) => set({ currentUser: user, lang: user?.lang || 'en' }),
 
   setLang: (lang) => set(state => ({
     lang,
-    currentUser: state.currentUser
-      ? { ...state.currentUser, lang }
-      : state.currentUser,
+    currentUser: state.currentUser ? { ...state.currentUser, lang } : state.currentUser,
   })),
 
   // ── Teacher profile ─────────────────────────────────────────────────────────
   teacher: {
-    id: 1,
-    name: 'Ms. Johnson',
-    school: 'KIPP New Orleans',
-    schoolColor: '#BA0C2F',
-    avatar: '👩‍🏫',
+    id: 1, name: 'Ms. Johnson', school: 'KIPP New Orleans',
+    schoolColor: '#BA0C2F', avatar: '👩‍🏫',
   },
 
   // ── Data (fallback until Supabase loads) ────────────────────────────────────
@@ -345,13 +265,15 @@ export const useStore = create((set, get) => ({
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
 
-  // ── Support Staff Groups (REPLACES Teams) ──────────────────────────────────
-  supportStaffGroups: [],
+  // ── Support Staff state ─────────────────────────────────────────────────────
+  supportStaffGroups:       [],
   supportStaffGroupMembers: [],
-  studentTrends: {},
-  interventionPlans: [],
+  studentTrends:            {},
+  interventionPlans:        [],
+  supportNotes:             [],
 
-setDemoSupportStaffData: async () => {
+  // ── Support Staff — demo data loader ────────────────────────────────────────
+  setDemoSupportStaffData: async () => {
     if (get().currentUser?.role !== 'supportStaff') return
     try {
       const {
@@ -362,10 +284,9 @@ setDemoSupportStaffData: async () => {
       } = await import('./demoSupportStaffGroups.js')
 
       set({
-        supportStaffGroups:      demoSupportStaffGroups,
+        supportStaffGroups:       demoSupportStaffGroups,
         supportStaffGroupMembers: demoGroupMembers,
-        // demoStudentTrends is already an object keyed by student_id — use as-is.
-        studentTrends:            demoStudentTrends,
+        studentTrends:            demoStudentTrends, // already an object keyed by student_id
         interventionPlans:        demoInterventionPlans,
       })
     } catch (e) {
@@ -373,189 +294,79 @@ setDemoSupportStaffData: async () => {
     }
   },
 
+  setDemoSupportNotes: () => {
+    if (get().currentUser?.role !== 'supportStaff') return
+    set({ supportNotes: demoSupportNotes })
+  },
+
+  // ── Support Staff — group actions ───────────────────────────────────────────
   loadSupportStaffGroups: async () => {
     const { currentUser } = get()
     if (currentUser?.role !== 'supportStaff') return []
-    
     try {
       const { data: groups } = await supabase
-        .from('support_staff_groups')
-        .select('*')
-        .eq('staff_id', currentUser.id)
-        .order('created_at', { ascending: false })
-      
+        .from('support_staff_groups').select('*')
+        .eq('staff_id', currentUser.id).order('created_at', { ascending: false })
       set({ supportStaffGroups: groups || [] })
       return groups || []
-    } catch {
-      // Fallback handled by setDemoSupportStaffData
-      return []
-    }
+    } catch { return [] }
   },
 
   createSupportStaffGroup: async (name, studentIds) => {
     const { currentUser } = get()
     if (currentUser?.role !== 'supportStaff') return null
-    
     try {
       const { data: group } = await supabase
-        .from('support_staff_groups')
-        .insert({ staff_id: currentUser.id, name })
-        .select()
-        .single()
-      
+        .from('support_staff_groups').insert({ staff_id: currentUser.id, name })
+        .select().single()
       if (group && studentIds?.length) {
-        const members = studentIds.map(id => ({
-          group_id: group.id,
-          student_id: id
-        }))
+        const members = studentIds.map(id => ({ group_id: group.id, student_id: id }))
         await supabase.from('support_staff_group_members').insert(members)
-        
-        // Reload members for this group
         const { data: groupMembersData } = await supabase
-          .from('support_staff_group_members')
-          .select('*')
-          .eq('group_id', group.id)
-        set(state => ({
-          supportStaffGroupMembers: [...state.supportStaffGroupMembers, ...groupMembersData]
-        }))
+          .from('support_staff_group_members').select('*').eq('group_id', group.id)
+        set(state => ({ supportStaffGroupMembers: [...state.supportStaffGroupMembers, ...groupMembersData] }))
       }
-      
-      // Reload all groups
       await get().loadSupportStaffGroups()
       return group
-    } catch (error) {
-      console.error('Create group failed:', error)
-      return null
-    }
+    } catch (error) { console.error('Create group failed:', error); return null }
   },
 
   loadSupportStaffGroupMembers: async (groupId) => {
     try {
       const { data } = await supabase
         .from('support_staff_group_members')
-        .select('*, student:students(name, class_id)')
-        .eq('group_id', groupId)
+        .select('*, student:students(name, class_id)').eq('group_id', groupId)
       return data || []
-    } catch {
-      return []
-    }
+    } catch { return [] }
+  },
+
+  getSupportStaffGroups: () => get().supportStaffGroups || [],
+
+  getGroupStudents: (groupId) => {
+    const { students, supportStaffGroupMembers } = get()
+    const memberIds = supportStaffGroupMembers
+      .filter(m => m.group_id === groupId).map(m => m.student_id)
+    return students.filter(s => memberIds.includes(s.id))
   },
 
   getStudentsForSupportStaff: () => {
-    const { currentUser, students, supportStaffGroups, supportStaffGroupMembers } = get()
+    const { currentUser, students, supportStaffGroupMembers } = get()
     if (currentUser?.role !== 'supportStaff') return []
-    
-    const studentIds = new Set()
-    for (const member of supportStaffGroupMembers) {
-      studentIds.add(member.student_id)
-    }
+    const studentIds = new Set(supportStaffGroupMembers.map(m => m.student_id))
     return students.filter(s => studentIds.has(s.id))
   },
 
   getStudentsInGroup: (groupId) => {
     const { students, supportStaffGroupMembers } = get()
     const groupMembers = supportStaffGroupMembers.filter(m => m.group_id === groupId)
-    const studentIds = groupMembers.map(m => m.student_id)
-    return students.filter(s => studentIds.includes(s.id))
-  },
-
-  loadStudentTrends: async (studentId) => {
-    try {
-      const { data } = await supabase
-        .from('student_trends')
-        .select('*')
-        .eq('student_id', studentId)
-        .order('period_start', { ascending: false })
-      const trendsById = Object.fromEntries(data?.map(t => [t.student_id, t]) || [])
-      set({ studentTrends: { ...get().studentTrends, [studentId]: trendsById[studentId] || null } })
-      return trendsById
-    } catch (error) {
-      console.error('Load trends failed:', error)
-      return {}
-    }
-  },
-
-  loadInterventionPlan: async (studentId) => {
-    try {
-      const { data } = await supabase
-        .from('intervention_plans')
-        .select('*')
-        .eq('student_id', studentId)
-        .order('created_at', { ascending: false })
-        .limit(1)
-      const plan = data?.[0]
-      set({ interventionPlans: plan ? [plan, ...get().interventionPlans.filter(p => p.student_id !== studentId)] : get().interventionPlans })
-      return plan
-    } catch (error) {
-      console.error('Load intervention plan failed:', error)
-      return null
-    }
-  },
-
-  createInterventionPlan: async (studentId, data) => {
-    const { currentUser } = get()
-    try {
-      const { data: plan } = await supabase
-        .from('intervention_plans')
-        .insert({ student_id: studentId, staff_id: currentUser.id, ...data })
-        .select()
-        .single()
-      set(state => ({ interventionPlans: [plan, ...state.interventionPlans] }))
-      return plan
-    } catch (error) {
-      console.error('Create plan failed:', error)
-      return null
-    }
-  },
-
-  updateInterventionPlan: async (planId, data) => {
-    try {
-      const { data: plan, error } = await supabase
-        .from('intervention_plans')
-        .update({ ...data, updated_at: new Date().toISOString() })
-        .eq('id', planId)
-        .select()
-        .single()
-      
-      if (error) throw error
-      set(state => ({
-        interventionPlans: state.interventionPlans.map(p => p.id === planId ? plan : p)
-      }))
-      return plan
-    } catch (error) {
-      console.error('Update plan failed:', error)
-      return null
-    }
-  },
-
-  getTeachersForSupportStaff: () => [
-    { id: 't1', name: 'Mr. Rivera',   avatar: '🧑‍🔬', role: 'teacher', subject: 'Science' },
-    { id: 't2', name: 'Ms. Davis',    avatar: '👩‍💼', role: 'teacher', subject: 'Reading' },
-    { id: 't3', name: 'Ms. Johnson',  avatar: '👩‍🏫', role: 'teacher', subject: 'Math'    },
-  ],
-
-  getAdminForSupportStaff: () => [
-    { id: 'a1', name: 'Principal Davis', avatar: '🏫', role: 'admin', label: 'Principal'      },
-    { id: 'a2', name: 'Dr. Green',       avatar: '🎓', role: 'admin', label: 'Vice Principal'  },
-  ],
-
-  getSupportStaffGroups: () => {
-    return get().supportStaffGroups || []
-  },
-
-  getGroupStudents: (groupId) => {
-    const { students, supportStaffGroupMembers } = get()
-    const memberIds = supportStaffGroupMembers
-      .filter(m => m.group_id === groupId)
-      .map(m => m.student_id)
-    return students.filter(s => memberIds.includes(s.id))
+    return students.filter(s => groupMembers.map(m => m.student_id).includes(s.id))
   },
 
   sendGroupMessage: async ({ groupId, groupName, recipientMode, recipients, subject, body }) => {
     const newMessages = recipients.map(r => ({
       id:            Date.now() + Math.random(),
       studentName:   r.name,
-      subject:       subject,
+      subject,
       trigger:       `Group: ${groupName} · ${recipientMode}`,
       status:        'sent',
       tone:          'Direct',
@@ -566,85 +377,343 @@ setDemoSupportStaffData: async () => {
     set(state => ({ messages: [...state.messages, ...newMessages] }))
   },
 
-  // ── Support Notes ─────────────────────────────────────────────────────────
-  supportNotes: [],
+  getTeachersForSupportStaff: () => [
+    { id: 't1', name: 'Mr. Rivera',  avatar: '🧑‍🔬', role: 'teacher', subject: 'Science' },
+    { id: 't2', name: 'Ms. Davis',   avatar: '👩‍💼', role: 'teacher', subject: 'Reading' },
+    { id: 't3', name: 'Ms. Johnson', avatar: '👩‍🏫', role: 'teacher', subject: 'Math'    },
+  ],
 
-  // Demo notes for supportStaff
-  setDemoSupportNotes: () => {
-    if (get().currentUser?.role !== 'supportStaff') return
-    set({ supportNotes: demoSupportNotes })
+  getAdminForSupportStaff: () => [
+    { id: 'a1', name: 'Principal Davis', avatar: '🏫', role: 'admin', label: 'Principal'     },
+    { id: 'a2', name: 'Dr. Green',       avatar: '🎓', role: 'admin', label: 'Vice Principal' },
+  ],
+
+  // ── Support Staff — Tier 3: Trend helpers ───────────────────────────────────
+
+  /**
+   * Returns trend summary for a single student.
+   * Uses studentTrends (loaded from demoSupportStaffGroups) if available,
+   * otherwise derives a simple trend from current grade alone.
+   */
+  getStudentTrendSummary: (studentId) => {
+    const { studentTrends, students } = get()
+    const student = students.find(s => s.id === studentId)
+    if (!student) return null
+
+    const trendData = studentTrends?.[studentId]
+    // demoStudentTrends is keyed as { 1: [...periods], 2: [...periods] }
+    const periods   = Array.isArray(trendData) ? trendData : []
+    const gradeValues = periods.map(p => p.grade_avg || 0)
+
+    return {
+      studentId,
+      name:          student.name,
+      currentGrade:  student.grade,
+      flagged:       student.flagged,
+      gradeTrend:    computeTrendFromValues(gradeValues.length >= 2 ? gradeValues : [student.grade]),
+      riskLevel:     periods[0]?.risk_level || (student.grade < 70 ? 'high' : 'low'),
+      notesCount:    periods[0]?.notes_count || 0,
+      periods,
+    }
   },
 
-  // ── Participation events (real-time, plus Supabase) ────────────────────────
+  /**
+   * Returns trend summaries for all students assigned to this support staff user.
+   */
+  getAllSupportStaffStudentTrends: () => {
+    const { students, supportStaffGroupMembers, studentTrends } = get()
+    const assignedIds = new Set(supportStaffGroupMembers.map(m => m.student_id))
+    return students
+      .filter(s => assignedIds.has(s.id))
+      .map(student => {
+        const trendData   = studentTrends?.[student.id]
+        const periods     = Array.isArray(trendData) ? trendData : []
+        const gradeValues = periods.map(p => p.grade_avg || 0)
+        return {
+          studentId:    student.id,
+          name:         student.name,
+          currentGrade: student.grade,
+          flagged:      student.flagged,
+          gradeTrend:   computeTrendFromValues(gradeValues.length >= 2 ? gradeValues : [student.grade]),
+          riskLevel:    periods[0]?.risk_level || (student.grade < 70 ? 'high' : 'low'),
+          notesCount:   periods[0]?.notes_count || 0,
+        }
+      })
+  },
+
+  // ── Support Staff — Tier 4: Intervention plan actions ───────────────────────
+
+  /**
+   * Returns intervention plans for a specific student.
+   * Checks local interventionPlans state first, falls back to demoSupportInterventions.
+   */
+  getSupportStaffInterventionPlans: (studentId) => {
+    const { interventionPlans } = get()
+    if (interventionPlans.length > 0) {
+      return studentId
+        ? interventionPlans.filter(p => p.student_id === studentId || p.studentId === studentId)
+        : interventionPlans
+    }
+    // Fallback — return empty; pages import demoSupportInterventions directly
+    return []
+  },
+
+  /**
+   * Creates a new intervention plan locally and optionally persists to Supabase.
+   */
+  createSupportStaffInterventionPlan: async (studentId, planData) => {
+    const { currentUser } = get()
+    const newPlan = {
+      ...planData,
+      id:        planData.id || `int-${Date.now()}`,
+      studentId,
+      student_id: studentId,
+      staff_id:  currentUser?.id || 'support-staff-1',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    set(state => ({ interventionPlans: [newPlan, ...state.interventionPlans] }))
+
+    try {
+      await supabase.from('intervention_plans').insert({
+        student_id:    studentId,
+        staff_id:      currentUser?.id,
+        goal:          planData.goal,
+        type:          planData.type,
+        steps:         planData.steps,
+        progress_notes: planData.progressNotes,
+        follow_up_date: planData.followUpDate,
+        status:        planData.status || 'active',
+      })
+    } catch { /* demo mode — silent */ }
+
+    return newPlan
+  },
+
+  /**
+   * Updates an existing intervention plan locally and optionally persists to Supabase.
+   */
+  updateSupportStaffInterventionPlan: async (planId, updates) => {
+    const updatedPlan = { ...updates, updatedAt: new Date().toISOString() }
+    set(state => ({
+      interventionPlans: state.interventionPlans.map(p =>
+        (p.id === planId) ? { ...p, ...updatedPlan } : p
+      ),
+    }))
+
+    try {
+      await supabase.from('intervention_plans')
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq('id', planId)
+    } catch { /* demo mode — silent */ }
+
+    return updatedPlan
+  },
+
+  // ── Support Staff — Tier 5: Analytics helpers ────────────────────────────────
+
+  /**
+   * Grade distribution across assigned students: { A, B, C, D, F, counts, percentages }
+   */
+  getGradeDistribution: () => {
+    const { students, supportStaffGroupMembers } = get()
+    const assignedIds = new Set(supportStaffGroupMembers.map(m => m.student_id))
+    const assigned    = supportStaffGroupMembers.size > 0
+      ? students.filter(s => assignedIds.has(s.id))
+      : students  // fallback to all if no groups loaded yet
+
+    const dist = { A:0, B:0, C:0, D:0, F:0 }
+    assigned.forEach(s => {
+      if      (s.grade >= 90) dist.A++
+      else if (s.grade >= 80) dist.B++
+      else if (s.grade >= 70) dist.C++
+      else if (s.grade >= 60) dist.D++
+      else                    dist.F++
+    })
+    const total = assigned.length || 1
+    return {
+      ...dist,
+      total,
+      atRisk:     dist.D + dist.F,
+      atRiskPct:  Math.round(((dist.D + dist.F) / total) * 100),
+      avgGrade:   assigned.length
+        ? Math.round(assigned.reduce((sum, s) => sum + s.grade, 0) / assigned.length)
+        : 0,
+    }
+  },
+
+  /**
+   * Support notes analytics: counts by type and trend over time.
+   */
+  getSupportNotesAnalytics: () => {
+    const { supportNotes } = get()
+    const byType = supportNotes.reduce((acc, n) => {
+      acc[n.note_type || n.type] = (acc[n.note_type || n.type] || 0) + 1
+      return acc
+    }, {})
+    return {
+      total:    supportNotes.length,
+      byType,
+      trend:    supportNotes.length > 4 ? 'up' : 'flat',
+    }
+  },
+
+  /**
+   * Intervention plan analytics: counts by status.
+   */
+  getInterventionAnalytics: () => {
+    const { interventionPlans } = get()
+    return {
+      total:     interventionPlans.length,
+      active:    interventionPlans.filter(p => p.status === 'active').length,
+      completed: interventionPlans.filter(p => p.status === 'completed').length,
+      overdue:   interventionPlans.filter(p => p.status === 'overdue').length,
+    }
+  },
+
+  /**
+   * Aggregate analytics object for the SupportStaffAnalytics page.
+   */
+  getSupportStaffAnalytics: () => {
+    const store = get()
+    return {
+      grades:        store.getGradeDistribution(),
+      notes:         store.getSupportNotesAnalytics(),
+      interventions: store.getInterventionAnalytics(),
+    }
+  },
+
+  // ── Support Staff — Supabase notes actions ──────────────────────────────────
+  loadSupportNotes: async (studentId) => {
+    if (get().currentUser?.role !== 'supportStaff') return
+    try {
+      const userId = get().currentUser.id
+      const res = await fetch(`/api/support-notes?studentId=${studentId}`, {
+        headers: { 'x-staff-id': userId },
+      })
+      if (!res.ok) throw new Error('Failed to load notes')
+      const { notes } = await res.json()
+      set({ supportNotes: notes })
+    } catch (err) { console.error('Load support notes failed:', err) }
+  },
+
+  addSupportNote: async (note) => {
+    const userId = get().currentUser.id
+    try {
+      const res = await fetch('/api/support-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-staff-id': userId },
+        body: JSON.stringify(note),
+      })
+      if (!res.ok) throw new Error('Failed to add note')
+      const newNote = await res.json()
+      set(state => ({ supportNotes: [newNote, ...state.supportNotes] }))
+    } catch (err) { console.error('Add support note failed:', err) }
+  },
+
+  updateSupportNote: async (id, changes) => {
+    const userId = get().currentUser.id
+    try {
+      const res = await fetch(`/api/support-notes?id=${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-staff-id': userId },
+        body: JSON.stringify(changes),
+      })
+      if (!res.ok) throw new Error('Failed to update note')
+      const updatedNote = await res.json()
+      set(state => ({ supportNotes: state.supportNotes.map(n => n.id === id ? updatedNote : n) }))
+    } catch (err) { console.error('Update support note failed:', err) }
+  },
+
+  // ── Support Staff — Supabase intervention plan (existing) ───────────────────
+  loadStudentTrends: async (studentId) => {
+    try {
+      const { data } = await supabase
+        .from('student_trends').select('*').eq('student_id', studentId)
+        .order('period_start', { ascending: false })
+      const trendsById = Object.fromEntries(data?.map(t => [t.student_id, t]) || [])
+      set({ studentTrends: { ...get().studentTrends, [studentId]: trendsById[studentId] || null } })
+      return trendsById
+    } catch (error) { console.error('Load trends failed:', error); return {} }
+  },
+
+  loadInterventionPlan: async (studentId) => {
+    try {
+      const { data } = await supabase
+        .from('intervention_plans').select('*').eq('student_id', studentId)
+        .order('created_at', { ascending: false }).limit(1)
+      const plan = data?.[0]
+      set({ interventionPlans: plan
+        ? [plan, ...get().interventionPlans.filter(p => p.student_id !== studentId)]
+        : get().interventionPlans })
+      return plan
+    } catch (error) { console.error('Load intervention plan failed:', error); return null }
+  },
+
+  createInterventionPlan: async (studentId, data) => {
+    const { currentUser } = get()
+    try {
+      const { data: plan } = await supabase
+        .from('intervention_plans')
+        .insert({ student_id: studentId, staff_id: currentUser.id, ...data })
+        .select().single()
+      set(state => ({ interventionPlans: [plan, ...state.interventionPlans] }))
+      return plan
+    } catch (error) { console.error('Create plan failed:', error); return null }
+  },
+
+  updateInterventionPlan: async (planId, data) => {
+    try {
+      const { data: plan, error } = await supabase
+        .from('intervention_plans')
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq('id', planId).select().single()
+      if (error) throw error
+      set(state => ({ interventionPlans: state.interventionPlans.map(p => p.id === planId ? plan : p) }))
+      return plan
+    } catch (error) { console.error('Update plan failed:', error); return null }
+  },
+
+  getMessagingTargetsForSupportStaff: () => {
+    const { students } = get()
+    const assignedStudents = students.filter(s => s.id <= 3)
+    const targets = []
+    targets.push(...assignedStudents.map(s => ({ type:'student', ...s, messagingLabel:`Message ${s.name}` })))
+    targets.push(
+      { id:'t1', name:'Mr. Rivera', avatar:'🧑‍🔬', role:'teacher', messagingLabel:'Message Mr. Rivera' },
+      { id:'t2', name:'Ms. Davis',  avatar:'👩‍💼', role:'teacher', messagingLabel:'Message Ms. Davis'  },
+    )
+    targets.push({ id:'a1', name:'Principal Davis', avatar:'🏫', role:'admin', messagingLabel:'Message Principal Davis' })
+    return targets
+  },
+
+  // ── Participation events ─────────────────────────────────────────────────────
   participationEvents: [],
 
   addParticipationEvent: async (classId, studentId, eventType) => {
     const points = getParticipationPointsForEventType(eventType)
     if (!points) return
-
-    const event = {
-      id:        Date.now(),
-      classId,
-      studentId,
-      eventType,
-      points,
-      createdAt: new Date().toISOString(),
-    }
-
-    // Update local state immediately (real-time UI)
-    set(state => ({
-      participationEvents: [...state.participationEvents, event],
-    }))
-
-    // Persist to Supabase (history / analytics)
+    const event = { id: Date.now(), classId, studentId, eventType, points, createdAt: new Date().toISOString() }
+    set(state => ({ participationEvents: [...state.participationEvents, event] }))
     try {
-      const { error } = await supabase
-        .from('participation_events')
-        .insert({
-          class_id:   classId,
-          student_id: studentId,
-          event_type: eventType,
-          points,
-        })
-      if (error) console.error('Participation event sync failed:', error)
-    } catch (err) {
-      console.error('Participation event error:', err)
-    }
-
-    // Recalculate participation grade for this student in this class
+      await supabase.from('participation_events').insert({ class_id: classId, student_id: studentId, event_type: eventType, points })
+    } catch (err) { console.error('Participation event error:', err) }
     const { assignments, participationEvents } = get()
-
-    const participationAssignment = assignments.find(
-      a => a.classId === classId && a.type === 'participation'
-    )
+    const participationAssignment = assignments.find(a => a.classId === classId && a.type === 'participation')
     if (!participationAssignment) return
-
-    const maxPoints =
-      (participationAssignment.options && participationAssignment.options.max_points) ?? 10
-
-    const totalPoints = participationEvents
-      .filter(e => e.classId === classId && e.studentId === studentId)
-      .reduce((sum, e) => sum + e.points, 0)
-
+    const maxPoints = (participationAssignment.options && participationAssignment.options.max_points) ?? 10
+    const totalPoints = participationEvents.filter(e => e.classId === classId && e.studentId === studentId).reduce((sum, e) => sum + e.points, 0)
     const score = Math.min(100, Math.round((totalPoints / maxPoints) * 100))
-
-    // Update grade in local state + Supabase
     await get().updateGrade(studentId, participationAssignment.id, score)
   },
 
-  // ── Student Accommodations ──────────────────────────────────────────────────
+  // ── Student Accommodations ───────────────────────────────────────────────────
   studentAccommodations: {},
 
   setAccommodations: (accommodations) => set(() => {
     const keyed = {}
     for (const s of accommodations) {
-      keyed[s.name] = {
-        name:              s.name,
-        accommodationType: s.accommodationType || 'Other',
-        specificNeeds:     s.specificNeeds     || [],
-        lessonAdjustments: [],
-        notes:             s.notes             || '',
-      }
+      keyed[s.name] = { name: s.name, accommodationType: s.accommodationType || 'Other', specificNeeds: s.specificNeeds || [], lessonAdjustments: [], notes: s.notes || '' }
     }
     return { studentAccommodations: keyed }
   }),
@@ -652,33 +721,13 @@ setDemoSupportStaffData: async () => {
   updateAccommodation: (studentName, changes) => set(state => ({
     studentAccommodations: {
       ...state.studentAccommodations,
-      [studentName]: {
-        ...(state.studentAccommodations[studentName] || {
-          name: studentName,
-          accommodationType: 'Other',
-          specificNeeds: [],
-          lessonAdjustments: [],
-          notes: '',
-        }),
-        ...changes,
-      },
+      [studentName]: { ...(state.studentAccommodations[studentName] || { name: studentName, accommodationType: 'Other', specificNeeds: [], lessonAdjustments: [], notes: '' }), ...changes },
     },
   })),
 
   addAccommodation: (studentName) => set(state => {
     if (state.studentAccommodations[studentName]) return {}
-    return {
-      studentAccommodations: {
-        ...state.studentAccommodations,
-        [studentName]: {
-          name: studentName,
-          accommodationType: 'Other',
-          specificNeeds: [],
-          lessonAdjustments: [],
-          notes: '',
-        },
-      },
-    }
+    return { studentAccommodations: { ...state.studentAccommodations, [studentName]: { name: studentName, accommodationType: 'Other', specificNeeds: [], lessonAdjustments: [], notes: '' } } }
   }),
 
   removeAccommodation: (studentName) => set(state => {
@@ -690,34 +739,17 @@ setDemoSupportStaffData: async () => {
   setLessonAdjustments: (adjustments) => set(state => {
     const next = { ...state.studentAccommodations }
     for (const { studentName, adjustments: adj } of adjustments) {
-      if (next[studentName]) {
-        next[studentName] = {
-          ...next[studentName],
-          lessonAdjustments: adj,
-        }
-      }
+      if (next[studentName]) next[studentName] = { ...next[studentName], lessonAdjustments: adj }
     }
     return { studentAccommodations: next }
   }),
 
-  // ── Load all data from Supabase ─────────────────────────────────────────────
+  // ── Load from Supabase (demo mode) ──────────────────────────────────────────
   loadFromDB: async () => {
-    // Demo mode - load demo data immediately
-    set({
-      classes: DEMO_CLASSES,
-      students: DEMO_STUDENTS,
-      assignments: DEMO_ASSIGNMENTS,
-      grades: DEMO_GRADES,
-      messages: DEMO_MESSAGES,
-      feed: DEMO_FEED,
-      lessons: DEMO_LESSONS,
-      dbLoaded: true,
-      isHydrated: true,
-      dbError: null
-    })
+    set({ classes: DEMO_CLASSES, students: DEMO_STUDENTS, assignments: DEMO_ASSIGNMENTS, grades: DEMO_GRADES, messages: DEMO_MESSAGES, feed: DEMO_FEED, lessons: DEMO_LESSONS, dbLoaded: true, isHydrated: true, dbError: null })
   },
 
-  // ── Grade categories ────────────────────────────────────────────────────────
+  // ── Grade categories ─────────────────────────────────────────────────────────
   categories:           DEFAULT_CATEGORIES,
   gradingMethod:        'weighted',
   allowTeacherOverride: true,
@@ -725,7 +757,7 @@ setDemoSupportStaffData: async () => {
   setCategories:    (cats)   => set({ categories: cats }),
   setGradingMethod: (method) => set({ gradingMethod: method }),
 
-  // ── Curriculum syncing ──────────────────────────────────────────────────────
+  // ── Curriculum ───────────────────────────────────────────────────────────────
   curriculumSources:  CURRICULUM_SOURCES,
   connectedCurricula: {},
 
@@ -733,61 +765,32 @@ setDemoSupportStaffData: async () => {
     connectedCurricula: { ...state.connectedCurricula, [subject]: sourceId },
   })),
 
-  // ── External integrations ───────────────────────────────────────────────────
+  // ── External integrations ────────────────────────────────────────────────────
   connections: DEFAULT_CONNECTIONS,
 
   setConnection: (key, connected) => set(state => ({
-    connections: {
-      ...state.connections,
-      [key]: {
-        ...state.connections[key],
-        connected,
-        lastSync: connected ? 'Just now' : null,
-      },
-    },
+    connections: { ...state.connections, [key]: { ...state.connections[key], connected, lastSync: connected ? 'Just now' : null } },
   })),
 
   syncGradebookToDistrict: async () => {
-    const triggeredBy = 'teacher'
     useStore.setState({ isSyncingGradebook: true })
-
     try {
-      const res = await fetch('/api/sync-gradebook', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ triggeredBy }),
-      })
-
-      if (!res.ok) {
-        console.error('District Gradebook sync failed')
-        useStore.setState({ isSyncingGradebook: false })
-        return false
-      }
-
-      useStore.setState({
-        isSyncingGradebook: false,
-        lastDistrictGradebookSync: new Date().toISOString(),
-      })
-      return true
-    } catch (err) {
-      console.error('District Gradebook sync error:', err)
-      useStore.setState({ isSyncingGradebook: false })
-      return false
-    }
+      const res = await fetch('/api/sync-gradebook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ triggeredBy: 'teacher' }) })
+      useStore.setState({ isSyncingGradebook: false, lastDistrictGradebookSync: res.ok ? new Date().toISOString() : null })
+      return res.ok
+    } catch (err) { console.error('District sync error:', err); useStore.setState({ isSyncingGradebook: false }); return false }
   },
 
-  // ── Onboarding ──────────────────────────────────────────────────────────────
-  onboardingComplete: false,
-  onboardingStep:     0,
-
-  // ── District Gradebook Sync ──────────────────────────────────────────────
-  isSyncingGradebook: false,
+  // ── Onboarding ───────────────────────────────────────────────────────────────
+  onboardingComplete:        false,
+  onboardingStep:            0,
+  isSyncingGradebook:        false,
   lastDistrictGradebookSync: null,
 
   setOnboardingStep:  (step) => set({ onboardingStep: step }),
   completeOnboarding: ()     => set({ onboardingComplete: true }),
 
-  // ── Navigation ──────────────────────────────────────────────────────────────
+  // ── Navigation ───────────────────────────────────────────────────────────────
   activeScreen:        'dashboard',
   previousScreen:      null,
   activeClass:         null,
@@ -798,356 +801,101 @@ setDemoSupportStaffData: async () => {
   keyAlertsDismissed:  [],
   cameraIntent:        null,
 
-  setScreen: (screen) => set(state => ({
-    previousScreen: state.activeScreen,
-    activeScreen:   screen,
-  })),
-
-  goBack: () => set(state => ({
-    activeScreen:   state.previousScreen || 'dashboard',
-    previousScreen: null,
-  })),
-
-  setActiveClass: (cls) => set(state => ({
-    activeClass:    cls,
-    previousScreen: state.activeScreen,
-    activeScreen:   cls ? 'gradebook' : state.activeScreen,
-  })),
-
-  setActiveStudent: (student) => set(state => ({
-    activeStudent:  student,
-    previousScreen: state.activeScreen,
-    activeScreen:   student ? 'studentProfile' : state.activeScreen,
-  })),
-
+  setScreen:   (screen)  => set(state => ({ previousScreen: state.activeScreen, activeScreen: screen })),
+  goBack:      ()        => set(state => ({ activeScreen: state.previousScreen || 'dashboard', previousScreen: null })),
+  setActiveClass:   (cls)     => set(state => ({ activeClass: cls, previousScreen: state.activeScreen, activeScreen: cls ? 'gradebook' : state.activeScreen })),
+  setActiveStudent: (student) => set(state => ({ activeStudent: student, previousScreen: state.activeScreen, activeScreen: student ? 'studentProfile' : state.activeScreen })),
   setActiveLessonClass: (classId) => set({ activeLessonClassId: classId }),
   setCameraIntent:      (intent)  => set({ cameraIntent: intent }),
   setLessonPlanMode:    (mode)    => set({ lessonPlanMode: mode }),
 
-  // ── Lesson status mutations ─────────────────────────────────────────────────
+  // ── Lesson status ────────────────────────────────────────────────────────────
   setLessonStatus: (classId, status) => set(state => {
     const classLessons = [...(state.lessons[classId] || [])]
     if (!classLessons.length) return {}
-
     if (status === 'done') {
       classLessons[0] = { ...classLessons[0], status: 'done', dayLabel: 'Previous' }
       const [completed, ...rest] = classLessons
       const reordered = [...rest, completed]
-
-      if (reordered[0]) {
-        reordered[0] = { ...reordered[0], dayLabel: 'Today', status: 'pending' }
-      }
-
+      if (reordered[0]) reordered[0] = { ...reordered[0], dayLabel: 'Today', status: 'pending' }
       return { lessons: { ...state.lessons, [classId]: reordered } }
     }
-
     if (status === 'tbd') {
       classLessons[0] = { ...classLessons[0], status: 'tbd' }
       return { lessons: { ...state.lessons, [classId]: classLessons } }
     }
-
     return {}
   }),
 
-  addLesson: (classId, lesson) => set(state => {
-    const existing = state.lessons[classId] || []
-    return {
-      lessons: {
-        ...state.lessons,
-        [classId]: [
-          ...existing,
-          { ...lesson, id: `custom-${Date.now()}`, status: 'pending' },
-        ],
-      },
-    }
-  }),
+  addLesson: (classId, lesson) => set(state => ({
+    lessons: { ...state.lessons, [classId]: [...(state.lessons[classId] || []), { ...lesson, id: `custom-${Date.now()}`, status: 'pending' }] },
+  })),
 
-  // ── Computed ────────────────────────────────────────────────────────────────
-  getStudentsForClass: (classId) =>
-    get().students.filter(s => s.classId === classId),
-
-  getAssignmentsForClass: (classId) =>
-    get().assignments.filter(a => a.classId === classId),
-
-  getGradeForStudentAssignment: (studentId, aId) =>
-    get().grades.find(g => g.studentId === studentId && g.assignmentId === aId),
-
-  getNeedsAttention: () =>
-    get().students.filter(s =>
-      s.grade < 70 || s.flagged || s.submitUngraded
-    ),
-
-  getTodayLesson: (classId) => {
-    const lessons = get().lessons[classId] || []
-    return lessons[0] || null
-  },
-
-  /**
-   * SupportStaff messaging targets: assigned students → their teachers + admin
-   */
-  getMessagingTargetsForSupportStaff: () => {
-    const { currentUser, students, classes } = get()
-    if (currentUser?.role !== 'supportStaff') return []
-
-    // Demo: first 3 students assigned
-    const assignedStudents = students.filter(s => s.id <= 3)
-    
-    const targets = []
-
-    // Assigned students
-    targets.push(...assignedStudents.map(s => ({
-      type: 'student',
-      ...s,
-      messagingLabel: `Message ${s.name}`,
-    })))
-
-    // Their teachers (demo classes 1-3 → teachers 1,2)
-    const teachers = [
-      { id: 't1', name: 'Mr. Rivera', avatar: '🧑‍🔬', role: 'teacher' },
-      { id: 't2', name: 'Ms. Davis', avatar: '👩‍💼', role: 'teacher' },
-    ]
-    targets.push(...teachers.map(t => ({
-      type: 'teacher',
-      ...t,
-      messagingLabel: `Message ${t.name}`,
-    })))
-
-    // Admin
-    const admins = [
-      { id: 'a1', name: 'Principal Davis', avatar: '🏫', role: 'admin' },
-    ]
-    targets.push(...admins.map(a => ({
-      type: 'admin',
-      ...a,
-      messagingLabel: `Message ${a.name}`,
-    })))
-
-    return targets
-  },
+  // ── Computed ─────────────────────────────────────────────────────────────────
+  getStudentsForClass:         (classId) => get().students.filter(s => s.classId === classId),
+  getAssignmentsForClass:      (classId) => get().assignments.filter(a => a.classId === classId),
+  getGradeForStudentAssignment: (studentId, aId) => get().grades.find(g => g.studentId === studentId && g.assignmentId === aId),
+  getNeedsAttention:           () => get().students.filter(s => s.grade < 70 || s.flagged || s.submitUngraded),
+  getTodayLesson:              (classId) => (get().lessons[classId] || [])[0] || null,
 
   calcWeightedGrade: (studentId, classId) => {
     const { assignments, grades, categories, gradingMethod } = get()
     const clsAssigns = assignments.filter(a => a.classId === classId)
-
     if (gradingMethod === 'total_points') {
-      const scored = clsAssigns
-        .map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id))
-        .filter(Boolean)
-
-      if (!scored.length) return null
-
-      return Math.round(
-        scored.reduce((s, g) => s + g.score, 0) / scored.length
-      )
+      const scored = clsAssigns.map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id)).filter(Boolean)
+      return scored.length ? Math.round(scored.reduce((s, g) => s + g.score, 0) / scored.length) : null
     }
-
-    let total = 0
-    let totalWeight = 0
-
+    let total = 0, totalWeight = 0
     categories.forEach(cat => {
       const catAssigns = clsAssigns.filter(a => a.categoryId === cat.id)
-      const catGrades  = catAssigns
-        .map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id))
-        .filter(Boolean)
-
-      if (catGrades.length) {
-        const avg = catGrades.reduce((s, g) => s + g.score, 0) / catGrades.length
-        total       += avg * (cat.weight / 100)
-        totalWeight += cat.weight
-      }
+      const catGrades  = catAssigns.map(a => grades.find(g => g.studentId === studentId && g.assignmentId === a.id)).filter(Boolean)
+      if (catGrades.length) { const avg = catGrades.reduce((s, g) => s + g.score, 0) / catGrades.length; total += avg * (cat.weight / 100); totalWeight += cat.weight }
     })
-
-    return totalWeight > 0
-      ? Math.round((total * 100) / totalWeight)
-      : null
+    return totalWeight > 0 ? Math.round((total * 100) / totalWeight) : null
   },
 
-  // ── Mutations (local + write-through to Supabase) ───────────────────────────
+  // ── Mutations ────────────────────────────────────────────────────────────────
   updateGrade: async (studentId, assignmentId, score) => {
     set(state => ({
-      grades: state.grades.some(
-        g => g.studentId === studentId && g.assignmentId === assignmentId
-      )
-        ? state.grades.map(g =>
-            g.studentId === studentId && g.assignmentId === assignmentId
-              ? { ...g, score }
-              : g
-          )
+      grades: state.grades.some(g => g.studentId === studentId && g.assignmentId === assignmentId)
+        ? state.grades.map(g => g.studentId === studentId && g.assignmentId === assignmentId ? { ...g, score } : g)
         : [...state.grades, { studentId, assignmentId, score }],
     }))
-
     try {
-      const { error } = await supabase
-        .from('grades')
-        .upsert(
-          { student_id: studentId, assignment_id: assignmentId, score, graded: true },
-          { onConflict: 'student_id,assignment_id' }
-        )
-
-      if (error) console.error('Grade sync failed:', error)
-    } catch (err) {
-      console.error('Grade sync error:', err)
-    }
+      await supabase.from('grades').upsert({ student_id: studentId, assignment_id: assignmentId, score, graded: true }, { onConflict: 'student_id,assignment_id' })
+    } catch (err) { console.error('Grade sync error:', err) }
   },
 
-  updateMessage: (id, changes) => set(state => ({
-    messages: state.messages.map(m =>
-      m.id === id ? { ...m, ...changes } : m
-    ),
-  })),
-
-  dismissMessage: (id) => set(state => ({
-    messages: state.messages.map(m =>
-      m.id === id ? { ...m, status: 'dismissed' } : m
-    ),
-  })),
-
-  sendMessage: (id) => set(state => ({
-    messages: state.messages.map(m =>
-      m.id === id ? { ...m, status: 'sent' } : m
-    ),
-  })),
+  updateMessage:  (id, changes) => set(state => ({ messages: state.messages.map(m => m.id === id ? { ...m, ...changes } : m) })),
+  dismissMessage: (id)          => set(state => ({ messages: state.messages.map(m => m.id === id ? { ...m, status: 'dismissed' } : m) })),
+  sendMessage:    (id)          => set(state => ({ messages: state.messages.map(m => m.id === id ? { ...m, status: 'sent' } : m) })),
 
   addAssignment: (assignment) => set(state => ({
-    assignments: [
-      ...state.assignments,
-      { ...assignment, id: Date.now(), options: assignment.options || {} },
-    ],
+    assignments: [...state.assignments, { ...assignment, id: Date.now(), options: assignment.options || {} }],
   })),
 
   saveLessonPlan: (plan) => set(state => ({
-    lessonPlans: [
-      ...state.lessonPlans,
-      { ...plan, id: Date.now(), createdAt: new Date().toISOString() },
-    ],
+    lessonPlans: [...state.lessonPlans, { ...plan, id: Date.now(), createdAt: new Date().toISOString() }],
   })),
 
-  dismissKeyAlert: (assignmentId) => set(state => ({
-    keyAlertsDismissed: [
-      ...state.keyAlertsDismissed,
-      assignmentId,
-    ],
-  })),
+  dismissKeyAlert: (assignmentId) => set(state => ({ keyAlertsDismissed: [...state.keyAlertsDismissed, assignmentId] })),
 
-  addReminder: (text) => set(state => ({
-    reminders: [
-      ...state.reminders,
-      { id: Date.now(), text, due: 'Today', done: false, priority: 'medium' },
-    ],
-  })),
-
-  toggleReminder: (id) => set(state => ({
-    reminders: state.reminders.map(r =>
-      r.id === id ? { ...r, done: !r.done } : r
-    ),
-  })),
-
-  deleteReminder: (id) => set(state => ({
-    reminders: state.reminders.filter(r => r.id !== id),
-  })),
-
-  // ── Support Notes ─────────────────────────────────────────────────────────
-  loadSupportNotes: async (studentId) => {
-    if (!get().currentUser?.role === 'supportStaff') return
-
-    try {
-      const userId = get().currentUser.id
-      const res = await fetch(`/api/support-notes?studentId=${studentId}`, {
-        headers: { 'x-staff-id': userId }
-      })
-
-      if (!res.ok) throw new Error('Failed to load notes')
-
-      const { notes } = await res.json()
-      set({ supportNotes: notes })
-    } catch (err) {
-      console.error('Load support notes failed:', err)
-    }
-  },
-
-  addSupportNote: async (note) => {
-    const userId = get().currentUser.id
-    try {
-      const res = await fetch('/api/support-notes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-staff-id': userId
-        },
-        body: JSON.stringify(note)
-      })
-
-      if (!res.ok) throw new Error('Failed to add note')
-
-      const newNote = await res.json()
-      set(state => ({ supportNotes: [newNote, ...state.supportNotes] }))
-    } catch (err) {
-      console.error('Add support note failed:', err)
-    }
-  },
-
-  updateSupportNote: async (id, changes) => {
-    const userId = get().currentUser.id
-    try {
-      const res = await fetch(`/api/support-notes?id=${id}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-staff-id': userId
-        },
-        body: JSON.stringify(changes)
-      })
-
-      if (!res.ok) throw new Error('Failed to update note')
-
-      const updatedNote = await res.json()
-      set(state => ({
-        supportNotes: state.supportNotes.map(n => n.id === id ? updatedNote : n)
-      }))
-    } catch (err) {
-      console.error('Update support note failed:', err)
-    }
-  },
+  addReminder:    (text) => set(state => ({ reminders: [...state.reminders, { id: Date.now(), text, due: 'Today', done: false, priority: 'medium' }] })),
+  toggleReminder: (id)   => set(state => ({ reminders: state.reminders.map(r => r.id === id ? { ...r, done: !r.done } : r) })),
+  deleteReminder: (id)   => set(state => ({ reminders: state.reminders.filter(r => r.id !== id) })),
 
   addFeedPost: async (classId, content) => {
     const authorName = useStore.getState().teacher.name
-
-    set(state => ({
-      feed: [
-        {
-          id: Date.now(),
-          classId,
-          author: authorName,
-          content,
-          time: 'Just now',
-          reactions: {},
-          confused: 0,
-          questions: 0,
-          approved: false,
-        },
-        ...state.feed,
-      ],
-    }))
-
+    set(state => ({ feed: [{ id: Date.now(), classId, author: authorName, content, time: 'Just now', reactions: {}, confused: 0, questions: 0, approved: false }, ...state.feed] }))
     try {
-      const { error } = await supabase.from('feed_posts').insert({
-        class_id: classId,
-        author_name: authorName,
-        content,
-        approved: false,
-        reactions: {},
-      })
-
-      if (error) console.error('Feed post sync failed:', error)
-    } catch (err) {
-      console.error('Feed post error:', err)
-    }
+      await supabase.from('feed_posts').insert({ class_id: classId, author_name: authorName, content, approved: false, reactions: {} })
+    } catch (err) { console.error('Feed post error:', err) }
   },
 
   quickCreateAssignment:      (a) => get().addAssignment(a),
   clearQuickCreateAssignment: ()  => {},
 
-  weights: { test: 40, quiz: 30, homework: 20, participation: 10 },
+  weights:    { test: 40, quiz: 30, homework: 20, participation: 10 },
   setWeights: (w) => set({ weights: w }),
 
 })) // closes store
