@@ -107,11 +107,11 @@ export default function SupportStaffCaseload({ onBack }) {
   }
 
   function handleMessageStudent(student) {
-    navigate('/support/messages', { state: { preselectedStudentIds: [student.id] } })
+    console.log('Message Student - functionality coming soon')
   }
 
   function handleViewStudent(student) {
-    navigate(`/support/student/${student.id}`)
+    console.log('View Student - functionality coming soon')
   }
 
   const filteredCaseload = getFilteredCaseload()
@@ -311,7 +311,7 @@ export default function SupportStaffCaseload({ onBack }) {
                     display:'flex', gap:8, flexWrap:'wrap' 
                   }}>
                     <button
-                      onClick={() => navigate('/support/logs')}
+                      onClick={() => console.log('View Logs - functionality coming soon')}
                       style={{
                         background:C.bg, border:`1px solid ${C.border}`, borderRadius:6,
                         padding:'4px 8px', fontSize:10, color:C.text, cursor:'pointer'
@@ -320,7 +320,7 @@ export default function SupportStaffCaseload({ onBack }) {
                       📝 View Logs
                     </button>
                     <button
-                      onClick={() => navigate('/support/groups')}
+                      onClick={() => console.log('Add to Group - functionality coming soon')}
                       style={{
                         background:C.bg, border:`1px solid ${C.border}`, borderRadius:6,
                         padding:'4px 8px', fontSize:10, color:C.text, cursor:'pointer'
@@ -329,7 +329,7 @@ export default function SupportStaffCaseload({ onBack }) {
                       👥 Add to Group
                     </button>
                     <button
-                      onClick={() => navigate('/support/student/:studentId', { replace: true, state: { studentId: student.id } })}
+                      onClick={() => console.log('View Student - functionality coming soon')}
                       style={{
                         background:C.bg, border:`1px solid ${C.border}`, borderRadius:6,
                         padding:'4px 8px', fontSize:10, color:C.text, cursor:'pointer'

@@ -820,7 +820,7 @@ setDemoSupportStaffData: async () => {
     return get().supportStaffGroups || []
   },
 
-  createSupportStaffGroup: async (name, studentIds) => {
+  createSupportStaffGroup: async ({ name, description, studentIds }) => {
     const { currentUser } = get()
     if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
     
@@ -830,8 +830,8 @@ setDemoSupportStaffData: async () => {
         .insert({ 
           staff_id: currentUser.id, 
           name, 
-          description: '',
-          student_count: studentIds.length 
+          description: description || '',
+          student_count: studentIds?.length || 0 
         })
         .select()
         .single()
@@ -862,19 +862,19 @@ setDemoSupportStaffData: async () => {
       const newGroup = {
         id: Date.now(),
         name,
-        description: '',
+        description: description || '',
         staff_id: currentUser.id,
-        student_count: studentIds.length,
+        student_count: studentIds?.length || 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
       
       // Add group members
-      const newMembers = studentIds.map(studentId => ({
+      const newMembers = studentIds?.map(studentId => ({
         id: Date.now() + Math.random(),
         group_id: newGroup.id,
         student_id: studentId
-      }))
+      })) || []
       
       set(state => ({
         supportStaffGroups: [...state.supportStaffGroups, newGroup],
@@ -961,6 +961,18 @@ setDemoSupportStaffData: async () => {
       }))
       return true
     }
+  },
+
+  // Helper methods for SupportStaffGroupScreen
+  getGroupStudents: (groupId) => {
+    const { students, supportStaffGroupMembers } = get()
+    const groupMembers = supportStaffGroupMembers.filter(m => m.group_id === groupId)
+    const studentIds = groupMembers.map(m => m.student_id)
+    return students.filter(s => studentIds.includes(s.id))
+  },
+
+  getAllStudents: () => {
+    return get().students || []
   },
 
   // ── Tier 10: Support Logs / Notes System ─────────────────────────────────

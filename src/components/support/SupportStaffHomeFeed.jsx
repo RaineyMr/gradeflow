@@ -60,19 +60,19 @@ export default function SupportStaffHomeFeed() {
   }
 
   function handleViewStudents() {
-    navigate('/support/student/1') // Navigate to first student for demo
+    console.log('Navigate to Students - functionality coming soon')
   }
 
   function handleViewGroups() {
-    navigate('/supportStaff/groups')
+    console.log('Navigate to Groups - functionality coming soon')
   }
 
   function handleViewLogs() {
-    navigate('/support/logs')
+    console.log('Navigate to Logs - functionality coming soon')
   }
 
   function handleViewCaseload() {
-    navigate('/support/caseload')
+    console.log('Navigate to Caseload - functionality coming soon')
   }
 
   if (loading) {
