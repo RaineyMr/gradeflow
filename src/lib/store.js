@@ -345,6 +345,50 @@ export const useStore = create((set, get) => ({
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
 
+  // ── Support Staff Teams ────────────────────────────────────────────────────
+  supportStaffTeams: [],
+
+  loadSupportStaffTeams: async () => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') return
+    const demoTeams = [
+      { id: 'st1', staff_id: 'support-staff-1', student_id: 1 },
+      { id: 'st2', staff_id: 'support-staff-1', student_id: 2 },
+      { id: 'st3', staff_id: 'support-staff-1', student_id: 3 },
+    ]
+    try {
+      const { data, error } = await supabase
+        .from('support_staff_teams')
+        .select('*')
+        .eq('staff_id', currentUser.id)
+      if (error) throw error
+      set({ supportStaffTeams: data?.length ? data : demoTeams })
+    } catch {
+      set({ supportStaffTeams: demoTeams })
+    }
+  },
+
+  getStudentsForSupportStaff: () => {
+    const { currentUser, students, supportStaffTeams } = get()
+    if (currentUser?.role !== 'supportStaff') return []
+    if (supportStaffTeams.length > 0) {
+      const ids = supportStaffTeams.map(t => t.student_id)
+      return students.filter(s => ids.includes(s.id))
+    }
+    return students.filter(s => s.id <= 3)
+  },
+
+  getTeachersForSupportStaff: () => [
+    { id: 't1', name: 'Mr. Rivera',   avatar: '🧑‍🔬', role: 'teacher', subject: 'Science' },
+    { id: 't2', name: 'Ms. Davis',    avatar: '👩‍💼', role: 'teacher', subject: 'Reading' },
+    { id: 't3', name: 'Ms. Johnson',  avatar: '👩‍🏫', role: 'teacher', subject: 'Math'    },
+  ],
+
+  getAdminForSupportStaff: () => [
+    { id: 'a1', name: 'Principal Davis', avatar: '🏫', role: 'admin', label: 'Principal'      },
+    { id: 'a2', name: 'Dr. Green',       avatar: '🎓', role: 'admin', label: 'Vice Principal'  },
+  ],
+
   // ── Support Notes ─────────────────────────────────────────────────────────
   supportNotes: [],
 
