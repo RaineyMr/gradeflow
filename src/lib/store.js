@@ -532,6 +532,33 @@ setDemoSupportStaffData: async () => {
     { id: 'a2', name: 'Dr. Green',       avatar: '🎓', role: 'admin', label: 'Vice Principal'  },
   ],
 
+  getSupportStaffGroups: () => {
+    return get().supportStaffGroups || []
+  },
+
+  getGroupStudents: (groupId) => {
+    const { students, supportStaffGroupMembers } = get()
+    const memberIds = supportStaffGroupMembers
+      .filter(m => m.group_id === groupId)
+      .map(m => m.student_id)
+    return students.filter(s => memberIds.includes(s.id))
+  },
+
+  sendGroupMessage: async ({ groupId, groupName, recipientMode, recipients, subject, body }) => {
+    const newMessages = recipients.map(r => ({
+      id:            Date.now() + Math.random(),
+      studentName:   r.name,
+      subject:       subject,
+      trigger:       `Group: ${groupName} · ${recipientMode}`,
+      status:        'sent',
+      tone:          'Direct',
+      draft:         body,
+      positiveDraft: body,
+      dayOld:        false,
+    }))
+    set(state => ({ messages: [...state.messages, ...newMessages] }))
+  },
+
   // ── Support Notes ─────────────────────────────────────────────────────────
   supportNotes: [],
 
