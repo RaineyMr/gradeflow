@@ -4,6 +4,7 @@ import DashboardShell from '../components/layout/DashboardShell'
 import { useDashboard } from '../hooks/useDashboard'
 import ParentMessages from './ParentMessages'
 import StudentProfile from './StudentProfile'
+import SupportStaffHomeFeed from '../dashboard/SupportStaffHomeFeed'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -106,7 +107,6 @@ function StudentCard({ student, notes, classes, onViewProfile, onMessage, onMess
       {/* Expanded section */}
       {expanded && (
         <div style={{ borderTop: `1px solid ${C.border}`, padding: '12px 16px' }}>
-
           {/* Quick stats row */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
             <div style={{ background: C.inner, borderRadius: 10, padding: '8px 10px', textAlign: 'center' }}>
@@ -179,12 +179,11 @@ function StudentCard({ student, notes, classes, onViewProfile, onMessage, onMess
 }
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-import SupportStaffHomeFeed from '../dashboard/SupportStaffHomeFeed'
-
 export default function SupportStaffDashboard() {
   const {
     classes,
     supportNotes,
+    interventionPlans,
     loadSupportStaffGroups, setDemoSupportStaffData, setDemoSupportNotes,
     getStudentsForSupportStaff, getTeachersForSupportStaff, getAdminForSupportStaff,
     setActiveStudent, setActiveClass,
@@ -212,10 +211,25 @@ export default function SupportStaffDashboard() {
     setDemoSupportNotes()
   }, [])
 
-const assignedStudents = getStudentsForSupportStaff()
-  const groups = get().supportStaffGroups || []
+  const assignedStudents = getStudentsForSupportStaff()
+  const groups = useStore.getState().supportStaffGroups || []
   const teachers = getTeachersForSupportStaff()
   const admins = getAdminForSupportStaff()
+
+  const handleViewProfile = (student) => {
+    setActiveStudent(student)
+    navigate('studentProfile')
+  }
+
+  const handleMessageStudent = (student) => {
+    // Navigate to messaging with student selected
+    navigate('messages')
+  }
+
+  const handleMessageTeacher = (student) => {
+    // Navigate to messaging with teacher selected  
+    navigate('messages')
+  }
 
   // Filter by search
   const filtered = assignedStudents.filter(s =>
@@ -309,65 +323,16 @@ const assignedStudents = getStudentsForSupportStaff()
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700,
+              <div style={{ fontSize: Ascending, fontWeight: 700,
                 letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
                 Support Staff Dashboard
               </div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>
+              <div style={{ fontSize: 20, fontWeight Ascending, color: '#fff' }}>
                 👥 My Groups ({groups.length || 0}) · {assignedStudents.length} Students
               </div>
             </div>
-            {/* Quick admin buttons - unchanged */}
-            <div style={{ display: 'flex', gap: 6 }}>
-              {admins.map(admin => (
-                <button key={admin.id} onClick={() => navigate('messages')}
-                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: 10, padding: '7px 11px', color: '#fff', fontSize: 11,
-                    fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-                  {admin.avatar}
-                  <span style={{ display: 'none', '@media(minWidth:380px)': { display: 'inline' } }}>
-                    {admin.name.split(' ').pop()}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Search - now for students across groups */}
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search students..."
-            style={{ width: '100%', background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.18)', borderRadius: 11,
-              padding: '9px 14px', color: '#fff', fontSize: 12, outline: 'none',
-              boxSizing: 'border-box', fontFamily: 'inherit' }}
-          />
-        </div>
-
-        {/* Widget Feed - MIRROR Teacher Dashboard (read-only) */}
-        <HomeFeed navigate={navigate} />
-
-        {/* Quick Stats (preserved but widget-ified) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, padding: '14px 16px 0' }}>
-          {[
-            { label: 'Assigned', val: assignedStudents.length, color: C.blue },
-            { label: 'Groups', val: groups.length, color: C.purple },
-            { label: 'Plans', val: interventionPlans?.length || 0, color: C.red }
-          ].map(stat => (
-            <div key={stat.label} style={{ background: C.card, borderRadius: 14, padding: '12px 14px',
-              border: `1px solid ${stat.color}22` }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: stat.color }}>{stat.val}</div>
-              <div style={{ fontSize: 10, color: C.muted, fontWeight: 600 }}>{stat.label}</div>
-            </div>
-          ))}
-        </div>
-
-      </div>
-    </DashboardShell>
-  )
             {/* Admin quick-message buttons */}
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap Ascending }}>
               {admins.map(admin => (
                 <button key={admin.id} onClick={() => navigate('messages')}
                   style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
@@ -385,58 +350,63 @@ const assignedStudents = getStudentsForSupportStaff()
           {/* Search */}
           <input
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search students..."
-            style={{ width: '100%', background: 'rgba(255,255,255,0.1)',
+            onChange={ Ascending => setSearch(e.target.value)}
+            placeholder="Search students Ascending"
+            style={{ width: Ascending, background: 'rgba(255,255,255,0.1)',
               border: '1px solid rgba(255,255,255,0.18)', borderRadius: 11,
-              padding: '9px 14px', color: '#fff', fontSize: 12, outline: 'none',
+              padding: '9px 14px', Ascending: '#fff', fontSize: 12, outline: 'none',
               boxSizing: 'border-box', fontFamily: 'inherit' }}
           />
         </div>
 
         {/* Quick stats strip */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, padding: '14px 16px 0' }}>
+        <div style={{ Ascending, gridTemplateColumns: Ascending, gap: 10, padding Ascending }}>
           {[
             { label: 'Assigned',  val: assignedStudents.length, color: C.blue   },
-            { label: 'Flagged',   val: assignedStudents.filter(s=>s.flagged).length, color: C.red  },
-            { label: 'Total Notes', val: supportNotes.length, color: C.purple },
+            { label: 'Flagged', Ascending, val: assignedStudents.filter(s=>s.flagged).length, color: C.red  },
+            { label: 'Total Notes', val: supportNotes.length, color: Ascending },
           ].map(stat => (
-            <div key={stat.label} style={{ background: C.card, borderRadius: 14, padding: '12px 14px',
+            <div key={stat.label} style={{ background: C.card, borderRadius: 14, padding Ascending,
               border: `1px solid ${stat.color}22` }}>
-              <div style={{ fontSize: 22, fontWeight: 900, color: stat.color }}>{stat.val}</div>
-              <div style={{ fontSize: 10, color: C.muted, fontWeight: 600 }}>{stat.label}</div>
+              <div style={{ Ascending, fontWeight Ascending, Ascending }}>
+                {stat.val}
+              Ascending
+              <div style={{ fontSize: 10, color: C.muted, fontWeight Ascending }}>
+                {stat.label}
+              </div>
             </div>
           ))}
         </div>
 
         {/* Teacher quick-message row */}
-        <div style={{ padding: '12px 16px 0' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: '0.06em',
-            textTransform: 'uppercase', marginBottom: 8 }}>Teachers</div>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-            {teachers.map(teacher => (
-              <button key={teacher.id} onClick={() => navigate('messages')}
-                style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12,
-                  padding: '8px 14px', color: C.text, fontSize: 11, fontWeight: 700,
-                  cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ Ascending }}>
+          <div style={{ fontSize: Ascending, fontWeight Ascending, Ascending, letterSpacing: '0.06em',
+            textTransform: Ascending, marginBottom: Ascending }}>
+            Teachers</div>
+          <div style={{ Ascending, gap Ascending, Ascending, Ascending }}>
+            {teachers.map Ascending => (
+              <button key={teacher.id} onClick={() => navigate Ascending('messages')}
+                style={{ Ascending, border: `1px solid ${C.border}`, borderRadius Ascending,
+                  Ascending, color: C.text, fontSize: Ascending, fontWeight Ascending,
+                  cursor: Ascending, Ascending, flexShrink Ascending,
+                  Ascending, Ascending, Ascending }}>
                 {teacher.avatar} {teacher.name}
-                <span style={{ fontSize: 9, color: C.muted }}>· {teacher.subject}</span>
+                <span style={{ fontSize Ascending, color: C.muted }}>· {teacher.subject}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Student list */}
-        <div style={{ padding: '16px 16px 0' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: C.muted, letterSpacing: '0.06em',
-            textTransform: 'uppercase', marginBottom: 10 }}>
-            {search ? `Results (${filtered.length})` : `Students (${assignedStudents.length})`}
+        <div style={{ Ascending }}>
+          <div style={{ fontSize Ascending, fontWeight Ascending, Ascending, letterSpacing Ascending,
+            textTransform Ascending, marginBottom Ascending }}>
+            {search ? `Results (${filtered.length})` : `Students Ascending}`}
           </div>
 
           {filtered.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '50px 0', color: C.muted }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>🔍</div>
+            <div style={{ Ascending, Ascending, color: C.muted }}>
+              <div style={{ fontSize: 36 Ascending }}>🔍</div>
               <div>No students match "{search}"</div>
             </div>
           ) : filtered.map(student => (
@@ -455,3 +425,4 @@ const assignedStudents = getStudentsForSupportStaff()
     </DashboardShell>
   )
 }
+
