@@ -58,6 +58,7 @@ function TeacherHome()  { return <Dashboard /> }
 function StudentHome()  { const u = useStore(s => s.currentUser); return <StudentDashboard currentUser={u} /> }
 function ParentHome()   { const u = useStore(s => s.currentUser); return <ParentDashboard  currentUser={u} /> }
 function AdminHome()    { const u = useStore(s => s.currentUser); return <AdminDashboard   currentUser={u} /> }
+function SupportStaffHome() { const u = useStore(s => s.currentUser); return <SupportStaffDashboard currentUser={u} /> }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public routes
@@ -247,7 +248,7 @@ export default function App() {
 
           {/* ── Support Staff ───────────────────────────────────────────────────── */ }
           <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />} >
-            <Route path="/supportStaff"           element={<SupportStaffHomeFeed />} />
+            <Route path="/supportStaff"           element={<SupportStaffHome />} />
             <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
             <Route path="/support/groups"         element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
             <Route path="/supportStaff/trends"    element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
