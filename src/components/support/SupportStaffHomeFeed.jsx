@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useStore } from '../../lib/store'
 import SupportWidget from './SupportWidget'
+import SupportTaskCard from './SupportTaskCard'
 import SupportStaffMessaging from './SupportStaffMessaging'
 import { useNavigate } from 'react-router-dom'
 
@@ -20,6 +21,9 @@ export default function SupportStaffHomeFeed() {
     getUpcomingFollowUps,
     getSupportGroupSummary,
     getStudentsForSupportStaff,
+    getAutomationFollowUps,
+    getAutomationRiskTasks,
+    getAutomationWeeklySummary,
     currentUser
   } = useStore()
 
@@ -28,23 +32,30 @@ export default function SupportStaffHomeFeed() {
   const [recentNotes, setRecentNotes] = useState([])
   const [upcomingFollowUps, setUpcomingFollowUps] = useState([])
   const [groupSummary, setGroupSummary] = useState([])
+  const [automationTasks, setAutomationTasks] = useState([])
+  const [weeklySummary, setWeeklySummary] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     async function loadHomeData() {
       setLoading(true)
       try {
-        const [attentionData, notesData, followUpsData, groupsData] = await Promise.all([
+        const [attentionData, notesData, followUpsData, groupsData, followUpTasks, riskTasks, summaryData] = await Promise.all([
           getSupportStaffStudentsNeedingAttention(),
           getRecentSupportNotes(),
           getUpcomingFollowUps(),
-          getSupportGroupSummary()
+          getSupportGroupSummary(),
+          getAutomationFollowUps(),
+          getAutomationRiskTasks(),
+          getAutomationWeeklySummary()
         ])
 
         setStudentsNeedingAttention(attentionData || [])
         setRecentNotes(notesData || [])
         setUpcomingFollowUps(followUpsData || [])
         setGroupSummary(groupsData || [])
+        setAutomationTasks([...(followUpTasks || []), ...(riskTasks || [])])
+        setWeeklySummary(summaryData)
       } catch (error) {
         console.error('Failed to load home data:', error)
       } finally {
@@ -73,6 +84,25 @@ export default function SupportStaffHomeFeed() {
 
   function handleViewCaseload() {
     console.log('Navigate to Caseload - functionality coming soon')
+  }
+
+  function handleTaskAction(taskId, action) {
+    console.log(`Task ${taskId} action: ${action}`)
+    // Handle task actions here
+    if (action === 'complete' || action === 'dismiss') {
+      setAutomationTasks(prev => prev.filter(task => task.id !== taskId))
+    } else if (action === 'snooze') {
+      // Move task to end of list
+      setAutomationTasks(prev => {
+        const task = prev.find(t => t.id === taskId)
+        const others = prev.filter(t => t.id !== taskId)
+        return task ? [...others, task] : prev
+      })
+    } else if (action === 'convert-to-log') {
+      navigate('/support/logs')
+    } else if (action === 'convert-to-parent-message') {
+      setShowMessaging(true)
+    }
   }
 
   if (loading) {
@@ -266,6 +296,101 @@ export default function SupportStaffHomeFeed() {
             {groupSummary.length === 0 && (
               <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:20 }}>
                 No active groups
+              </div>
+            )}
+          </SupportWidget>
+
+          {/* Automated Tasks */}
+          <SupportWidget
+            title="Automated Tasks"
+            icon="🤖"
+            color={C.purple}
+          >
+            <div style={{ marginBottom:12 }}>
+              <div style={{ fontSize:24, fontWeight:700, color:C.purple, marginBottom:4 }}>
+                {automationTasks.length}
+              </div>
+              <div style={{ fontSize:12, color:C.muted }}>
+                AI-generated tasks
+              </div>
+            </div>
+            
+            {automationTasks.slice(0, 3).map((task, idx) => (
+              <SupportTaskCard
+                key={task.id}
+                task={task}
+                onAction={handleTaskAction}
+                compact={true}
+              />
+            ))}
+            
+            {automationTasks.length === 0 && (
+              <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:20 }}>
+                No automated tasks
+              </div>
+            )}
+            
+            {automationTasks.length > 3 && (
+              <div style={{ fontSize:11, color:C.muted, textAlign:'center', marginTop:8 }}>
+                +{automationTasks.length - 3} more tasks
+              </div>
+            )}
+          </SupportWidget>
+
+          {/* Weekly Summary */}
+          <SupportWidget
+            title="Weekly Summary"
+            icon="📈"
+            color={C.teal}
+          >
+            {weeklySummary ? (
+              <div>
+                <div style={{ marginBottom:12 }}>
+                  <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>
+                    {weeklySummary.weekStart} - {weeklySummary.weekEnd}
+                  </div>
+                </div>
+                
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(2, 1fr)', gap:8, marginBottom:12 }}>
+                  <div style={{ background:C.inner, borderRadius:8, padding:8, textAlign:'center' }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:C.blue }}>{weeklySummary.metrics.notesAdded}</div>
+                    <div style={{ fontSize:9, color:C.muted }}>Notes Added</div>
+                  </div>
+                  <div style={{ background:C.inner, borderRadius:8, padding:8, textAlign:'center' }}>
+                    <div style={{ fontSize:14, fontWeight:700, color:C.green }}>{weeklySummary.metrics.completedInterventions}</div>
+                    <div style={{ fontSize:9, color:C.muted }}>Completed</div>
+                  </div>
+                </div>
+                
+                <div style={{ fontSize:11, color:C.text, marginBottom:8 }}>
+                  <strong>Highlights:</strong>
+                </div>
+                {weeklySummary.highlights.slice(0, 2).map((highlight, idx) => (
+                  <div key={idx} style={{ 
+                    fontSize:10, 
+                    color:C.muted, 
+                    marginBottom:4,
+                    paddingLeft:12,
+                    position:'relative'
+                  }}>
+                    • {highlight}
+                  </div>
+                ))}
+                
+                <div style={{ display:'flex', gap:6, marginTop:12 }}>
+                  <button
+                    style={{
+                      background:C.inner, border:`1px solid ${C.border}`, borderRadius:6,
+                      padding:'4px 8px', fontSize:10, color:C.text, cursor:'pointer'
+                    }}
+                  >
+                    📊 View Full
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize:12, color:C.muted, textAlign:'center', padding:20 }}>
+                No summary available
               </div>
             )}
           </SupportWidget>
