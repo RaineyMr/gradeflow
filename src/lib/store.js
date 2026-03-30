@@ -2703,4 +2703,387 @@ setDemoSupportStaffData: async () => {
     }
   },
 
+  // ── Tier 24: Support Staff Reporting Functions ─────────────────────────────
+  getStudentSupportReport: async (studentId, filters = {}) => {
+    try {
+      const { students, getStudentNotes, getStudentGrades, getStudentTrends } = get()
+      const student = students.find(s => s.id === parseInt(studentId))
+      
+      if (!student) return null
+
+      const [notes, grades, trends] = await Promise.all([
+        getStudentNotes(studentId),
+        getStudentGrades(studentId),
+        getStudentTrends(studentId)
+      ])
+
+      return {
+        summary: `${student.name} has ${grades.length} graded assignments with an average of ${student.grade}%. Recent support notes indicate ${notes.length} interventions this period.`,
+        metrics: {
+          total_assignments: grades.length,
+          current_grade: student.grade,
+          support_notes_count: notes.length,
+          attendance_rate: '92%',
+          assignment_completion: '85%',
+          intervention_count: notes.filter(n => n.content.toLowerCase().includes('intervention')).length
+        },
+        aiInsights: `Student shows ${student.grade >= 70 ? 'positive' : 'concerning'} academic progress. Consider ${student.grade >= 70 ? 'maintaining current support strategies' : 'increasing intervention frequency'}.`,
+        details: {
+          grades: grades.slice(0, 10),
+          notes: notes.slice(0, 5),
+          trends: trends
+        }
+      }
+    } catch (error) {
+      console.error('Error generating student support report:', error)
+      return null
+    }
+  },
+
+  getInterventionEffectivenessReport: async (filters = {}) => {
+    try {
+      const { interventionPlans, students } = get()
+      
+      const activePlans = interventionPlans.filter(plan => plan.status === 'active')
+      const completedPlans = interventionPlans.filter(plan => plan.status === 'completed')
+      
+      const effectivenessRate = completedPlans.length > 0 
+        ? Math.round((completedPlans.filter(p => p.effectiveness === 'high').length / completedPlans.length) * 100)
+        : 0
+
+      return {
+        summary: `Current intervention effectiveness rate is ${effectivenessRate}% with ${activePlans.length} active plans and ${completedPlans.length} completed plans.`,
+        metrics: {
+          active_interventions: activePlans.length,
+          completed_interventions: completedPlans.length,
+          effectiveness_rate: effectivenessRate,
+          average_duration: '6 weeks',
+          success_rate: effectivenessRate
+        },
+        aiInsights: `Intervention effectiveness is ${effectivenessRate >= 75 ? 'strong' : effectivenessRate >= 50 ? 'moderate' : 'needs improvement'}. Consider reviewing ${effectivenessRate < 50 ? 'all intervention strategies' : 'low-performing interventions'}.`,
+        details: {
+          activePlans: activePlans.slice(0, 10),
+          completedPlans: completedPlans.slice(0, 10)
+        }
+      }
+    } catch (error) {
+      console.error('Error generating intervention effectiveness report:', error)
+      return null
+    }
+  },
+
+  getCaseloadHealthReport: async (filters = {}) => {
+    try {
+      const { getStudentsForSupportStaff, students } = get()
+      const caseloadStudents = getStudentsForSupportStaff()
+      
+      const criticalStudents = caseloadStudents.filter(s => s.grade < 60).length
+      const atRiskStudents = caseloadStudents.filter(s => s.grade >= 60 && s.grade < 70).length
+      const healthyStudents = caseloadStudents.filter(s => s.grade >= 70).length
+      
+      const averageGrade = Math.round(
+        caseloadStudents.reduce((sum, s) => sum + s.grade, 0) / caseloadStudents.length
+      )
+
+      return {
+        summary: `Caseload consists of ${caseloadStudents.length} students with an average grade of ${averageGrade}%. ${criticalStudents} students require immediate attention.`,
+        metrics: {
+          total_students: caseloadStudents.length,
+          critical_students: criticalStudents,
+          at_risk_students: atRiskStudents,
+          healthy_students: healthyStudents,
+          average_grade: averageGrade,
+          caseload_health_score: Math.round((healthyStudents / caseloadStudents.length) * 100)
+        },
+        aiInsights: `Caseload health is ${averageGrade >= 80 ? 'excellent' : averageGrade >= 70 ? 'good' : averageGrade >= 60 ? 'fair' : 'concerning'}. Priority focus on ${criticalStudents > 0 ? `${criticalStudents} critical students` : 'maintaining current progress'}.`,
+        details: {
+          studentsByCategory: {
+            critical: caseloadStudents.filter(s => s.grade < 60),
+            atRisk: caseloadStudents.filter(s => s.grade >= 60 && s.grade < 70),
+            healthy: caseloadStudents.filter(s => s.grade >= 70)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error generating caseload health report:', error)
+      return null
+    }
+  },
+
+  getAttendanceBehaviorCorrelationReport: async (filters = {}) => {
+    try {
+      const { getStudentsForSupportStaff } = get()
+      const students = getStudentsForSupportStaff()
+      
+      // Demo correlation data
+      const attendanceIssues = Math.round(students.length * 0.15)
+      const behaviorIncidents = Math.round(students.length * 0.08)
+      const correlationRate = 72 // Percentage of students with both attendance and behavior issues
+
+      return {
+        summary: `Analysis shows ${correlationRate}% correlation between attendance issues and behavior incidents across ${students.length} students.`,
+        metrics: {
+          total_students_analyzed: students.length,
+          attendance_issues: attendanceIssues,
+          behavior_incidents: behaviorIncidents,
+          correlation_rate: correlationRate,
+          improved_with_intervention: Math.round(attendanceIssues * 0.6)
+        },
+        aiInsights: `Strong correlation exists between attendance and behavior. Early intervention for attendance issues shows ${Math.round(attendanceIssues * 0.6)} positive outcomes. Consider proactive attendance monitoring.`,
+        details: {
+          recommendations: [
+            'Implement early warning system for attendance',
+            'Increase parent communication for at-risk students',
+            'Provide behavior support alongside academic intervention'
+          ]
+        }
+      }
+    } catch (error) {
+      console.error('Error generating attendance behavior correlation report:', error)
+      return null
+    }
+  },
+
+  getGroupImpactReport: async (groupId, filters = {}) => {
+    try {
+      const { supportStaffGroups, getStudentsInGroup } = get()
+      const group = supportStaffGroups.find(g => g.id === groupId)
+      
+      if (!group) return null
+
+      const groupStudents = getStudentsInGroup(groupId)
+      const averageGrade = Math.round(
+        groupStudents.reduce((sum, s) => sum + s.grade, 0) / groupStudents.length
+      )
+      
+      const improvementRate = 68 // Demo improvement rate for group interventions
+
+      return {
+        summary: `Group "${group.name}" shows ${improvementRate}% improvement rate with ${groupStudents.length} students averaging ${averageGrade}% grade.`,
+        metrics: {
+          group_size: groupStudents.length,
+          average_grade: averageGrade,
+          improvement_rate: improvementRate,
+          active_interventions: Math.round(groupStudents.length * 0.4),
+          parent_engagement: '82%'
+        },
+        aiInsights: `Group intervention effectiveness is ${improvementRate >= 70 ? 'high' : 'moderate'}. Consider ${improvementRate < 70 ? 'adjusting group strategies' : 'expanding successful approaches'}.`,
+        details: {
+          group: group,
+          students: groupStudents,
+          interventions: [] // Would be populated with actual group interventions
+        }
+      }
+    } catch (error) {
+      console.error('Error generating group impact report:', error)
+      return null
+    }
+  },
+
+  getParentCommunicationReport: async (studentId, filters = {}) => {
+    try {
+      const { students, getParentsForStudents } = get()
+      const student = students.find(s => s.id === parseInt(studentId))
+      
+      if (!student) return null
+
+      // Demo communication data
+      const totalCommunications = Math.floor(Math.random() * 20) + 5
+      const positiveCommunications = Math.round(totalCommunications * 0.7)
+      const responseRate = 85
+      const parentSatisfaction = 4.2
+
+      return {
+        summary: `Parent communication for ${student.name} includes ${totalCommunications} interactions with ${responseRate}% response rate and ${parentSatisfaction}/5 satisfaction.`,
+        metrics: {
+          total_communications: totalCommunications,
+          positive_communications: positiveCommunications,
+          response_rate: responseRate,
+          parent_satisfaction: parentSatisfaction,
+          average_response_time: '2.3 hours'
+        },
+        aiInsights: `Parent engagement is ${responseRate >= 80 ? 'excellent' : 'needs improvement'}. Consider ${responseRate < 80 ? 'increasing communication frequency' : 'maintaining current communication strategy'}.`,
+        details: {
+          communicationTypes: {
+            positive: positiveCommunications,
+            concerns: totalCommunications - positiveCommunications,
+            meetings: Math.floor(totalCommunications * 0.2)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error generating parent communication report:', error)
+      return null
+    }
+  },
+
+  getWeeklySupportActivityReport: async (filters = {}) => {
+    try {
+      const { getStudentsForSupportStaff, getRecentSupportNotes } = get()
+      const students = getStudentsForSupportStaff()
+      const notes = await getRecentSupportNotes()
+      
+      // Demo weekly activity data
+      const weeklyNotes = Math.floor(Math.random() * 30) + 15
+      const studentContacts = Math.floor(Math.random() * 20) + 10
+      const parentContacts = Math.floor(Math.random() * 15) + 8
+      const interventionsCreated = Math.floor(Math.random() * 5) + 2
+
+      return {
+        summary: `Weekly support activity includes ${weeklyNotes} notes, ${studentContacts} student contacts, and ${parentContacts} parent communications.`,
+        metrics: {
+          support_notes: weeklyNotes,
+          student_contacts: studentContacts,
+          parent_contacts: parentContacts,
+          interventions_created: interventionsCreated,
+          follow_ups_scheduled: Math.floor(weeklyNotes * 0.3)
+        },
+        aiInsights: `Weekly activity level is ${weeklyNotes > 25 ? 'high' : weeklyNotes > 15 ? 'moderate' : 'low'}. ${interventionsCreated > 3 ? 'Strong proactive intervention work' : 'Consider increasing intervention frequency'}.`,
+        details: {
+          dailyBreakdown: {
+            monday: Math.floor(weeklyNotes * 0.2),
+            tuesday: Math.floor(weeklyNotes * 0.25),
+            wednesday: Math.floor(weeklyNotes * 0.15),
+            thursday: Math.floor(weeklyNotes * 0.2),
+            friday: Math.floor(weeklyNotes * 0.2)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error generating weekly support activity report:', error)
+      return null
+    }
+  },
+
+  // ── Tier 25: Case Conference Functions ───────────────────────────────────
+  getCaseConferenceData: async (studentId) => {
+    try {
+      // In a real implementation, this would fetch from database
+      // For now, return demo data or existing data from state
+      const { students } = get()
+      const student = students.find(s => s.id === parseInt(studentId))
+      
+      if (!student) return null
+
+      // Demo conference data
+      return {
+        studentId,
+        notes: `Student ${student.name} is showing improvement in math but needs additional support with reading comprehension. Current interventions are proving effective, but parent involvement could be enhanced.`,
+        actionItems: [
+          {
+            id: 1,
+            description: 'Schedule reading intervention sessions',
+            assignedTo: 'Reading Specialist',
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            status: 'pending',
+            priority: 'high',
+            comments: 'Focus on phonics and comprehension strategies'
+          },
+          {
+            id: 2,
+            description: 'Follow up with parents regarding home support',
+            assignedTo: 'Support Staff',
+            dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            status: 'in_progress',
+            priority: 'medium',
+            comments: 'Provide parents with reading materials and strategies'
+          }
+        ],
+        attendance: [
+          { id: student.id, name: student.name, type: 'student', attended: true },
+          { id: 'p1', name: `Parent of ${student.name}`, type: 'parent', attended: true },
+          { id: 't1', name: 'Ms. Johnson', type: 'teacher', attended: true }
+        ],
+        agendaItems: [
+          { id: 1, text: 'Review academic progress', completed: true },
+          { id: 2, text: 'Discuss intervention effectiveness', completed: true },
+          { id: 3, text: 'Plan next steps', completed: false }
+        ],
+        meetingDate: new Date().toISOString(),
+        conductedBy: 'Support Staff'
+      }
+    } catch (error) {
+      console.error('Error getting case conference data:', error)
+      return null
+    }
+  },
+
+  saveCaseConferenceNotes: async (studentId, notes) => {
+    try {
+      // In a real implementation, this would save to database
+      console.log('Saving case conference notes for student:', studentId, notes)
+      
+      // For demo purposes, store in localStorage
+      const conferenceData = {
+        studentId,
+        notes,
+        updatedAt: new Date().toISOString()
+      }
+      
+      const existingData = JSON.parse(localStorage.getItem('caseConferences') || '{}')
+      existingData[studentId] = { ...existingData[studentId], ...conferenceData }
+      localStorage.setItem('caseConferences', JSON.stringify(existingData))
+      
+      return true
+    } catch (error) {
+      console.error('Error saving case conference notes:', error)
+      return false
+    }
+  },
+
+  saveCaseConferenceActionItems: async (studentId, actionItems) => {
+    try {
+      // In a real implementation, this would save to database
+      console.log('Saving case conference action items for student:', studentId, actionItems)
+      
+      // For demo purposes, store in localStorage
+      const conferenceData = {
+        studentId,
+        actionItems,
+        updatedAt: new Date().toISOString()
+      }
+      
+      const existingData = JSON.parse(localStorage.getItem('caseConferences') || '{}')
+      existingData[studentId] = { ...existingData[studentId], ...conferenceData }
+      localStorage.setItem('caseConferences', JSON.stringify(existingData))
+      
+      return true
+    } catch (error) {
+      console.error('Error saving case conference action items:', error)
+      return false
+    }
+  },
+
+  getCaseConferenceHistory: async (studentId) => {
+    try {
+      // In a real implementation, this would fetch from database
+      // For now, return demo data
+      return [
+        {
+          id: 1,
+          studentId,
+          meetingDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+          type: 'academic_review',
+          attendees: ['Support Staff', 'Parent', 'Teacher'],
+          summary: 'Discussed academic progress and set new goals',
+          actionItems: 3,
+          completedActionItems: 2
+        },
+        {
+          id: 2,
+          studentId,
+          meetingDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+          type: 'behavior_support',
+          attendees: ['Support Staff', 'Counselor', 'Parent'],
+          summary: 'Reviewed behavior intervention plan effectiveness',
+          actionItems: 4,
+          completedActionItems: 4
+        }
+      ]
+    } catch (error) {
+      console.error('Error getting case conference history:', error)
+      return []
+    }
+  },
+
 })) // closes store
