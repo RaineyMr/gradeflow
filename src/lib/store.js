@@ -351,7 +351,7 @@ export const useStore = create((set, get) => ({
   studentTrends: {},
   interventionPlans: [],
 
-  setDemoSupportStaffData: () => {
+setDemoSupportStaffData: async () => {
     if (get().currentUser?.role !== 'supportStaff') return
     try {
       const { demoSupportStaffGroups, demoGroupMembers, demoStudentTrends, demoInterventionPlans } = await import('./demoSupportStaffGroups.js')
@@ -404,12 +404,12 @@ export const useStore = create((set, get) => ({
         await supabase.from('support_staff_group_members').insert(members)
         
         // Reload members for this group
-        const { data: members } = await supabase
+        const { data: groupMembersData } = await supabase
           .from('support_staff_group_members')
           .select('*')
           .eq('group_id', group.id)
         set(state => ({
-          supportStaffGroupMembers: [...state.supportStaffGroupMembers, ...members]
+          supportStaffGroupMembers: [...state.supportStaffGroupMembers, ...groupMembersData]
         }))
       }
       
