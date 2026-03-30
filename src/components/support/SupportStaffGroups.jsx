@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useStore } from '../../lib/store'
 import SupportGroupEditor from './SupportGroupEditor'
+import AIAssistantPanel from './AIAssistantPanel'
 import { useNavigate } from 'react-router-dom'
 
 const C = {
@@ -12,6 +13,7 @@ const C = {
 }
 
 export default function SupportStaffGroups({ onBack }) {
+  const [showAI, setShowAI] = useState(false)
   const navigate = useNavigate()
   const {
     getSupportStaffGroups,
@@ -112,16 +114,28 @@ export default function SupportStaffGroups({ onBack }) {
           </div>
         </div>
 
-        <button
-          onClick={handleCreateGroup}
-          style={{
-            background:C.teal, color:'#fff', border:'none', borderRadius:8,
-            padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
-            display:'flex', alignItems:'center', gap:6
-          }}
-        >
-          + Create Group
-        </button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button
+            onClick={() => setShowAI(true)}
+            style={{
+              background:C.blue, color:'#fff', border:'none', borderRadius:8,
+              padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
+              display:'flex', alignItems:'center', gap:6
+            }}
+          >
+            🤖 AI
+          </button>
+          <button
+            onClick={handleCreateGroup}
+            style={{
+              background:C.teal, color:'#fff', border:'none', borderRadius:8,
+              padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
+              display:'flex', alignItems:'center', gap:6
+            }}
+          >
+            + Create Group
+          </button>
+        </div>
       </div>
 
       {/* Groups List */}
@@ -248,6 +262,16 @@ export default function SupportStaffGroups({ onBack }) {
           onClose={handleEditorClose}
         />
       )}
+
+      {/* AI Assistant Panel */}
+      <AIAssistantPanel
+        isOpen={showAI}
+        onClose={() => setShowAI(false)}
+        initialContext={{ 
+          screen: 'groups',
+          groups: groups
+        }}
+      />
     </div>
   )
 }
