@@ -4,6 +4,7 @@ import { useStore } from '../lib/store'
 import InterventionPlanCard from '../components/support/InterventionPlanCard'
 import AIAssistantPanel from '../components/support/AIAssistantPanel'
 import ParentAIAssistantPanel from '../components/parents/ParentAIAssistantPanel'
+import SupportTaskCard from '../components/support/SupportTaskCard'
 import { demoSupportInterventions, INTERVENTION_TYPES } from '../lib/demoSupportInterventions'
 
 const C = {
@@ -29,7 +30,7 @@ function inputStyle(focused = false) {
 }
 
 // ─── Plan form ────────────────────────────────────────────────────────────────
-function PlanForm({ student, existingPlan, onSave, onCancel }) {
+function PlanForm({ student, existingPlan, onSave, onCancel, automationSuggestions }) {
   const [type,          setType]          = useState(existingPlan?.type          || 'academic')
   const [goal,          setGoal]          = useState(existingPlan?.goal          || '')
   const [steps,         setSteps]         = useState(existingPlan?.steps?.join('\n') || '')
@@ -82,6 +83,30 @@ function PlanForm({ student, existingPlan, onSave, onCancel }) {
           <div style={{ fontSize:9, color:C.muted, background:C.inner, borderRadius:8, padding:'4px 8px', fontWeight:600 }}>READ-ONLY GRADE</div>
         </div>
       </div>
+
+      {/* Automation Suggestions */}
+      {automationSuggestions && automationSuggestions.length > 0 && (
+        <div style={{ marginBottom:20 }}>
+          <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>
+            💡 AI Suggestions
+          </div>
+          <div style={{ display:'grid', gap:8 }}>
+            {automationSuggestions.slice(0, 2).map(suggestion => (
+              <SupportTaskCard
+                key={suggestion.id}
+                task={suggestion}
+                onAction={(taskId, action) => {
+                  if (action === 'use-template' && suggestion.template) {
+                    setGoal(suggestion.template.body.split('\n')[0] || '')
+                    setSteps(suggestion.template.body.split('\n').slice(1).join('\n').trim())
+                  }
+                }}
+                compact={true}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Intervention type */}
       <div style={{ marginBottom:16 }}>
@@ -197,7 +222,12 @@ const DEMO_STUDENTS = [
 ]
 
 export default function SupportStaffInterventionBuilder({ onBack, initialStudentId }) {
-  const { createSupportStaffInterventionPlan, updateSupportStaffInterventionPlan } = useStore()
+  const { 
+    createSupportStaffInterventionPlan, 
+    updateSupportStaffInterventionPlan,
+    getAutomationFollowUps,
+    getAutomationParentTemplates
+  } = useStore()
   const [showAI, setShowAI] = useState(false)
   const [showParentAI, setShowParentAI] = useState(false)
 
@@ -207,11 +237,34 @@ export default function SupportStaffInterventionBuilder({ onBack, initialStudent
     initialStudentId ? DEMO_STUDENTS.find(s => s.id === initialStudentId) : null
   )
   const [editingPlan, setEditingPlan] = useState(null)
+  const [automationSuggestions, setAutomationSuggestions] = useState([])
+
+  async function loadAutomationSuggestions(student) {
+    if (!student) return
+    
+    try {
+      const [followUps, templates] = await Promise.all([
+        getAutomationFollowUps(),
+        getAutomationParentTemplates()
+      ])
+      
+      const studentSuggestions = [
+        ...followUps.filter(f => f.studentId === student.id),
+        ...templates.filter(t => t.studentId === student.id)
+      ]
+      
+      setAutomationSuggestions(studentSuggestions)
+    } catch (error) {
+      console.error('Failed to load automation suggestions:', error)
+      setAutomationSuggestions([])
+    }
+  }
 
   function openCreate(student) {
     setSelected(student)
     setEditingPlan(null)
     setMode('create')
+    loadAutomationSuggestions(student)
   }
 
   function openEdit(plan) {
@@ -219,6 +272,7 @@ export default function SupportStaffInterventionBuilder({ onBack, initialStudent
     setSelected(student)
     setEditingPlan(plan)
     setMode('edit')
+    loadAutomationSuggestions(student)
   }
 
   async function handleSave(plan) {
@@ -260,6 +314,7 @@ export default function SupportStaffInterventionBuilder({ onBack, initialStudent
         existingPlan={editingPlan}
         onSave={handleSave}
         onCancel={() => setMode('list')}
+        automationSuggestions={automationSuggestions}
       />
     </div>
   )
