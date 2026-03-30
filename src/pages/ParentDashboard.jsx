@@ -705,13 +705,13 @@ export default function ParentDashboard({ currentUser }) {
   const NAV_TO_PAGE = {
     classes:   'grades',
     messages:  'messages',
-    alerts:    'alerts',
+    feed:      'feed',
     widgets:   'widgets',
     dashboard: null,
   }
   const PAGE_TO_NAV = {
     grades:'classes', classes:'classes', messages:'messages',
-    alerts:'alerts', widgets:'widgets',
+    feed:'feed', alerts:'alerts', widgets:'widgets',
   }
 
   const { subPage, activeNav, isSubPage, navigate, goBack, goHome, navSelect } = useDashboard({
@@ -733,6 +733,7 @@ export default function ParentDashboard({ currentUser }) {
   if(subPage==='classes')  return shell(<SubPage><GradesPage   onBack={goHome}/></SubPage>)
   if(subPage==='grades')   return shell(<SubPage><GradesPage   onBack={goHome}/></SubPage>)
   if(subPage==='messages') return <MessagesPage onBack={goHome}/>
+  if(subPage==='feed')     return shell(<SubPage><FeedPage     onBack={goHome}/></SubPage>)
   if(subPage==='alerts')   return shell(<SubPage><AlertsPage   onBack={goHome}/></SubPage>)
   if(subPage==='widgets')  return shell(<SubPage><Widgets      onBack={goHome}/></SubPage>)
 
