@@ -334,7 +334,7 @@ function FeedPage({ onBack }) {
 
 const PARENT_WIDGET_CATALOG = [
   { id:'alerts', label:'Alerts', icon:'🔔', desc:'Important notifications for Marcus' },
-  { id:'lessons', label:"Today's Lessons", icon:'📖', desc:'Marcus's lesson plan and worksheet' },
+  { id:'lessons', label:"Today's Lessons", icon:'📖', desc:"Marcus's lesson plan and worksheet" },
   { id:'classes', label:"Marcus's Classes", icon:'📚', desc:'Grades and progress' },
   { id:'messages', label:'Messages', icon:'💬', desc:'Messages from teachers' },
   { id:'feed', label:'Class Feed', icon:'📢', desc:'Announcements and updates' },
