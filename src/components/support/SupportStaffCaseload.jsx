@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useStore } from '../../lib/store'
 import { useNavigate } from 'react-router-dom'
+import AIAssistantPanel from './AIAssistantPanel'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -18,6 +19,7 @@ const RISK_LEVELS = {
 }
 
 export default function SupportStaffCaseload({ onBack }) {
+  const [showAI, setShowAI] = useState(false)
   const navigate = useNavigate()
   const {
     getSupportStaffCaseload,
@@ -154,17 +156,39 @@ export default function SupportStaffCaseload({ onBack }) {
           </div>
         </div>
 
-        <button
-          onClick={() => setShowAssignModal(true)}
-          style={{
-            background:C.teal, color:'#fff', border:'none', borderRadius:8,
-            padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
-            display:'flex', alignItems:'center', gap:6
-          }}
-        >
-          + Assign Student
-        </button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button
+            onClick={() => setShowAI(true)}
+            style={{
+              background:C.blue, color:'#fff', border:'none', borderRadius:8,
+              padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
+              display:'flex', alignItems:'center', gap:6
+            }}
+          >
+            🤖 AI
+          </button>
+          <button
+            onClick={() => setShowAssignModal(true)}
+            style={{
+              background:C.teal, color:'#fff', border:'none', borderRadius:8,
+              padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
+              display:'flex', alignItems:'center', gap:6
+            }}
+          >
+            + Assign Student
+          </button>
+        </div>
       </div>
+
+      {/* AI Assistant Panel */}
+      <AIAssistantPanel
+        isOpen={showAI}
+        onClose={() => setShowAI(false)}
+        initialContext={{ 
+          screen: 'caseload',
+          caseload: caseload
+        }}
+      />
 
       {/* Stats Overview */}
       <div style={{ padding:20, paddingBottom:0 }}>
