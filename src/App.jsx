@@ -23,6 +23,7 @@ import Integrations    from './pages/Integrations'
 import Tutorials       from './pages/Tutorials'
 import Widgets         from './pages/Widgets'
 import ProfileSettings from './components/ProfileSettings'
+import SupportStaffDashboard from './pages/SupportStaffDashboard'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
