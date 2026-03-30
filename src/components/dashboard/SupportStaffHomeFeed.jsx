@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useStore } from '../../lib/store'
 import Widget from '../ui/Widget'
-import GroupsWidget from './Widgets/GroupsWidget'
+
 import StudentTrendsWidget from './Widgets/StudentTrendsWidget'
 import InterventionPlansWidget from './Widgets/InterventionPlansWidget'
 import NeedsAttentionWidget from './Widgets/NeedsAttentionWidget'
@@ -70,7 +70,6 @@ export default function SupportStaffHomeFeed({ navigate }) {
   const widgets = [
     <OverviewTiles key="overview" navigate={navigate} />,
     <StudentTrendsWidget key="trends" navigate={navigate} />,
-    <GroupsWidget key="groups" navigate={navigate} />,
     <InterventionPlansWidget key="plans" navigate={navigate} />,
     <NeedsAttentionWidget key="attention" atRisk={atRisk} navigate={navigate} />,
     <MessagesWidget key="messages" navigate={navigate} />,
