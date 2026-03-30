@@ -179,7 +179,9 @@ function StudentCard({ student, notes, classes, onViewProfile, onMessage, onMess
 }
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-import SupportStaffHomeFeed from '../dashboard/SupportStaffHomeFeed'
+// SupportStaffHomeFeed - MIRROR from Dashboard.jsx HomeFeed (read-only)
+import HomeFeed from '../dashboard/HomeFeed'
+
 
 export default function SupportStaffDashboard() {
   const {
@@ -345,8 +347,8 @@ const assignedStudents = getStudentsForSupportStaff()
           />
         </div>
 
-        {/* Widget Feed - MIRROR Teacher Dashboard */}
-        <SupportStaffHomeFeed navigate={navigate} />
+        {/* Widget Feed - MIRROR Teacher Dashboard (read-only) */}
+        <HomeFeed navigate={navigate} />
 
         {/* Quick Stats (preserved but widget-ified) */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, padding: '14px 16px 0' }}>
