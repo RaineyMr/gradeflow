@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from './supabase'
+import { demoSupportNotes } from './demoSupportNotes'
 
 // ─── Fallback Demo Data (used if Supabase is unreachable) ─────────────────────
 const DEMO_CLASSES = [
@@ -346,6 +347,12 @@ export const useStore = create((set, get) => ({
 
   // ── Support Notes ─────────────────────────────────────────────────────────
   supportNotes: [],
+
+  // Demo notes for supportStaff
+  setDemoSupportNotes: () => {
+    if (get().currentUser?.role !== 'supportStaff') return
+    set({ supportNotes: demoSupportNotes })
+  },
 
   // ── Participation events (real-time, plus Supabase) ────────────────────────
   participationEvents: [],
