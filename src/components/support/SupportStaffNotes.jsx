@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../../lib/store'
 import SupportLogEditor from './SupportLogEditor'
 import SupportLogCard from './SupportLogCard'
+import AIAssistantPanel from './AIAssistantPanel'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -12,6 +13,7 @@ const C = {
 }
 
 export default function SupportStaffNotes({ onBack, studentId = null }) {
+  const [showAI, setShowAI] = useState(false)
   const {
     getSupportLogs,
     getSupportLogsForStudent,
@@ -86,7 +88,15 @@ export default function SupportStaffNotes({ onBack, studentId = null }) {
           <div style={{ fontSize:18, fontWeight:700, color:C.text, marginBottom:2 }}>Support Logs</div>
           <div style={{ fontSize:12, color:C.muted }}>{selectedStudentId ? 'Student-specific logs' : 'All support logs'}</div>
         </div>
-        <button onClick={handleCreateLog} style={{ background:C.teal, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer' }}>+ Add Log</button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button
+            onClick={() => setShowAI(true)}
+            style={{ background:C.blue, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer' }}
+          >
+            🤖 AI
+          </button>
+          <button onClick={handleCreateLog} style={{ background:C.teal, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer' }}>+ Add Log</button>
+        </div>
       </div>
 
       {/* Student Filter */}
@@ -155,6 +165,17 @@ export default function SupportStaffNotes({ onBack, studentId = null }) {
           onClose={handleEditorClose}
         />
       )}
+
+      {/* AI Assistant Panel */}
+      <AIAssistantPanel
+        isOpen={showAI}
+        onClose={() => setShowAI(false)}
+        initialContext={{ 
+          screen: 'logs',
+          studentId: selectedStudentId,
+          logs: logs
+        }}
+      />
     </div>
   )
 }
