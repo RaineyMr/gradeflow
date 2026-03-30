@@ -1,5 +1,5 @@
 import React from 'react'
-import { useStore } from '../../lib/store'
+import { useStore } from '../../../lib/store'
 import Widget from '../../ui/Widget'
 import { ActionBtn } from '../../ui/ActionBtn'
 
