@@ -5,6 +5,7 @@ import SupportWidget from './SupportWidget'
 import SupportTaskCard from './SupportTaskCard'
 import SupportStaffMessaging from './SupportStaffMessaging'
 import { useNavigate } from 'react-router-dom'
+import { useIsMobile } from '../../lib/utils'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -15,6 +16,7 @@ const C = {
 
 export default function SupportStaffHomeFeed() {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const {
     getSupportStaffStudentsNeedingAttention,
     getRecentSupportNotes,
@@ -118,22 +120,22 @@ export default function SupportStaffHomeFeed() {
       {/* Header */}
       <div style={{ 
         background:C.card, borderBottom:`1px solid ${C.border}`, 
-        padding:'20px', marginBottom:20 
+        padding: isMobile ? '16px' : '20px', marginBottom:20 
       }}>
-        <div style={{ fontSize:24, fontWeight:800, color:C.text, marginBottom:4 }}>
+        <div style={{ fontSize: isMobile ? 20 : 24, fontWeight:800, color:C.text, marginBottom:4 }}>
           Welcome back, {currentUser?.name || 'Support Staff'}
         </div>
-        <div style={{ fontSize:14, color:C.muted }}>
+        <div style={{ fontSize: isMobile ? 12 : 14, color:C.muted }}>
           Here's what needs your attention today
         </div>
       </div>
 
       {/* Widgets Grid */}
-      <div style={{ padding:'0 20px', maxWidth:1200, margin:'0 auto' }}>
+      <div style={{ padding: isMobile ? '0 16px' : '0 20px', maxWidth:1200, margin:'0 auto' }}>
         <div style={{ 
           display:'grid', 
-          gridTemplateColumns:'repeat(auto-fit, minmax(320px, 1fr))', 
-          gap:20 
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(320px, 1fr))', 
+          gap: isMobile ? 16 : 20 
         }}>
           
           {/* Students Needing Attention */}
