@@ -6,6 +6,7 @@ import ParentMessages from './ParentMessages'
 import StudentProfile from './StudentProfile'
 
 
+
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
   text:'#eef0f8', soft:'#c8cce0', muted:'#6b7494', border:'#252b3d',
@@ -151,25 +152,38 @@ function StudentCard({ student, notes, classes, onViewProfile, onMessage, onMess
           <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
             <button
               onClick={() => onViewProfile(student)}
-              style={{ flex: 1, minWidth: 100, background: `${C.purple}18`, color: C.purple,
+              style={{ flex: 1, minWidth: 80, background: `${C.purple}18`, color: C.purple,
                 border: `1px solid ${C.purple}35`, borderRadius: 10, padding: '8px 12px',
                 fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
               👁 View Profile
             </button>
             <button
               onClick={() => onMessage(student)}
-              style={{ flex: 1, minWidth: 100, background: 'var(--school-color,#003057)18',
-                color: 'var(--school-color,#B3A369)',
-                border: '1px solid var(--school-color,#003057)35',
-                borderRadius: 10, padding: '8px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-              💬 Message Student
+              style={{ flex: 1, minWidth: 80, background: `${C.green}18`, color: C.green,
+                border: `1px solid ${C.green}35`, borderRadius: 10, padding: '8px 12px',
+                fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+              💬 Student
             </button>
             <button
               onClick={() => onMessageTeacher(student)}
-              style={{ flex: 1, minWidth: 100, background: `${C.teal}18`, color: C.teal,
+              style={{ flex: 1, minWidth: 80, background: `${C.teal}18`, color: C.teal,
                 border: `1px solid ${C.teal}35`, borderRadius: 10, padding: '8px 12px',
                 fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-              👩‍🏫 Message Teacher
+              👩‍🏫 Teacher
+            </button>
+            <button
+              onClick={() => navigate('messages')}
+              style={{ flex: 1, minWidth: 80, background: `${C.purple}18`, color: C.purple,
+                border: `1px solid ${C.purple}35`, borderRadius: 10, padding: '8px 12px',
+                fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+              👪 Parent
+            </button>
+            <button
+              onClick={() => navigate('messages')}
+              style={{ flex: 1, minWidth: 80, background: `${C.red}18`, color: C.red,
+                border: `1px solid ${C.red}35`, borderRadius: 10, padding: '8px 12px',
+                fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+              🏫 Admin
             </button>
           </div>
         </div>
@@ -359,12 +373,15 @@ export default function SupportStaffDashboard() {
           />
         </div>
 
+        <SupportStaffHomeFeed navigate={navigate} />
+        
         {/* Quick stats strip */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, padding: '12px 16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, padding: '12px 16px' }}> 
           {[
             { label: 'Assigned', val: assignedStudents.length, color: C.blue },
             { label: 'Flagged', val: assignedStudents.filter(s => s.flagged).length, color: C.red },
             { label: 'Total Notes', val: supportNotes.length, color: C.purple },
+            { label: 'Active Plans', val: interventionPlans.filter(p => p.status === 'active').length, color: C.teal },
           ].map(stat => (
             <div key={stat.label} style={{ background: C.card, borderRadius: 14, padding: '10px 12px',
               border: `1px solid ${stat.color}22` }}>
@@ -421,6 +438,49 @@ export default function SupportStaffDashboard() {
               onMessageTeacher={handleMessageTeacher}
             />
           ))}
+        </div>
+
+        {/* My Groups Panel */}
+        <div style={{ padding: '12px 16px', background: C.inner }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, letterSpacing: '0.02em',
+            textTransform: 'uppercase', marginBottom: 12 }}>
+            👥 My Groups ({groups.length})
+          </div>
+          {groups.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
+              <div style={{ fontSize: 36, marginBottom: 8 }}>👥</div>
+              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}>No groups yet</div>
+              <div style={{ fontSize: 12, marginBottom: 16 }}>Create groups to organize students and send group messages</div>
+              <button
+                onClick={() => navigate('groups')}
+                style={{ 
+                  background: C.blue, color: 'white', 
+                  borderRadius: 12, padding: '12px 24px', 
+                  fontSize: 13, fontWeight: 700, border: 'none', cursor: 'pointer',
+                  width: '100%'
+                }}>
+                + Create First Group
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8 }}>
+              {groups.map(group => (
+                <div key={group.id} style={{ 
+                  background: C.card, borderRadius: 16, padding: 16, minWidth: 160, textAlign: 'center',
+                  border: `1px solid ${C.border}`, cursor: 'pointer'
+                }} onClick={() => navigate('groups')}>
+                  <div style={{ fontSize: 20, marginBottom: 8 }}>👥</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 4 }}>
+                    {group.name}
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: C.blue, marginBottom: 4 }}>
+                    {getStudentsForSupportStaff().filter(s => s.groupId === group.id).length || 0}
+                  </div>
+                  <div style={{ fontSize: 11, color: C.muted }}>students</div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardShell>
