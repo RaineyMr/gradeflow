@@ -116,14 +116,14 @@ export default function BottomNav({ active, onSelect, isSubPage, role: roleProp 
               justifyContent:  'center',
               gap:             2,
               padding:         '10px 4px 6px',
-              color:           isActive ? 'var(--school-color)' : 'rgba(255,255,255,0.4)',
+              color:           isActive ? 'var(--school-color)' : 'rgba(255,255,255,0.65)',
               fontSize:        item.icon === '←' ? 20 : 18,
               fontWeight:      700,
               transition:      'color 0.15s',
               position:        'relative',
             }}>
             <span style={{ fontSize: item.icon === '←' ? 20 : 18, lineHeight: 1 }}>{item.icon}</span>
-            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.02em', color: isActive ? 'var(--school-color)' : 'rgba(255,255,255,0.4)' }}>
+            <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.02em', color: isActive ? 'var(--school-color)' : 'rgba(255,255,255,0.65)' }}>
               {item.label}
             </span>
             {isActive && (
