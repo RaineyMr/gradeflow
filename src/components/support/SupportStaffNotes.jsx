@@ -4,6 +4,7 @@ import { useStore } from '../../lib/store'
 import SupportLogEditor from './SupportLogEditor'
 import SupportLogCard from './SupportLogCard'
 import AIAssistantPanel from './AIAssistantPanel'
+import ParentAIAssistantPanel from '../parents/ParentAIAssistantPanel'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -14,6 +15,7 @@ const C = {
 
 export default function SupportStaffNotes({ onBack, studentId = null }) {
   const [showAI, setShowAI] = useState(false)
+  const [showParentAI, setShowParentAI] = useState(false)
   const {
     getSupportLogs,
     getSupportLogsForStudent,
@@ -89,6 +91,12 @@ export default function SupportStaffNotes({ onBack, studentId = null }) {
           <div style={{ fontSize:12, color:C.muted }}>{selectedStudentId ? 'Student-specific logs' : 'All support logs'}</div>
         </div>
         <div style={{ display:'flex', gap:8 }}>
+          <button
+            onClick={() => setShowParentAI(true)}
+            style={{ background:C.teal, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer' }}
+          >
+            👪 Parent AI
+          </button>
           <button
             onClick={() => setShowAI(true)}
             style={{ background:C.blue, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:600, cursor:'pointer' }}
@@ -170,6 +178,17 @@ export default function SupportStaffNotes({ onBack, studentId = null }) {
       <AIAssistantPanel
         isOpen={showAI}
         onClose={() => setShowAI(false)}
+        initialContext={{ 
+          screen: 'logs',
+          studentId: selectedStudentId,
+          logs: logs
+        }}
+      />
+
+      {/* Parent AI Assistant Panel */}
+      <ParentAIAssistantPanel
+        isOpen={showParentAI}
+        onClose={() => setShowParentAI(false)}
         initialContext={{ 
           screen: 'logs',
           studentId: selectedStudentId,
