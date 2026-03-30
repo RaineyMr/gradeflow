@@ -240,10 +240,11 @@ export default function App() {
           {/* ── Support Staff ───────────────────────────────────────────────────── */ }
           <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />} >
             <Route path="/supportStaff"           element={<SupportStaffDashboard />} />
-            <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="groups" />} />
+            <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffGroupScreen} backTo="/supportStaff" />} />
             <Route path="/supportStaff/trends"    element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
             <Route path="/supportStaff/messages"  element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
             <Route path="/supportStaff/notes"     element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="notes" />} />
+            <Route path="/supportStaff/studentProfile" element={<Page Component={StudentProfile} backTo="/supportStaff" extraProps={{ readOnly: true }} />} />
           </Route>
 
         </Route>
