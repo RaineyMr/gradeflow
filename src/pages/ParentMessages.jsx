@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useStore } from '../lib/store'
 
 const C = {
@@ -7,8 +7,6 @@ const C = {
   green:'#22c97a', blue:'#3b7ef4', red:'#f04a4a', amber:'#f5a623',
   teal:'#0fb8a0', purple:'#9b6ef5',
 }
-
-const KEY = () => import.meta.env.VITE_ANTHROPIC_KEY
 
 const ALL_CONTACTS_BASE = Object.freeze({
   teachers:[
@@ -129,19 +127,26 @@ const PARENT_STUDENT_VIEW = [
 
 // ─── AI draft ─────────────────────────────────────────────────────────────────
 async function aiDraft(trigger, recipientRole, studentName, tone) {
-  if (!KEY()) return null
-  const toneMap = { warm:'warm and supportive', formal:'professional', urgent:'urgent and direct', celebratory:'celebratory and encouraging' }
+  // All AI calls now route through /api/ai for security
   try {
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('/api/ai', {
       method:'POST',
-      headers:{ 'Content-Type':'application/json','x-api-key':KEY(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body:JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:250,
-        system:`Write a school communication in a ${toneMap[tone]||'warm'} tone. Under 3 sentences. Return only the message text.`,
-        messages:[{ role:'user', content:`Write to a ${recipientRole} about: ${trigger}. Student: ${studentName||''}` }] })
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ 
+        intent:'draft_parent_message',
+        trigger,
+        recipientRole,
+        studentName: studentName || '',
+        tone: tone || 'warm'
+      })
     })
+    if (!r.ok) return null
     const d = await r.json()
-    return d.content?.[0]?.text || null
-  } catch { return null }
+    return d?.message || d?.text || null
+  } catch (e) {
+    console.error('AI draft error:', e)
+    return null
+  }
 }
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
@@ -417,7 +422,11 @@ const seed = viewerRole==='supportStaff' ? SUPPORT_THREADS
   const [pView, setPView] = useState('private')
   const isParent = viewerRole==='parent'
 
-  const displayList = isParent && pView==='student' ? PARENT_STUDENT_VIEW : threads
+  // For parents: show student view (read-only) or private (interactive) threads
+  const displayList = useMemo(() => {
+    if (!isParent) return threads
+    return pView === 'student' ? PARENT_STUDENT_VIEW : threads
+  }, [pView, threads, isParent])
 
   const pending     = threads.filter(t=>t.status==='pending')
   const unread      = threads.filter(t=>t.unread).length

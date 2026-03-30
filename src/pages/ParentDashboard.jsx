@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import Widgets from './Widgets'
 import DashboardShell from '../components/layout/DashboardShell'
+import { useStore } from '../lib/store'
 
 // ─── HISD Theme ───────────────────────────────────────────────────────────────
 const T = {
@@ -341,7 +342,7 @@ const PARENT_WIDGET_CATALOG = [
   { id:'aiTips', label:'AI Tips', icon:'✨', desc:'Parenting strategies' },
 ]
 
-function HomePage({ navigate, childName }) {
+function HomePage({ navigate, childName, parentMessages }) {
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [activeWidgets, setActiveWidgets] = useState(PARENT_WIDGET_CATALOG.map(w=>w.id))
   const [showAddWidgets, setShowAddWidgets] = useState(false)
@@ -358,7 +359,7 @@ function HomePage({ navigate, childName }) {
   )
 
   const pendingCount = CHILD.assignments.filter(a=>a.status==='pending').length
-  const unreadCount = INITIAL_THREADS.filter(t=>t.unread&&t.private).length
+  const unreadCount = (parentMessages || INITIAL_THREADS).filter(t=>t.unread&&t.private).length
 
   const overviewTiles = [
     { icon:'📊', val:CHILD.gpa, label:'GPA', page:'classes', color:T.secondary },
@@ -382,7 +383,7 @@ function HomePage({ navigate, childName }) {
 
       {show('classes')&&wrap('classes',<Widget onClick={()=>navigate('classes')}><div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>📚 {childName}'s Classes</div><div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>{CHILD.classes.map(c=>(<button key={c.id} onClick={e=>{ e.stopPropagation(); navigate('classes') }} style={{ background:T.inner, borderLeft:`3px solid ${c.color}`, borderRadius:12, padding:'10px 12px', border:'none', cursor:'pointer', textAlign:'left' }}><div style={{ fontWeight:700, fontSize:12, color:T.text, marginBottom:2 }}>{c.subject}</div><div style={{ fontSize:10, color:T.muted, marginBottom:6 }}>{c.teacher}</div><div style={{ fontSize:20, fontWeight:800, color:gradeColor(c.grade) }}>{c.grade}%</div></button>))}</div></Widget>)}
 
-      {show('messages')&&wrap('messages',<Widget onClick={()=>navigate('messages')}><div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}><div style={{ fontSize:13, fontWeight:700 }}>💬 Messages</div><Btn label="+ New" color={T.secondary} onClick={()=>navigate('messages')}/></div>{INITIAL_THREADS.filter(t=>t.unread&&t.private).slice(0,2).map(t=>(<div key={t.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', alignItems:'center', gap:10 }}><span style={{ fontSize:20 }}>{t.avatar}</span><div style={{ flex:1, minWidth:0 }}><div style={{ fontWeight:700, fontSize:12, color:T.text }}>{t.from}</div><div style={{ fontSize:10, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.messages[t.messages.length-1]?.text}</div></div><div style={{ width:8, height:8, borderRadius:'50%', background:T.red, flexShrink:0 }}/></div>))}{!INITIAL_THREADS.some(t=>t.unread&&t.private)&&<div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}</Widget>)}
+      {show('messages')&&wrap('messages',<Widget onClick={()=>navigate('messages')}><div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}><div style={{ fontSize:13, fontWeight:700 }}>💬 Messages</div><Btn label="+ New" color={T.secondary} onClick={()=>navigate('messages')}/></div>{(parentMessages||INITIAL_THREADS).filter(t=>t.unread&&t.private).slice(0,2).map(t=>(<div key={t.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px', marginBottom:8, display:'flex', alignItems:'center', gap:10, cursor:'pointer' }} onClick={()=>navigate('messages')}><span style={{ fontSize:20 }}>{t.avatar}</span><div style={{ flex:1, minWidth:0 }}><div style={{ fontWeight:700, fontSize:12, color:T.text }}>{t.from||t.name}</div><div style={{ fontSize:10, color:T.muted, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.messages[t.messages.length-1]?.text}</div></div><div style={{ width:8, height:8, borderRadius:'50%', background:T.red, flexShrink:0 }}/></div>))}{!(parentMessages||INITIAL_THREADS).some(t=>t.unread&&t.private)&&<div style={{ fontSize:11, color:T.muted, textAlign:'center', padding:'8px 0' }}>No new messages</div>}</Widget>)}
 
       {show('feed')&&wrap('feed',<Widget onClick={()=>navigate('feed')}><div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>📢 Class Feed</div>{CHILD.feed.slice(0,1).map(p=>(<div key={p.id} style={{ background:T.inner, borderRadius:12, padding:'10px 12px' }}><div style={{ fontSize:11, fontWeight:600, color:T.secondary, marginBottom:4 }}>{p.author}</div><div style={{ fontSize:12, color:T.text, lineHeight:1.5 }}>{p.content}</div><div style={{ fontSize:10, color:T.muted, marginTop:6 }}>{p.time}</div></div>))}</Widget>)}
 
@@ -398,8 +399,12 @@ import { useDashboard } from '../hooks/useDashboard'
 
 export default function ParentDashboard({ currentUser }) {
   const location = useLocation()
+  const store = useStore()
   const parentName = currentUser?.userName || 'Ms. Thompson'
   const childName  = CHILD.name
+  
+  // Get parent's message threads from store (private + read-only student view)
+  const parentMessages = store.parentMessages || INITIAL_THREADS
 
   const NAV_TO_PAGE = {
     classes:   'classes',
@@ -439,7 +444,7 @@ export default function ParentDashboard({ currentUser }) {
   return shell(
     <div style={{ minHeight:'100vh', background:T.bg, color:T.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
       <StickyHeader parentName={parentName} childName={childName}/>
-      <HomePage navigate={navigate} childName={childName}/>
+      <HomePage navigate={navigate} childName={childName} parentMessages={parentMessages}/>
     </div>
   )
 }
