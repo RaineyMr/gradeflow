@@ -6,6 +6,7 @@ import AIAssistantPanel from './AIAssistantPanel'
 import ParentAIAssistantPanel from '../parents/ParentAIAssistantPanel'
 import SupportTaskCard from './SupportTaskCard'
 import StudentSupportTimeline from './StudentSupportTimeline'
+import { useIsMobile } from '../../lib/utils'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -101,6 +102,7 @@ function ParentTab({ student, onOpenParentAI }) {
 }
 
 export default function SupportStaffStudentProfile({ studentId, onBack }) {
+  const isMobile = useIsMobile()
   const [showAI, setShowAI] = useState(false)
   const [showParentAI, setShowParentAI] = useState(false)
   const {
@@ -224,34 +226,41 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
       {/* Header */}
       <div style={{ 
         background:C.card, borderBottom:`1px solid ${C.border}`, 
-        padding:'16px 20px', display:'flex', alignItems:'center', gap:16 
+        padding: isMobile ? '12px 16px' : '16px 20px', 
+        display:'flex', alignItems:'center', gap: isMobile ? 12 : 16,
+        flexWrap: isMobile ? 'wrap' : 'nowrap'
       }}>
         <button 
           onClick={onBack}
           style={{ 
             background:C.inner, border:'none', borderRadius:8, 
-            width:36, height:36, color:C.soft, fontSize:18, cursor:'pointer',
+            width: isMobile ? 32 : 36, height: isMobile ? 32 : 36, 
+            color:C.soft, fontSize: isMobile ? 16 : 18, cursor:'pointer',
             display:'flex', alignItems:'center', justifyContent:'center'
           }}
         >
           ←
         </button>
         
-        <div style={{ flex:1 }}>
-          <div style={{ fontSize:18, fontWeight:700, color:C.text, marginBottom:2 }}>
+        <div style={{ flex:1, minWidth: 0 }}>
+          <div style={{ fontSize: isMobile ? 16 : 18, fontWeight:700, color:C.text, marginBottom:2 }}>
             {student.name}
           </div>
-          <div style={{ fontSize:12, color:C.muted }}>
+          <div style={{ fontSize: isMobile ? 10 : 12, color:C.muted }}>
             {studentClass?.subject} · Grade {student.grade}% · {studentClass?.period}
           </div>
         </div>
 
-        <div style={{ display:'flex', gap:8 }}>
+        <div style={{ 
+          display:'flex', gap: isMobile ? 4 : 8,
+          flexWrap: isMobile ? 'wrap' : 'nowrap'
+        }}>
           <button
             onClick={() => setShowAI(true)}
             style={{
               background:C.purple, color:'#fff', border:'none', borderRadius:8,
-              padding:'8px 12px', fontSize:11, fontWeight:600, cursor:'pointer'
+              padding: isMobile ? '6px 8px' : '8px 12px', 
+              fontSize: isMobile ? 9 : 11, fontWeight:600, cursor:'pointer'
             }}
           >
             🤖 AI
@@ -260,19 +269,21 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
             onClick={handleMessageStudent}
             style={{
               background:C.teal, color:'#fff', border:'none', borderRadius:8,
-              padding:'8px 12px', fontSize:11, fontWeight:600, cursor:'pointer'
+              padding: isMobile ? '6px 8px' : '8px 12px', 
+              fontSize: isMobile ? 9 : 11, fontWeight:600, cursor:'pointer'
             }}
           >
-            💬 Message Student
+            💬 {isMobile ? '' : 'Message'}
           </button>
           <button
             onClick={handleMessageTeacherTeam}
             style={{
               background:C.blue, color:'#fff', border:'none', borderRadius:8,
-              padding:'8px 12px', fontSize:11, fontWeight:600, cursor:'pointer'
+              padding: isMobile ? '6px 8px' : '8px 12px', 
+              fontSize: isMobile ? 9 : 11, fontWeight:600, cursor:'pointer'
             }}
           >
-            👥 Message Teacher Team
+            👥 {isMobile ? '' : 'Team'}
           </button>
         </div>
       </div>
@@ -280,19 +291,21 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
       {/* Tabs */}
       <div style={{ 
         background:C.card, borderBottom:`1px solid ${C.border}`, 
-        padding:'0 20px', overflowX:'auto' 
+        padding: isMobile ? '0 16px' : '0 20px', overflowX:'auto' 
       }}>
-        <div style={{ display:'flex', gap:4, minWidth:'max-content' }}>
+        <div style={{ display:'flex', gap: isMobile ? 2 : 4, minWidth:'max-content' }}>
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
                 background: activeTab === tab.id ? C.inner : 'transparent',
-                border:'none', borderRadius:8, padding:'12px 16px',
-                cursor:'pointer', display:'flex', alignItems:'center', gap:6,
+                border:'none', borderRadius:8, 
+                padding: isMobile ? '8px 12px' : '12px 16px',
+                cursor:'pointer', display:'flex', alignItems:'center', gap: isMobile ? 4 : 6,
                 borderBottom: activeTab === tab.id ? `2px solid ${C.teal}` : '2px solid transparent',
-                marginBottom:-1
+                marginBottom:-1,
+                fontSize: isMobile ? 11 : 12
               }}
             >
               <span style={{ fontSize:14 }}>{tab.icon}</span>
