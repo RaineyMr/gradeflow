@@ -153,14 +153,37 @@ function TodaysLessonsWidget({ navigate }) {
 }
 
 // ─── EDIT MODE BAR ────────────────────────────────────────────────────────────
-function EditModeBar() {
+function EditModeBar({ editMode, onToggle, onReset, hiddenCount }) {
   return (
-    <div style={{ margin:'4px 12px 24px', background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'11px 14px', textAlign:'center' }}>
-      <div style={{ fontSize:11, fontWeight:700, color:C.soft, marginBottom:3 }}>— Hold any widget → Edit Mode</div>
-      <div style={{ fontSize:10, color:C.muted, lineHeight:1.6 }}>
-        Drag to rearrange · Pinch to resize · + to add · All widgets available<br/>
-        Saved to your account · Same layout on all devices
-      </div>
+    <div style={{ margin:'4px 0 24px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
+      <button
+        onClick={onToggle}
+        style={{ flex:1, background: editMode ? `${C.amber}20` : C.inner, border:`1px solid ${editMode ? C.amber : C.border}`, borderRadius:14, padding:'11px 14px', color: editMode ? C.amber : C.soft, fontSize:11, fontWeight:700, cursor:'pointer', textAlign:'center' }}>
+        {editMode ? '✓ Done Editing' : '✏️ Edit Widgets'}
+        {!editMode && hiddenCount > 0 && <span style={{ marginLeft:6, background:C.muted, color:C.bg, borderRadius:999, padding:'1px 6px', fontSize:9 }}>{hiddenCount} hidden</span>}
+      </button>
+      {editMode && hiddenCount > 0 && (
+        <button
+          onClick={onReset}
+          style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'11px 14px', color:C.muted, fontSize:11, fontWeight:700, cursor:'pointer', whiteSpace:'nowrap' }}>
+          Reset All
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── DISMISSIBLE WIDGET WRAPPER ───────────────────────────────────────────────
+function DismissibleWidget({ id, editMode, onHide, children }) {
+  if (!editMode) return children
+  return (
+    <div style={{ position:'relative' }}>
+      <button
+        onClick={() => onHide(id)}
+        style={{ position:'absolute', top:8, right:8, zIndex:10, background:`${C.red}22`, border:`1px solid ${C.red}55`, borderRadius:'50%', width:26, height:26, display:'flex', alignItems:'center', justifyContent:'center', color:C.red, fontSize:14, fontWeight:900, cursor:'pointer', lineHeight:1 }}>
+        ×
+      </button>
+      <div style={{ opacity:0.7, pointerEvents:'none' }}>{children}</div>
     </div>
   )
 }
@@ -815,11 +838,38 @@ function SettingsPage({ onBack, navigate }) {
 }
 
 // ─── HOME FEED ────────────────────────────────────────────────────────────────
+const ALL_WIDGET_IDS = ['overview','lessons','classes','attention','messages','reports','grading','lessonPlan','sketch','testing','scan','gradebook']
+
 function HomeFeed({ navigate }) {
   const store = useStore()
-  const { classes, messages, reminders, getNeedsAttention } = store
+  const { classes, messages, getNeedsAttention } = store
   const pending = messages.filter(m=>m.status==='pending')
   const atRisk  = getNeedsAttention()
+
+  const [editMode,   setEditMode]   = useState(false)
+  const [hidden,     setHidden]     = useState(() => {
+    try { return JSON.parse(localStorage.getItem('gf_hidden_widgets') || '[]') } catch { return [] }
+  })
+
+  function hideWidget(id) {
+    const next = [...hidden, id]
+    setHidden(next)
+    localStorage.setItem('gf_hidden_widgets', JSON.stringify(next))
+  }
+
+  function resetWidgets() {
+    setHidden([])
+    localStorage.removeItem('gf_hidden_widgets')
+  }
+
+  function W({ id, children }) {
+    if (!editMode && hidden.includes(id)) return null
+    return (
+      <DismissibleWidget id={id} editMode={editMode} onHide={hideWidget}>
+        {children}
+      </DismissibleWidget>
+    )
+  }
 
   const overviewTiles = [
     { icon:'📚', val:classes.length,    label:'Classes',      page:'classes',        color:C.blue   },
@@ -831,75 +881,63 @@ function HomeFeed({ navigate }) {
   return (
     <div style={{ padding:'12px 12px 0' }}>
 
-      {/* W1: Daily Overview — untouched */}
-      <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
-          {overviewTiles.map(tile=>(
-            <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
-              style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'background 0.15s' }}
-              onMouseEnter={e=>(e.currentTarget.style.background=`${tile.color}30`)}
-              onMouseLeave={e=>(e.currentTarget.style.background=`${tile.color}18`)}>
-              <span style={{ fontSize:16 }}>{tile.icon}</span>
-              {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
-              <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
-            </button>
-          ))}
-        </div>
-      </Widget>
+      <W id="overview">
+        <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
+          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+            {overviewTiles.map(tile=>(
+              <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
+                style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'background 0.15s' }}
+                onMouseEnter={e=>(e.currentTarget.style.background=`${tile.color}30`)}
+                onMouseLeave={e=>(e.currentTarget.style.background=`${tile.color}18`)}>
+                <span style={{ fontSize:16 }}>{tile.icon}</span>
+                {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
+                <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
+              </button>
+            ))}
+          </div>
+        </Widget>
+      </W>
 
-      {/* W2: Today's Lessons — untouched */}
-      <TodaysLessonsWidget navigate={navigate}/>
+      <W id="lessons"><TodaysLessonsWidget navigate={navigate}/></W>
 
-      {/* W3: My Classes */}
-      <Widget onClick={()=>navigate('classes')} title="📚 My Classes" titleRight={<ActionBtn label="+ Add" color={C.blue} onClick={()=>navigate('gradebook')}/>}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-          {classes.map(cls=>(
-            <button key={cls.id} onClick={e=>{ e.stopPropagation(); store.setActiveClass(cls); navigate('gradebook') }}
-              style={{ background:C.inner, borderRadius:14, padding:'12px 14px', border:'none', borderLeft:`3px solid ${cls.color}`, cursor:'pointer', textAlign:'left', transition:'background 0.15s' }}
-              onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
-              onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
-              <div style={{ fontWeight:700, fontSize:12, color:C.text, marginBottom:2 }}>{cls.period} · {cls.subject}</div>
-              <div style={{ fontSize:10, color:C.muted, marginBottom:8 }}>{cls.students} students</div>
-              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                <span style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{cls.gpa}</span>
-                <TrendBadge trend={cls.trend}/>
-              </div>
-              {cls.needsAttention>0 && <div style={{ fontSize:9, color:C.red, marginTop:4, fontWeight:700 }}>⚑ {cls.needsAttention} need attention</div>}
-            </button>
-          ))}
-        </div>
-      </Widget>
+      <W id="classes">
+        <Widget onClick={()=>navigate('classes')} title="📚 My Classes" titleRight={<ActionBtn label="+ Add" color={C.blue} onClick={()=>navigate('gradebook')}/>}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+            {classes.map(cls=>(
+              <button key={cls.id} onClick={e=>{ e.stopPropagation(); store.setActiveClass(cls); navigate('gradebook') }}
+                style={{ background:C.inner, borderRadius:14, padding:'12px 14px', border:'none', borderLeft:`3px solid ${cls.color}`, cursor:'pointer', textAlign:'left', transition:'background 0.15s' }}
+                onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
+                onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
+                <div style={{ fontWeight:700, fontSize:12, color:C.text, marginBottom:2 }}>{cls.period} · {cls.subject}</div>
+                <div style={{ fontSize:10, color:C.muted, marginBottom:8 }}>{cls.students} students</div>
+                <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                  <span style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{cls.gpa}</span>
+                  <TrendBadge trend={cls.trend}/>
+                </div>
+                {cls.needsAttention>0 && <div style={{ fontSize:9, color:C.red, marginTop:4, fontWeight:700 }}>⚑ {cls.needsAttention} need attention</div>}
+              </button>
+            ))}
+          </div>
+        </Widget>
+      </W>
 
-      {/* W4: Needs Attention */}
-      <NeedsAttentionWidget atRisk={atRisk} navigate={navigate}/>
+      <W id="attention"><NeedsAttentionWidget atRisk={atRisk} navigate={navigate}/></W>
+      <W id="messages"><MessagesWidget navigate={navigate}/></W>
+      <W id="reports"><ReportsWidget navigate={navigate}/></W>
+      <W id="grading"><GradingWidget navigate={navigate}/></W>
+      <W id="lessonPlan"><LessonPlanWidget navigate={navigate}/></W>
+      <W id="sketch"><SketchAnnotateWidget navigate={navigate}/></W>
+      <W id="testing"><TestingSuiteWidget navigate={navigate}/></W>
+      <W id="scan"><ScanGradeSheetWidget navigate={navigate}/></W>
+      <W id="gradebook"><GradebookWidget navigate={navigate}/></W>
 
-      {/* W5: Messages (admin-style widget) */}
-      <MessagesWidget navigate={navigate}/>
-
-      {/* W6: Reports */}
-      <ReportsWidget navigate={navigate}/>
-
-      {/* W7: Grading */}
-      <GradingWidget navigate={navigate}/>
-
-      {/* W8: Lesson Plan Builder */}
-      <LessonPlanWidget navigate={navigate}/>
-
-      {/* W9: Sketch & Annotate */}
-      <SketchAnnotateWidget navigate={navigate}/>
-
-      {/* W10: Testing Suite */}
-      <TestingSuiteWidget navigate={navigate}/>
-
-      {/* W11: Scan Grade Sheet */}
-      <ScanGradeSheetWidget navigate={navigate}/>
-
-      {/* W12: Gradebook + Student Profile */}
-      <GradebookWidget navigate={navigate}/>
-
-      {/* Edit Mode Bar */}
-      <EditModeBar/>
+      <EditModeBar
+        editMode={editMode}
+        onToggle={() => setEditMode(e => !e)}
+        onReset={resetWidgets}
+        hiddenCount={hidden.filter(id => ALL_WIDGET_IDS.includes(id)).length}
+      />
     </div>
   )
 }

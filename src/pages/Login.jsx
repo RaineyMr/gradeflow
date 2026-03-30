@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react'
 import { demoLoginList, getDemoAccountByCredentials } from '../lib/demoAccounts'
 
 const ROLES = [
-  { id: 'teacher', label: 'Teacher', icon: '🧑‍🏫' },
-  { id: 'student', label: 'Student', icon: '🎓'   },
-  { id: 'parent',  label: 'Parent',  icon: '👪'   },
-  { id: 'admin',   label: 'Admin',   icon: '🏫'   },
+  { id: 'teacher',      label: 'Teacher',       icon: '🧑‍🏫' },
+  { id: 'student',      label: 'Student',       icon: '🎓'   },
+  { id: 'parent',       label: 'Parent',        icon: '👪'   },
+  { id: 'admin',        label: 'Admin',         icon: '🏫'   },
+  { id: 'supportStaff', label: 'Support Staff', icon: '🩺'   },
 ]
 
 const BRAND = {
@@ -41,8 +42,8 @@ const T = {
     switchLang:   'ES',
     switchFlag:   '🇲🇽',
     footerNote:   "Each demo uses a real school's branding & colors throughout.",
-    roles: { teacher:'Teacher', student:'Student', parent:'Parent', admin:'Admin' },
-    demoLabels: { teacher:'Teacher Demo', student:'Student Demo', parent:'Parent Demo', admin:'Admin Demo' },
+    roles: { teacher:'Teacher', student:'Student', parent:'Parent', admin:'Admin', supportStaff:'Support Staff' },
+    demoLabels: { teacher:'Teacher Demo', student:'Student Demo', parent:'Parent Demo', admin:'Admin Demo', supportStaff:'Support Staff Demo' },
     features: [
       { icon:'📷', title:'Auto-grade with camera',      body:'Snap a photo — GradeFlow grades & updates your gradebook instantly.' },
       { icon:'📋', title:'All assignments in one place', body:'Upload, collect, proctor, and generate reports from one screen.'      },
@@ -71,8 +72,8 @@ const T = {
     switchLang:   'EN',
     switchFlag:   '🇺🇸',
     footerNote:   'Cada demo usa los colores y marca de una escuela real.',
-    roles: { teacher:'Maestro', student:'Estudiante', parent:'Padre/Madre', admin:'Admin' },
-    demoLabels: { teacher:'Demo Maestro', student:'Demo Estudiante', parent:'Demo Padre/Madre', admin:'Demo Admin' },
+    roles: { teacher:'Maestro', student:'Estudiante', parent:'Padre/Madre', admin:'Admin', supportStaff:'Personal de Apoyo' },
+    demoLabels: { teacher:'Demo Maestro', student:'Demo Estudiante', parent:'Demo Padre/Madre', admin:'Demo Admin', supportStaff:'Demo Personal de Apoyo' },
     features: [
       { icon:'📷', title:'Califica con la camara',       body:'Toma una foto — GradeFlow califica y actualiza tu libro de calificaciones al instante.' },
       { icon:'📋', title:'Todas las tareas en un lugar',  body:'Sube, recopila, supervisa y genera informes desde una sola pantalla.'                   },
@@ -183,7 +184,7 @@ function MobileLogin({ form }) {
         <h2 style={{ fontSize:21, fontWeight:800, margin:'0 0 18px' }}>{t.signIn}</h2>
 
         {/* Role tabs */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:6, marginBottom:18 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:6, marginBottom:18 }}>
           {ROLES.map(r => (
             <button key={r.id} onClick={() => setSelectedRole(r.id)}
               style={{ padding:'8px 4px', borderRadius:12, border:`1.5px solid ${selectedRole===r.id?BRAND.primary:BRAND.border}`, background:selectedRole===r.id?'rgba(249,115,22,0.12)':BRAND.inner, color:selectedRole===r.id?BRAND.primary:BRAND.muted, cursor:'pointer', fontSize:10, fontWeight:700, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
@@ -214,7 +215,7 @@ function MobileLogin({ form }) {
 
         {/* Quick demo */}
         <div style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:BRAND.muted, marginBottom:10 }}>{t.quickDemo}</div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))', gap:8 }}>
           {demoLoginList.map(demo => (
             <button key={demo.role} onClick={() => handleDemoClick(demo)}
               style={{ background:BRAND.inner, border:`1px solid ${BRAND.border}`, borderRadius:14, padding:'12px 10px', cursor:'pointer', textAlign:'left', transition:'border-color 0.15s' }}
@@ -307,7 +308,7 @@ function DesktopLogin({ form }) {
             <p style={{ fontSize:13, color:BRAND.muted, margin:'0 0 24px' }}>{t.subtitle}</p>
 
             {/* Role tabs */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:22 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:8, marginBottom:22 }}>
               {ROLES.map(r => (
                 <button key={r.id} onClick={() => setSelectedRole(r.id)}
                   style={{ padding:'12px 6px', borderRadius:14, border:`1.5px solid ${selectedRole===r.id?BRAND.primary:BRAND.border}`, background:selectedRole===r.id?'rgba(249,115,22,0.12)':BRAND.inner, color:selectedRole===r.id?BRAND.primary:BRAND.muted, cursor:'pointer', fontSize:12, fontWeight:700, display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.15s' }}>
