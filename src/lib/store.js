@@ -305,6 +305,7 @@ export const useStore = create((set, get) => ({
 
   // ── Loading state ───────────────────────────────────────────────────────────
   dbLoaded: false,
+  isHydrated: false,
   dbError:  null,
 
   // ── Auth / User ─────────────────────────────────────────────────────────────
@@ -493,7 +494,7 @@ export const useStore = create((set, get) => ({
 
       if (classesRes.error || studentsRes.error) {
         console.warn('Supabase load failed, using demo data:', classesRes.error || studentsRes.error)
-        set({ dbLoaded: true, dbError: classesRes.error || studentsRes.error })
+        set({ dbLoaded: true, isHydrated: true, dbError: classesRes.error || studentsRes.error })
         return
       }
 
@@ -520,12 +521,13 @@ export const useStore = create((set, get) => ({
         feed:        feed.length        ? feed        : DEMO_FEED,
         lessons:     Object.keys(lessonsById).length ? lessonsById : DEMO_LESSONS,
         dbLoaded: true,
+        isHydrated: true,
         dbError:  null,
       })
 
     } catch (err) {
       console.warn('Supabase unreachable, using demo data:', err)
-      set({ dbLoaded: true, dbError: err })
+      set({ dbLoaded: true, isHydrated: true, dbError: err })
     }
   },
 
