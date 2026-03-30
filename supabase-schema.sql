@@ -119,6 +119,18 @@ create table if not exists public.support_staff_teams (
   unique(staff_id, student_id)
 );
 
+-- Support Staff Notes
+create table if not exists public.support_staff_notes (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid references students(id) on delete cascade,
+  staff_id uuid references teachers(id),
+  note_type text,  -- e.g., "academic", "behavior", "wellness", "intervention"
+  content text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  visibility text  -- "staff-only", "teachers", "admin"
+);
+
 -- Enable Row Level Security
 alter table teachers enable row level security;
 alter table classes enable row level security;
@@ -129,3 +141,4 @@ alter table parent_messages enable row level security;
 alter table lessons enable row level security;
 alter table feed_posts enable row level security;
 alter table sync_logs enable row level security;
+alter table support_staff_notes enable row level security;
