@@ -29,8 +29,9 @@ function TrendBadge({ trend }) {
  *   color    string   — 'green' | 'yellow' | 'red' | 'blue'
  *   subtitle string   — optional secondary info
  *   onClick  func     — optional tap handler
+ *   onAIExplain func  — optional AI explain handler
  */
-export default function AnalyticsSummaryCard({ title, value, trend = 'flat', color = 'blue', subtitle, onClick }) {
+export default function AnalyticsSummaryCard({ title, value, trend = 'flat', color = 'blue', subtitle, onClick, onAIExplain }) {
   const accent = COLOR_MAP[color] || C.blue
   return (
     <div
@@ -41,8 +42,45 @@ export default function AnalyticsSummaryCard({ title, value, trend = 'flat', col
         borderRadius: 16,
         padding:      '14px 16px',
         cursor:       onClick ? 'pointer' : 'default',
+        position: 'relative'
       }}
     >
+      {/* AI Explain Button */}
+      {onAIExplain && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onAIExplain()
+          }}
+          style={{
+            position: 'absolute',
+            top: '8px',
+            right: '8px',
+            background: C.inner,
+            border: `1px solid ${C.border}`,
+            borderRadius: '4px',
+            color: C.soft,
+            fontSize: '10px',
+            padding: '4px 6px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '2px',
+            transition: 'all 0.2s'
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.background = C.raised
+            e.target.style.color = C.text
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.background = C.inner
+            e.target.style.color = C.soft
+          }}
+        >
+          🤖
+        </button>
+      )}
+      
       <div style={{ fontSize:9, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.07em', marginBottom:10 }}>
         {title}
       </div>
