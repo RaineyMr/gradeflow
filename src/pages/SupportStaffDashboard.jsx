@@ -593,7 +593,3 @@ export default function SupportStaffDashboard({ currentUser }) {
   )
 }
 
-function SubPage({ children }) {
-  useEffect(()=>{ window.scrollTo(0,0) },[])
-  return <div style={{ minHeight:'100vh', background:C.bg, paddingBottom:80 }}>{children}</div>
-}
