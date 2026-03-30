@@ -26,7 +26,23 @@ const mockAIEndpoint = async (prompt, context = {}) => {
     
     suggestFollowUps: `FOLLOW-UP RECOMMENDATIONS\n\nBased on the context provided, here are the suggested follow-up actions:\n\n**Immediate (This Week):**\n• ${context.immediate1 || 'Schedule individual meeting with student'}\n• ${context.immediate2 || 'Contact parents/guardians to discuss concerns'}\n• ${context.immediate3 || 'Review recent academic performance data'}\n\n**Short-term (Next 2-3 Weeks):**\n• ${context.shortTerm1 || 'Implement targeted intervention strategies'}\n• ${context.shortTerm2 || 'Monitor progress through regular check-ins'}\n• ${context.shortTerm3 || 'Coordinate with teachers for classroom support'}\n\n**Long-term (Next Month):**\n• ${context.longTerm1 || 'Evaluate intervention effectiveness'}\n• ${context.longTerm2 || 'Adjust support strategies as needed'}\n• ${context.longTerm3 || 'Plan for continued support or transition'}\n\n**Documentation Required:**\n• Update support logs with all interactions\n• Document intervention outcomes\n• Maintain communication records with parents and teachers\n\n**Red Flags to Watch:**\n• Declining academic performance\n• Increased absenteeism\n• Behavioral changes\n• Lack of response to interventions`,
     
-    suggestGroupMembers: `GROUP MEMBER RECOMMENDATIONS\n\n**Suggested Group:** ${context.groupPurpose || 'Academic Support Group'}\n\n**Recommended Students:**\n${context.suggestedStudents || '• Student A - Similar academic needs, compatible schedule\n• Student B - Complementary learning styles\n• Student C - Positive peer influence potential\n• Student D - Similar intervention requirements'}\n\n**Grouping Rationale:**\n• Academic compatibility: Students have similar learning needs\n• Scheduling alignment: Compatible availability for group sessions\n• Peer dynamics: Positive social interactions expected\n• Intervention efficiency: Group format supports targeted interventions\n\n**Group Size:** ${context.groupSize || '4-6 students'}\n\n**Meeting Frequency:** ${context.frequency || '2x per week'}\n\n**Focus Areas:**\n${context.focusAreas || '• Math concepts reinforcement\n• Study skills development\n• Peer tutoring opportunities\n• Progress monitoring'}\n\n**Considerations:**\n• Monitor group dynamics closely\n• Be prepared to adjust group composition\n• Ensure individual needs are met within group setting\n• Coordinate with teachers for academic alignment`
+    suggestGroupMembers: `GROUP MEMBER RECOMMENDATIONS\n\n**Suggested Group:** ${context.groupPurpose || 'Academic Support Group'}\n\n**Recommended Students:**\n${context.suggestedStudents || '• Student A - Similar academic needs, compatible schedule\n• Student B - Complementary learning styles\n• Student C - Positive peer influence potential\n• Student D - Similar intervention requirements'}\n\n**Grouping Rationale:**\n• Academic compatibility: Students have similar learning needs\n• Scheduling alignment: Compatible availability for group sessions\n• Peer dynamics: Positive social interactions expected\n• Intervention efficiency: Group format supports targeted interventions\n\n**Group Size:** ${context.groupSize || '4-6 students'}\n\n**Meeting Frequency:** ${context.frequency || '2x per week'}\n\n**Focus Areas:**\n${context.focusAreas || '• Math concepts reinforcement\n• Study skills development\n• Peer tutoring opportunities\n• Progress monitoring'}\n\n**Considerations:**\n• Monitor group dynamics closely\n• Be prepared to adjust group composition\n• Ensure individual needs are met within group setting\n• Coordinate with teachers for academic alignment`,
+    
+    generateParentUpdate: `PARENT UPDATE\n\nDear ${context.parentName || 'Parent/Guardian'},\n\nI wanted to share a positive update about ${context.studentName || 'your child'}'s progress in ${context.subject || 'school'}.\n\n**Recent Achievements:**\n${context.achievements || '• Improved participation in class discussions\n• Completed all assignments this week\n• Showed great effort on recent projects'}\n\n**Areas of Growth:**\n${context.growthAreas || '• Building confidence in asking questions\n• Developing better study habits\n• Showing improvement in time management'}\n\n**How You Can Support at Home:**\n${context.homeSupport || '• Encourage daily reading for 20 minutes\n• Review homework together when possible\n• Celebrate small wins and progress'}\n\n**Next Steps:**\n${context.nextSteps || '• Continue current support strategies\n• Monitor progress closely\n• Schedule follow-up if needed'}\n\nPlease feel free to reach out if you have any questions or concerns. We appreciate your partnership in your child's education!\n\nBest regards,\n${context.senderName || 'Support Staff'}`,
+    
+    generateParentMeetingSummary: `PARENT MEETING SUMMARY\n\nDate: ${context.meetingDate || new Date().toLocaleDateString()}\nAttendees: ${context.attendees || 'Parent/Guardian, Support Staff'}\nStudent: ${context.studentName || 'Student'}\n\n**Meeting Purpose:**\n${context.purpose || 'Discuss student progress and support strategies'}\n\n**Key Discussion Points:**\n${context.discussionPoints || '• Reviewed recent academic performance\n• Discussed strengths and areas for improvement\n• Explored support strategies and resources'}\n\n**Parent Concerns:**\n${context.parentConcerns || '• Questions about homework expectations\n• Interest in additional support options\n• Communication preferences'}\n\n**Agreed Actions:**\n${context.actions || '• Implement daily check-ins\n• Schedule weekly progress reviews\n• Increase parent communication'}\n\n**Follow-up Plan:**\n${context.followUp || '• Progress review in 2 weeks\n• Email update next Friday\n• Phone call if concerns arise'}\n\n**Parent Feedback:**\n${context.parentFeedback || 'Appreciated the detailed update and feels confident about the plan moving forward.'}`,
+    
+    rewriteForParentTone: `PARENT-FRIENDLY REWRITE\n\nOriginal: "${context.originalMessage || 'Original message'}"\n\nTone: Warm, encouraging, and professional\n\nRewritten: "${context.rewrittenMessage || 'I wanted to share some wonderful news about your child\'s recent progress! They\'ve been working really hard and I\'ve seen some great improvements in their participation and effort. I\'m so proud of how they\'re taking ownership of their learning, and I wanted to celebrate these positive steps with you.'}"\n\n**Changes Made:**\n• Added warmth and encouragement\n• Used parent-friendly language\n• Focused on positive aspects\n• Maintained professional tone\n• Ensured clarity and approachability`,
+    
+    simplifyForESLParents: `ESL-FRIENDLY SIMPLIFICATION\n\nOriginal: "${context.originalMessage || 'Original message'}"\n\nSimplified Version:\n"${context.simplifiedMessage || 'Your child is doing good work in school. They try hard in class. We help them learn more. Please talk with them about school at home. Thank you for helping your child learn.'}"\n\n**Simplification Strategies:**\n• Used simple, common words\n• Shorter sentences\n• Clear, direct communication\n• Removed complex vocabulary\n• Focused on key information\n• Maintained positive tone`,
+    
+    translateWithTone: `CULTURALLY SENSITIVE TRANSLATION\n\nOriginal (${context.fromLanguage || 'English'}):\n"${context.originalMessage || 'Original message'}"\n\nTarget Language: ${context.targetLanguage || 'Spanish'}\nTone: ${context.tone || 'Professional and respectful'}\n\nTranslated:\n"${context.translatedMessage || 'Estimado padre/tutor, Le escribo para informarle sobre el progreso de su hijo/a. Estoy muy orgulloso/a de sus esfuerzos y mejoras recientes. Agradezco su apoyo en la educación de su hijo/a.'}"\n\n**Cultural Considerations:**\n• Used formal address appropriate for parent communication\n• Maintained respectful tone\n• Considered cultural communication preferences\n• Ensured clarity and appropriateness\n• Note: Please review with native speaker if possible`,
+    
+    generatePositiveParentNote: `POSITIVE PARENT NOTE\n\nDear ${context.parentName || 'Parent/Guardian'},\n\nI just had to share some wonderful news about ${context.studentName || 'your child'}!\n\n**Today's Success:**\n${context.success || 'During our class today, your child demonstrated exceptional leadership skills during group work. They helped classmates understand difficult concepts and showed great patience and kindness.'}\n\n**Why This Matters:**\n${context.significance || 'This shows not only academic growth but also important social-emotional development. These skills are crucial for success both in and out of the classroom.'}\n\n**Celebration Suggestion:**\n${context.celebration || 'Consider celebrating this at home with a special acknowledgment of their kindness and leadership. Positive reinforcement goes a long way!'}\n\n**Looking Forward:**\n${context.forwardLooking || 'I\'m excited to see continued growth and will keep you updated on their progress. Thank you for your support at home!'}\n\nWarmly,\n${context.senderName || 'Support Staff'}`,
+    
+    generateParentFollowUp: `PARENT FOLLOW-UP MESSAGE\n\nDear ${context.parentName || 'Parent/Guardian'},\n\nFollowing up on our recent conversation about ${context.studentName || 'your child'}:\n\n**Progress Since We Last Spoke:**\n${context.progress || '• Improved assignment completion rate\n• More active participation in class\n• Positive feedback from teachers'}\n\n**Current Status:**\n${context.currentStatus || 'Your child is responding well to the support strategies we discussed. I can see real improvement in their confidence and engagement.'}\n\n**Next Steps:**\n${context.nextSteps || '• Continue current support plan\n• Monitor progress for another 2 weeks\n• Schedule check-in if needed'}\n\n**Questions for You:**\n${context.questions || '• Have you noticed any changes at home?\n• Do you have any questions or concerns?\n• Is there anything else I can do to support your child?'}\n\nPlease feel free to reach out anytime. I\'m here to support both you and your child!\n\nBest regards,\n${context.senderName || 'Support Staff'}`,
+    
+    generateWeeklyParentDigest: `WEEKLY PARENT DIGEST\n\nWeek of: ${context.weekStart || new Date().toLocaleDateString()}\nStudent: ${context.studentName || 'Student'}\n\n**Academic Highlights:**\n${context.academicHighlights || '• Math: Improved quiz scores\n• Reading: Completed all assignments\n• Science: Great participation in lab'}\n\n**Social & Emotional Growth:**\n${context.socialEmotional || '• Demonstrated leadership in group work\n• Showed kindness to classmates\n• Improved confidence in speaking up'}\n\n**Attendance:**\n${context.attendance || 'Present and on time all week - excellent!'}\n\n**Upcoming:**\n${context.upcoming || '• Math test next Tuesday\n• Science project due Friday\n• Parent-teacher conference next month'}\n\n**Home Connection:**\n${context.homeConnection || '• Ask about their science project\n• Practice multiplication facts\n• Read together for 15 minutes daily'}\n\n**Celebration Moment:**\n${context.celebration || 'This week\'s star moment: Your child helped a classmate understand a difficult math concept. Their patience and kindness made everyone proud!'}\n\n**Need to Know:**\n${context.needToKnow || '• All caught up on assignments\n• No missing work\n• Positive behavior reports all week'}\n\nHave a wonderful weekend!\n\n${context.senderName || 'Support Staff'}`
   }
   
   // Return appropriate response based on context
@@ -83,6 +99,47 @@ export async function suggestFollowUps(context) {
 export async function suggestGroupMembers(context) {
   const prompt = `Suggest group members based on these criteria: ${JSON.stringify(context)}`
   return await mockAIEndpoint(prompt, { ...context, functionType: 'suggestGroupMembers' })
+}
+
+// Parent Communication AI Functions
+export async function generateParentUpdate(studentData) {
+  const prompt = `Generate a parent update for this student: ${JSON.stringify(studentData)}`
+  return await mockAIEndpoint(prompt, { ...studentData, functionType: 'generateParentUpdate' })
+}
+
+export async function generateParentMeetingSummary(meetingData) {
+  const prompt = `Generate a parent meeting summary: ${JSON.stringify(meetingData)}`
+  return await mockAIEndpoint(prompt, { ...meetingData, functionType: 'generateParentMeetingSummary' })
+}
+
+export async function rewriteForParentTone(message) {
+  const prompt = `Rewrite this message for parent-friendly tone: ${JSON.stringify(message)}`
+  return await mockAIEndpoint(prompt, { ...message, functionType: 'rewriteForParentTone' })
+}
+
+export async function simplifyForESLParents(message) {
+  const prompt = `Simplify this message for ESL parents: ${JSON.stringify(message)}`
+  return await mockAIEndpoint(prompt, { ...message, functionType: 'simplifyForESLParents' })
+}
+
+export async function translateWithTone(message) {
+  const prompt = `Translate with cultural sensitivity: ${JSON.stringify(message)}`
+  return await mockAIEndpoint(prompt, { ...message, functionType: 'translateWithTone' })
+}
+
+export async function generatePositiveParentNote(studentData) {
+  const prompt = `Generate a positive parent note: ${JSON.stringify(studentData)}`
+  return await mockAIEndpoint(prompt, { ...studentData, functionType: 'generatePositiveParentNote' })
+}
+
+export async function generateParentFollowUp(studentData) {
+  const prompt = `Generate a parent follow-up message: ${JSON.stringify(studentData)}`
+  return await mockAIEndpoint(prompt, { ...studentData, functionType: 'generateParentFollowUp' })
+}
+
+export async function generateWeeklyParentDigest(studentId) {
+  const prompt = `Generate a weekly parent digest for student: ${JSON.stringify(studentId)}`
+  return await mockAIEndpoint(prompt, { studentId, functionType: 'generateWeeklyParentDigest' })
 }
 
 // Utility function to check AI service availability
