@@ -4,6 +4,7 @@ import DashboardShell from '@components/layout/DashboardShell'
 import { useDashboard } from '@hooks/useDashboard'
 import ParentMessages from '@pages/ParentMessages'
 import StudentProfile from '@pages/StudentProfile'
+import SupportStaffHomeFeed from '@components/dashboard/SupportStaffHomeFeed'
 
 
 
