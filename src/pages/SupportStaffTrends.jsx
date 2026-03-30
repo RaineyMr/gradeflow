@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useStore } from '../lib/store'
 import TrendSummaryCard from '../components/support/TrendSummaryCard'
+import AIAssistantPanel from '../components/support/AIAssistantPanel'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -137,6 +138,8 @@ const DEMO_NOTES = [
 ]
 
 export default function SupportStaffTrends({ onBack, onViewProfile }) {
+  const { students } = useStore()
+  const [showAI, setShowAI] = useState(false)
   const [filter, setFilter] = useState('all')
 
   const filtered = DEMO_STUDENTS.filter(s => {
@@ -157,10 +160,16 @@ export default function SupportStaffTrends({ onBack, onViewProfile }) {
       <div style={{ background:T.header, padding:'16px 16px 20px', position:'sticky', top:0, zIndex:50 }}>
         <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
           <button onClick={onBack} style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-          <div>
+          <div style={{ flex:1, minWidth:0 }}>
             <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>📊 Student Trends</h1>
             <p style={{ fontSize:10, color:'rgba(255,255,255,0.55)', margin:0 }}>{DEMO_STUDENTS.length} students · read-only view</p>
           </div>
+          <button
+            onClick={() => setShowAI(true)}
+            style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:6 }}
+          >
+            🤖 AI Assist
+          </button>
         </div>
         {/* Filter pills */}
         <div style={{ display:'flex', gap:8, overflowX:'auto', paddingBottom:2 }}>
@@ -217,9 +226,20 @@ export default function SupportStaffTrends({ onBack, onViewProfile }) {
 
         {/* Read-only notice */}
         <div style={{ textAlign:'center', padding:'16px 0', fontSize:10, color:C.muted }}>
-          📋 Trend data is read-only. Contact the classroom teacher to update grades.
+          📋 Trend data is read-only. Contact classroom teacher to update grades.
         </div>
       </div>
+
+      {/* AI Assistant Panel */}
+      <AIAssistantPanel
+        isOpen={showAI}
+        onClose={() => setShowAI(false)}
+        initialContext={{ 
+          screen: 'trends',
+          studentData: filtered,
+          filter: filter
+        }}
+      />
     </div>
   )
 }
