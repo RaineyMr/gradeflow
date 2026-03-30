@@ -45,6 +45,10 @@ const CHILD = {
     { id:2, name:'Book Report',    subject:'Reading', due:'Tomorrow', status:'pending'   },
     { id:3, name:'Lab Report',     subject:'Science', due:'Friday',   status:'submitted' },
   ],
+  feed: [
+    { id:1, author:'Ms. Johnson', avatar:'👩‍🏫', content:'Unit Test Friday! Review chapters 3-4.', time:'2 hours ago', reactions:{'up':12,'heart':5} },
+    { id:2, author:'Ms. Johnson', avatar:'👩‍🏫', content:"Great work on yesterday's homework! Class average was 87%.", time:'Yesterday', reactions:{'up':18,'heart':9} },
+  ],
 }
 
 const INITIAL_THREADS = [
@@ -516,6 +520,36 @@ function AlertsPage({ onBack }) {
             <div style={{ fontSize:13, color:T.text }}>{a.msg}</div>
           </div>
         ))}
+      </div>
+    </SubPage>
+  )
+}
+
+function FeedPage({ onBack }) {
+  return (
+    <SubPage>
+      <div style={{ background:T.header, padding:'16px 16px 20px' }}>
+        <button onClick={onBack} style={{ background:T.inner, border:'none', borderRadius:10, padding:'7px 14px', color:T.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:12 }}>← Back</button>
+        <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>{'📢'} Class Feed</h1>
+      </div>
+      <div style={{ padding:'16px' }}>
+        {CHILD.feed?.map(post=>(
+          <div key={post.id} style={{ background:T.card, border:`1px solid ${T.border}`, borderRadius:14, padding:'16px', marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+              <span style={{ fontSize:24 }}>{post.avatar}</span>
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:T.secondary }}>{post.author}</div>
+                <div style={{ fontSize:11, color:T.muted }}>{post.time}</div>
+              </div>
+            </div>
+            <div style={{ fontSize:14, color:T.text, lineHeight:1.5, marginBottom:8 }}>{post.content}</div>
+            {post.image && (
+              <div style={{ background:T.inner, border:`1px solid ${T.border}`, borderRadius:10, padding:8, marginTop:8 }}>
+                <span style={{ fontSize:32 }}>{post.image}</span>
+              </div>
+            )}
+          </div>
+        )) || <div style={{ textAlign:'center', padding:'40px 0', color:T.muted }}>No feed posts available</div>}
       </div>
     </SubPage>
   )
