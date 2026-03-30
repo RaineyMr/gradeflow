@@ -1,6 +1,5 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import './ActionBtn.module.css';
 
 function ActionBtn({ label, color, onClick, style = {} }) {
   return (
