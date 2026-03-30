@@ -5,6 +5,7 @@ import SupportStaffMessaging from './SupportStaffMessaging'
 import AIAssistantPanel from './AIAssistantPanel'
 import ParentAIAssistantPanel from '../parents/ParentAIAssistantPanel'
 import SupportTaskCard from './SupportTaskCard'
+import StudentSupportTimeline from './StudentSupportTimeline'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -21,6 +22,7 @@ const TABS = [
   { id: 'trends', label: 'Trends', icon: '📈' },
   { id: 'interventions', label: 'Interventions', icon: '🎯' },
   { id: 'supportLogs', label: 'Support Logs', icon: '🗂️' },
+  { id: 'timeline', label: 'Support Timeline', icon: '📅' },
   { id: 'parent', label: 'Parent', icon: '👨‍👩‍👧‍👦' },
 ]
 
@@ -334,6 +336,9 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
         )}
         {activeTab === 'supportLogs' && (
           <SupportLogsTab student={student} />
+        )}
+        {activeTab === 'timeline' && (
+          <StudentSupportTimeline studentId={studentId} />
         )}
         {activeTab === 'parent' && (
           <ParentTab student={student} onOpenParentAI={() => setShowParentAI(true)} />
