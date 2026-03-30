@@ -539,16 +539,693 @@ setDemoSupportStaffData: async () => {
     { id: 'a2', name: 'Dr. Green',       avatar: '🎓', role: 'admin', label: 'Vice Principal'  },
   ],
 
+  // ── Tier 6: Support Staff Messaging Helpers ───────────────────────────────
+  getParentsForStudents: (studentIds) => {
+    const { students } = get()
+    return studentIds.map(studentId => {
+      const student = students.find(s => s.id === studentId)
+      return {
+        id: `p${studentId}`,
+        name: `Parent of ${student?.name || 'Student'}`,
+        studentName: student?.name || 'Student',
+        email: `parent${studentId}@email.com`,
+        type: 'parent'
+      }
+    })
+  },
+
+  getTeachersForStudents: (studentIds) => {
+    const { students, classes } = get()
+    const teachers = get().getTeachersForSupportStaff()
+    const assignments = []
+    
+    studentIds.forEach(studentId => {
+      const student = students.find(s => s.id === studentId)
+      if (student) {
+        const studentClass = classes.find(c => c.id === student.classId)
+        if (studentClass) {
+          // Assign teachers based on subject
+          const teacherForSubject = teachers.find(t => 
+            t.subject === studentClass.subject || 
+            (studentClass.subject === 'Math' && t.subject === 'Math') ||
+            (studentClass.subject === 'Reading' && t.subject === 'Reading') ||
+            (studentClass.subject === 'Science' && t.subject === 'Science') ||
+            (studentClass.subject === 'Writing' && t.subject === 'Reading') // Writing teachers often in Reading
+          )
+          
+          if (teacherForSubject) {
+            assignments.push({
+              id: teacherForSubject.id,
+              name: teacherForSubject.name,
+              subject: teacherForSubject.subject,
+              studentName: student.name,
+              studentId: studentId
+            })
+          }
+        }
+      }
+    })
+    
+    return assignments
+  },
+
+  getAdminContacts: () => {
+    return get().getAdminForSupportStaff()
+  },
+
+  sendSupportStaffMessage: async ({ recipientMode, recipientIds, subject, body }) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    // Create message records for each recipient
+    const messages = recipientIds.map(recipientId => {
+      let recipientName = 'Unknown'
+      
+      // Get recipient name based on mode
+      if (recipientMode === 'students') {
+        const student = get().students.find(s => s.id === recipientId)
+        recipientName = student?.name || 'Student'
+      } else if (recipientMode === 'teachers') {
+        const teacher = get().getAllTeachers().find(t => t.id === recipientId)
+        recipientName = teacher?.name || 'Teacher'
+      } else if (recipientMode === 'admins') {
+        const admin = get().getAllAdmins().find(a => a.id === recipientId)
+        recipientName = admin?.name || 'Administrator'
+      } else if (recipientMode === 'counselors') {
+        const counselor = get().getAllCounselors().find(c => c.id === recipientId)
+        recipientName = counselor?.name || 'Counselor'
+      } else if (recipientMode === 'parents') {
+        recipientName = `Parent of Student ${recipientId.replace('p', '')}`
+      } else if (recipientMode === 'groups') {
+        const group = get().supportStaffGroups.find(g => g.id === recipientId)
+        recipientName = group?.name || 'Group'
+      } else if (recipientMode === 'studentTeachers') {
+        const teacher = get().getAllTeachers().find(t => t.id === recipientId)
+        recipientName = teacher?.name || 'Teacher'
+      }
+      
+      return {
+        id: Date.now() + Math.random(),
+        recipientName,
+        recipientMode,
+        subject,
+        body,
+        senderId: currentUser.id,
+        senderName: currentUser.name,
+        status: 'sent',
+        createdAt: new Date().toISOString(),
+        type: 'support_staff_message'
+      }
+    })
+    
+    // Add to messages in store
+    set(state => ({ messages: [...state.messages, ...messages] }))
+    
+    // In a real implementation, this would send via email/SMS/API
+    console.log('Support staff messages sent:', messages)
+    
+    return messages
+  },
+
+  // ── Tier 7: Student Profile Data Helpers ─────────────────────────────────
+  getStudentGrades: async (studentId) => {
+    const { assignments, grades, getGradeForStudentAssignment } = get()
+    const studentGrades = []
+    
+    assignments.forEach(assignment => {
+      const grade = getGradeForStudentAssignment(studentId, assignment.id)
+      if (grade) {
+        studentGrades.push({
+          assignment: assignment.name,
+          type: assignment.type,
+          date: assignment.date || 'Recent',
+          score: grade.score
+        })
+      }
+    })
+    
+    return studentGrades.sort((a, b) => new Date(b.date) - new Date(a.date))
+  },
+
+  getStudentAttendance: async (studentId) => {
+    // Demo attendance data
+    return [
+      { date: '2024-10-15', period: '1st', status: 'Present' },
+      { date: '2024-10-14', period: '1st', status: 'Present' },
+      { date: '2024-10-13', period: '1st', status: 'Tardy' },
+      { date: '2024-10-12', period: '1st', status: 'Present' },
+      { date: '2024-10-11', period: '1st', status: 'Present' },
+      { date: '2024-10-10', period: '1st', status: 'Absent' },
+      { date: '2024-10-09', period: '1st', status: 'Present' },
+    ]
+  },
+
+  getStudentNotes: async (studentId) => {
+    const { students } = get()
+    const student = students.find(s => s.id === parseInt(studentId))
+    if (!student) return []
+    
+    // Demo notes data
+    return [
+      {
+        author: 'Ms. Johnson',
+        date: '2024-10-14',
+        content: `${student.name} is showing improvement in math concepts. Still needs practice with fractions.`
+      },
+      {
+        author: 'Mr. Rivera',
+        date: '2024-10-12',
+        content: `Participates well in science discussions. Good understanding of lab procedures.`
+      },
+      {
+        author: 'Ms. Davis',
+        date: '2024-10-10',
+        content: `Reading comprehension has improved. Should continue daily reading practice.`
+      }
+    ]
+  },
+
+  getStudentTrends: async (studentId) => {
+    const { students } = get()
+    const student = students.find(s => s.id === parseInt(studentId))
+    if (!student) return null
+    
+    // Use existing trends data if available
+    const existingTrend = get().studentTrends[studentId]
+    if (existingTrend) {
+      return {
+        summary: existingTrend.summary || `${student.name} is ${student.grade >= 70 ? 'maintaining' : 'showing need for improvement in'} academic performance.`,
+        metrics: {
+          current_grade: `${student.grade}%`,
+          trend: existingTrend.trend || 'stable',
+          attendance_rate: '92%',
+          assignment_completion: '85%'
+        }
+      }
+    }
+    
+    // Generate demo trends
+    return {
+      summary: `${student.name} is ${student.grade >= 70 ? 'maintaining' : 'showing need for improvement in'} academic performance.`,
+      metrics: {
+        current_grade: `${student.grade}%`,
+        trend: student.grade >= 70 ? 'improving' : 'declining',
+        attendance_rate: '92%',
+        assignment_completion: '85%'
+      }
+    }
+  },
+
+  getStudentInterventions: async (studentId) => {
+    const { students } = get()
+    const student = students.find(s => s.id === parseInt(studentId))
+    if (!student) return []
+    
+    // Check if student needs intervention
+    if (student.grade >= 70 && !student.flagged) {
+      return []
+    }
+    
+    // Demo intervention data
+    return [
+      {
+        title: 'Math Support Plan',
+        description: 'Weekly tutoring sessions focusing on fraction operations and problem-solving skills.',
+        status: 'Active',
+        createdDate: '2024-10-01',
+        nextReview: '2024-10-29'
+      }
+    ]
+  },
+
+  // ── Tier 8: HomeFeed Widget Helpers ─────────────────────────────────────
+  getSupportStaffStudentsNeedingAttention: () => {
+    const { students } = get()
+    return students
+      .filter(s => s.grade < 70 || s.flagged || s.submitUngraded)
+      .map(s => ({
+        id: s.id,
+        name: s.name,
+        grade: s.grade,
+        reason: s.grade < 60 ? 'Critical - Failing' : 
+                s.grade < 70 ? 'At Risk' : 
+                s.flagged ? 'Flagged' : 'Missing Work'
+      }))
+      .sort((a, b) => a.grade - b.grade)
+  },
+
+  getRecentSupportNotes: () => {
+    const { supportNotes, students } = get()
+    return supportNotes
+      .slice(0, 10)
+      .map(note => {
+        const student = students.find(s => s.id === note.studentId)
+        return {
+          id: note.id,
+          studentName: student?.name || 'Unknown Student',
+          content: note.content || note.note || 'Support note logged',
+          author: note.author || note.staffName || 'Support Staff',
+          date: note.createdAt ? new Date(note.createdAt).toLocaleDateString() : 'Recent'
+        }
+      })
+  },
+
+  getUpcomingFollowUps: () => {
+    const { students, interventionPlans } = get()
+    const followUps = []
+    
+    // Generate demo follow-ups based on intervention plans and flagged students
+    students
+      .filter(s => s.flagged || s.grade < 70)
+      .slice(0, 5)
+      .forEach(student => {
+        const intervention = interventionPlans.find(p => p.student_id === student.id)
+        followUps.push({
+          id: `followup-${student.id}`,
+          studentName: student.name,
+          type: intervention ? 'Intervention Review' : 'Academic Check-in',
+          date: intervention?.next_review || 'This Week',
+          priority: student.grade < 60 ? 'high' : 'medium'
+        })
+      })
+    
+    return followUps.sort((a, b) => {
+      const priorityOrder = { high: 0, medium: 1, low: 2 }
+      return priorityOrder[a.priority] - priorityOrder[b.priority]
+    })
+  },
+
+  // ── Tier 9: Support Staff Custom Groups ───────────────────────────────────
   getSupportStaffGroups: () => {
     return get().supportStaffGroups || []
   },
 
-  getGroupStudents: (groupId) => {
-    const { students, supportStaffGroupMembers } = get()
-    const memberIds = supportStaffGroupMembers
-      .filter(m => m.group_id === groupId)
-      .map(m => m.student_id)
-    return students.filter(s => memberIds.includes(s.id))
+  createSupportStaffGroup: async (name, studentIds) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    try {
+      const { data: group } = await supabase
+        .from('support_staff_groups')
+        .insert({ 
+          staff_id: currentUser.id, 
+          name, 
+          description: '',
+          student_count: studentIds.length 
+        })
+        .select()
+        .single()
+      
+      if (group && studentIds?.length) {
+        const members = studentIds.map(id => ({
+          group_id: group.id,
+          student_id: id
+        }))
+        await supabase.from('support_staff_group_members').insert(members)
+        
+        // Reload members for this group
+        const { data: groupMembersData } = await supabase
+          .from('support_staff_group_members')
+          .select('*')
+          .eq('group_id', group.id)
+        set(state => ({
+          supportStaffGroupMembers: [...state.supportStaffGroupMembers, ...groupMembersData]
+        }))
+      }
+      
+      // Reload all groups
+      await get().loadSupportStaffGroups()
+      return group
+    } catch (error) {
+      console.error('Create group failed:', error)
+      // Fallback to demo mode
+      const newGroup = {
+        id: Date.now(),
+        name,
+        description: '',
+        staff_id: currentUser.id,
+        student_count: studentIds.length,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      
+      // Add group members
+      const newMembers = studentIds.map(studentId => ({
+        id: Date.now() + Math.random(),
+        group_id: newGroup.id,
+        student_id: studentId
+      }))
+      
+      set(state => ({
+        supportStaffGroups: [...state.supportStaffGroups, newGroup],
+        supportStaffGroupMembers: [...state.supportStaffGroupMembers, ...newMembers]
+      }))
+      
+      return newGroup
+    }
+  },
+
+  updateSupportStaffGroup: async (groupId, data) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    try {
+      const { data: group, error } = await supabase
+        .from('support_staff_groups')
+        .update({ 
+          ...data, 
+          updated_at: new Date().toISOString(),
+          student_count: data.studentIds?.length || 0
+        })
+        .eq('id', groupId)
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      // Update members if studentIds provided
+      if (data.studentIds) {
+        // Remove existing members
+        await supabase.from('support_staff_group_members').delete().eq('group_id', groupId)
+        
+        // Add new members
+        if (data.studentIds.length > 0) {
+          const members = data.studentIds.map(id => ({
+            group_id: groupId,
+            student_id: id
+          }))
+          await supabase.from('support_staff_group_members').insert(members)
+        }
+      }
+      
+      set(state => ({
+        supportStaffGroups: state.supportStaffGroups.map(g => g.id === groupId ? { ...g, ...data } : g)
+      }))
+      
+      return group
+    } catch (error) {
+      console.error('Update group failed:', error)
+      // Fallback to demo mode
+      set(state => ({
+        supportStaffGroups: state.supportStaffGroups.map(g => 
+          g.id === groupId ? { ...g, ...data, updated_at: new Date().toISOString() } : g
+        )
+      }))
+      return { id: groupId, ...data }
+    }
+  },
+
+  deleteSupportStaffGroup: async (groupId) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    try {
+      // Delete members first
+      await supabase.from('support_staff_group_members').delete().eq('group_id', groupId)
+      
+      // Delete group
+      await supabase.from('support_staff_groups').delete().eq('id', groupId)
+      
+      set(state => ({
+        supportStaffGroups: state.supportStaffGroups.filter(g => g.id !== groupId),
+        supportStaffGroupMembers: state.supportStaffGroupMembers.filter(m => m.group_id !== groupId)
+      }))
+      
+      return true
+    } catch (error) {
+      console.error('Delete group failed:', error)
+      // Fallback to demo mode
+      set(state => ({
+        supportStaffGroups: state.supportStaffGroups.filter(g => g.id !== groupId),
+        supportStaffGroupMembers: state.supportStaffGroupMembers.filter(m => m.group_id !== groupId)
+      }))
+      return true
+    }
+  },
+
+  // ── Tier 10: Support Logs / Notes System ─────────────────────────────────
+  getSupportLogs: async () => {
+    const { currentUser, supportNotes } = get()
+    
+    // Combine support notes with dedicated logs
+    const allLogs = [
+      ...supportNotes.map(note => ({
+        id: note.id,
+        type: 'note',
+        studentId: note.studentId,
+        title: note.title || 'Support Note',
+        content: note.content || note.note || '',
+        confidentiality: note.confidentiality || 'standard',
+        followUpRequired: note.followUpRequired || false,
+        followUpDate: note.followUpDate || null,
+        tags: note.tags || [],
+        authorId: note.staffId || note.authorId,
+        authorName: note.staffName || note.author || 'Support Staff',
+        createdAt: note.createdAt || note.created_at,
+        updatedAt: note.updatedAt || note.updated_at
+      }))
+    ]
+    
+    return allLogs.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+  },
+
+  getSupportLogsForStudent: async (studentId) => {
+    const allLogs = await get().getSupportLogs()
+    return allLogs.filter(log => log.studentId === parseInt(studentId))
+  },
+
+  createSupportLog: async (logData) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    try {
+      const { data: log } = await supabase
+        .from('support_logs')
+        .insert({
+          student_id: logData.studentId,
+          staff_id: currentUser.id,
+          type: logData.type,
+          title: logData.title,
+          content: logData.content,
+          confidentiality: logData.confidentiality,
+          follow_up_required: logData.followUpRequired,
+          follow_up_date: logData.followUpDate,
+          tags: logData.tags
+        })
+        .select()
+        .single()
+      
+      // Add to local state
+      const newLog = {
+        id: log.id,
+        type: log.type,
+        studentId: log.student_id,
+        title: log.title,
+        content: log.content,
+        confidentiality: log.confidentiality,
+        followUpRequired: log.follow_up_required,
+        followUpDate: log.follow_up_date,
+        tags: log.tags || [],
+        authorId: log.staff_id,
+        authorName: currentUser.name,
+        createdAt: log.created_at,
+        updatedAt: log.updated_at
+      }
+      
+      set(state => ({ supportNotes: [...state.supportNotes, newLog] }))
+      return newLog
+    } catch (error) {
+      console.error('Create log failed:', error)
+      // Fallback to demo mode
+      const newLog = {
+        id: Date.now(),
+        ...logData,
+        authorId: currentUser.id,
+        authorName: currentUser.name,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
+      
+      set(state => ({ supportNotes: [...state.supportNotes, newLog] }))
+      return newLog
+    }
+  },
+
+  updateSupportLog: async (logId, logData) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    try {
+      const { data: log, error } = await supabase
+        .from('support_logs')
+        .update({
+          type: logData.type,
+          title: logData.title,
+          content: logData.content,
+          confidentiality: logData.confidentiality,
+          follow_up_required: logData.followUpRequired,
+          follow_up_date: logData.followUpDate,
+          tags: logData.tags,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', logId)
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      // Update local state
+      set(state => ({
+        supportNotes: state.supportNotes.map(note => 
+          note.id === logId ? {
+            ...note,
+            type: log.type,
+            title: log.title,
+            content: log.content,
+            confidentiality: log.confidentiality,
+            followUpRequired: log.follow_up_required,
+            followUpDate: log.follow_up_date,
+            tags: log.tags || [],
+            updatedAt: log.updated_at
+          } : note
+        )
+      }))
+      
+      return log
+    } catch (error) {
+      console.error('Update log failed:', error)
+      // Fallback to demo mode
+      set(state => ({
+        supportNotes: state.supportNotes.map(note => 
+          note.id === logId ? {
+            ...note,
+            ...logData,
+            updatedAt: new Date().toISOString()
+          } : note
+        )
+      }))
+      return { id: logId, ...logData }
+    }
+  },
+
+  deleteSupportLog: async (logId) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    try {
+      await supabase.from('support_logs').delete().eq('id', logId)
+      
+      set(state => ({
+        supportNotes: state.supportNotes.filter(note => note.id !== logId)
+      }))
+      
+      return true
+    } catch (error) {
+      console.error('Delete log failed:', error)
+      // Fallback to demo mode
+      set(state => ({
+        supportNotes: state.supportNotes.filter(note => note.id !== logId)
+      }))
+      return true
+    }
+  },
+
+  // ── Tier 11: Teacher/Admin Messaging Enhancements ───────────────────────
+  getAllTeachers: () => {
+    // Expanded teacher list including all school teachers
+    return [
+      { id: 't1', name: 'Mr. Rivera',   avatar: '🧑‍🔬', role: 'teacher', subject: 'Science' },
+      { id: 't2', name: 'Ms. Davis',    avatar: '👩‍💼', role: 'teacher', subject: 'Reading' },
+      { id: 't3', name: 'Ms. Johnson',  avatar: '👩‍🏫', role: 'teacher', subject: 'Math' },
+      { id: 't4', name: 'Mr. Chen',     avatar: '👨‍🏫', role: 'teacher', subject: 'Writing' },
+      { id: 't5', name: 'Mrs. Williams', avatar: '👩‍🏫', role: 'teacher', subject: 'Social Studies' },
+      { id: 't6', name: 'Mr. Martinez', avatar: '👨‍🏫', role: 'teacher', subject: 'Art' },
+      { id: 't7', name: 'Ms. Thompson', avatar: '👩‍🏫', role: 'teacher', subject: 'Music' },
+      { id: 't8', name: 'Mr. Anderson', avatar: '👨‍🏫', role: 'teacher', subject: 'PE' },
+    ]
+  },
+
+  getAllAdmins: () => {
+    // Expanded admin list including all school administrators
+    return [
+      { id: 'a1', name: 'Principal Davis', avatar: '🏫', role: 'admin', label: 'Principal' },
+      { id: 'a2', name: 'Dr. Green',       avatar: '🎓', role: 'admin', label: 'Vice Principal' },
+      { id: 'a3', name: 'Ms. Rodriguez',  avatar: '📋', role: 'admin', label: 'Academic Dean' },
+      { id: 'a4', name: 'Mr. Johnson',    avatar: '📊', role: 'admin', label: 'Student Services' },
+      { id: 'a5', name: 'Mrs. Chen',      avatar: '💼', role: 'admin', label: 'Operations' },
+    ]
+  },
+
+  getAllCounselors: () => {
+    // School counselors (optional as specified)
+    return [
+      { id: 'c1', name: 'Dr. Sarah Miller', avatar: '🧑‍⚕️', role: 'counselor', specialty: 'Academic Counseling' },
+      { id: 'c2', name: 'Mr. James Wilson', avatar: '👨‍⚕️', role: 'counselor', specialty: 'Personal Counseling' },
+      { id: 'c3', name: 'Ms. Patricia Brown', avatar: '👩‍⚕️', role: 'counselor', specialty: 'College Counseling' },
+      { id: 'c4', name: 'Dr. Robert Taylor', avatar: '👨‍⚕️', role: 'counselor', specialty: 'Career Counseling' },
+    ]
+  },
+
+  // ── Tier 12: Support Staff Caseload Manager ─────────────────────────────
+  getSupportStaffCaseload: async () => {
+    const { currentUser, students } = get()
+    if (currentUser?.role !== 'supportStaff') return []
+    
+    // Demo: Return first 5 students as assigned caseload
+    return students.slice(0, 5).map(student => ({
+      ...student,
+      assignedDate: '2024-10-01',
+      followUpDate: student.grade < 70 ? '2024-10-25' : null,
+      riskLevel: student.grade < 60 ? 'critical' : student.grade < 70 ? 'high' : 'moderate'
+    }))
+  },
+
+  assignStudentToSupportStaff: async (studentId, staffId) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    try {
+      // In a real implementation, this would update the database
+      const { data, error } = await supabase
+        .from('student_assignments')
+        .insert({
+          student_id: studentId,
+          staff_id: staffId,
+          assigned_at: new Date().toISOString(),
+          role: 'support_staff'
+        })
+        .select()
+        .single()
+      
+      if (error) throw error
+      return data
+    } catch (error) {
+      console.error('Assign student failed:', error)
+      // Fallback to demo mode - just return success
+      return { student_id: studentId, staff_id, assigned_at: new Date().toISOString() }
+    }
+  },
+
+  unassignStudentFromSupportStaff: async (studentId, staffId) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') throw new Error('Unauthorized')
+    
+    try {
+      // In a real implementation, this would update the database
+      const { error } = await supabase
+        .from('student_assignments')
+        .delete()
+        .eq('student_id', studentId)
+        .eq('staff_id', staffId)
+        .eq('role', 'support_staff')
+      
+      if (error) throw error
+      return true
+    } catch (error) {
+      console.error('Unassign student failed:', error)
+      // Fallback to demo mode - just return success
+      return true
+    }
   },
 
   sendGroupMessage: async ({ groupId, groupName, recipientMode, recipients, subject, body }) => {
