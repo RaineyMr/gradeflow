@@ -41,7 +41,6 @@ export function useDashboard({ navToPage = {}, pageToNav = {}, onGoHome, onNavig
 
   const scrollTop = () => {
     window.scrollTo(0, 0)
-    // Also scroll the app-level scroll container if present (used by AppShell)
     document.querySelector('[data-app-scroll]')?.scrollTo(0, 0)
   }
 
@@ -68,23 +67,25 @@ export function useDashboard({ navToPage = {}, pageToNav = {}, onGoHome, onNavig
 
   // ── goBack ────────────────────────────────────────────────────────────────
   const goBack = useCallback(() => {
+    if (history.current.length === 0) { goHome(); return }
     history.current.pop()
     const prev = history.current[history.current.length - 1] ?? null
     if (!prev) { goHome(); return }
     setSubPage(prev)
-    setActiveNav(pageToNav[prev] ?? 'dashboard')
+    setActiveNav(pageToNav[prev] ?? prev ?? 'dashboard')
     scrollTop()
   }, [goHome, pageToNav])
 
   // ── navSelect (called by BottomNav onSelect) ──────────────────────────────
   const navSelect = useCallback((id) => {
+    if (!id) return
     if (id === '__back__') { goBack(); return }
     const page = navToPage[id]
-    if (page === undefined) return   // unknown nav item — ignore
-    if (page === null) { goHome(); return }  // null = home
+    if (page === null) { goHome(); return }
+    if (page === undefined) return
     setActiveNav(id)
     navigate(page)
-  }, [goBack, goHome, navigate, navToPage])
+  }, [navToPage, goBack, goHome, navigate])
 
   // ── gradeflow-home global event (GradeFlow logo click in AppShell) ────────
   useEffect(() => {
