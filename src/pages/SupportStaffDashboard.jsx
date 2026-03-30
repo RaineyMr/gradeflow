@@ -3,6 +3,7 @@ import { useStore } from '../lib/store'
 import DashboardShell from '../components/layout/DashboardShell'
 import { useDashboard } from '../hooks/useDashboard'
 import SubPage from '../pages/Dashboard' // reuse SubPage
+import { Tag } from '../components/ui'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', text:'#eef0f8', muted:'#6b7494',
@@ -21,6 +22,13 @@ export default function SupportStaffDashboard() {
   const students = messagingTargets.filter(t => t.type === 'student')
   const teachers = messagingTargets.filter(t => t.type === 'teacher')
   const admins  = messagingTargets.filter(t => t.type === 'admin')
+
+  // Load notes counts
+  useEffect(() => {
+    students.forEach(student => {
+      useStore.getState().loadSupportNotes(student.id)
+    })
+  }, [students.length])
 
   if (subPage === 'parentMessages') {
     return <SubPage><ParentMessages viewerRole="supportStaff" /></SubPage>
@@ -75,13 +83,33 @@ export default function SupportStaffDashboard() {
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{student.name}</div>
               <div style={{ fontSize: 11, color: C.muted }}>Grade: {student.grade}% · {student.flagged ? 'Flagged' : 'On track'}</div>
+              
+              {/* Notes column */}
+              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#3b7ef420', color: '#3b7ef4' }}>
+                  {useStore(state => state.supportNotes.filter(n => n.student_id === student.id).length || 0} notes
+                </div>
+                {useStore(state => {
+                  const userNotes = state.supportNotes.filter(n => n.student_id === student.id)
+                  const latest = userNotes[0]
+                  return latest ? <Tag color="#22c97a">{new Date(latest.created_at).toLocaleDateString()}</Tag> : null
+                })}
+              </div>
             </div>
-            <button
-              onClick={() => openMessaging({ ...student, role: 'student' })}
-              style={{ background: `var(--school-color)20`, color: 'var(--school-color)', border: `1px solid var(--school-color)40`, borderRadius: 10, padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-            >
-              📨 Message Student
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => openMessaging({ ...student, role: 'student' })}
+                style={{ background: `var(--school-color)20`, color: 'var(--school-color)', border: `1px solid var(--school-color)40`, borderRadius: 10, padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+              >
+                📨 Message Student
+              </button>
+              <button
+                onClick={() => useStore.getState().setActiveStudent(student)}
+                style={{ background: '#9b6ef420', color: '#9b6ef4', border: '1px solid #9b6ef430', borderRadius: 10, padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+              >
+                👁️ View Profile
+              </button>
+            </div>
           </div>
         ))}
       </div>
