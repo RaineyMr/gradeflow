@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useStore } from '../lib/store'
 import InterventionPlanCard from '../components/support/InterventionPlanCard'
 import AIAssistantPanel from '../components/support/AIAssistantPanel'
+import ParentAIAssistantPanel from '../components/parents/ParentAIAssistantPanel'
 import { demoSupportInterventions, INTERVENTION_TYPES } from '../lib/demoSupportInterventions'
 
 const C = {
@@ -198,6 +199,7 @@ const DEMO_STUDENTS = [
 export default function SupportStaffInterventionBuilder({ onBack, initialStudentId }) {
   const { createSupportStaffInterventionPlan, updateSupportStaffInterventionPlan } = useStore()
   const [showAI, setShowAI] = useState(false)
+  const [showParentAI, setShowParentAI] = useState(false)
 
   const [mode,       setMode]       = useState('list')     // 'list' | 'create' | 'edit' | 'success'
   const [plans,      setPlans]      = useState(demoSupportInterventions)
@@ -273,12 +275,20 @@ export default function SupportStaffInterventionBuilder({ onBack, initialStudent
             <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>🎯 Intervention Plans</h1>
             <p style={{ fontSize:10, color:'rgba(255,255,255,0.55)', margin:0 }}>{plans.length} active plan{plans.length !== 1 ? 's' : ''}</p>
           </div>
-          <button
-            onClick={() => setShowAI(true)}
-            style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:6 }}
-          >
-            🤖 AI Assist
-          </button>
+          <div style={{ display:'flex', gap:8 }}>
+            <button
+              onClick={() => setShowParentAI(true)}
+              style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:6 }}
+            >
+              👨‍👩‍👧‍👦 Parent AI
+            </button>
+            <button
+              onClick={() => setShowAI(true)}
+              style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:6 }}
+            >
+              🤖 AI Assist
+            </button>
+          </div>
         </div>
       </div>
 
@@ -328,6 +338,17 @@ export default function SupportStaffInterventionBuilder({ onBack, initialStudent
         onClose={() => setShowAI(false)}
         initialContext={{ 
           screen: 'interventions',
+          plans: plans,
+          selectedStudent: selected
+        }}
+      />
+
+      {/* Parent AI Assistant Panel */}
+      <ParentAIAssistantPanel
+        isOpen={showParentAI}
+        onClose={() => setShowParentAI(false)}
+        initialContext={{ 
+          screen: 'parentIntervention',
           plans: plans,
           selectedStudent: selected
         }}
