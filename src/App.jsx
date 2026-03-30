@@ -239,8 +239,10 @@ export default function App() {
           {/* ── Support Staff ───────────────────────────────────────────────────── */ }
           <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />} >
             <Route path="/supportStaff"           element={<SupportStaffDashboard />} />
-            <Route path="/supportStaff/teams"     element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" />} />
+            <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="groups" />} />
+            <Route path="/supportStaff/trends"    element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
             <Route path="/supportStaff/messages"  element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
+            <Route path="/supportStaff/notes"     element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="notes" />} />
           </Route>
 
         </Route>

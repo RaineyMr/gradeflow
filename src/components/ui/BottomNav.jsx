@@ -36,10 +36,11 @@ export default function BottomNav({ active, onSelect, isSubPage, role: roleProp 
       { id:'alerts',    icon:'🔔', label: t('nav_alerts')   },
     ],
     supportStaff: [
-      { id:'teams',     icon:'👥', label: 'Teams'           },
-      { id:'messages',  icon:'💬', label: t('nav_messages') },
-      { id:'notes',     icon:'📝', label: 'Notes'           },
-      { id:'alerts',    icon:'🔔', label: t('nav_alerts')   },
+      { id:'groups',    icon:'👥', label: 'Groups'         },
+      { id:'messages',  icon:'💬', label: t('nav_messages')},
+      { id:'notes',     icon:'📝', label: 'Notes'          },
+      { id:'trends',    icon:'📊', label: 'Trends'         },
+      { id:'alerts',    icon:'🔔', label: t('nav_alerts')  },
     ],
   }
 
@@ -74,9 +75,10 @@ export default function BottomNav({ active, onSelect, isSubPage, role: roleProp 
     ],
     supportStaff: [
       { id:'__back__',  icon:'←',  label: t('nav_back')     },
-      { id:'teams',     icon:'👥', label: 'Teams'           },
+      { id:'groups',    icon:'👥', label: 'Groups'          },
       { id:'messages',  icon:'💬', label: t('nav_messages') },
       { id:'notes',     icon:'📝', label: 'Notes'           },
+      { id:'trends',    icon:'📊', label: 'Trends'          },
     ],
   }
 

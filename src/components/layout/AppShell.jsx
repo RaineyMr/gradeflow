@@ -34,6 +34,12 @@ const PAGES_BY_ROLE = {
     { icon: '💬', label: 'Messages',   path: '/admin/messages'  },
     { icon: '📢', label: 'Class Feed', path: '/admin/feed'      },
   ],
+  supportStaff: [
+    { icon: '👥', label: 'Groups', path: '/supportStaff/groups' },
+    { icon: '📊', label: 'Trends', path: '/supportStaff/trends' },
+    { icon: '💬', label: 'Messages', path: '/supportStaff/messages' },
+    { icon: '📝', label: 'Notes', path: '/supportStaff/notes' },
+  ],
 }
 
 export default function AppShell() {
