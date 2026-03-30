@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
 import DashboardShell from '../components/layout/DashboardShell'
 import { useDashboard } from '../hooks/useDashboard'
-import SubPage from '../pages/Dashboard' // reuse SubPage
-import { Tag } from '../components/ui'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', text:'#eef0f8', muted:'#6b7494',
+  border:'#252b3d', blue:'#3b7ef4', green:'#22c97a', purple:'#9b6ef4',
 }
 
 export default function SupportStaffDashboard() {
   const { currentUser } = useStore()
-  const { subPage, activeNav, isSubPage, navigate } = useDashboard({
+  const supportNotes = useStore(state => state.supportNotes)
+  const { activeNav, isSubPage, navigate } = useDashboard({
     navToPage: { teams: 'teams', messages: 'parentMessages' },
     pageToNav: { teams: 'teams', parentMessages: 'messages' },
   })
@@ -21,23 +21,13 @@ export default function SupportStaffDashboard() {
 
   const students = messagingTargets.filter(t => t.type === 'student')
   const teachers = messagingTargets.filter(t => t.type === 'teacher')
-  const admins  = messagingTargets.filter(t => t.type === 'admin')
+  const admins   = messagingTargets.filter(t => t.type === 'admin')
 
-  // Load notes counts
   useEffect(() => {
     students.forEach(student => {
       useStore.getState().loadSupportNotes(student.id)
     })
   }, [students.length])
-
-  if (subPage === 'parentMessages') {
-    return <SubPage><ParentMessages viewerRole="supportStaff" /></SubPage>
-  }
-
-  const DEMO_ADMIN = [
-    { id: 'a1', name: 'Principal Davis', role: 'admin', avatar: '🏫' },
-    { id: 'a2', name: 'Dr. Green', role: 'admin', avatar: '🎓' },
-  ]
 
   const openMessaging = (recipient) => {
     setShowMessaging({ [recipient.role]: recipient })
@@ -55,7 +45,7 @@ export default function SupportStaffDashboard() {
       {/* Header */}
       <div style={{ padding: '20px 16px 0', marginBottom: 20 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>
-  👥 My Teams ({students.length})
+          👥 My Teams ({students.length})
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {admins.map(admin => (
@@ -73,45 +63,47 @@ export default function SupportStaffDashboard() {
       {/* Students */}
       <div style={{ padding: '0 16px 16px' }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>
-        🎓 Assigned Students ({students.length})
+          🎓 Assigned Students ({students.length})
         </div>
-        {students.map(student => (
-          <div key={student.id} style={{ background: C.card, borderRadius: 16, padding: 16, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ fontSize: 18, background: 'var(--school-color)', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              👤
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{student.name}</div>
-              <div style={{ fontSize: 11, color: C.muted }}>Grade: {student.grade}% · {student.flagged ? 'Flagged' : 'On track'}</div>
-              
-              {/* Notes column */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#3b7ef420', color: '#3b7ef4' }}>
-                  {useStore(state => state.supportNotes.filter(n => n.student_id === student.id).length || 0} notes
+        {students.map(student => {
+          const studentNotes = supportNotes.filter(n => n.student_id === student.id)
+          const latestNote = studentNotes[0]
+          return (
+            <div key={student.id} style={{ background: C.card, borderRadius: 16, padding: 16, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ fontSize: 18, background: 'var(--school-color)', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                👤
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>{student.name}</div>
+                <div style={{ fontSize: 11, color: C.muted }}>Grade: {student.grade}% · {student.flagged ? 'Flagged' : 'On track'}</div>
+                <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: `${C.blue}20`, color: C.blue }}>
+                    {studentNotes.length} notes
+                  </span>
+                  {latestNote && (
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: `${C.green}20`, color: C.green }}>
+                      {new Date(latestNote.created_at).toLocaleDateString()}
+                    </span>
+                  )}
                 </div>
-                {useStore(state => {
-                  const userNotes = state.supportNotes.filter(n => n.student_id === student.id)
-                  const latest = userNotes[0]
-                  return latest ? <Tag color="#22c97a">{new Date(latest.created_at).toLocaleDateString()}</Tag> : null
-                })}
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => openMessaging({ ...student, role: 'student' })}
+                  style={{ background: 'var(--school-color)20', color: 'var(--school-color)', border: '1px solid var(--school-color)40', borderRadius: 10, padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  📨 Message
+                </button>
+                <button
+                  onClick={() => useStore.getState().setActiveStudent(student)}
+                  style={{ background: `${C.purple}20`, color: C.purple, border: `1px solid ${C.purple}30`, borderRadius: 10, padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                >
+                  👁️ Profile
+                </button>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => openMessaging({ ...student, role: 'student' })}
-                style={{ background: `var(--school-color)20`, color: 'var(--school-color)', border: `1px solid var(--school-color)40`, borderRadius: 10, padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-              >
-                📨 Message Student
-              </button>
-              <button
-                onClick={() => useStore.getState().setActiveStudent(student)}
-                style={{ background: '#9b6ef420', color: '#9b6ef4', border: '1px solid #9b6ef430', borderRadius: 10, padding: '8px 14px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-              >
-                👁️ View Profile
-              </button>
-            </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
