@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react'
 import { useStore } from '../lib/store'
 import { GradeBar, Modal } from '../components/ui'
-import { GradebookSyncStatus, GradebookSyncButton } from '../GradebookSyncButton.jsx'
-import { GradebookSyncStatus as SyncStatus } from '../GradebookSyncStatus.jsx'
+import { GradebookSyncButton } from '../components/GradebookSyncButton.jsx'
+import { GradebookSyncStatus } from '../components/GradebookSyncStatus.jsx'
 
 const C = {
   bg: '#060810', card: '#161923', inner: '#1e2231', text: '#eef0f8',
