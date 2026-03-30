@@ -1,7 +1,6 @@
 import React from 'react'
 import { useStore } from '../../lib/store'
 import Widget from '../../ui/Widget'
-import { ActionBtn } from '../../ui/ActionBtn'
 
 const C = {
   green: '#22c97a', red: '#f04a4a', amber: '#f5a623', purple: '#9b6ef5',
@@ -9,7 +8,6 @@ const C = {
 }
 
 function TrendSpark({ trend, color }) {
-  // Simple CSS sparkline
   const points = trend === 'up' ? '2,38 50,10 98,35' : 
                  trend === 'down' ? '2,10 50,38 98,15' : 
                  '2,20 50,20 98,20'
@@ -43,7 +41,6 @@ export default function StudentTrendsWidget({ navigate }) {
   const { getStudentsForSupportStaff, studentTrends } = useStore()
   const students = getStudentsForSupportStaff()
   
-  // Mock at-risk students from demo data
   const atRiskStudents = students.slice(0, 4).map((s, i) => ({
     ...s,
     trend: i % 3 === 0 ? 'down' : 'stable',
@@ -80,7 +77,6 @@ export default function StudentTrendsWidget({ navigate }) {
           cursor: 'pointer'
         }} onClick={() => viewTrends(student)}>
           
-          {/* Avatar */}
           <div style={{ 
             width: 36, height: 36, 
             background: 'var(--school-color)', 
@@ -91,7 +87,6 @@ export default function StudentTrendsWidget({ navigate }) {
             👤
           </div>
 
-          {/* Info */}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: C.text, marginBottom: 2 }}>
               {student.name}
@@ -101,10 +96,8 @@ export default function StudentTrendsWidget({ navigate }) {
             </div>
           </div>
 
-          {/* Trend */}
           <TrendSpark trend={student.trend} color={student.trend === 'down' ? C.red : C.green} />
 
-          {/* Risk */}
           <RiskBadge level={student.risk} count={student.flags} />
         </div>
       ))}
@@ -119,4 +112,3 @@ export default function StudentTrendsWidget({ navigate }) {
     </Widget>
   )
 }
-
