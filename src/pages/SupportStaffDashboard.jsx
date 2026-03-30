@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react'
-import { useStore } from '../lib/store'
-import DashboardShell from '../components/layout/DashboardShell'
-import { useDashboard } from '../hooks/useDashboard'
-import ParentMessages from './ParentMessages'
-import StudentProfile from './StudentProfile'
+import { useStore } from '@lib/store'
+import DashboardShell from '@components/layout/DashboardShell'
+import { useDashboard } from '@hooks/useDashboard'
+import ParentMessages from '@pages/ParentMessages'
+import StudentProfile from '@pages/StudentProfile'
 
 
 
