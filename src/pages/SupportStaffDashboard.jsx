@@ -3,6 +3,7 @@ import { useDashboard } from '../hooks/useDashboard'
 import DashboardShell from '../components/layout/DashboardShell'
 import ParentMessages from './ParentMessages'
 import StudentProfile from './StudentProfile'
+import SupportStaffGroupScreen from './SupportStaffGroupScreen'
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 const C = {
@@ -366,7 +367,7 @@ function HomeFeed({ navigate }) {
   }
 
   const overviewTiles = [
-    { icon:'👥', val:DEMO_STUDENTS.length, label:'Students', page:'students', color:C.blue   },
+    { icon:'👥', val:DEMO_STUDENTS.length, label:'Students', page:'groups',   color:C.blue   },
     { icon:'⚑',  val:flaggedCount,          label:'Flagged',  page:'students', color:C.red    },
     { icon:'📝', val:totalNotes,            label:'Notes',    page:'notes',    color:C.purple },
     { icon:'🔔', val:urgentAlerts,          label:'Alerts',   page:'alerts',   color:C.amber  },
@@ -425,7 +426,7 @@ function HomeFeed({ navigate }) {
 
       {/* W2: My Students */}
       {wrap('students',
-        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:16, cursor:'pointer' }} onClick={()=>navigate('students')}>
+        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:16, cursor:'pointer' }} onClick={()=>navigate('groups')}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
             <div style={{ fontSize:13, fontWeight:800, color:C.text }}>👥 My Students</div>
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
@@ -531,14 +532,15 @@ export default function SupportStaffDashboard({ currentUser }) {
   // BottomNav supportStaff home nav IDs: groups | messages | notes | trends | alerts
   // BottomNav supportStaff sub  nav IDs: __back__ | groups | messages | notes | trends
   const NAV_TO_PAGE = {
-    groups:    'students',  // "Groups" tab → student list (groups feature = future)
+    groups:    'groups',    // "Groups" tab → group screen
     messages:  'messages',
     notes:     'notes',
-    trends:    'students',  // "Trends" tab → student list filtered (trends feature = future)
+    trends:    'students',  // "Trends" tab → student list (trends feature = future)
     alerts:    'alerts',
     dashboard: null,
   }
   const PAGE_TO_NAV = {
+    groups:    'groups',
     students:  'groups',
     messages:  'messages',
     notes:     'notes',
@@ -576,6 +578,12 @@ export default function SupportStaffDashboard({ currentUser }) {
     </DashboardShell>
   )
 
+  if(subPage==='groups') return shell(
+    <SupportStaffGroupScreen
+      onBack={goBack}
+      onViewProfile={student => { setDetailStudent(student) }}
+    />
+  )
   if(subPage==='students') return shell(
     <StudentsPage onBack={goBack} navigate={navigate} setDetailStudent={setDetailStudent}/>
   )
@@ -592,4 +600,5 @@ export default function SupportStaffDashboard({ currentUser }) {
     </div>
   )
 }
+
 
