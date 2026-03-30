@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../../lib/store'
 import SupportStaffMessaging from './SupportStaffMessaging'
 import AIAssistantPanel from './AIAssistantPanel'
+import ParentAIAssistantPanel from '../parents/ParentAIAssistantPanel'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -19,10 +20,86 @@ const TABS = [
   { id: 'trends', label: 'Trends', icon: '📈' },
   { id: 'interventions', label: 'Interventions', icon: '🎯' },
   { id: 'supportLogs', label: 'Support Logs', icon: '🗂️' },
+  { id: 'parent', label: 'Parent', icon: '👨‍👩‍👧‍👦' },
 ]
+
+// Parent Tab Component
+function ParentTab({ student, onOpenParentAI }) {
+  return (
+    <div style={{ 
+      background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:20 
+    }}>
+      <div style={{ marginBottom:20 }}>
+        <h3 style={{ margin:0, fontSize:16, fontWeight:700, color:C.text, marginBottom:8 }}>
+          👨‍👩‍👧‍👦 Parent Communication
+        </h3>
+        <p style={{ margin:0, fontSize:12, color:C.muted, lineHeight:1.5 }}>
+          Generate parent-friendly updates, meeting summaries, and communications for {student.name}.
+        </p>
+      </div>
+
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12, marginBottom:20 }}>
+        <button
+          onClick={() => onOpenParentAI()}
+          style={{
+            background:C.blue, color:'#fff', border:'none', borderRadius:8,
+            padding:'12px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
+            display:'flex', alignItems:'center', gap:8
+          }}
+        >
+          📝 Generate Parent Update
+        </button>
+        <button
+          onClick={() => onOpenParentAI()}
+          style={{
+            background:C.teal, color:'#fff', border:'none', borderRadius:8,
+            padding:'12px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
+            display:'flex', alignItems:'center', gap:8
+          }}
+        >
+          📰 Weekly Digest
+        </button>
+        <button
+          onClick={() => onOpenParentAI()}
+          style={{
+            background:C.green, color:'#fff', border:'none', borderRadius:8,
+            padding:'12px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
+            display:'flex', alignItems:'center', gap:8
+          }}
+        >
+          ⭐ Positive Note
+        </button>
+        <button
+          onClick={() => onOpenParentAI()}
+          style={{
+            background:C.purple, color:'#fff', border:'none', borderRadius:8,
+            padding:'12px 16px', fontSize:12, fontWeight:600, cursor:'pointer',
+            display:'flex', alignItems:'center', gap:8
+          }}
+        >
+          📞 Follow-Up Message
+        </button>
+      </div>
+
+      <div style={{ 
+        background:C.inner, border:`1px solid ${C.border}`, borderRadius:8, padding:16,
+        textAlign:'center'
+      }}>
+        <div style={{ fontSize:24, marginBottom:8, opacity:0.7 }}>🤖</div>
+        <div style={{ fontSize:12, color:C.text, marginBottom:8 }}>
+          AI-Powered Parent Communication Assistant
+        </div>
+        <div style={{ fontSize:11, color:C.muted, lineHeight:1.4 }}>
+          Generate culturally sensitive, parent-friendly messages with appropriate tone and language.
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function SupportStaffStudentProfile({ studentId, onBack }) {
   const [showAI, setShowAI] = useState(false)
+  const [showParentAI, setShowParentAI] = useState(false)
   const {
     students,
     classes,
@@ -218,6 +295,9 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
         )}
         {activeTab === 'supportLogs' && (
           <SupportLogsTab student={student} />
+        )}
+        {activeTab === 'parent' && (
+          <ParentTab student={student} onOpenParentAI={() => setShowParentAI(true)} />
         )}
       </div>
 
@@ -609,6 +689,17 @@ function SupportLogsTab({ student }) {
       <AIAssistantPanel
         isOpen={showAI}
         onClose={() => setShowAI(false)}
+        initialContext={{ 
+          screen: 'studentProfile',
+          studentId: studentId,
+          student: student
+        }}
+      />
+
+      {/* Parent AI Assistant Panel */}
+      <ParentAIAssistantPanel
+        isOpen={showParentAI}
+        onClose={() => setShowParentAI(false)}
         initialContext={{ 
           screen: 'studentProfile',
           studentId: studentId,
