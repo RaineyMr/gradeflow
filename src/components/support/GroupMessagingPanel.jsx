@@ -1,6 +1,7 @@
 // src/components/support/GroupMessagingPanel.jsx
 import React, { useState } from 'react'
 import { useStore } from '../../lib/store'
+import RecipientSelector from './RecipientSelector'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -90,22 +91,14 @@ export default function GroupMessagingPanel({ groupId, groupName, students, onCl
 
         {/* Recipient selector */}
         <div style={{ marginBottom:16 }}>
-          <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>Send To</div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:6 }}>
-            {RECIPIENT_OPTIONS.map(opt => (
-              <button key={opt.id} onClick={() => setRecipientMode(opt.id)}
-                style={{
-                  background: recipientMode === opt.id ? `${C.teal}18` : C.inner,
-                  border: `1px solid ${recipientMode === opt.id ? C.teal : C.border}`,
-                  borderRadius:12, padding:'10px 12px', cursor:'pointer', textAlign:'left',
-                  transition:'all 0.15s',
-                }}>
-                <div style={{ fontSize:13, marginBottom:3 }}>{opt.icon}</div>
-                <div style={{ fontSize:11, fontWeight:700, color: recipientMode === opt.id ? C.teal : C.text }}>{opt.label}</div>
-                <div style={{ fontSize:9, color:C.muted, marginTop:2 }}>{opt.desc}</div>
-              </button>
-            ))}
-          </div>
+          <RecipientSelector
+            mode="students"
+            preselectedStudentIds={students.map(s => s.id)}
+            onRecipientsChange={(ids, mode) => {
+              // For group messaging, we'll handle this differently
+              // Keep the existing logic for now
+            }}
+          />
         </div>
 
         {/* Student selector — shown when 'selected' mode */}
