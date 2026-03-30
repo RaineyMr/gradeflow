@@ -179,9 +179,7 @@ function StudentCard({ student, notes, classes, onViewProfile, onMessage, onMess
 }
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-// SupportStaffHomeFeed - MIRROR from Dashboard.jsx HomeFeed (read-only)
-import HomeFeed from '../dashboard/HomeFeed'
-
+import SupportStaffHomeFeed from '../dashboard/SupportStaffHomeFeed'
 
 export default function SupportStaffDashboard() {
   const {
