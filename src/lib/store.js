@@ -1965,6 +1965,115 @@ setDemoSupportStaffData: async () => {
     }
   },
 
+  // ── Tier 17: Parent Communication Context Helpers ───────────────────────────
+  getParentCommunicationContext: (studentId) => {
+    const { students, classes, getStudentGrades, getStudentAttendance, getStudentNotes } = get()
+    const student = students.find(s => s.id === parseInt(studentId))
+    if (!student) return null
+
+    const studentClass = classes.find(c => c.id === student.classId)
+    
+    return {
+      studentId: student.id,
+      studentName: student.name,
+      grade: student.grade,
+      letterGrade: student.letter,
+      subject: studentClass?.subject || 'General',
+      classPeriod: studentClass?.period || 'N/A',
+      recentGrades: [], // Would be populated with actual grade data
+      attendanceRate: '92%', // Demo data
+      behaviorNotes: [], // Would exclude sensitive internal notes
+      achievements: [], // Would include positive achievements
+      areasForGrowth: [], // Would include constructive areas
+      homeSupportSuggestions: [
+        'Review homework together when possible',
+        'Encourage daily reading for 20 minutes',
+        'Celebrate small wins and progress',
+        'Maintain consistent bedtime routine'
+      ]
+    }
+  },
+
+  getParentMeetingContext: (studentId) => {
+    const baseContext = get().getParentCommunicationContext(studentId)
+    if (!baseContext) return null
+
+    return {
+      ...baseContext,
+      meetingDate: new Date().toLocaleDateString(),
+      meetingType: 'Parent-Teacher Conference',
+      attendees: ['Parent/Guardian', 'Support Staff'],
+      discussionTopics: [
+        'Academic Progress',
+        'Social-Emotional Development',
+        'Support Strategies',
+        'Home-School Partnership'
+      ],
+      parentConcerns: [], // Would be populated from actual meeting data
+      agreedActions: [],
+      followUpPlan: []
+    }
+  },
+
+  getParentSummaryContext: (studentId) => {
+    const baseContext = get().getParentCommunicationContext(studentId)
+    if (!baseContext) return null
+
+    return {
+      ...baseContext,
+      summaryType: 'Weekly Progress',
+      timeframe: 'This Week',
+      highlights: [
+        'Improved participation in class discussions',
+        'Completed all assignments on time',
+        'Showed great effort on recent projects'
+      ],
+      challenges: [], // Would include appropriate challenges
+      nextSteps: [
+        'Continue current support strategies',
+        'Monitor progress closely',
+        'Schedule follow-up if needed'
+      ]
+    }
+  },
+
+  getParentDigestContext: (studentId) => {
+    const baseContext = get().getParentCommunicationContext(studentId)
+    if (!baseContext) return null
+
+    return {
+      ...baseContext,
+      digestType: 'Weekly Parent Digest',
+      weekStart: new Date().toLocaleDateString(),
+      academicHighlights: [
+        'Math: Improved quiz scores',
+        'Reading: Completed all assignments',
+        'Science: Great participation in lab'
+      ],
+      socialEmotional: [
+        'Demonstrated leadership in group work',
+        'Showed kindness to classmates',
+        'Improved confidence in speaking up'
+      ],
+      upcoming: [
+        'Math test next Tuesday',
+        'Science project due Friday',
+        'Parent-teacher conference next month'
+      ],
+      homeConnection: [
+        'Ask about their science project',
+        'Practice multiplication facts',
+        'Read together for 15 minutes daily'
+      ],
+      celebrationMoment: 'This week\'s star moment: Your child helped a classmate understand a difficult math concept. Their patience and kindness made everyone proud!',
+      needToKnow: [
+        'All caught up on assignments',
+        'No missing work',
+        'Positive behavior reports all week'
+      ]
+    }
+  },
+
   addFeedPost: async (classId, content) => {
     const authorName = useStore.getState().teacher.name
 
