@@ -334,6 +334,7 @@ const WIDGET_CATALOG = [
   { id:'students',  label:'My Students',     icon:'👥', desc:'Assigned student list and grades'    },
   { id:'notes',     label:'Recent Notes',    icon:'📝', desc:'Latest case notes across all students' },
   { id:'messages',  label:'Messages',        icon:'💬', desc:'Staff, parent & teacher messaging'   },
+  { id:'ai',        label:'AI Assistant',   icon:'🤖', desc:'AI-powered support helper'           },
   { id:'alerts',    label:'Alerts',          icon:'🔔', desc:'Urgent flags requiring action'       },
 ]
 
@@ -371,6 +372,7 @@ function HomeFeed({ navigate }) {
     { icon:'⚑',  val:flaggedCount,          label:'Flagged',  page:'students', color:C.red    },
     { icon:'📝', val:totalNotes,            label:'Notes',    page:'notes',    color:C.purple },
     { icon:'🔔', val:urgentAlerts,          label:'Alerts',   page:'alerts',   color:C.amber  },
+    { icon:'🤖', val:'AI',                  label:'AI',      page:'ai',      color:C.teal    },
   ]
 
   return (
@@ -529,14 +531,15 @@ function HomeFeed({ navigate }) {
 export default function SupportStaffDashboard({ currentUser }) {
   const [detailStudent, setDetailStudent] = useState(null)
 
-  // BottomNav supportStaff home nav IDs: groups | messages | notes | trends | alerts
-  // BottomNav supportStaff sub  nav IDs: __back__ | groups | messages | notes | trends
+  // BottomNav supportStaff home nav IDs: groups | messages | notes | trends | alerts | ai
+  // BottomNav supportStaff sub  nav IDs: __back__ | groups | messages | notes | trends | alerts | ai
   const NAV_TO_PAGE = {
     groups:    'groups',    // "Groups" tab → group screen
     messages:  'messages',
     notes:     'notes',
     trends:    'students',  // "Trends" tab → student list (trends feature = future)
     alerts:    'alerts',
+    ai:        'ai',
     dashboard: null,
   }
   const PAGE_TO_NAV = {
@@ -545,6 +548,7 @@ export default function SupportStaffDashboard({ currentUser }) {
     messages:  'messages',
     notes:     'notes',
     alerts:    'alerts',
+    ai:        'ai',
     studentDetail: 'groups',
   }
 
@@ -591,6 +595,9 @@ export default function SupportStaffDashboard({ currentUser }) {
   if(subPage==='alerts')   return shell(<AlertsPage   onBack={goBack}/>)
   if(subPage==='messages') return shell(
     <SubPage><ParentMessages onBack={goBack} viewerRole="supportStaff"/></SubPage>
+  )
+  if(subPage==='ai') return shell(
+    <SubPage><SupportStaffAI onBack={goBack}/></SubPage>
   )
 
   return shell(
