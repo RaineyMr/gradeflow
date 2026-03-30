@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { useStore } from '../../lib/store'
 import RecipientSelector from './RecipientSelector'
 import AIAssistantPanel from './AIAssistantPanel'
+import ParentAIAssistantPanel from '../parents/ParentAIAssistantPanel'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -18,6 +19,7 @@ export default function SupportStaffMessaging({
 }) {
   const { sendSupportStaffMessage } = useStore()
   const [showAI, setShowAI] = useState(false)
+  const [showParentAI, setShowParentAI] = useState(false)
 
   const [selectedRecipientIds, setSelectedRecipientIds] = useState(preselectedStudentIds)
   const [recipientMode, setRecipientMode] = useState(preselectedMode)
@@ -86,24 +88,84 @@ export default function SupportStaffMessaging({
             </div>
           </div>
           <div style={{ display:'flex', gap:8 }}>
-            <button
-              onClick={() => setShowAI(true)}
-              style={{
-                background: C.blue,
-                border: 'none',
-                borderRadius: 8,
-                padding: '6px 12px',
-                color: '#fff',
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4
-              }}
-            >
-              🤖 AI
-            </button>
+            {recipientMode === 'parents' && (
+              <>
+                <button
+                  onClick={() => setShowParentAI(true)}
+                  style={{
+                    background: C.teal,
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                >
+                  👨‍👩‍👧‍👦 Parent AI
+                </button>
+                <button
+                  onClick={() => setShowAI(true)}
+                  style={{
+                    background: C.blue,
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                >
+                  🤖 AI Draft
+                </button>
+                <button
+                  onClick={() => setShowParentAI(true)}
+                  style={{
+                    background: C.purple,
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: '6px 12px',
+                    color: '#fff',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4
+                  }}
+                >
+                  ✏️ Rewrite
+                </button>
+              </>
+            )}
+            {recipientMode !== 'parents' && (
+              <button
+                onClick={() => setShowAI(true)}
+                style={{
+                  background: C.blue,
+                  border: 'none',
+                  borderRadius: 8,
+                  padding: '6px 12px',
+                  color: '#fff',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
+                }}
+              >
+                🤖 AI
+              </button>
+            )}
             <button 
               onClick={onClose} 
               style={{ 
@@ -224,6 +286,19 @@ export default function SupportStaffMessaging({
         onClose={() => setShowAI(false)}
         initialContext={{ 
           screen: 'messaging',
+          recipientMode: recipientMode,
+          selectedRecipientIds: selectedRecipientIds,
+          subject: subject,
+          body: body
+        }}
+      />
+
+      {/* Parent AI Assistant Panel */}
+      <ParentAIAssistantPanel
+        isOpen={showParentAI}
+        onClose={() => setShowParentAI(false)}
+        initialContext={{ 
+          screen: 'parentMessaging',
           recipientMode: recipientMode,
           selectedRecipientIds: selectedRecipientIds,
           subject: subject,
