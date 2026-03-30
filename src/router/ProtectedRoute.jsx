@@ -15,7 +15,12 @@ import { useStore } from '../lib/store'
  *   </Route>
  */
 export default function ProtectedRoute({ allowedRoles }) {
-  const currentUser = useStore(s => s.currentUser)
+  const { currentUser, isHydrated } = useStore(s => ({ currentUser: s.currentUser, isHydrated: s.isHydrated }))
+
+  // Hydrating → wait
+  if (!isHydrated) {
+    return null
+  }
 
   // Not logged in → go to login
   if (!currentUser) {

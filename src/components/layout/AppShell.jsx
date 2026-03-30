@@ -39,7 +39,7 @@ const PAGES_BY_ROLE = {
 export default function AppShell() {
   const navigate = useNavigate()
   const t = useT()
-  const { currentUser, setCurrentUser, setLang } = useStore()
+  const { currentUser, setCurrentUser, setLang, isHydrated } = useStore()
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef(null)
@@ -64,7 +64,42 @@ export default function AppShell() {
     soft:      'rgba(249,115,22,0.14)',
   }, [currentUser])
 
-  if (!currentUser) return null
+  if (!currentUser) {
+    if (isHydrated) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          background: '#060810',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#eef0f8',
+          fontFamily: 'Inter, Arial, sans-serif',
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
+            <div style={{ fontSize: 18, marginBottom: 16 }}>Session expired</div>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                background: 'linear-gradient(135deg, #f97316, #2563EB)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 999,
+                padding: '12px 24px',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Reload to login
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
 
   const isEs       = (currentUser.lang || 'en') === 'es'
   const roleLabel  = ROLE_LABELS[currentUser.role] ?? 'User'

@@ -63,11 +63,53 @@ function RootRedirect() {
 /** /login → dashboard if already authed, otherwise show Login */
 function LoginRoute() {
   const navigate  = useNavigate()
-  const currentUser = useStore(s => s.currentUser)
+  const { currentUser, isHydrated } = useStore(s => ({ currentUser: s.currentUser, isHydrated: s.isHydrated }))
   const { setCurrentUser, setLang } = useStore()
 
-  // Allow landing to remain accessible even when a session exists.
-  // Do not auto-redirect from /login to dashboard.
+  // Auto-redirect to dashboard if already authenticated and hydrated
+  useEffect(() => {
+    if (isHydrated && currentUser?.role) {
+      navigate(`/${currentUser.role}`, { replace: true })
+    }
+  }, [isHydrated, currentUser, navigate])
+
+  if (!isHydrated) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: '#060810',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: '#eef0f8',
+        fontFamily: 'Inter, Arial, sans-serif',
+      }}>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
+          <div style={{ fontSize: 18, marginBottom: 32 }}>Loading GradeFlow...</div>
+          <div style={{ width: 40, height: 40, border: '3px solid #1e2231', borderTop: '3px solid #f97316', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </div>
+    )
+  }
+
+  // Invalid persisted user → clear
+  useEffect(() => {
+    const raw = localStorage.getItem('gradeflow_user')
+    if (raw) {
+      try {
+        const user = JSON.parse(raw)
+        if (!user?.role) {
+          localStorage.removeItem('gradeflow_user')
+          setCurrentUser(null)
+        }
+      } catch {
+        localStorage.removeItem('gradeflow_user')
+        setCurrentUser(null)
+      }
+    }
+  }, [setCurrentUser])
 
   function handleLogin(account) {
     if (!account?.role) return
@@ -78,15 +120,43 @@ function LoginRoute() {
     navigate(`/${account.role}`, { replace: true })
   }
 
-  return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={currentUser} />
+  return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={null} />
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // App — route tree
 // ─────────────────────────────────────────────────────────────────────────────
 
+function Loading() {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #060810 0%, #0a0f1e 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      color: '#eef0f8',
+      fontFamily: 'Inter, Arial, sans-serif',
+    }}>
+      <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
+      <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 12 }}>GradeFlow</div>
+      <div style={{ fontSize: 14, color: '#6b7494', marginBottom: 32 }}>Loading your dashboard...</div>
+      <div style={{
+        width: 40,
+        height: 40,
+        border: '3px solid rgba(249,115,22,0.2)',
+        borderTop: '3px solid #f97316',
+        borderRadius: '50%',
+        animation: 'spin 1s linear infinite',
+      }} />
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}
+
 export default function App() {
-  const { loadFromDB, setCurrentUser, setLang } = useStore()
+  const { loadFromDB, setCurrentUser, setLang, isHydrated } = useStore()
 
   // Rehydrate auth session + apply school CSS vars on first load
   useEffect(() => {
@@ -105,10 +175,15 @@ export default function App() {
         }
       } catch {
         localStorage.removeItem('gradeflow_user')
+        console.log('Cleared invalid localStorage user')
       }
     }
     loadFromDB()
   }, [loadFromDB, setCurrentUser, setLang])
+
+  if (!isHydrated) {
+    return <Loading />
+  }
 
   return (
     <Routes>
