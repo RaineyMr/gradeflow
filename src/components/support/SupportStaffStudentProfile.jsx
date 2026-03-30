@@ -4,6 +4,7 @@ import { useStore } from '../../lib/store'
 import SupportStaffMessaging from './SupportStaffMessaging'
 import AIAssistantPanel from './AIAssistantPanel'
 import ParentAIAssistantPanel from '../parents/ParentAIAssistantPanel'
+import SupportTaskCard from './SupportTaskCard'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -109,7 +110,9 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
     getStudentTrends,
     getStudentInterventions,
     getTeachersForStudents,
-    sendSupportStaffMessage
+    sendSupportStaffMessage,
+    getAutomationMeetingPrep,
+    getAutomationRiskTasks
   } = useStore()
 
   const [activeTab, setActiveTab] = useState('overview')
@@ -127,6 +130,8 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
   const [trends, setTrends] = useState(null)
   const [interventions, setInterventions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [meetingPrep, setMeetingPrep] = useState(null)
+  const [studentTasks, setStudentTasks] = useState([])
 
   useEffect(() => {
     if (!student) return
@@ -134,12 +139,14 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
     async function loadStudentData() {
       setLoading(true)
       try {
-        const [gradesData, attendanceData, notesData, trendsData, interventionsData] = await Promise.all([
+        const [gradesData, attendanceData, notesData, trendsData, interventionsData, meetingPrepData, riskTasksData] = await Promise.all([
           getStudentGrades(studentId),
           getStudentAttendance(studentId),
           getStudentNotes(studentId),
           getStudentTrends(studentId),
-          getStudentInterventions(studentId)
+          getStudentInterventions(studentId),
+          getAutomationMeetingPrep(studentId),
+          getAutomationRiskTasks()
         ])
 
         setGrades(gradesData || [])
@@ -147,6 +154,11 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
         setNotes(notesData || [])
         setTrends(trendsData)
         setInterventions(interventionsData || [])
+        setMeetingPrep(meetingPrepData)
+        
+        // Filter tasks for this specific student
+        const studentSpecificTasks = (riskTasksData || []).filter(task => task.studentId === parseInt(studentId))
+        setStudentTasks(studentSpecificTasks)
       } catch (error) {
         console.error('Failed to load student data:', error)
       } finally {
@@ -167,6 +179,26 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
     setMessagingMode('studentTeachers')
     setPreselectedIds([])
     setShowMessaging(true)
+  }
+
+  function handleTaskAction(taskId, action) {
+    console.log(`Task ${taskId} action: ${action}`)
+    if (action === 'complete' || action === 'dismiss') {
+      setStudentTasks(prev => prev.filter(task => task.id !== taskId))
+    } else if (action === 'snooze') {
+      // Move task to end of list
+      setStudentTasks(prev => {
+        const task = prev.find(t => t.id === taskId)
+        const others = prev.filter(t => t.id !== taskId)
+        return task ? [...others, task] : prev
+      })
+    } else if (action === 'convert-to-log') {
+      setActiveTab('supportLogs')
+    } else if (action === 'convert-to-parent-message') {
+      setShowParentAI(true)
+    } else if (action === 'download-packet' || action === 'email-packet') {
+      console.log('Meeting prep packet action:', action)
+    }
   }
 
   if (!student) {
@@ -276,7 +308,14 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
       {/* Content */}
       <div style={{ padding:20 }}>
         {activeTab === 'overview' && (
-          <OverviewTab student={student} studentClass={studentClass} trends={trends} />
+          <OverviewTab 
+            student={student} 
+            studentClass={studentClass} 
+            trends={trends} 
+            meetingPrep={meetingPrep}
+            studentTasks={studentTasks}
+            onTaskAction={handleTaskAction}
+          />
         )}
         {activeTab === 'grades' && (
           <GradesTab grades={grades} student={student} />
@@ -314,7 +353,7 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
 }
 
 // ─── Tab Components ────────────────────────────────────────────────────────────
-function OverviewTab({ student, studentClass, trends }) {
+function OverviewTab({ student, studentClass, trends, meetingPrep, studentTasks, onTaskAction }) {
   return (
     <div style={{ display:'grid', gap:16 }}>
       <div style={{ 
@@ -361,6 +400,48 @@ function OverviewTab({ student, studentClass, trends }) {
           <div style={{ fontSize:12, color:C.muted, lineHeight:1.5 }}>
             {trends.summary || 'No trend data available.'}
           </div>
+        </div>
+      )}
+
+      {/* Meeting Prep Packet */}
+      {meetingPrep && (
+        <div style={{ 
+          background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:16 
+        }}>
+          <h3 style={{ margin:'0 0 12px 0', fontSize:14, fontWeight:700, color:C.text }}>
+            📋 Meeting Prep Packet
+          </h3>
+          <SupportTaskCard
+            task={meetingPrep}
+            onAction={onTaskAction}
+            compact={true}
+          />
+        </div>
+      )}
+
+      {/* Automated Tasks for This Student */}
+      {studentTasks && studentTasks.length > 0 && (
+        <div style={{ 
+          background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:16 
+        }}>
+          <h3 style={{ margin:'0 0 12px 0', fontSize:14, fontWeight:700, color:C.text }}>
+            ⚠️ Automated Tasks for {student.name}
+          </h3>
+          <div style={{ display:'grid', gap:8 }}>
+            {studentTasks.slice(0, 3).map(task => (
+              <SupportTaskCard
+                key={task.id}
+                task={task}
+                onAction={onTaskAction}
+                compact={true}
+              />
+            ))}
+          </div>
+          {studentTasks.length > 3 && (
+            <div style={{ fontSize:11, color:C.muted, textAlign:'center', marginTop:8 }}>
+              +{studentTasks.length - 3} more tasks
+            </div>
+          )}
         </div>
       )}
     </div>
