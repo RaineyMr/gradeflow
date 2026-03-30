@@ -179,11 +179,13 @@ function StudentCard({ student, notes, classes, onViewProfile, onMessage, onMess
 }
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
+import SupportStaffHomeFeed from '../dashboard/SupportStaffHomeFeed'
+
 export default function SupportStaffDashboard() {
   const {
     classes,
     supportNotes,
-    loadSupportStaffTeams, setDemoSupportNotes,
+    loadSupportStaffGroups, setDemoSupportStaffData, setDemoSupportNotes,
     getStudentsForSupportStaff, getTeachersForSupportStaff, getAdminForSupportStaff,
     setActiveStudent, setActiveClass,
   } = useStore()
@@ -205,13 +207,15 @@ export default function SupportStaffDashboard() {
 
   // Load data on mount
   useEffect(() => {
-    loadSupportStaffTeams()
+    loadSupportStaffGroups()
+    setDemoSupportStaffData()
     setDemoSupportNotes()
   }, [])
 
-  const assignedStudents = getStudentsForSupportStaff()
-  const teachers         = getTeachersForSupportStaff()
-  const admins           = getAdminForSupportStaff()
+const assignedStudents = getStudentsForSupportStaff()
+  const groups = get().supportStaffGroups || []
+  const teachers = getTeachersForSupportStaff()
+  const admins = getAdminForSupportStaff()
 
   // Filter by search
   const filtered = assignedStudents.filter(s =>
@@ -283,41 +287,85 @@ export default function SupportStaffDashboard() {
     )
   }
 
-  // ── Home ───────────────────────────────────────────────────────────────────
-  function handleViewProfile(student) {
-    const cls = classes.find(c => c.id === student.classId)
-    setActiveStudent(student)
-    if (cls) setActiveClass(cls)
-    navigate('studentProfile')
-  }
-
-  function handleMessageStudent() {
-    navigate('messages')
-  }
-
-  function handleMessageTeacher() {
-    navigate('messages')
-  }
-
   return (
-    <DashboardShell role="supportStaff" activeNav={activeNav || 'teams'}
+    <DashboardShell role="supportStaff" activeNav={activeNav || 'groups'}
       onNavSelect={navSelect} isSubPage={isSubPage} themeKey="hisd">
-      <div style={{ background: C.bg, minHeight: '100vh', color: C.text,
-        fontFamily: "'DM Sans','Helvetica Neue',sans-serif", paddingBottom: 90 }}>
-
-        {/* Header */}
-        <div style={{ background: 'linear-gradient(135deg, var(--school-color,#003057) 0%, #000d1f 100%)',
-          padding: '18px 16px 20px', position: 'sticky', top: 0, zIndex: 50 }}>
+      
+      <div style={{ 
+        background: C.bg, 
+        minHeight: '100vh', 
+        color: C.text,
+        fontFamily: "'DM Sans','Helvetica Neue',sans-serif", 
+        paddingBottom: 90 
+      }}>
+        
+        {/* Support Staff Header */}
+        <div style={{ 
+          background: 'linear-gradient(135deg, var(--school-color,#003057) 0%, #000d1f 100%)',
+          padding: '18px 16px 20px', 
+          position: 'sticky', 
+          top: 0, 
+          zIndex: 50 
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontWeight: 700,
                 letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 2 }}>
-                Support Staff
+                Support Staff Dashboard
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>
-                👥 My Teams ({assignedStudents.length})
+                👥 My Groups ({groups.length || 0}) · {assignedStudents.length} Students
               </div>
             </div>
+            {/* Quick admin buttons - unchanged */}
+            <div style={{ display: 'flex', gap: 6 }}>
+              {admins.map(admin => (
+                <button key={admin.id} onClick={() => navigate('messages')}
+                  style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: 10, padding: '7px 11px', color: '#fff', fontSize: 11,
+                    fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  {admin.avatar}
+                  <span style={{ display: 'none', '@media(minWidth:380px)': { display: 'inline' } }}>
+                    {admin.name.split(' ').pop()}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Search - now for students across groups */}
+          <input
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search students..."
+            style={{ width: '100%', background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.18)', borderRadius: 11,
+              padding: '9px 14px', color: '#fff', fontSize: 12, outline: 'none',
+              boxSizing: 'border-box', fontFamily: 'inherit' }}
+          />
+        </div>
+
+        {/* Widget Feed - MIRROR Teacher Dashboard */}
+        <SupportStaffHomeFeed navigate={navigate} />
+
+        {/* Quick Stats (preserved but widget-ified) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, padding: '14px 16px 0' }}>
+          {[
+            { label: 'Assigned', val: assignedStudents.length, color: C.blue },
+            { label: 'Groups', val: groups.length, color: C.purple },
+            { label: 'Plans', val: interventionPlans?.length || 0, color: C.red }
+          ].map(stat => (
+            <div key={stat.label} style={{ background: C.card, borderRadius: 14, padding: '12px 14px',
+              border: `1px solid ${stat.color}22` }}>
+              <div style={{ fontSize: 22, fontWeight: 900, color: stat.color }}>{stat.val}</div>
+              <div style={{ fontSize: 10, color: C.muted, fontWeight: 600 }}>{stat.label}</div>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </DashboardShell>
+  )
             {/* Admin quick-message buttons */}
             <div style={{ display: 'flex', gap: 6 }}>
               {admins.map(admin => (
