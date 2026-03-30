@@ -344,6 +344,9 @@ export const useStore = create((set, get) => ({
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
 
+  // ── Support Notes ─────────────────────────────────────────────────────────
+  supportNotes: [],
+
   // ── Participation events (real-time, plus Supabase) ────────────────────────
   participationEvents: [],
 
@@ -859,6 +862,69 @@ export const useStore = create((set, get) => ({
   deleteReminder: (id) => set(state => ({
     reminders: state.reminders.filter(r => r.id !== id),
   })),
+
+  // ── Support Notes ─────────────────────────────────────────────────────────
+  loadSupportNotes: async (studentId) => {
+    if (!get().currentUser?.role === 'supportStaff') return
+
+    try {
+      const userId = get().currentUser.id
+      const res = await fetch(`/api/support-notes?studentId=${studentId}`, {
+        headers: { 'x-staff-id': userId }
+      })
+
+      if (!res.ok) throw new Error('Failed to load notes')
+
+      const { notes } = await res.json()
+      set({ supportNotes: notes })
+    } catch (err) {
+      console.error('Load support notes failed:', err)
+    }
+  },
+
+  addSupportNote: async (note) => {
+    const userId = get().currentUser.id
+    try {
+      const res = await fetch('/api/support-notes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-id': userId
+        },
+        body: JSON.stringify(note)
+      })
+
+      if (!res.ok) throw new Error('Failed to add note')
+
+      const newNote = await res.json()
+      set(state => ({ supportNotes: [newNote, ...state.supportNotes] }))
+    } catch (err) {
+      console.error('Add support note failed:', err)
+    }
+  },
+
+  updateSupportNote: async (id, changes) => {
+    const userId = get().currentUser.id
+    try {
+      const res = await fetch(`/api/support-notes?id=${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-staff-id': userId
+        },
+        body: JSON.stringify(changes)
+      })
+
+      if (!res.ok) throw new Error('Failed to update note')
+
+      const updatedNote = await res.json()
+      set(state => ({
+        supportNotes: state.supportNotes.map(n => n.id === id ? updatedNote : n)
+      }))
+    } catch (err) {
+      console.error('Update support note failed:', err)
+    }
+  },
 
   addFeedPost: async (classId, content) => {
     const authorName = useStore.getState().teacher.name
