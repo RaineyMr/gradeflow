@@ -61,18 +61,11 @@ function RootRedirect() {
   return <Navigate to="/login" replace />
 }
 
-/** /login → dashboard if already authed, otherwise show Login */
+/** /login → always show Login page */
 function LoginRoute() {
   const navigate  = useNavigate()
-  const { currentUser, isHydrated } = useStore(s => ({ currentUser: s.currentUser, isHydrated: s.isHydrated }))
+  const { isHydrated } = useStore(s => ({ isHydrated: s.isHydrated }))
   const { setCurrentUser, setLang } = useStore()
-
-  // Auto-redirect to dashboard if already authenticated and hydrated
-  useEffect(() => {
-    if (isHydrated && currentUser?.role) {
-      navigate(`/${currentUser.role}`, { replace: true })
-    }
-  }, [isHydrated, currentUser, navigate])
 
   if (!isHydrated) {
     return (
