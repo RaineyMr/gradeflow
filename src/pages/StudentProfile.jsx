@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
+import { supabase } from '../lib/supabase'
 import { generateStudyTips } from '../lib/ai'
-import { GradeBadge, Tag, LoadingSpinner, Modal } from '../components/ui'
+import { GradeBadge, Tag, LoadingSpinner, Modal, EmptyState } from '../components/ui'
 
 // ─── Submission Viewer Modal ──────────────────────────────────────────────────
 function SubmissionViewer({ open, onClose, student, assignment }) {
@@ -66,9 +67,21 @@ export default function StudentProfile() {
   const [newScore, setNewScore]         = useState('')
   const [viewSubmission, setViewSubmission] = useState({ open: false, assignment: null })
 
+  // Support Notes
+  const [notes, setNotes] = useState([])
+  const [loadingNotes, setLoadingNotes] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newNote, setNewNote] = useState({
+    note_type: 'academic',
+    content: '',
+    visibility: 'staff-only'
+  })
+
   const student     = activeStudent
   const cls         = activeClass || classes.find(c => c.id === student?.classId) || classes[0]
   const assignments = getAssignmentsForClass(cls?.id)
+
+  const isSupportStaff = useStore(state => state.currentUser?.role === 'supportStaff')
 
   // ── No student selected guard ─────────────────────────────────────────────
   if (!student) {
@@ -84,6 +97,61 @@ export default function StudentProfile() {
         </button>
       </div>
     )
+  }
+
+  // Fetch support notes
+  useEffect(() => {
+    if (!isSupportStaff || !student?.id) return
+
+    async function fetchNotes() {
+      setLoadingNotes(true)
+      try {
+        const { data, error } = await supabase
+          .from('support_staff_notes')
+          .select(`
+            *,
+            staff:teachers(name)
+          `)
+          .eq('student_id', student.id)
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+        setNotes(data || [])
+      } catch (err) {
+        console.error('Failed to fetch notes:', err)
+      } finally {
+        setLoadingNotes(false)
+      }
+    }
+
+    fetchNotes()
+  }, [student?.id, isSupportStaff])
+
+  // Add note
+  async function addNote() {
+    if (!newNote.content.trim()) return
+
+    try {
+      const { data, error } = await supabase
+        .from('support_staff_notes')
+        .insert({
+          student_id: student.id,
+          staff_id: useStore.getState().currentUser.id,
+          ...newNote,
+        })
+        .select(`
+          *,
+          staff:teachers(name)
+        `)
+        .single()
+
+      if (error) throw error
+      setNotes([data, ...notes])
+      setNewNote({ note_type: 'academic', content: '', visibility: 'staff-only' })
+      setShowAddModal(false)
+    } catch (err) {
+      console.error('Failed to add note:', err)
+    }
   }
 
   // ── AI study tips handler ─────────────────────────────────────────────────
@@ -308,6 +376,100 @@ export default function StudentProfile() {
           </div>
         )}
       </div>
+
+      {/* Support Notes Section */}
+      {isSupportStaff && (
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <p className="tag-label">Support Notes</p>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-4 py-1.5 rounded-pill text-sm font-bold"
+              style={{ background: '#3b7ef420', color: '#3b7ef4', border: '1px solid #3b7ef430' }}
+            >
+              + Add Note
+            </button>
+          </div>
+          
+          {loadingNotes ? (
+            <LoadingSpinner />
+          ) : notes.length === 0 ? (
+            <EmptyState icon="📝" message="No support notes yet. Add the first one!" />
+          ) : (
+            <div className="space-y-3">
+              {notes.map(note => (
+                <div key={note.id} className="p-4 rounded-card" style={{ background: '#161923' }}>
+                  <div className="flex items-start justify-between mb-2">
+                    <Tag color="#9b6ef5">{note.note_type}</Tag>
+                    <p className="text-xs text-text-muted">
+                      {new Date(note.created_at).toLocaleDateString()} · {note.staff?.name || 'Unknown'}
+                    </p>
+                  </div>
+                  <p className="text-text-primary text-sm mb-2 whitespace-pre-wrap">{note.content}</p>
+                  <p className="text-xs text-text-muted capitalize">{note.visibility.replace('-', ' ')}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add Note Modal */}
+      <Modal open={showAddModal} onClose={() => setShowAddModal(false)} title="Add Support Note">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">Note Type</label>
+            <select
+              value={newNote.note_type}
+              onChange={e => setNewNote({ ...newNote, note_type: e.target.value })}
+              className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-sm text-text-primary"
+            >
+              <option value="academic">Academic</option>
+              <option value="behavior">Behavior</option>
+              <option value="wellness">Wellness</option>
+              <option value="intervention">Intervention</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">Content</label>
+            <textarea
+              value={newNote.content}
+              onChange={e => setNewNote({ ...newNote, content: e.target.value })}
+              placeholder="Enter note details..."
+              rows={4}
+              className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-sm text-text-primary resize-vertical"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">Visibility</label>
+            <select
+              value={newNote.visibility}
+              onChange={e => setNewNote({ ...newNote, visibility: e.target.value })}
+              className="w-full bg-elevated border border-border rounded-card px-3 py-2 text-sm text-text-primary"
+            >
+              <option value="staff-only">Staff Only</option>
+              <option value="teachers">Teachers</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={addNote}
+              disabled={!newNote.content.trim()}
+              className="flex-1 py-2 rounded-pill font-bold text-sm"
+              style={{ background: newNote.content.trim() ? '#22c97a' : '#6b749430', color: 'white' }}
+            >
+              Save Note
+            </button>
+            <button
+              onClick={() => setShowAddModal(false)}
+              className="px-4 py-2 rounded-pill text-sm font-bold text-text-muted hover:text-text-primary"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Submission viewer modal */}
       <SubmissionViewer
