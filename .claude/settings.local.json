@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cp \"c:/Users/HQ_Gr/Desktop/GitHub Repository/gradeflow/src/pages/Dashboard.jsx\" \"c:/Users/HQ_Gr/Desktop/GitHub Repository/gradeflow/src/pages/Dashboard.jsx.bak\")",
+      "Bash(cp /tmp/dashboard_fixed.jsx \"c:/Users/HQ_Gr/Desktop/GitHub Repository/gradeflow/src/pages/Dashboard.jsx\")"
+    ]
+  }
+}
