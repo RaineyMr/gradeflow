@@ -159,7 +159,7 @@ function Badge({ role }) {
 function Compose({ onSend, onClose, viewerRole }) {
   const { currentUser } = useStore();
   const isSupportStaff = currentUser?.role === 'supportStaff';
-  const canMsg = { teacher:['parents','students','teachers','admin'], student:['teachers','admin'], parent:['teachers','admin'], admin:['teachers','students','parents','admin'] }[viewerRole]||['teachers']
+  const canMsg = { teacher:['parents','students','teachers','admin'], student:['teachers','admin'], parent:['teachers','admin'], admin:['teachers','students','parents','admin'], supportStaff:['students','teachers','admin'] }[viewerRole]||['teachers']
   const groupLabel = { parents:'👪 Parents', students:'🎓 Students', teachers:'👩‍🏫 Teachers', admin:'🏫 Admin' }
 
   const [step,      setStep]    = useState('pick')
@@ -446,6 +446,12 @@ const seed = viewerRole==='supportStaff' ? SUPPORT_THREADS
       { k:'pending',  l:`⚠ Pending (${pending.length})` },
     ],
     parent:[], // parent uses toggle instead of tabs
+    supportStaff:[
+      { k:'all',      l:`All (${threads.length})` },
+      { k:'students', l:`🎓 Students (${threads.filter(t=>t.role==='student').length})` },
+      { k:'teachers', l:`👩‍🏫 Teachers (${threads.filter(t=>t.role==='teacher').length})` },
+      { k:'admin',    l:`🏫 Admin (${threads.filter(t=>t.role==='admin').length})` },
+    ],
   }[viewerRole]||[]
 
   const visible = displayList.filter(t=>{
@@ -472,7 +478,9 @@ const seed = viewerRole==='supportStaff' ? SUPPORT_THREADS
     setComposing(false)
   }
 
-  const senderName = { teacher:'Ms. Johnson', student:'Marcus', parent:'Ms. Thompson', admin:'Principal Carter' }[viewerRole]||'Me'
+  const senderName = viewerRole==='supportStaff'
+    ? (currentUser?.userName || currentUser?.name || 'Ms. Carter')
+    : ({ teacher:'Ms. Johnson', student:'Marcus', parent:'Ms. Thompson', admin:'Principal Carter' }[viewerRole] || 'Me')
 
   // Thread view
   if (active) {
@@ -492,10 +500,11 @@ const seed = viewerRole==='supportStaff' ? SUPPORT_THREADS
             <div>
               <div style={{ fontSize:20, fontWeight:800, color:'#fff' }}>💬 Messages</div>
               <div style={{ fontSize:10, color:'rgba(255,255,255,0.5)', marginTop:1 }}>
-                { viewerRole==='teacher' ? 'Teachers · Students · Parents · Admin'
-                : viewerRole==='student' ? 'Teachers · Admin'
-                : viewerRole==='parent'  ? 'Teachers · Admin'
-                :                          'Teachers · Students · Parents · Admin' }
+                { viewerRole==='teacher'      ? 'Teachers · Students · Parents · Admin'
+                : viewerRole==='student'      ? 'Teachers · Admin'
+                : viewerRole==='parent'       ? 'Teachers · Admin'
+                : viewerRole==='supportStaff' ? 'Students · Teachers · Admin'
+                :                               'Teachers · Students · Parents · Admin' }
               </div>
             </div>
           </div>
