@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
-import { useStore } from '../../lib/store'
-import { useT } from '../../lib/i18n'
-import { GradebookSyncButton } from '../GradebookSyncButton.jsx'
+import { useStore } from '@lib/store'
+import { useT } from '@lib/i18n'
+import { GradebookSyncButton } from '@components/GradebookSyncButton.jsx'
 
 const ROLE_LABELS = {
   teacher: 'Teacher',

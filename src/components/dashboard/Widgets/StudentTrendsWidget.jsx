@@ -1,6 +1,6 @@
 import React from 'react'
-import { useStore } from '../../lib/store'
-import Widget from '../../ui/Widget'
+import { useStore } from '@lib/store'
+import Widget from '@components/ui/Widget'
 
 const C = {
   green: '#22c97a', red: '#f04a4a', amber: '#f5a623', purple: '#9b6ef5',

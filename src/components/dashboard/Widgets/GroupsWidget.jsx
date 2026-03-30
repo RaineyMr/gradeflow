@@ -1,7 +1,7 @@
 import React from 'react'
-import { useStore } from '../../../lib/store'
-import Widget from '../../ui/Widget'
-import { ActionBtn } from '../../ui/ActionBtn'
+import { useStore } from '@lib/store'
+import Widget from '@components/ui/Widget'
+import { ActionBtn } from '@components/ui/ActionBtn'
 
 const C = {
   text: '#eef0f8', muted: '#6b7494', border: '#252b3d',

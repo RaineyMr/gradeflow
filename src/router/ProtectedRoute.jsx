@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom'
-import { useStore } from '../lib/store'
+import { useStore } from '@lib/store'
 
 /**
  * ProtectedRoute
