@@ -35,6 +35,12 @@ export default function BottomNav({ active, onSelect, isSubPage, role: roleProp 
       { id:'feed',      icon:'📢', label: t('nav_feed')     },
       { id:'alerts',    icon:'🔔', label: t('nav_alerts')   },
     ],
+    supportStaff: [
+      { id:'teams',     icon:'👥', label: 'Teams'           },
+      { id:'messages',  icon:'💬', label: t('nav_messages') },
+      { id:'notes',     icon:'📝', label: 'Notes'           },
+      { id:'alerts',    icon:'🔔', label: t('nav_alerts')   },
+    ],
   }
 
   const SUB_NAV = {
@@ -65,6 +71,12 @@ export default function BottomNav({ active, onSelect, isSubPage, role: roleProp 
       { id:'widgets',   icon:'🧩', label: 'Widgets'         },
       { id:'feed',      icon:'📢', label: t('nav_feed')     },
       { id:'alerts',    icon:'🔔', label: t('nav_alerts')   },
+    ],
+    supportStaff: [
+      { id:'__back__',  icon:'←',  label: t('nav_back')     },
+      { id:'teams',     icon:'👥', label: 'Teams'           },
+      { id:'messages',  icon:'💬', label: t('nav_messages') },
+      { id:'notes',     icon:'📝', label: 'Notes'           },
     ],
   }
 
