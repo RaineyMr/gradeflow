@@ -345,37 +345,180 @@ export const useStore = create((set, get) => ({
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
 
-  // ── Support Staff Teams ────────────────────────────────────────────────────
-  supportStaffTeams: [],
+  // ── Support Staff Groups (REPLACES Teams) ──────────────────────────────────
+  supportStaffGroups: [],
+  supportStaffGroupMembers: [],
+  studentTrends: {},
+  interventionPlans: [],
 
-  loadSupportStaffTeams: async () => {
-    const { currentUser } = get()
-    if (currentUser?.role !== 'supportStaff') return
-    const demoTeams = [
-      { id: 'st1', staff_id: 'support-staff-1', student_id: 1 },
-      { id: 'st2', staff_id: 'support-staff-1', student_id: 2 },
-      { id: 'st3', staff_id: 'support-staff-1', student_id: 3 },
-    ]
+  setDemoSupportStaffData: () => {
+    if (get().currentUser?.role !== 'supportStaff') return
     try {
-      const { data, error } = await supabase
-        .from('support_staff_teams')
+      const { demoSupportStaffGroups, demoGroupMembers, demoStudentTrends, demoInterventionPlans } = await import('./demoSupportStaffGroups.js')
+      set({ 
+        supportStaffGroups: demoSupportStaffGroups,
+        supportStaffGroupMembers: demoGroupMembers,
+        studentTrends: Object.fromEntries(demoStudentTrends.map(t => [t.student_id, t])),
+        interventionPlans: demoInterventionPlans 
+      })
+    } catch (e) {
+      console.warn('Demo groups data failed to load')
+    }
+  },
+
+  loadSupportStaffGroups: async () => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') return []
+    
+    try {
+      const { data: groups } = await supabase
+        .from('support_staff_groups')
         .select('*')
         .eq('staff_id', currentUser.id)
-      if (error) throw error
-      set({ supportStaffTeams: data?.length ? data : demoTeams })
+        .order('created_at', { ascending: false })
+      
+      set({ supportStaffGroups: groups || [] })
+      return groups || []
     } catch {
-      set({ supportStaffTeams: demoTeams })
+      // Fallback handled by setDemoSupportStaffData
+      return []
+    }
+  },
+
+  createSupportStaffGroup: async (name, studentIds) => {
+    const { currentUser } = get()
+    if (currentUser?.role !== 'supportStaff') return null
+    
+    try {
+      const { data: group } = await supabase
+        .from('support_staff_groups')
+        .insert({ staff_id: currentUser.id, name })
+        .select()
+        .single()
+      
+      if (group && studentIds?.length) {
+        const members = studentIds.map(id => ({
+          group_id: group.id,
+          student_id: id
+        }))
+        await supabase.from('support_staff_group_members').insert(members)
+        
+        // Reload members for this group
+        const { data: members } = await supabase
+          .from('support_staff_group_members')
+          .select('*')
+          .eq('group_id', group.id)
+        set(state => ({
+          supportStaffGroupMembers: [...state.supportStaffGroupMembers, ...members]
+        }))
+      }
+      
+      // Reload all groups
+      await get().loadSupportStaffGroups()
+      return group
+    } catch (error) {
+      console.error('Create group failed:', error)
+      return null
+    }
+  },
+
+  loadSupportStaffGroupMembers: async (groupId) => {
+    try {
+      const { data } = await supabase
+        .from('support_staff_group_members')
+        .select('*, student:students(name, class_id)')
+        .eq('group_id', groupId)
+      return data || []
+    } catch {
+      return []
     }
   },
 
   getStudentsForSupportStaff: () => {
-    const { currentUser, students, supportStaffTeams } = get()
+    const { currentUser, students, supportStaffGroups, supportStaffGroupMembers } = get()
     if (currentUser?.role !== 'supportStaff') return []
-    if (supportStaffTeams.length > 0) {
-      const ids = supportStaffTeams.map(t => t.student_id)
-      return students.filter(s => ids.includes(s.id))
+    
+    const studentIds = new Set()
+    for (const member of supportStaffGroupMembers) {
+      studentIds.add(member.student_id)
     }
-    return students.filter(s => s.id <= 3)
+    return students.filter(s => studentIds.has(s.id))
+  },
+
+  getStudentsInGroup: (groupId) => {
+    const { students, supportStaffGroupMembers } = get()
+    const groupMembers = supportStaffGroupMembers.filter(m => m.group_id === groupId)
+    const studentIds = groupMembers.map(m => m.student_id)
+    return students.filter(s => studentIds.includes(s.id))
+  },
+
+  loadStudentTrends: async (studentId) => {
+    try {
+      const { data } = await supabase
+        .from('student_trends')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('period_start', { ascending: false })
+      const trendsById = Object.fromEntries(data?.map(t => [t.student_id, t]) || [])
+      set({ studentTrends: { ...get().studentTrends, [studentId]: trendsById[studentId] || null } })
+      return trendsById
+    } catch (error) {
+      console.error('Load trends failed:', error)
+      return {}
+    }
+  },
+
+  loadInterventionPlan: async (studentId) => {
+    try {
+      const { data } = await supabase
+        .from('intervention_plans')
+        .select('*')
+        .eq('student_id', studentId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+      const plan = data?.[0]
+      set({ interventionPlans: plan ? [plan, ...get().interventionPlans.filter(p => p.student_id !== studentId)] : get().interventionPlans })
+      return plan
+    } catch (error) {
+      console.error('Load intervention plan failed:', error)
+      return null
+    }
+  },
+
+  createInterventionPlan: async (studentId, data) => {
+    const { currentUser } = get()
+    try {
+      const { data: plan } = await supabase
+        .from('intervention_plans')
+        .insert({ student_id: studentId, staff_id: currentUser.id, ...data })
+        .select()
+        .single()
+      set(state => ({ interventionPlans: [plan, ...state.interventionPlans] }))
+      return plan
+    } catch (error) {
+      console.error('Create plan failed:', error)
+      return null
+    }
+  },
+
+  updateInterventionPlan: async (planId, data) => {
+    try {
+      const { data: plan, error } = await supabase
+        .from('intervention_plans')
+        .update({ ...data, updated_at: new Date().toISOString() })
+        .eq('id', planId)
+        .select()
+        .single()
+      
+      if (error) throw error
+      set(state => ({
+        interventionPlans: state.interventionPlans.map(p => p.id === planId ? plan : p)
+      }))
+      return plan
+    } catch (error) {
+      console.error('Update plan failed:', error)
+      return null
+    }
   },
 
   getTeachersForSupportStaff: () => [
