@@ -943,17 +943,6 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     settings:       'dashboard',
   }
 
-  import React, { useState, useEffect, useRef } from 'react'
-import { useStore } from '../lib/store'
-import Gradebook      from './Gradebook'
-import LessonPlan     from './LessonPlan'
-import Reports        from './Reports'
-import TestingSuite   from './TestingSuite'
-import ClassFeed      from './ClassFeed'
-import StudentProfile from './StudentProfile'
-import ParentMessages from './ParentMessages'
-import Camera         from './Camera'
-import Integrations   from './Integrations'
 
 const activeNav = subPage ? (PAGE_TO_NAV[subPage] || 'dashboard') : 'dashboard'
 
