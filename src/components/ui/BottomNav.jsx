@@ -61,14 +61,14 @@ export default function BottomNav({ active, onSelect, isSubPage, role: roleProp 
     ],
     student: [
       { id:'__back__',  icon:'←',  label: t('nav_back')     },
-      { id:'grades',    icon:'📋', label: t('nav_grades')   },
+      { id:'classes',   icon:'📚', label: t('nav_classes')  },
       { id:'widgets',   icon:'🧩', label: 'Widgets'         },
       { id:'feed',      icon:'📢', label: t('nav_feed')     },
       { id:'alerts',    icon:'🔔', label: t('nav_alerts')   },
     ],
     parent: [
       { id:'__back__',  icon:'←',  label: t('nav_back')     },
-      { id:'grades',    icon:'📋', label: t('nav_grades')   },
+      { id:'classes',   icon:'📚', label: t('nav_classes')  },
       { id:'widgets',   icon:'🧩', label: 'Widgets'         },
       { id:'feed',      icon:'📢', label: t('nav_feed')     },
       { id:'alerts',    icon:'🔔', label: t('nav_alerts')   },
