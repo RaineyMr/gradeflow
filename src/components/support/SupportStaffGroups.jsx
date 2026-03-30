@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../../lib/store'
 import SupportGroupEditor from './SupportGroupEditor'
 import AIAssistantPanel from './AIAssistantPanel'
+import SupportTaskCard from './SupportTaskCard'
 import { useNavigate } from 'react-router-dom'
 
 const C = {
@@ -20,6 +21,7 @@ export default function SupportStaffGroups({ onBack }) {
     loadSupportStaffGroups,
     deleteSupportStaffGroup,
     getGroupStudents,
+    getAutomationGroupSuggestions,
     currentUser
   } = useStore()
 
@@ -27,13 +29,18 @@ export default function SupportStaffGroups({ onBack }) {
   const [loading, setLoading] = useState(true)
   const [showEditor, setShowEditor] = useState(false)
   const [editingGroup, setEditingGroup] = useState(null)
+  const [groupSuggestions, setGroupSuggestions] = useState([])
 
   useEffect(() => {
     async function loadGroups() {
       setLoading(true)
       try {
-        const loadedGroups = await loadSupportStaffGroups()
+        const [loadedGroups, suggestions] = await Promise.all([
+          loadSupportStaffGroups(),
+          getAutomationGroupSuggestions()
+        ])
         setGroups(loadedGroups || [])
+        setGroupSuggestions(suggestions || [])
       } catch (error) {
         console.error('Failed to load groups:', error)
       } finally {
@@ -77,6 +84,44 @@ export default function SupportStaffGroups({ onBack }) {
 
   function handleViewGroupStudents(group) {
     navigate(`/support/student/1`) // Navigate to first student for demo
+  }
+
+  function handleTaskAction(taskId, action) {
+    console.log(`Task ${taskId} action: ${action}`)
+    if (action === 'complete' || action === 'dismiss') {
+      setGroupSuggestions(prev => prev.filter(task => task.id !== taskId))
+    } else if (action === 'snooze') {
+      // Move task to end of list
+      setGroupSuggestions(prev => {
+        const task = prev.find(t => t.id === taskId)
+        const others = prev.filter(t => t.id !== taskId)
+        return task ? [...others, task] : prev
+      })
+    } else if (action === 'create-group') {
+      handleCreateGroup()
+    } else if (action === 'add-members') {
+      handleCreateGroup() // Open editor to add members
+    } else if (action === 'merge-group') {
+      handleCreateGroup() // Open editor for merge functionality
+    } else if (action === 'split-group') {
+      handleCreateGroup() // Open editor for split functionality
+    } else if (action === 'schedule-meeting') {
+      handleCreateGroup() // Open editor for meeting scheduling
+    } else if (action === 'review-group') {
+      handleCreateGroup() // Open editor for group review
+    }
+  }
+
+  function getGroupHealth(group) {
+    const students = getGroupStudents(group.id)
+    if (students.length === 0) return { status: 'empty', label: 'No Members', color: C.muted }
+    
+    const activeStudents = students.filter(s => !s.flagged).length
+    const ratio = activeStudents / students.length
+    
+    if (ratio >= 0.8) return { status: 'active', label: 'Active', color: C.green }
+    if (ratio >= 0.5) return { status: 'moderate', label: 'Moderate', color: C.amber }
+    return { status: 'inactive', label: 'Inactive', color: C.red }
   }
 
   if (loading) {
@@ -138,6 +183,34 @@ export default function SupportStaffGroups({ onBack }) {
         </div>
       </div>
 
+      {/* Group Suggestions */}
+      {groupSuggestions.length > 0 && (
+        <div style={{ padding:20, paddingBottom:0 }}>
+          <div style={{ 
+            background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:16 
+          }}>
+            <div style={{ fontSize:12, fontWeight:600, color:C.text, marginBottom:12 }}>
+              💡 Group Suggestions
+            </div>
+            <div style={{ display:'grid', gap:8 }}>
+              {groupSuggestions.slice(0, 3).map(suggestion => (
+                <SupportTaskCard
+                  key={suggestion.id}
+                  task={suggestion}
+                  onAction={handleTaskAction}
+                  compact={true}
+                />
+              ))}
+            </div>
+            {groupSuggestions.length > 3 && (
+              <div style={{ fontSize:11, color:C.muted, textAlign:'center', marginTop:8 }}>
+                +{groupSuggestions.length - 3} more suggestions
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Groups List */}
       <div style={{ padding:20 }}>
         {groups.length === 0 ? (
@@ -166,6 +239,9 @@ export default function SupportStaffGroups({ onBack }) {
           <div style={{ display:'grid', gap:16 }}>
             {groups.map(group => {
               const students = getGroupStudents(group.id)
+              const groupHealth = getGroupHealth(group)
+              const groupTask = groupSuggestions.find(s => s.groupId === group.id)
+              
               return (
                 <div key={group.id} style={{ 
                   background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:20 
@@ -174,8 +250,15 @@ export default function SupportStaffGroups({ onBack }) {
                     display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:16 
                   }}>
                     <div style={{ flex:1 }}>
-                      <div style={{ fontSize:16, fontWeight:700, color:C.text, marginBottom:4 }}>
-                        {group.name}
+                      <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:4 }}>
+                        <div style={{ fontSize:16, fontWeight:700, color:C.text }}>{group.name}</div>
+                        <div style={{ 
+                          fontSize:10, padding:'2px 6px', borderRadius:4,
+                          background: `${groupHealth.color}20`, color: groupHealth.color,
+                          display:'flex', alignItems:'center', gap:4
+                        }}>
+                          {groupHealth.status === 'active' ? '✅' : groupHealth.status === 'moderate' ? '⚠️' : '❌'} {groupHealth.label}
+                        </div>
                       </div>
                       <div style={{ fontSize:12, color:C.muted, marginBottom:8 }}>
                         {group.description || 'No description provided'}
@@ -217,6 +300,17 @@ export default function SupportStaffGroups({ onBack }) {
                       </button>
                     </div>
                   </div>
+
+                  {/* Review Group Task Card */}
+                  {groupTask && (
+                    <div style={{ marginBottom:16 }}>
+                      <SupportTaskCard
+                        task={groupTask}
+                        onAction={handleTaskAction}
+                        compact={true}
+                      />
+                    </div>
+                  )}
 
                   {/* Students Preview */}
                   {students.length > 0 && (
