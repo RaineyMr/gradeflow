@@ -119,10 +119,12 @@ function GroupCard({ group, students, onMessageGroup, onViewProfile }) {
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 export default function SupportStaffGroupScreen({ onBack, onViewProfile }) {
-  const { getSupportStaffGroups, getGroupStudents } = useStore()
+  const { getSupportStaffGroups, getGroupStudents, createSupportStaffGroup, getAllStudents } = useStore()
 
   const groups   = getSupportStaffGroups()
   const [messagingTarget, setMessagingTarget] = useState(null) // { group, students }
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newGroup, setNewGroup] = useState({ name: '', description: '', selectedStudents: [] })
 
   function openMessaging(group, students) {
     setMessagingTarget({ group, students })
@@ -130,6 +132,27 @@ export default function SupportStaffGroupScreen({ onBack, onViewProfile }) {
 
   function handleViewProfile(student) {
     if (onViewProfile) onViewProfile(student)
+  }
+
+  function handleCreateGroup() {
+    if (newGroup.name.trim() && newGroup.selectedStudents.length > 0) {
+      createSupportStaffGroup({
+        name: newGroup.name.trim(),
+        description: newGroup.description.trim(),
+        studentIds: newGroup.selectedStudents
+      })
+      setNewGroup({ name: '', description: '', selectedStudents: [] })
+      setShowCreateModal(false)
+    }
+  }
+
+  function toggleStudentSelection(studentId) {
+    setNewGroup(prev => ({
+      ...prev,
+      selectedStudents: prev.selectedStudents.includes(studentId)
+        ? prev.selectedStudents.filter(id => id !== studentId)
+        : [...prev.selectedStudents, studentId]
+    }))
   }
 
   return (
@@ -143,12 +166,16 @@ export default function SupportStaffGroupScreen({ onBack, onViewProfile }) {
               style={{ background:'rgba(255,255,255,0.12)', border:'none', borderRadius:10, padding:'7px 14px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:600 }}>
               ← Back
             </button>
-            <div>
+            <div style={{ flex:1, minWidth:0 }}>
               <h1 style={{ fontSize:20, fontWeight:800, color:'#fff', margin:0 }}>👥 My Groups</h1>
               <p style={{ fontSize:10, color:'rgba(255,255,255,0.55)', margin:0 }}>
                 {groups.length} group{groups.length !== 1 ? 's' : ''} · tap to expand
               </p>
             </div>
+            <button onClick={() => setShowCreateModal(true)}
+              style={{ background:'var(--school-color)', border:'none', borderRadius:10, padding:'8px 16px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', gap:6 }}>
+              + Create
+            </button>
           </div>
         </div>
 
@@ -184,6 +211,95 @@ export default function SupportStaffGroupScreen({ onBack, onViewProfile }) {
           students={messagingTarget.students}
           onClose={() => setMessagingTarget(null)}
         />
+      )}
+
+      {/* Create Group Modal */}
+      {showCreateModal && (
+        <div style={{ position:'fixed', inset:0, zIndex:250, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+          <div style={{ width:'100%', maxWidth:500, maxHeight:'85vh', overflowY:'auto', background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:20 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+              <div>
+                <div style={{ fontSize:17, fontWeight:800, color:C.text }}>Create New Group</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:2 }}>Organize students for targeted messaging</div>
+              </div>
+              <button onClick={() => setShowCreateModal(false)} style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+            </div>
+
+            {/* Group Name */}
+            <div style={{ marginBottom:16 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:C.soft, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6, display:'block' }}>Group Name *</label>
+              <input
+                value={newGroup.name}
+                onChange={e => setNewGroup(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="e.g., Math Intervention, Reading Support"
+                style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
+              />
+            </div>
+
+            {/* Group Description */}
+            <div style={{ marginBottom:16 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:C.soft, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6, display:'block' }}>Description (optional)</label>
+              <textarea
+                value={newGroup.description}
+                onChange={e => setNewGroup(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="What's the purpose of this group?"
+                rows={3}
+                style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box', resize:'vertical' }}
+              />
+            </div>
+
+            {/* Student Selection */}
+            <div style={{ marginBottom:20 }}>
+              <label style={{ fontSize:11, fontWeight:700, color:C.soft, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6, display:'block' }}>
+                Select Students * ({newGroup.selectedStudents.length} selected)
+              </label>
+              <div style={{ maxHeight:'200px', overflowY:'auto', background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:8 }}>
+                {getAllStudents().map(student => {
+                  const isSelected = newGroup.selectedStudents.includes(student.id)
+                  const gradeColor = student.grade >= 80 ? C.green : student.grade >= 70 ? C.amber : C.red
+                  return (
+                    <button
+                      key={student.id}
+                      onClick={() => toggleStudentSelection(student.id)}
+                      style={{ width:'100%', background:isSelected ? `${C.blue}15` : 'transparent', border:isSelected ? `1px solid ${C.blue}40` : '1px solid transparent', borderRadius:8, padding:'8px 10px', cursor:'pointer', display:'flex', alignItems:'center', gap:10, marginBottom:4 }}
+                    >
+                      <div style={{ width:24, height:24, borderRadius:'50%', background:isSelected ? C.blue : C.inner, border:isSelected ? '2px solid var(--school-color)' : `1px solid ${C.border}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, color:isSelected ? '#fff' : C.muted }}>
+                        {isSelected ? '✓' : ''}
+                      </div>
+                      <div style={{ flex:1, textAlign:'left', minWidth:0 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:C.text }}>{student.name}</div>
+                        <div style={{ fontSize:10, color:gradeColor, fontWeight:700 }}>{student.grade}%</div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display:'flex', gap:8 }}>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                style={{ flex:1, background:C.inner, color:C.soft, border:`1px solid ${C.border}`, borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateGroup}
+                disabled={!newGroup.name.trim() || newGroup.selectedStudents.length === 0}
+                style={{ 
+                  flex:1, 
+                  background:newGroup.name.trim() && newGroup.selectedStudents.length > 0 ? 'var(--school-color)' : C.inner, 
+                  color:newGroup.name.trim() && newGroup.selectedStudents.length > 0 ? '#fff' : C.muted, 
+                  border:newGroup.name.trim() && newGroup.selectedStudents.length > 0 ? '1px solid var(--school-color)' : `1px solid ${C.border}`, 
+                  borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, cursor:'pointer' 
+                }}
+              >
+                Create Group
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   )
