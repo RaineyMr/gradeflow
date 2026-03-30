@@ -372,7 +372,6 @@ function HomeFeed({ navigate }) {
     { icon:'⚑',  val:flaggedCount,          label:'Flagged',  page:'students', color:C.red    },
     { icon:'📝', val:totalNotes,            label:'Notes',    page:'notes',    color:C.purple },
     { icon:'🔔', val:urgentAlerts,          label:'Alerts',   page:'alerts',   color:C.amber  },
-    { icon:'🤖', val:'AI',                  label:'AI',      page:'ai',      color:C.teal    },
   ]
 
   return (
