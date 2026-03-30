@@ -975,6 +975,173 @@ setDemoSupportStaffData: async () => {
     return get().students || []
   },
 
+  // ── Tier 15: AI Context Helpers ───────────────────────────────────────
+  getAIContextForStudent: (studentId) => {
+    const { students, classes, assignments, grades, interventionPlans, studentTrends } = get()
+    const student = students.find(s => s.id === parseInt(studentId))
+    if (!student) return {}
+
+    const studentClass = classes.find(c => c.id === student.classId)
+    const studentGrades = grades.filter(g => g.studentId === student.id)
+    const studentAssignments = assignments.filter(a => 
+      studentGrades.some(g => g.assignmentId === a.id)
+    )
+    const studentInterventions = interventionPlans.filter(ip => ip.student_id === parseInt(studentId))
+    const studentTrendData = studentTrends[studentId]
+
+    return {
+      studentId: student.id,
+      studentName: student.name,
+      grade: student.grade,
+      letter: student.letter,
+      flagged: student.flagged,
+      submitted: student.submitted,
+      submitUngraded: student.submitUngraded,
+      classInfo: studentClass ? {
+        classId: studentClass.id,
+        subject: studentClass.subject,
+        period: studentClass.period,
+        teacher: studentClass.teacher
+      } : null,
+      recentGrades: studentGrades.slice(-5),
+      averageGrade: studentGrades.length > 0 
+        ? Math.round(studentGrades.reduce((sum, g) => sum + g.score, 0) / studentGrades.length)
+        : student.grade,
+      assignmentCount: studentAssignments.length,
+      interventions: studentInterventions,
+      trends: studentTrendData,
+      riskLevel: student.grade < 60 ? 'critical' : student.grade < 70 ? 'high' : student.grade < 80 ? 'moderate' : 'low'
+    }
+  },
+
+  getAIContextForGroup: (groupId) => {
+    const { supportStaffGroups, supportStaffGroupMembers, students, classes } = get()
+    const group = supportStaffGroups.find(g => g.id === parseInt(groupId))
+    if (!group) return {}
+
+    const groupMembers = supportStaffGroupMembers.filter(m => m.group_id === parseInt(groupId))
+    const studentIds = groupMembers.map(m => m.student_id)
+    const groupStudents = students.filter(s => studentIds.includes(s.id))
+
+    return {
+      groupId: group.id,
+      groupName: group.name,
+      description: group.description,
+      studentCount: groupStudents.length,
+      students: groupStudents.map(student => {
+        const studentClass = classes.find(c => c.id === student.classId)
+        return {
+          id: student.id,
+          name: student.name,
+          grade: student.grade,
+          flagged: student.flagged,
+          class: studentClass ? `${studentClass.subject} (${studentClass.period})` : 'No class'
+        }
+      }),
+      averageGrade: groupStudents.length > 0
+        ? Math.round(groupStudents.reduce((sum, s) => sum + s.grade, 0) / groupStudents.length)
+        : 0,
+      flaggedCount: groupStudents.filter(s => s.flagged).length,
+      atRiskCount: groupStudents.filter(s => s.grade < 70).length,
+      createdAt: group.created_at
+    }
+  },
+
+  getAIContextForCaseload: () => {
+    const { students, supportStaffGroupMembers, interventionPlans, currentUser } = get()
+    
+    // Get assigned students (those in groups or with interventions)
+    const assignedStudentIds = new Set([
+      ...supportStaffGroupMembers.map(m => m.student_id),
+      ...interventionPlans.map(ip => ip.student_id)
+    ])
+    
+    const assignedStudents = students.filter(s => assignedStudentIds.has(s.id))
+
+    const riskStats = {
+      total: assignedStudents.length,
+      critical: assignedStudents.filter(s => s.grade < 60).length,
+      high: assignedStudents.filter(s => s.grade >= 60 && s.grade < 70).length,
+      moderate: assignedStudents.filter(s => s.grade >= 70 && s.grade < 80).length,
+      low: assignedStudents.filter(s => s.grade >= 80).length,
+      flagged: assignedStudents.filter(s => s.flagged).length
+    }
+
+    return {
+      staffName: currentUser?.name || 'Support Staff',
+      totalStudents: riskStats.total,
+      interventionCount: interventionPlans.length,
+      criticalCount: riskStats.critical,
+      highRiskCount: riskStats.high,
+      moderateRiskCount: riskStats.moderate,
+      lowRiskCount: riskStats.low,
+      atRiskCount: riskStats.critical + riskStats.high,
+      onTrackCount: riskStats.moderate + riskStats.low,
+      flaggedCount: riskStats.flagged,
+      averageGrade: assignedStudents.length > 0
+        ? Math.round(assignedStudents.reduce((sum, s) => sum + s.grade, 0) / assignedStudents.length)
+        : 0,
+      students: assignedStudents.map(s => ({
+        id: s.id,
+        name: s.name,
+        grade: s.grade,
+        flagged: s.flagged,
+        riskLevel: s.grade < 60 ? 'critical' : s.grade < 70 ? 'high' : s.grade < 80 ? 'moderate' : 'low'
+      }))
+    }
+  },
+
+  getAIContextForIntervention: (studentId) => {
+    const { getAIContextForStudent, interventionPlans } = get()
+    const studentContext = getAIContextForStudent(studentId)
+    const studentInterventions = interventionPlans.filter(ip => ip.student_id === parseInt(studentId))
+
+    return {
+      ...studentContext,
+      interventions: studentInterventions,
+      hasActiveIntervention: studentInterventions.some(ip => ip.status === 'active'),
+      interventionHistory: studentInterventions.map(ip => ({
+        id: ip.id,
+        title: ip.title,
+        description: ip.description,
+        status: ip.status,
+        created: ip.created_at,
+        updated: ip.updated_at
+      }))
+    }
+  },
+
+  getAIContextForMessaging: (context = {}) => {
+    const { currentUser, getTeachersForStudents, getParentsForStudents } = get()
+    
+    return {
+      senderName: currentUser?.name || 'Support Staff',
+      senderRole: currentUser?.role || 'supportStaff',
+      recipientType: context.recipientType || 'parent',
+      studentName: context.studentName,
+      subject: context.subject || 'General',
+      urgency: context.urgency || 'normal',
+      tone: context.tone || 'professional',
+      language: context.language || 'english',
+      availableTeachers: context.studentIds ? getTeachersForStudents(context.studentIds) : [],
+      availableParents: context.studentIds ? getParentsForStudents(context.studentIds) : []
+    }
+  },
+
+  getAIContextForLogs: (studentId) => {
+    const { getAIContextForStudent, supportNotes } = get()
+    const studentContext = getAIContextForStudent(studentId)
+    const studentNotes = supportNotes.filter(sn => sn.studentId === parseInt(studentId))
+
+    return {
+      ...studentContext,
+      recentNotes: studentNotes.slice(-5),
+      totalNotes: studentNotes.length,
+      noteTypes: [...new Set(studentNotes.map(note => note.type))],
+      lastContact: studentNotes.length > 0 ? studentNotes[studentNotes.length - 1].date : null
+    }
+  },
+
   // ── Tier 10: Support Logs / Notes System ─────────────────────────────────
   getSupportLogs: async () => {
     const { currentUser, supportNotes } = get()
