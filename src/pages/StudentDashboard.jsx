@@ -758,6 +758,7 @@ export default function StudentDashboard({ currentUser }) {
     messages:  'messages',
     feed:      'feed',
     widgets:   'widgets',
+    alerts:    'alerts',
     dashboard: null,
   }
   const PAGE_TO_NAV = {
