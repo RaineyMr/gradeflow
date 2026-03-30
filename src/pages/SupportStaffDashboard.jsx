@@ -9,7 +9,7 @@ const C = {
 }
 
 export default function SupportStaffDashboard() {
-  const { currentUser, students } = useStore()
+  const { currentUser } = useStore()
   const { subPage, activeNav, isSubPage, navigate } = useDashboard({
     navToPage: { teams: 'teams', messages: 'parentMessages' },
     pageToNav: { teams: 'teams', parentMessages: 'messages' },
