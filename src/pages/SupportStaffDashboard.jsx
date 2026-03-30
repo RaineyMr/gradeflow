@@ -4,6 +4,9 @@ import DashboardShell from '../components/layout/DashboardShell'
 import ParentMessages from './ParentMessages'
 import StudentProfile from './StudentProfile'
 import SupportStaffGroupScreen from './SupportStaffGroupScreen'
+import SupportStaffTrends from './SupportStaffTrends'
+import SupportStaffInterventionBuilder from './SupportStaffInterventionBuilder'
+import SupportStaffAnalytics from './SupportStaffAnalytics'
 
 // ─── Colors ──────────────────────────────────────────────────────────────────
 const C = {
@@ -13,7 +16,7 @@ const C = {
   teal:'#0fb8a0', purple:'#9b6ef5',
 }
 
-// ─── Theme (Houston ISD — matches other HISD demo accounts) ──────────────────
+// ─── Theme (Houston ISD) ──────────────────────────────────────────────────────
 const T = {
   primary:   '#003057',
   secondary: '#B3A369',
@@ -29,9 +32,9 @@ function applyTheme() {
   r.style.setProperty('--school-text',      '#e8f0ff')
 }
 
-// ─── Demo data (self-contained — no store dependency) ────────────────────────
+// ─── Demo data (self-contained) ───────────────────────────────────────────────
 const STAFF = {
-  name: 'Ms. Carter',
+  name:  'Ms. Carter',
   title: 'School Counselor',
   school: 'Houston ISD · Lincoln Elementary',
 }
@@ -128,8 +131,8 @@ function StatBar({ value, color }) {
 
 // ─── SUB-PAGES ────────────────────────────────────────────────────────────────
 function StudentDetailPage({ student, onBack, navigate }) {
-  const cls      = DEMO_CLASSES.find(c=>c.id===student.classId)
-  const notes    = DEMO_NOTES.filter(n=>n.studentId===student.id)
+  const cls        = DEMO_CLASSES.find(c=>c.id===student.classId)
+  const notes      = DEMO_NOTES.filter(n=>n.studentId===student.id)
   const gradeColor = student.grade>=80?C.green:student.grade>=70?C.amber:C.red
 
   return (
@@ -145,7 +148,7 @@ function StudentDetailPage({ student, onBack, navigate }) {
       </div>
 
       <div style={{ padding:'16px' }}>
-        {/* Grade card */}
+        {/* Grade card — read only */}
         <div style={{ background:C.card, border:`1px solid ${gradeColor}35`, borderRadius:18, padding:16, marginBottom:12 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
             <div style={{ fontSize:13, fontWeight:700, color:C.text }}>Current Grade</div>
@@ -156,9 +159,9 @@ function StudentDetailPage({ student, onBack, navigate }) {
           </div>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
             {[
-              { label:'Grade',     val:`${student.grade}%`, color:gradeColor },
-              { label:'Status',    val:student.flagged?'⚑ Flagged':'On Track', color:student.flagged?C.red:C.green },
-              { label:'Notes',     val:notes.length,        color:C.purple },
+              { label:'Grade',  val:`${student.grade}%`,              color:gradeColor },
+              { label:'Status', val:student.flagged?'⚑ Flagged':'On Track', color:student.flagged?C.red:C.green },
+              { label:'Notes',  val:notes.length,                     color:C.purple },
             ].map(s=>(
               <div key={s.label} style={{ background:C.inner, borderRadius:12, padding:'10px 8px', textAlign:'center' }}>
                 <div style={{ fontSize:18, fontWeight:800, color:s.color }}>{s.val}</div>
@@ -169,7 +172,7 @@ function StudentDetailPage({ student, onBack, navigate }) {
           <StatBar value={student.grade} color={gradeColor}/>
         </div>
 
-        {/* Action buttons */}
+        {/* Quick action buttons */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
           {[
             { label:'💬 Message Student', color:C.green  },
@@ -184,7 +187,13 @@ function StudentDetailPage({ student, onBack, navigate }) {
           ))}
         </div>
 
-        {/* Notes */}
+        {/* Intervention plan shortcut */}
+        <button onClick={()=>navigate('interventions')}
+          style={{ width:'100%', background:`${C.amber}15`, color:C.amber, border:`1px solid ${C.amber}30`, borderRadius:12, padding:'11px', fontSize:12, fontWeight:700, cursor:'pointer', marginBottom:16 }}>
+          🎯 View / Create Intervention Plan
+        </button>
+
+        {/* Case notes — read only */}
         <div style={{ fontSize:13, fontWeight:700, color:C.text, marginBottom:10 }}>📝 Case Notes ({notes.length})</div>
         {notes.length===0 ? (
           <div style={{ textAlign:'center', padding:'24px 0', color:C.muted }}>No notes yet</div>
@@ -210,7 +219,7 @@ function StudentsPage({ onBack, navigate, setDetailStudent }) {
 
   const filtered = DEMO_STUDENTS.filter(s=>{
     const matchSearch = s.name.toLowerCase().includes(search.toLowerCase())
-    const matchFilter = filter==='all' || (filter==='flagged'&&s.flagged) || (filter==='atrisk'&&s.grade<70)
+    const matchFilter = filter==='all'||(filter==='flagged'&&s.flagged)||(filter==='atrisk'&&s.grade<70)
     return matchSearch && matchFilter
   })
 
@@ -226,7 +235,6 @@ function StudentsPage({ onBack, navigate, setDetailStudent }) {
             <p style={{ fontSize:10, color:'rgba(255,255,255,0.55)', margin:0 }}>{DEMO_STUDENTS.length} assigned students</p>
           </div>
         </div>
-        {/* Filters */}
         <div style={{ display:'flex', gap:8, marginBottom:10 }}>
           {[['all','All'],['flagged','Flagged'],['atrisk','At Risk']].map(([val,label])=>(
             <button key={val} onClick={()=>setFilter(val)}
@@ -246,9 +254,9 @@ function StudentsPage({ onBack, navigate, setDetailStudent }) {
             <div>No students match "{search}"</div>
           </div>
         ) : filtered.map(student=>{
-          const cls = DEMO_CLASSES.find(c=>c.id===student.classId)
+          const cls   = DEMO_CLASSES.find(c=>c.id===student.classId)
           const notes = DEMO_NOTES.filter(n=>n.studentId===student.id)
-          const gc = gradeColor(student.grade)
+          const gc    = gradeColor(student.grade)
           return (
             <button key={student.id} onClick={()=>setDetailStudent(student)}
               style={{ width:'100%', background:C.card, border:`1px solid ${student.flagged?`${C.red}40`:C.border}`, borderRadius:16, padding:'14px 16px', marginBottom:10, display:'flex', gap:14, cursor:'pointer', textAlign:'left' }}>
@@ -330,11 +338,14 @@ function AlertsPage({ onBack }) {
 
 // ─── WIDGET CATALOG ───────────────────────────────────────────────────────────
 const WIDGET_CATALOG = [
-  { id:'overview',  label:'Daily Overview',  icon:'📅', desc:'Students, notes, flags & alerts'     },
-  { id:'students',  label:'My Students',     icon:'👥', desc:'Assigned student list and grades'    },
-  { id:'notes',     label:'Recent Notes',    icon:'📝', desc:'Latest case notes across all students' },
-  { id:'messages',  label:'Messages',        icon:'💬', desc:'Staff, parent & teacher messaging'   },
-  { id:'alerts',    label:'Alerts',          icon:'🔔', desc:'Urgent flags requiring action'       },
+  { id:'overview',      label:'Daily Overview',      icon:'📅', desc:'Students, notes, flags & alerts'     },
+  { id:'students',      label:'My Students',         icon:'👥', desc:'Assigned student list and grades'    },
+  { id:'notes',         label:'Recent Notes',        icon:'📝', desc:'Latest case notes across all students' },
+  { id:'messages',      label:'Messages',            icon:'💬', desc:'Staff, parent & teacher messaging'   },
+  { id:'alerts',        label:'Alerts',              icon:'🔔', desc:'Urgent flags requiring action'       },
+  { id:'trends',        label:'Student Trends',      icon:'📊', desc:'Grade trends and risk indicators'    },
+  { id:'interventions', label:'Intervention Plans',  icon:'🎯', desc:'Active plans and progress'           },
+  { id:'analytics',     label:'Analytics',           icon:'📈', desc:'Caseload analytics and distribution' },
 ]
 
 // ─── HOME FEED ────────────────────────────────────────────────────────────────
@@ -342,15 +353,13 @@ function HomeFeed({ navigate }) {
   const [hidden,         setHidden]         = useState([])
   const [showAddWidgets, setShowAddWidgets] = useState(false)
 
-  const flaggedCount   = DEMO_STUDENTS.filter(s=>s.flagged).length
-  const atRiskCount    = DEMO_STUDENTS.filter(s=>s.grade<70).length
-  const totalNotes     = DEMO_NOTES.length
-  const urgentAlerts   = ALERTS.length
+  const flaggedCount = DEMO_STUDENTS.filter(s=>s.flagged).length
+  const totalNotes   = DEMO_NOTES.length
+  const urgentAlerts = ALERTS.length
 
   function toggleWidget(id) {
     setHidden(prev=>prev.includes(id)?prev.filter(x=>x!==id):[...prev,id])
   }
-
   const show = id => !hidden.includes(id)
 
   const wrap = (id, content) => {
@@ -367,10 +376,10 @@ function HomeFeed({ navigate }) {
   }
 
   const overviewTiles = [
-    { icon:'👥', val:DEMO_STUDENTS.length, label:'Students', page:'groups',   color:C.blue   },
-    { icon:'⚑',  val:flaggedCount,          label:'Flagged',  page:'students', color:C.red    },
-    { icon:'📝', val:totalNotes,            label:'Notes',    page:'notes',    color:C.purple },
-    { icon:'🔔', val:urgentAlerts,          label:'Alerts',   page:'alerts',   color:C.amber  },
+    { icon:'👥', val:DEMO_STUDENTS.length, label:'Students',  page:'groups',        color:C.blue   },
+    { icon:'⚑',  val:flaggedCount,          label:'Flagged',   page:'students',      color:C.red    },
+    { icon:'📝', val:totalNotes,            label:'Notes',     page:'notes',         color:C.purple },
+    { icon:'🔔', val:urgentAlerts,          label:'Alerts',    page:'alerts',        color:C.amber  },
   ]
 
   return (
@@ -383,7 +392,7 @@ function HomeFeed({ navigate }) {
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
               <div>
                 <div style={{ fontSize:17, fontWeight:800, color:C.text }}>+ Add Widgets</div>
-                <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Tap a widget to add or remove from your dashboard</div>
+                <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Tap a widget to add or remove</div>
               </div>
               <button onClick={()=>setShowAddWidgets(false)} style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
             </div>
@@ -520,6 +529,81 @@ function HomeFeed({ navigate }) {
         </div>
       )}
 
+      {/* W6: Student Trends — Tier 3 */}
+      {wrap('trends',
+        <div style={{ background:`linear-gradient(135deg,#0a1628 0%,#060810 100%)`, border:`1px solid ${C.blue}25`, borderRadius:20, padding:16, cursor:'pointer' }} onClick={()=>navigate('trends')}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📊 Student Trends</div>
+              <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Grade trends · risk indicators · read-only</div>
+            </div>
+            <span style={{ color:C.muted, fontSize:16 }}>›</span>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            {[
+              { label:'At Risk',   val:DEMO_STUDENTS.filter(s=>s.grade<70).length,    color:C.red   },
+              { label:'Flagged',   val:DEMO_STUDENTS.filter(s=>s.flagged).length,      color:C.amber },
+              { label:'On Track',  val:DEMO_STUDENTS.filter(s=>s.grade>=70&&!s.flagged).length, color:C.green },
+            ].map(m=>(
+              <div key={m.label} style={{ flex:1, background:C.inner, borderRadius:10, padding:'8px', textAlign:'center' }}>
+                <div style={{ fontSize:18, fontWeight:800, color:m.color }}>{m.val}</div>
+                <div style={{ fontSize:9, color:C.muted }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* W7: Intervention Plans — Tier 4 */}
+      {wrap('interventions',
+        <div style={{ background:`linear-gradient(135deg,#1a0a10 0%,#060810 100%)`, border:`1px solid ${C.amber}25`, borderRadius:20, padding:16, cursor:'pointer' }} onClick={()=>navigate('interventions')}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:800, color:C.text }}>🎯 Intervention Plans</div>
+              <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Create and track student intervention plans</div>
+            </div>
+            <span style={{ color:C.muted, fontSize:16 }}>›</span>
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            {[
+              { label:'Active',  val:3, color:C.green  },
+              { label:'Overdue', val:0, color:C.red    },
+              { label:'Done',    val:0, color:C.muted  },
+            ].map(m=>(
+              <div key={m.label} style={{ flex:1, background:C.inner, borderRadius:10, padding:'8px', textAlign:'center' }}>
+                <div style={{ fontSize:18, fontWeight:800, color:m.color }}>{m.val}</div>
+                <div style={{ fontSize:9, color:C.muted }}>{m.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* W8: Analytics — Tier 5 */}
+      {wrap('analytics',
+        <div style={{ background:`linear-gradient(135deg,#0d1a0d 0%,#060810 100%)`, border:`1px solid ${C.green}25`, borderRadius:20, padding:16, cursor:'pointer' }} onClick={()=>navigate('analytics')}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📈 Analytics</div>
+              <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Grade distribution · notes · interventions</div>
+            </div>
+            <span style={{ color:C.muted, fontSize:16 }}>›</span>
+          </div>
+          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+            {['A','B','C','D','F'].map((letter, i) => {
+              const heights = [10, 20, 30, 55, 80]
+              const colors  = [C.green, C.blue, C.amber, C.amber, C.red]
+              return (
+                <div key={letter} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+                  <div style={{ width:'100%', height:heights[i], background:colors[i], borderRadius:4, opacity:0.7 }}/>
+                  <div style={{ fontSize:8, color:C.muted }}>{letter}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       <AddWidgetsBar onOpen={()=>setShowAddWidgets(true)}/>
     </div>
   )
@@ -532,19 +616,22 @@ export default function SupportStaffDashboard({ currentUser }) {
   // BottomNav supportStaff home nav IDs: groups | messages | notes | trends | alerts
   // BottomNav supportStaff sub  nav IDs: __back__ | groups | messages | notes | trends
   const NAV_TO_PAGE = {
-    groups:    'groups',    // "Groups" tab → group screen
+    groups:    'groups',
     messages:  'messages',
     notes:     'notes',
-    trends:    'students',  // "Trends" tab → student list (trends feature = future)
+    trends:    'trends',         // ← now goes to real trends screen
     alerts:    'alerts',
     dashboard: null,
   }
   const PAGE_TO_NAV = {
-    groups:    'groups',
-    students:  'groups',
-    messages:  'messages',
-    notes:     'notes',
-    alerts:    'alerts',
+    groups:        'groups',
+    students:      'groups',
+    messages:      'messages',
+    notes:         'notes',
+    alerts:        'alerts',
+    trends:        'trends',
+    interventions: 'groups',
+    analytics:     'groups',
     studentDetail: 'groups',
   }
 
@@ -559,8 +646,8 @@ export default function SupportStaffDashboard({ currentUser }) {
 
   useEffect(()=>{ applyTheme() },[])
 
-  // Student detail drill-down (within students sub-page)
-  if(detailStudent) {
+  // Student detail drill-down
+  if (detailStudent) {
     return (
       <DashboardShell role="supportStaff" activeNav="groups" onNavSelect={navSelect} isSubPage={true} themeKey="hisd">
         <StudentDetailPage
@@ -578,20 +665,15 @@ export default function SupportStaffDashboard({ currentUser }) {
     </DashboardShell>
   )
 
-  if(subPage==='groups') return shell(
-    <SupportStaffGroupScreen
-      onBack={goBack}
-      onViewProfile={student => { setDetailStudent(student) }}
-    />
-  )
-  if(subPage==='students') return shell(
-    <StudentsPage onBack={goBack} navigate={navigate} setDetailStudent={setDetailStudent}/>
-  )
-  if(subPage==='notes')    return shell(<NotesPage    onBack={goBack}/>)
-  if(subPage==='alerts')   return shell(<AlertsPage   onBack={goBack}/>)
-  if(subPage==='messages') return shell(
-    <SubPage><ParentMessages onBack={goBack} viewerRole="supportStaff"/></SubPage>
-  )
+  // ── Sub-page routing ─────────────────────────────────────────────────────────
+  if (subPage==='groups')        return shell(<SupportStaffGroupScreen       onBack={goBack} onViewProfile={s=>setDetailStudent(s)}/>)
+  if (subPage==='students')      return shell(<StudentsPage                  onBack={goBack} navigate={navigate} setDetailStudent={setDetailStudent}/>)
+  if (subPage==='notes')         return shell(<NotesPage                     onBack={goBack}/>)
+  if (subPage==='alerts')        return shell(<AlertsPage                    onBack={goBack}/>)
+  if (subPage==='trends')        return shell(<SupportStaffTrends            onBack={goBack} onViewProfile={s=>setDetailStudent(s)}/>)
+  if (subPage==='interventions') return shell(<SupportStaffInterventionBuilder onBack={goBack}/>)
+  if (subPage==='analytics')     return shell(<SupportStaffAnalytics         onBack={goBack}/>)
+  if (subPage==='messages')      return shell(<SubPage><ParentMessages onBack={goBack} viewerRole="supportStaff"/></SubPage>)
 
   return shell(
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:"'DM Sans','Helvetica Neue',sans-serif", paddingBottom:90 }}>
@@ -600,5 +682,3 @@ export default function SupportStaffDashboard({ currentUser }) {
     </div>
   )
 }
-
-
