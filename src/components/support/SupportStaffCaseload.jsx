@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../../lib/store'
 import { useNavigate } from 'react-router-dom'
 import AIAssistantPanel from './AIAssistantPanel'
+import SupportTaskCard from './SupportTaskCard'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -26,6 +27,8 @@ export default function SupportStaffCaseload({ onBack }) {
     assignStudentToSupportStaff,
     unassignStudentFromSupportStaff,
     getStudentsForSupportStaff,
+    getAutomationCaseloadAlerts,
+    getAutomationRiskTasks,
     currentUser
   } = useStore()
 
@@ -34,17 +37,23 @@ export default function SupportStaffCaseload({ onBack }) {
   const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState('all') // 'all', 'critical', 'high', 'moderate', 'low'
   const [showAssignModal, setShowAssignModal] = useState(false)
+  const [caseloadAlerts, setCaseloadAlerts] = useState([])
+  const [studentsNeedingReview, setStudentsNeedingReview] = useState([])
 
   useEffect(() => {
     async function loadCaseload() {
       setLoading(true)
       try {
-        const [caseloadData, allStudents] = await Promise.all([
+        const [caseloadData, allStudents, alertsData, reviewData] = await Promise.all([
           getSupportStaffCaseload(),
-          getStudentsForSupportStaff()
+          getStudentsForSupportStaff(),
+          getAutomationCaseloadAlerts(),
+          getAutomationRiskTasks()
         ])
 
         setCaseload(caseloadData || [])
+        setCaseloadAlerts(alertsData || [])
+        setStudentsNeedingReview(reviewData || [])
         
         // Find unassigned students
         const assignedStudentIds = caseloadData.map(c => c.studentId)
@@ -114,6 +123,28 @@ export default function SupportStaffCaseload({ onBack }) {
 
   function handleViewStudent(student) {
     console.log('View Student - functionality coming soon')
+  }
+
+  function handleTaskAction(taskId, action) {
+    console.log(`Task ${taskId} action: ${action}`)
+    if (action === 'complete' || action === 'dismiss') {
+      setCaseloadAlerts(prev => prev.filter(task => task.id !== taskId))
+      setStudentsNeedingReview(prev => prev.filter(task => task.id !== taskId))
+    } else if (action === 'snooze') {
+      // Move task to end of list
+      setCaseloadAlerts(prev => {
+        const task = prev.find(t => t.id === taskId)
+        const others = prev.filter(t => t.id !== taskId)
+        return task ? [...others, task] : prev
+      })
+      setStudentsNeedingReview(prev => {
+        const task = prev.find(t => t.id === taskId)
+        const others = prev.filter(t => t.id !== taskId)
+        return task ? [...others, task] : prev
+      })
+    } else if (action === 'view-students') {
+      setFilterStatus('all')
+    }
   }
 
   const filteredCaseload = getFilteredCaseload()
@@ -232,6 +263,62 @@ export default function SupportStaffCaseload({ onBack }) {
           </div>
         </div>
       </div>
+
+      {/* Caseload Alerts */}
+      {caseloadAlerts.length > 0 && (
+        <div style={{ padding:20, paddingBottom:0 }}>
+          <div style={{ 
+            background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:16 
+          }}>
+            <div style={{ fontSize:12, fontWeight:600, color:C.text, marginBottom:12 }}>
+              🚨 Caseload Alerts
+            </div>
+            <div style={{ display:'grid', gap:8 }}>
+              {caseloadAlerts.slice(0, 3).map(alert => (
+                <SupportTaskCard
+                  key={alert.id}
+                  task={alert}
+                  onAction={handleTaskAction}
+                  compact={true}
+                />
+              ))}
+            </div>
+            {caseloadAlerts.length > 3 && (
+              <div style={{ fontSize:11, color:C.muted, textAlign:'center', marginTop:8 }}>
+                +{caseloadAlerts.length - 3} more alerts
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Students Needing Review */}
+      {studentsNeedingReview.length > 0 && (
+        <div style={{ padding:20, paddingBottom:0 }}>
+          <div style={{ 
+            background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:16 
+          }}>
+            <div style={{ fontSize:12, fontWeight:600, color:C.text, marginBottom:12 }}>
+              ⚠️ Students Needing Review
+            </div>
+            <div style={{ display:'grid', gap:8 }}>
+              {studentsNeedingReview.slice(0, 3).map(task => (
+                <SupportTaskCard
+                  key={task.id}
+                  task={task}
+                  onAction={handleTaskAction}
+                  compact={true}
+                />
+              ))}
+            </div>
+            {studentsNeedingReview.length > 3 && (
+              <div style={{ fontSize:11, color:C.muted, textAlign:'center', marginTop:8 }}>
+                +{studentsNeedingReview.length - 3} more students
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Caseload List */}
       <div style={{ padding:20 }}>
