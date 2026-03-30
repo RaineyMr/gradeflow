@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
 import DashboardShell from '../components/layout/DashboardShell'
 import { useDashboard } from '../hooks/useDashboard'
-import SubPage from './Dashboard' // reuse SubPage
+import SubPage from '../pages/Dashboard' // reuse SubPage
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', text:'#eef0f8', muted:'#6b7494',
@@ -47,7 +47,7 @@ export default function SupportStaffDashboard() {
       {/* Header */}
       <div style={{ padding: '20px 16px 0', marginBottom: 20 }}>
         <div style={{ fontSize: 22, fontWeight: 800, color: C.text, marginBottom: 4 }}>
-          👥 My Teams ({assignedStudents.length})
+  👥 My Teams ({students.length})
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           {admins.map(admin => (
@@ -65,9 +65,9 @@ export default function SupportStaffDashboard() {
       {/* Students */}
       <div style={{ padding: '0 16px 16px' }}>
         <div style={{ fontSize: 13, fontWeight: 800, color: C.text, marginBottom: 12, paddingBottom: 8, borderBottom: `1px solid ${C.border}` }}>
-          🎓 Assigned Students ({assignedStudents.length})
+        🎓 Assigned Students ({students.length})
         </div>
-        {assignedStudents.map(student => (
+        {students.map(student => (
           <div key={student.id} style={{ background: C.card, borderRadius: 16, padding: 16, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ fontSize: 18, background: 'var(--school-color)', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
               👤
