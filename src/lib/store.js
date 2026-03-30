@@ -1,6 +1,15 @@
 import { create } from 'zustand'
 import { supabase } from './supabase'
 import { demoSupportNotes } from './demoSupportNotes'
+import {
+  generateFollowUpReminders,
+  generateRiskTriggeredTasks,
+  generateParentTemplates,
+  generateCaseloadAlerts,
+  generateGroupMaintenanceSuggestions,
+  generateMeetingPrepPacket,
+  generateWeeklySummary
+} from './automationEngine'
 
 // ─── Fallback Demo Data (used if Supabase is unreachable) ─────────────────────
 const DEMO_CLASSES = [
@@ -2114,5 +2123,95 @@ setDemoSupportStaffData: async () => {
 
   weights: { test: 40, quiz: 30, homework: 20, participation: 10 },
   setWeights: (w) => set({ weights: w }),
+
+  // ─── Automation Helper Functions ─────────────────────
+  
+  getAutomationFollowUps: async () => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const supportNotes = await get().getRecentSupportNotes()
+      const interventions = await get().getSupportInterventions()
+      
+      return generateFollowUpReminders(supportNotes, interventions)
+    } catch (error) {
+      console.error('Error generating follow-up reminders:', error)
+      return []
+    }
+  },
+
+  getAutomationRiskTasks: async () => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const supportNotes = await get().getRecentSupportNotes()
+      
+      return generateRiskTriggeredTasks(students, supportNotes)
+    } catch (error) {
+      console.error('Error generating risk-triggered tasks:', error)
+      return []
+    }
+  },
+
+  getAutomationParentTemplates: async () => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const supportNotes = await get().getRecentSupportNotes()
+      
+      return generateParentTemplates(students, supportNotes)
+    } catch (error) {
+      console.error('Error generating parent templates:', error)
+      return []
+    }
+  },
+
+  getAutomationCaseloadAlerts: async () => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const supportNotes = await get().getRecentSupportNotes()
+      
+      return generateCaseloadAlerts(students, supportNotes)
+    } catch (error) {
+      console.error('Error generating caseload alerts:', error)
+      return []
+    }
+  },
+
+  getAutomationGroupSuggestions: async () => {
+    try {
+      const groups = await get().getSupportGroupSummary()
+      const students = await get().getStudentsForSupportStaff()
+      const supportNotes = await get().getRecentSupportNotes()
+      
+      return generateGroupMaintenanceSuggestions(groups, students, supportNotes)
+    } catch (error) {
+      console.error('Error generating group suggestions:', error)
+      return []
+    }
+  },
+
+  getAutomationMeetingPrep: async (studentId) => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const supportNotes = await get().getRecentSupportNotes()
+      const interventions = await get().getSupportInterventions()
+      
+      return generateMeetingPrepPacket(studentId, students, supportNotes, interventions)
+    } catch (error) {
+      console.error('Error generating meeting prep packet:', error)
+      return null
+    }
+  },
+
+  getAutomationWeeklySummary: async () => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const supportNotes = await get().getRecentSupportNotes()
+      const interventions = await get().getSupportInterventions()
+      
+      return generateWeeklySummary(students, supportNotes, interventions)
+    } catch (error) {
+      console.error('Error generating weekly summary:', error)
+      return null
+    }
+  },
 
 })) // closes store
