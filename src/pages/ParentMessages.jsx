@@ -10,7 +10,7 @@ const C = {
 
 const KEY = () => import.meta.env.VITE_ANTHROPIC_KEY
 
-const ALL_CONTACTS = {
+const ALL_CONTACTS_BASE = Object.freeze({
   teachers:[
     { id:'t1', name:'Mr. Rivera',   role:'teacher', label:'Science Teacher', avatar:'🧑‍🔬' },
     { id:'t2', name:'Ms. Davis',    role:'teacher', label:'Reading Teacher', avatar:'👩‍💼' },
@@ -38,12 +38,7 @@ const ALL_CONTACTS = {
     { id:'a2', name:'Dr. Green',       role:'admin', label:'Vice Principal', avatar:'🎓' },
     { id:'a3', name:'Ms. Ortiz',       role:'admin', label:'Counselor',      avatar:'💬' },
   ],
-}
-
-if (isSupportStaff) {
-  ALL_CONTACTS.students = ALL_CONTACTS.students.slice(0,3) // Demo assigned students
-  ALL_CONTACTS.teachers = ALL_CONTACTS.teachers.slice(0,2) // Their teachers
-}
+});
 
 const AI_TONES = [
   { id:'warm',        label:'Warm & Friendly', emoji:'🤗' },
@@ -162,6 +157,8 @@ function Badge({ role }) {
 
 // ─── COMPOSE SHEET ────────────────────────────────────────────────────────────
 function Compose({ onSend, onClose, viewerRole }) {
+  const { currentUser } = useStore();
+  const isSupportStaff = currentUser?.role === 'supportStaff';
   const canMsg = { teacher:['parents','students','teachers','admin'], student:['teachers','admin'], parent:['teachers','admin'], admin:['teachers','students','parents','admin'] }[viewerRole]||['teachers']
   const groupLabel = { parents:'👪 Parents', students:'🎓 Students', teachers:'👩‍🏫 Teachers', admin:'🏫 Admin' }
 
@@ -174,6 +171,15 @@ function Compose({ onSend, onClose, viewerRole }) {
   const [loading,   setLoading] = useState(false)
   const [email,     setEmail]   = useState('')
   const [done,      setDone]    = useState(false)
+
+  // Derive filtered contacts based on isSupportStaff
+  const getFilteredContacts = (group) => {
+    const contacts = ALL_CONTACTS_BASE[group] || [];
+    if (isSupportStaff && (group === 'students' || group === 'teachers')) {
+      return contacts.slice(0, group === 'students' ? 3 : 2);
+    }
+    return contacts;
+  };
 
   async function doAI() {
     setLoading(true)
@@ -218,7 +224,7 @@ function Compose({ onSend, onClose, viewerRole }) {
             ))}
           </div>
           <div style={{ maxHeight:270, overflow:'auto', marginBottom:12 }}>
-            {(ALL_CONTACTS[tab]||[]).map(c=>(
+            {getFilteredContacts(tab).map(c=>(
               <button key={c.id} onClick={()=>{ setContact(c); setStep('write') }}
                 style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:11, padding:'10px 13px', display:'flex', alignItems:'center', gap:11, cursor:'pointer', textAlign:'left', marginBottom:5 }}
                 onMouseEnter={e=>(e.currentTarget.style.background=C.raised)} onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
@@ -370,8 +376,7 @@ function ThreadView({ thread, onBack, senderName }) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function ParentMessages({ onBack, viewerRole='teacher' }) {
-  const { currentUser } = useStore()
-  const isSupportStaff = currentUser?.role === 'supportStaff'
+const { currentUser } = useStore()
 
   const { goBack } = useStore()
   const handleBack = onBack || goBack

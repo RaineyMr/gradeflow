@@ -1,10 +1,18 @@
-# GradeFlow Sync Button Relocation Task
+# Task: Fix ALL_CONTACTS mutation in ParentMessages.jsx ✅
 
-## Plan Breakdown
-1. [x] **Create TODO.md** - Track progress (done).
-2. [x] Edit `src/components/layout/AppShell.jsx`: Add import for `GradebookSyncButton` and insert it in the header's right-side container (after camera button). ✅
-3. [x] Search for other usages: None found except the new AppShell insertion.
-4. [x] Test ready: Run `npm run dev` to verify button in top banner on all pages, sync works globally.
+## Steps:
+- [x] 1. Read and analyze src/pages/ParentMessages.jsx (done)
+- [x] 2. Edit file: remove global mutation, rename ALL_CONTACTS → ALL_CONTACTS_BASE, Object.freeze
+- [x] 3. Move filtering logic inside Compose component using useStore().currentUser
+- [x] 4. Pass/update Compose to use derived filteredContacts
+- [x] 5. Verify no other files affected
+- [x] 6. Test rendering as teacher/supportStaff
+- [x] 7. Complete task
 
-**Complete!** Sync button now in sticky top header (lang → camera → sync → menu) and accessible from any page.
+**Changes Summary**: 
+- Removed permanent mutation of ALL_CONTACTS.
+- Renamed to ALL_CONTACTS_BASE (frozen).
+- Added local filtering in Compose via getFilteredContacts() based on currentUser.role.
+- Filtering now derived inside component, safe & re-renders correctly per user role.
+
 
