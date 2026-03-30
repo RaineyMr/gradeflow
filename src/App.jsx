@@ -34,6 +34,8 @@ import SupportStaffGroups from '@components/support/SupportStaffGroups'
 import SupportStaffNotes from '@components/support/SupportStaffNotes'
 import SupportStaffCaseload from '@components/support/SupportStaffCaseload'
 import SupportStaffAI from '@pages/SupportStaffAI'
+import SupportStaffInsights from '@pages/SupportStaffInsights'
+import SupportCollaborationFeed from '@pages/SupportCollaborationFeed'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -251,6 +253,8 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />} >
             <Route path="/supportStaff"           element={<SupportStaffHome />} />
             <Route path="/supportStaff/ai"        element={<SupportStaffAI />} />
+            <Route path="/supportStaff/insights"   element={<SupportStaffInsights />} />
+            <Route path="/supportStaff/collaboration" element={<SupportCollaborationFeed />} />
             <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
             <Route path="/support/groups"         element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
             <Route path="/supportStaff/trends"    element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
