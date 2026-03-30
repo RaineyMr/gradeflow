@@ -4,6 +4,8 @@ import { useStore } from '@lib/store'
 
 // ── Layout & guards ───────────────────────────────────────────────────────────
 import AppShell      from '@components/layout/AppShell'
+import MobileLayout  from '@layouts/MobileLayout'
+import SupportStaffLayoutWrapper from '@components/layout/SupportStaffLayoutWrapper'
 import ProtectedRoute from './router/ProtectedRoute'
 
 // ── Pages ─────────────────────────────────────────────────────────────────────
@@ -36,6 +38,8 @@ import SupportStaffCaseload from '@components/support/SupportStaffCaseload'
 import SupportStaffAI from '@pages/SupportStaffAI'
 import SupportStaffInsights from '@pages/SupportStaffInsights'
 import SupportCollaborationFeed from '@pages/SupportCollaborationFeed'
+import SupportReports from '@pages/SupportReports'
+import CaseConference from '@pages/CaseConference'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -251,20 +255,24 @@ export default function App() {
 
           {/* ── Support Staff ───────────────────────────────────────────────────── */ }
           <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />} >
-            <Route path="/supportStaff"           element={<SupportStaffHome />} />
-            <Route path="/supportStaff/ai"        element={<SupportStaffAI />} />
-            <Route path="/supportStaff/insights"   element={<SupportStaffInsights />} />
-            <Route path="/supportStaff/collaboration" element={<SupportCollaborationFeed />} />
-            <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
-            <Route path="/support/groups"         element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
-            <Route path="/supportStaff/trends"    element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
-            <Route path="/supportStaff/messages"  element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
-            <Route path="/support/messages"       element={<SupportStaffMessaging />} />
-            <Route path="/support/student/:studentId" element={<SupportStaffStudentProfile />} />
-            <Route path="/support/logs"           element={<Page Component={SupportStaffNotes} backTo="/supportStaff" />} />
-            <Route path="/support/caseload"       element={<Page Component={SupportStaffCaseload} backTo="/supportStaff" />} />
-            <Route path="/supportStaff/notes"     element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="notes" />} />
-            <Route path="/supportStaff/studentProfile" element={<Page Component={StudentProfile} backTo="/supportStaff" extraProps={{ readOnly: true }} />} />
+            <Route element={<SupportStaffLayoutWrapper />}>
+              <Route path="/supportStaff"           element={<SupportStaffHome />} />
+              <Route path="/supportStaff/ai"        element={<SupportStaffAI />} />
+              <Route path="/supportStaff/insights"   element={<SupportStaffInsights />} />
+              <Route path="/supportStaff/collaboration" element={<SupportCollaborationFeed />} />
+              <Route path="/supportStaff/reports"    element={<SupportReports />} />
+              <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
+              <Route path="/support/groups"         element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
+              <Route path="/supportStaff/trends"    element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
+              <Route path="/supportStaff/messages"  element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
+              <Route path="/support/messages"       element={<SupportStaffMessaging />} />
+              <Route path="/support/student/:studentId" element={<SupportStaffStudentProfile />} />
+              <Route path="/support/case/:studentId" element={<CaseConference />} />
+              <Route path="/support/logs"           element={<Page Component={SupportStaffNotes} backTo="/supportStaff" />} />
+              <Route path="/support/caseload"       element={<Page Component={SupportStaffCaseload} backTo="/supportStaff" />} />
+              <Route path="/supportStaff/notes"     element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="notes" />} />
+              <Route path="/supportStaff/studentProfile" element={<Page Component={StudentProfile} backTo="/supportStaff" extraProps={{ readOnly: true }} />} />
+            </Route>
           </Route>
 
         </Route>
