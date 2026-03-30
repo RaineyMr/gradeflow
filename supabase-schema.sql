@@ -110,14 +110,57 @@ create table if not exists public.sync_logs (
   created_at timestamp with time zone default now()
 );
 
--- Support Staff Teams
-create table if not exists public.support_staff_teams (
+-- Support Staff Groups (REPLACES teams)
+create table if not exists public.support_staff_groups (
   id uuid primary key default gen_random_uuid(),
   staff_id uuid not null references teachers(id),
+  name text not null,
+  created_at timestamp with time zone default now()
+);
+
+create table if not exists public.support_staff_group_members (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references support_staff_groups(id) on delete cascade,
   student_id uuid not null references students(id),
   created_at timestamp with time zone default now(),
-  unique(staff_id, student_id)
+  unique(group_id, student_id)
 );
+
+-- Student Trends
+create table if not exists public.student_trends (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid references students(id) on delete cascade,
+  period_start date not null,
+  period_end date not null,
+  grade_avg numeric,
+  participation_avg numeric,
+  flags_count integer default 0,
+  notes_count integer default 0,
+  risk_level text check (risk_level in ('low','medium','high','critical')) default 'low',
+  created_at timestamp with time zone default now(),
+  unique(student_id, period_start)
+);
+
+-- Intervention Plans (extends notes)
+create table if not exists public.intervention_plans (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid references students(id) on delete cascade,
+  staff_id uuid references teachers(id),
+  goal text not null,
+  strategies jsonb default '[]'::jsonb,
+  status text check (status in ('active','completed','discontinued')) default 'active',
+  visibility text check (visibility in ('staff-only','teachers','admin')) default 'staff-only',
+  checkins jsonb default '[]'::jsonb,  -- [{date: '...', notes: '...'}]
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+-- RLS for new tables
+alter table support_staff_groups enable row level security;
+alter table support_staff_group_members enable row level security;
+alter table student_trends enable row level security;
+alter table intervention_plans enable row level security;
+
 
 -- Support Staff Notes
 create table if not exists public.support_staff_notes (
