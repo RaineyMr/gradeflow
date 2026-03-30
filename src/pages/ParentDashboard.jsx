@@ -741,6 +741,7 @@ export default function ParentDashboard({ currentUser }) {
     messages:  'messages',
     feed:      'feed',
     widgets:   'widgets',
+    alerts:    'alerts',
     dashboard: null,
   }
   const PAGE_TO_NAV = {
