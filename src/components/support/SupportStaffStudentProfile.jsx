@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import { useStore } from '../../lib/store'
 import SupportStaffMessaging from './SupportStaffMessaging'
+import AIAssistantPanel from './AIAssistantPanel'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -21,6 +22,7 @@ const TABS = [
 ]
 
 export default function SupportStaffStudentProfile({ studentId, onBack }) {
+  const [showAI, setShowAI] = useState(false)
   const {
     students,
     classes,
@@ -134,6 +136,15 @@ export default function SupportStaffStudentProfile({ studentId, onBack }) {
         </div>
 
         <div style={{ display:'flex', gap:8 }}>
+          <button
+            onClick={() => setShowAI(true)}
+            style={{
+              background:C.purple, color:'#fff', border:'none', borderRadius:8,
+              padding:'8px 12px', fontSize:11, fontWeight:600, cursor:'pointer'
+            }}
+          >
+            🤖 AI
+          </button>
           <button
             onClick={handleMessageStudent}
             style={{
@@ -593,6 +604,17 @@ function SupportLogsTab({ student }) {
           </div>
         </div>
       )}
+
+      {/* AI Assistant Panel */}
+      <AIAssistantPanel
+        isOpen={showAI}
+        onClose={() => setShowAI(false)}
+        initialContext={{ 
+          screen: 'studentProfile',
+          studentId: studentId,
+          student: student
+        }}
+      />
     </div>
   )
 }
