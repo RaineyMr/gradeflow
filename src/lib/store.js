@@ -354,15 +354,22 @@ export const useStore = create((set, get) => ({
 setDemoSupportStaffData: async () => {
     if (get().currentUser?.role !== 'supportStaff') return
     try {
-      const { demoSupportStaffGroups, demoGroupMembers, demoStudentTrends, demoInterventionPlans } = await import('./demoSupportStaffGroups.js')
-      set({ 
-        supportStaffGroups: demoSupportStaffGroups,
+      const {
+        demoSupportStaffGroups,
+        demoGroupMembers,
+        demoStudentTrends,
+        demoInterventionPlans,
+      } = await import('./demoSupportStaffGroups.js')
+
+      set({
+        supportStaffGroups:      demoSupportStaffGroups,
         supportStaffGroupMembers: demoGroupMembers,
-        studentTrends: Object.fromEntries(demoStudentTrends.map(t => [t.student_id, t])),
-        interventionPlans: demoInterventionPlans 
+        // demoStudentTrends is already an object keyed by student_id — use as-is.
+        studentTrends:            demoStudentTrends,
+        interventionPlans:        demoInterventionPlans,
       })
     } catch (e) {
-      console.warn('Demo groups data failed to load')
+      console.warn('Demo groups data failed to load:', e)
     }
   },
 
