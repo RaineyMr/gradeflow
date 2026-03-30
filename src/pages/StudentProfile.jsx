@@ -49,7 +49,7 @@ function SubmissionViewer({ open, onClose, student, assignment }) {
 }
 
 // ─── Student Profile ──────────────────────────────────────────────────────────
-export default function StudentProfile() {
+export default function StudentProfile({ readOnly = false, onBack }) {
   const {
     activeStudent,
     activeClass,
@@ -59,6 +59,8 @@ export default function StudentProfile() {
     goBack,
     updateGrade,
   } = useStore()
+
+  const handleBack = onBack || goBack
 
   const [aiTips, setAiTips]           = useState(null)
   const [loadingTips, setLoadingTips] = useState(false)
@@ -89,7 +91,7 @@ export default function StudentProfile() {
       <div className="text-center py-16">
         <p className="text-text-muted mb-4">No student selected</p>
         <button
-          onClick={goBack}
+          onClick={handleBack}
           className="btn-primary px-6 py-2 rounded-pill"
           style={{ background: 'var(--school-color)', color: 'white' }}
         >
@@ -191,10 +193,10 @@ export default function StudentProfile() {
     <div>
       {/* Back button */}
       <button
-        onClick={goBack}
+        onClick={handleBack}
         className="flex items-center gap-2 text-text-muted text-sm mb-6 hover:text-text-primary transition-colors"
       >
-        ← Back to Gradebook
+        ← {readOnly ? 'Back' : 'Back to Gradebook'}
       </button>
 
       {/* Student header */}
@@ -229,30 +231,32 @@ export default function StudentProfile() {
       </div>
 
       {/* Action buttons */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
-        <button
-          onClick={handleAITips}
-          disabled={loadingTips}
-          className="py-3 rounded-card text-sm font-bold transition-all hover:opacity-90"
-          style={{ background: '#9b6ef520', color: '#9b6ef5', border: '1px solid #9b6ef530' }}
-        >
-          {loadingTips ? '...' : '✨ AI Insights'}
-        </button>
-        <button
-          onClick={() => useStore.getState().setScreen('reports')}
-          className="py-3 rounded-card text-sm font-bold"
-          style={{ background: '#22c97a20', color: '#22c97a', border: '1px solid #22c97a30' }}
-        >
-          📊 Report
-        </button>
-        <button
-          onClick={() => useStore.getState().setScreen('parentMessages')}
-          className="py-3 rounded-card text-sm font-bold"
-          style={{ background: '#f04a4a20', color: '#f04a4a', border: '1px solid #f04a4a30' }}
-        >
-          📩 Message Parent
-        </button>
-      </div>
+      {!readOnly && (
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <button
+            onClick={handleAITips}
+            disabled={loadingTips}
+            className="py-3 rounded-card text-sm font-bold transition-all hover:opacity-90"
+            style={{ background: '#9b6ef520', color: '#9b6ef5', border: '1px solid #9b6ef530' }}
+          >
+            {loadingTips ? '...' : '✨ AI Insights'}
+          </button>
+          <button
+            onClick={() => useStore.getState().setScreen('reports')}
+            className="py-3 rounded-card text-sm font-bold"
+            style={{ background: '#22c97a20', color: '#22c97a', border: '1px solid #22c97a30' }}
+          >
+            📊 Report
+          </button>
+          <button
+            onClick={() => useStore.getState().setScreen('parentMessages')}
+            className="py-3 rounded-card text-sm font-bold"
+            style={{ background: '#f04a4a20', color: '#f04a4a', border: '1px solid #f04a4a30' }}
+          >
+            📩 Message Parent
+          </button>
+        </div>
+      )}
 
       {/* AI Tips loading */}
       {loadingTips && <LoadingSpinner />}
@@ -311,7 +315,7 @@ export default function StudentProfile() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      {isEditing ? (
+                      {isEditing && !readOnly ? (
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
@@ -341,7 +345,7 @@ export default function StudentProfile() {
                         <>
                           {g ? (
                             <GradeBadge score={g.score} />
-                          ) : student.submitUngraded ? (
+                          ) : !readOnly && student.submitUngraded ? (
                             <button
                               onClick={() => setViewSubmission({ open: true, assignment: a })}
                               className="px-2 py-1 rounded-pill text-xs font-bold hover:opacity-80 transition-opacity"
@@ -356,16 +360,18 @@ export default function StudentProfile() {
                           ) : (
                             <span className="text-text-muted text-sm">—</span>
                           )}
-                          <button
-                            onClick={() => {
-                              setEditingGrade(a)
-                              setNewScore(g?.score ?? '')
-                            }}
-                            className="px-2 py-1 rounded text-xs font-semibold"
-                            style={{ background: '#3b7ef420', color: '#3b7ef4' }}
-                          >
-                            ✏ Edit
-                          </button>
+                          {!readOnly && (
+                            <button
+                              onClick={() => {
+                                setEditingGrade(a)
+                                setNewScore(g?.score ?? '')
+                              }}
+                              className="px-2 py-1 rounded text-xs font-semibold"
+                              style={{ background: '#3b7ef420', color: '#3b7ef4' }}
+                            >
+                              ✏ Edit
+                            </button>
+                          )}
                         </>
                       )}
                     </div>
