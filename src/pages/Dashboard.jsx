@@ -7,8 +7,8 @@ import LessonPlan     from './LessonPlan'
 import Reports        from './Reports'
 import TestingSuite   from './TestingSuite'
 import ClassFeed      from './ClassFeed'
-import StudentProfile from './StudentProfile'
-import ParentMessages from './ParentMessages'
+import StudentProfile from '@pages/StudentProfile'
+import ParentMessages from '@pages/ParentMessages'
 import Integrations   from './Integrations'
 
 const C = {
