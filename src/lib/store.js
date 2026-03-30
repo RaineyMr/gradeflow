@@ -2214,4 +2214,493 @@ setDemoSupportStaffData: async () => {
     }
   },
 
+  // ── Tier 20: AI-Powered Insights Helper Functions ─────────────────────
+
+  getStudentRiskInsights: async () => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const atRiskStudents = students.filter(s => s.grade < 70 || s.flagged)
+      const criticalStudents = students.filter(s => s.grade < 60)
+      
+      return {
+        totalAtRisk: atRiskStudents.length,
+        criticalCases: criticalStudents.length,
+        trend: atRiskStudents.length > 5 ? 'up' : 'stable',
+        recentAdditions: 2,
+        topRiskFactors: ['Failing Grades', 'Poor Attendance', 'Missing Work'],
+        breakdown: {
+          academic: atRiskStudents.filter(s => s.grade < 70).length,
+          behavioral: students.filter(s => s.flagged).length,
+          attendance: Math.floor(atRiskStudents.length * 0.3)
+        }
+      }
+    } catch (error) {
+      console.error('Error getting student risk insights:', error)
+      return null
+    }
+  },
+
+  getGroupInsights: async () => {
+    try {
+      const groups = await get().getSupportStaffGroups()
+      
+      return {
+        totalGroups: groups.length,
+        activeGroups: groups.filter(g => g.student_count > 0).length,
+        averageGroupSize: groups.length > 0 ? Math.round(groups.reduce((sum, g) => sum + (g.student_count || 0), 0) / groups.length) : 0,
+        highPerformingGroups: 2,
+        groupsNeedingAttention: 1,
+        trend: 'stable',
+        topPerformingGroups: groups.slice(0, 3).map(g => g.name),
+        groupsAtRisk: groups.filter(g => g.name.includes('Intervention')).map(g => g.name)
+      }
+    } catch (error) {
+      console.error('Error getting group insights:', error)
+      return null
+    }
+  },
+
+  getInterventionInsights: async () => {
+    try {
+      const interventions = await get().getSupportInterventions()
+      const activePlans = interventions.filter(p => p.status === 'active')
+      const completedPlans = interventions.filter(p => p.status === 'completed')
+      
+      return {
+        totalInterventions: interventions.length,
+        activeInterventions: activePlans.length,
+        completedInterventions: completedPlans.length,
+        successRate: activePlans.length > 0 ? Math.round((completedPlans.length / interventions.length) * 100) : 0,
+        averageDuration: '6 weeks',
+        trend: completedPlans.length > 5 ? 'up' : 'stable',
+        interventionTypes: {
+          academic: activePlans.filter(p => p.type === 'academic').length,
+          behavioral: activePlans.filter(p => p.type === 'behavioral').length,
+          attendance: activePlans.filter(p => p.type === 'attendance').length
+        }
+      }
+    } catch (error) {
+      console.error('Error getting intervention insights:', error)
+      return null
+    }
+  },
+
+  getParentCommunicationInsights: async () => {
+    try {
+      // Demo data - would be calculated from actual communication logs
+      return {
+        totalMessages: 45,
+        responseRate: 78,
+        averageResponseTime: '2.3 days',
+        positiveResponses: 32,
+        concernRaised: 8,
+        trend: 'up',
+        communicationMethods: {
+          email: 25,
+          phone: 12,
+          inPerson: 8
+        }
+      }
+    } catch (error) {
+      console.error('Error getting parent communication insights:', error)
+      return null
+    }
+  },
+
+  getCaseloadInsights: async () => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const highNeeds = students.filter(s => s.grade < 60 || s.flagged)
+      const moderateNeeds = students.filter(s => s.grade >= 60 && s.grade < 75)
+      const lowNeeds = students.filter(s => s.grade >= 75)
+      
+      return {
+        totalStudents: students.length,
+        highNeeds: highNeeds.length,
+        moderateNeeds: moderateNeeds.length,
+        lowNeeds: lowNeeds.length,
+        averageTimePerStudent: '2.5 hours/week',
+        trend: 'stable',
+        workloadDistribution: {
+          direct: 60,
+          indirect: 25,
+          administrative: 15
+        }
+      }
+    } catch (error) {
+      console.error('Error getting caseload insights:', error)
+      return null
+    }
+  },
+
+  getWeeklyAISummary: async () => {
+    try {
+      const students = await get().getStudentsForSupportStaff()
+      const supportNotes = await get().getRecentSupportNotes()
+      const interventions = await get().getSupportInterventions()
+      
+      return {
+        weekOf: new Date().toLocaleDateString(),
+        keyHighlights: [
+          '3 students showed significant improvement',
+          '2 new intervention plans initiated',
+          '5 parent meetings completed',
+          'Group tutoring sessions increased engagement'
+        ],
+        priorities: [
+          'Follow up with critical risk students',
+          'Review intervention effectiveness',
+          'Schedule parent conferences',
+          'Update group rosters'
+        ],
+        upcomingDeadlines: [
+          'Progress reports due Friday',
+          'Intervention reviews Wednesday',
+          'Team meeting Tuesday'
+        ]
+      }
+    } catch (error) {
+      console.error('Error getting weekly AI summary:', error)
+      return null
+    }
+  },
+
+  // ── Tier 21: Support Staff Collaboration Helper Functions ─────────────────────
+
+  getCollaborationFeed: async () => {
+    try {
+      // Demo collaboration feed data
+      return [
+        {
+          id: 1,
+          type: 'note',
+          author: 'Ms. Johnson',
+          authorRole: 'teacher',
+          timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+          title: 'Math Intervention Progress',
+          content: 'Student shows improvement in fraction operations. Consider moving to advanced group.',
+          studentName: 'Aaliyah Brooks',
+          visibility: 'team',
+          attachments: [],
+          reactions: { '👍': 2, '❤️': 1 }
+        },
+        {
+          id: 2,
+          type: 'task',
+          author: 'Mr. Rivera',
+          authorRole: 'supportStaff',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+          title: 'Review Science Group Progress',
+          content: 'Check in with students about upcoming lab project understanding',
+          assignedTo: 'Dr. Green',
+          dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(),
+          priority: 'medium',
+          status: 'pending',
+          studentName: 'Science Intervention Group'
+        },
+        {
+          id: 3,
+          type: 'intervention',
+          author: 'System',
+          authorRole: 'automation',
+          timestamp: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
+          title: 'Intervention Plan Updated',
+          content: 'Math support plan for Marcus Thompson marked as effective - 85% improvement rate',
+          studentName: 'Marcus Thompson',
+          interventionType: 'academic',
+          status: 'active'
+        }
+      ]
+    } catch (error) {
+      console.error('Error getting collaboration feed:', error)
+      return []
+    }
+  },
+
+  createSharedNote: async (noteData) => {
+    try {
+      // In a real implementation, this would save to a database
+      console.log('Creating shared note:', noteData)
+      return noteData
+    } catch (error) {
+      console.error('Error creating shared note:', error)
+      throw error
+    }
+  },
+
+  createSharedTask: async (taskData) => {
+    try {
+      // In a real implementation, this would save to a database
+      console.log('Creating shared task:', taskData)
+      return taskData
+    } catch (error) {
+      console.error('Error creating shared task:', error)
+      throw error
+    }
+  },
+
+  updateSharedTask: async (taskId, taskData) => {
+    try {
+      // In a real implementation, this would update in a database
+      console.log('Updating shared task:', taskId, taskData)
+      return taskData
+    } catch (error) {
+      console.error('Error updating shared task:', error)
+      throw error
+    }
+  },
+
+  getSharedTasksForStudent: async (studentId) => {
+    try {
+      // Demo tasks for a specific student
+      return [
+        {
+          id: 1,
+          title: 'Math Progress Review',
+          description: 'Review recent math assessment results and plan next steps',
+          assignedTo: 'Ms. Johnson',
+          createdBy: 'Mr. Rivera',
+          dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'medium',
+          status: 'pending',
+          studentId: studentId,
+          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 2,
+          title: 'Parent Follow-up Call',
+          description: 'Contact parents to discuss recent progress and concerns',
+          assignedTo: 'Mr. Rivera',
+          createdBy: 'System',
+          dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'high',
+          status: 'pending',
+          studentId: studentId,
+          timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+    } catch (error) {
+      console.error('Error getting shared tasks for student:', error)
+      return []
+    }
+  },
+
+  getSharedNotesForStudent: async (studentId) => {
+    try {
+      // Demo notes for a specific student
+      return [
+        {
+          id: 1,
+          title: 'Math Intervention Progress',
+          content: 'Student is showing significant improvement in fraction operations. Has mastered basic concepts and is ready for more advanced work. Consider moving to advanced group next week.',
+          author: 'Ms. Johnson',
+          authorRole: 'teacher',
+          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          studentId: studentId,
+          visibility: 'team',
+          priority: 'medium'
+        },
+        {
+          id: 2,
+          title: 'Behavioral Observation',
+          content: 'Student demonstrated excellent leadership during group work today. Helped classmates understand difficult concepts and showed great patience.',
+          author: 'Mr. Rivera',
+          authorRole: 'supportStaff',
+          timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+          studentId: studentId,
+          visibility: 'team',
+          priority: 'low'
+        }
+      ]
+    } catch (error) {
+      console.error('Error getting shared notes for student:', error)
+      return []
+    }
+  },
+
+  getSharedGroupActivity: async (groupId) => {
+    try {
+      // Demo group activity
+      return [
+        {
+          id: 1,
+          type: 'note',
+          title: 'Group Session Summary',
+          content: 'Productive group session today. All students participated actively and showed good understanding of material.',
+          author: 'Ms. Davis',
+          timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          groupId: groupId
+        },
+        {
+          id: 2,
+          type: 'task',
+          title: 'Prepare Next Session Materials',
+          content: 'Prepare materials for next group session focusing on advanced reading comprehension.',
+          assignedTo: 'Ms. Davis',
+          dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+          priority: 'medium',
+          status: 'pending',
+          groupId: groupId
+        }
+      ]
+    } catch (error) {
+      console.error('Error getting shared group activity:', error)
+      return []
+    }
+  },
+
+  // ── Tier 22: Student Support Timeline Helper Functions ─────────────────────
+
+  getStudentSupportTimeline: async (studentId) => {
+    try {
+      // Gather events from different sources
+      const [
+        grades,
+        attendance,
+        notes,
+        interventions,
+        sharedNotes,
+        sharedTasks
+      ] = await Promise.all([
+        get().getStudentGrades(studentId),
+        get().getStudentAttendance(studentId),
+        get().getStudentNotes(studentId),
+        get().getStudentInterventions(studentId),
+        get().getSharedNotesForStudent(studentId),
+        get().getSharedTasksForStudent(studentId)
+      ])
+
+      // Transform data into timeline events
+      const events = []
+
+      // Grade events
+      grades.forEach(grade => {
+        events.push({
+          id: `grade_${Date.now()}_${grade.assignment}`,
+          type: 'grades',
+          timestamp: new Date(grade.date).toISOString(),
+          title: `${grade.assignment} Score`,
+          description: `Score: ${grade.score}%`,
+          author: 'Teacher',
+          authorRole: 'teacher',
+          studentId: parseInt(studentId),
+          details: {
+            assignment: grade.assignment,
+            score: grade.score,
+            type: grade.type
+          }
+        })
+      })
+
+      // Attendance events
+      attendance.forEach(record => {
+        events.push({
+          id: `attendance_${Date.now()}_${record.date}`,
+          type: 'attendance',
+          timestamp: new Date(record.date).toISOString(),
+          title: 'Attendance Record',
+          description: record.status,
+          author: 'System',
+          authorRole: 'automation',
+          studentId: parseInt(studentId),
+          details: {
+            date: record.date,
+            status: record.status,
+            period: record.period
+          }
+        })
+      })
+
+      // Note events
+      notes.forEach(note => {
+        events.push({
+          id: `note_${Date.now()}_${note.author}`,
+          type: 'support_logs',
+          timestamp: new Date(note.date).toISOString(),
+          title: 'Support Note',
+          description: note.content,
+          author: note.author,
+          authorRole: 'supportStaff',
+          studentId: parseInt(studentId),
+          details: {
+            content: note.content
+          }
+        })
+      })
+
+      // Intervention events
+      interventions.forEach(intervention => {
+        events.push({
+          id: `intervention_${Date.now()}_${intervention.title}`,
+          type: 'interventions',
+          timestamp: new Date(intervention.createdDate).toISOString(),
+          title: intervention.title,
+          description: intervention.description,
+          author: 'Support Staff',
+          authorRole: 'supportStaff',
+          studentId: parseInt(studentId),
+          details: {
+            status: intervention.status,
+            description: intervention.description,
+            nextReview: intervention.nextReview
+          }
+        })
+      })
+
+      // Shared notes events
+      sharedNotes.forEach(note => {
+        events.push({
+          id: `shared_note_${Date.now()}_${note.id}`,
+          type: 'shared_notes',
+          timestamp: new Date(note.timestamp).toISOString(),
+          title: note.title,
+          description: note.content,
+          author: note.author,
+          authorRole: note.authorRole,
+          studentId: parseInt(studentId),
+          details: {
+            visibility: note.visibility,
+            priority: note.priority
+          }
+        })
+      })
+
+      // Shared tasks events
+      sharedTasks.forEach(task => {
+        events.push({
+          id: `shared_task_${Date.now()}_${task.id}`,
+          type: 'shared_tasks',
+          timestamp: new Date(task.timestamp).toISOString(),
+          title: task.title,
+          description: task.description,
+          author: task.createdBy,
+          authorRole: 'supportStaff',
+          studentId: parseInt(studentId),
+          details: {
+            assignedTo: task.assignedTo,
+            dueDate: task.dueDate,
+            priority: task.priority,
+            status: task.status
+          }
+        })
+      })
+
+      return events
+    } catch (error) {
+      console.error('Error getting student support timeline:', error)
+      return []
+    }
+  },
+
+  mergeTimelineEvents: (eventsArray) => {
+    try {
+      // Flatten and sort events by timestamp
+      const allEvents = eventsArray.flat()
+      return allEvents.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    } catch (error) {
+      console.error('Error merging timeline events:', error)
+      return []
+    }
+  },
+
 })) // closes store
