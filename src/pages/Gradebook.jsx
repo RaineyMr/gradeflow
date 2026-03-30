@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react'
 import { useStore } from '../lib/store'
 import { GradeBar, Modal } from '../components/ui'
+import { GradebookSyncStatus, GradebookSyncButton } from '../GradebookSyncButton.jsx'
+import { GradebookSyncStatus as SyncStatus } from '../GradebookSyncStatus.jsx'
 
 const C = {
   bg: '#060810', card: '#161923', inner: '#1e2231', text: '#eef0f8',
@@ -208,13 +210,19 @@ export default function Gradebook({ onBack }) {
 
       {/* ── Header ── */}
       <div style={{ padding: '20px 16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {handleBack && (
-            <button onClick={handleBack} style={{ background: C.inner, border: 'none', borderRadius: 10, padding: '8px 14px', color: C.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>← Back</button>
-          )}
-          <div>
-            <h1 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 2px' }}>Gradebook</h1>
-            <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>{cls?.period} · {cls?.subject} · {clsStudents.length} students</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {handleBack && (
+              <button onClick={handleBack} style={{ background: C.inner, border: 'none', borderRadius: 10, padding: '8px 14px', color: C.text, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>← Back</button>
+            )}
+            <div>
+              <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Gradebook</h1>
+              <p style={{ fontSize: 11, color: C.muted, margin: 0 }}>{cls?.period} · {cls?.subject} · {clsStudents.length} students</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <GradebookSyncStatus />
+            <GradebookSyncButton />
           </div>
         </div>
         <button onClick={() => setNewAssignModal(true)} style={{ background: 'var(--school-color, #BA0C2F)', border: 'none', borderRadius: 12, padding: '8px 14px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>

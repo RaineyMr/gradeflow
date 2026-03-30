@@ -130,6 +130,36 @@ export const demoAccounts = {
       red:            '#f04a4a',
     },
   },
+
+  supportStaff: {
+    role: 'supportStaff',
+    email: 'support@houstonisd.org',
+    password: 'demo123',
+    schoolName: 'Houston ISD',
+    districtName: 'Houston Independent School District',
+    userName: 'Ms. Carter',
+    studentName: null,
+    avatar: '🩺',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
+    theme: {
+      primary:        '#003057',
+      secondary:      '#B3A369',
+      bg:             '#000d1f',
+      card:           '#001830',
+      inner:          '#002040',
+      border:         '#003a6a',
+      text:           '#e8edf5',
+      muted:          '#6080a0',
+      heroGradient:   'linear-gradient(135deg,#003057,#001830)',
+      headerGradient: 'linear-gradient(135deg,#003057,#001020)',
+      soft:           'rgba(179,163,105,0.18)',
+      navActive:      '#B3A369',
+      green:          '#22c97a',
+      blue:           '#B3A369',
+      amber:          '#f5a623',
+      red:            '#f04a4a',
+    },
+  },
 }
 
 export const demoLoginList = [
@@ -137,6 +167,7 @@ export const demoLoginList = [
   { role: 'student', label: '🎓 Student Demo',  email: 'student@houstonisd.org',     password: 'demo123', school: 'Houston ISD' },
   { role: 'parent',  label: '👨‍👩‍👧 Parent Demo',  email: 'parent@bellaire.org',       password: 'demo123', school: 'Bellaire High School' },
   { role: 'admin',   label: '🏫 Admin Demo',    email: 'admin@lamarhs.org',          password: 'demo123', school: 'Lamar High School' },
+  { role: 'supportStaff', label: '🩺 Support Staff Demo', email: 'support@houstonisd.org', password: 'demo123', school: 'Houston ISD' },
 ]
 
 export function getDemoAccountByRole(role) {

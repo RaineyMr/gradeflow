@@ -40,6 +40,11 @@ const ALL_CONTACTS = {
   ],
 }
 
+if (isSupportStaff) {
+  ALL_CONTACTS.students = ALL_CONTACTS.students.slice(0,3) // Demo assigned students
+  ALL_CONTACTS.teachers = ALL_CONTACTS.teachers.slice(0,2) // Their teachers
+}
+
 const AI_TONES = [
   { id:'warm',        label:'Warm & Friendly', emoji:'🤗' },
   { id:'formal',      label:'Professional',    emoji:'💼' },
@@ -365,10 +370,35 @@ function ThreadView({ thread, onBack, senderName }) {
 
 // ─── MAIN ─────────────────────────────────────────────────────────────────────
 export default function ParentMessages({ onBack, viewerRole='teacher' }) {
+  const { currentUser } = useStore()
+  const isSupportStaff = currentUser?.role === 'supportStaff'
+
   const { goBack } = useStore()
   const handleBack = onBack || goBack
 
-  const seed = viewerRole==='student' ? STUDENT_THREADS
+const SUPPORT_THREADS = [
+  { id:6, name:'Marcus Thompson', role:'student', avatar:'👦', subject:'Progress check-in',
+    unread:true, status:'sent',
+    msgs:[
+      { id:1, from:'Ms. Carter', me:true, text:"Hi Marcus, just checking in on your Math grades. How's the practice going?", time:'2 hr ago' },
+      { id:2, from:'Marcus Thompson', me:false, text:"Hi Ms. Carter, I did the practice worksheet. It's better now!", time:'1 hr ago' },
+    ] },
+  { id:7, name:'Mr. Rivera', role:'teacher', avatar:'🧑‍🔬', subject:'Student support plan',
+    unread:false, status:'sent',
+    msgs:[
+      { id:1, from:'Ms. Carter', me:true, text:"Mr. Rivera, Marcus (3rd period) needs extra Science practice sheets.", time:'Yesterday' },
+      { id:2, from:'Mr. Rivera', me:false, text:"Got it, I'll send 5 worksheets to the office by tomorrow.", time:'Yesterday' },
+    ] },
+  { id:8, name:'Principal Davis', role:'admin', avatar:'🏫', subject:'Counseling referral',
+    unread:true, status:'sent',
+    msgs:[
+      { id:1, from:'Ms. Carter', me:true, text:"Principal Davis, recommending Sofia Rodriguez for counseling services.", time:'3 days ago' },
+      { id:2, from:'Principal Davis', me:false, text:"Thank you Ms. Carter. I've scheduled her initial meeting for Thursday.", time:'2 days ago' },
+    ] },
+]
+
+const seed = viewerRole==='supportStaff' ? SUPPORT_THREADS
+             : viewerRole==='student' ? STUDENT_THREADS
              : viewerRole==='parent'  ? PARENT_PRIVATE
              : TEACHER_THREADS
 

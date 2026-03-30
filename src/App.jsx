@@ -158,13 +158,20 @@ export default function App() {
             <Route path="/parent/messages"   element={<Page Component={ParentMessages} backTo="/parent" extraProps={{ viewerRole: 'parent' }} />} />
           </Route>
 
-          {/* ── Admin ───────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+          {/* ── Admin ───────────────────────────────────────────────── */ }
+          <Route element={<ProtectedRoute allowedRoles={['admin']} />} >
             <Route path="/admin"            element={<AdminHome />} />
             <Route path="/admin/widgets"    element={<Page Component={Widgets}       backTo="/admin" />} />
             <Route path="/admin/messages"   element={<Page Component={ParentMessages} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
             <Route path="/admin/feed"       element={<Page Component={ClassFeed}      backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
             <Route path="/admin/reports"    element={<Page Component={Reports}        backTo="/admin" />} />
+          </Route>
+
+          {/* ── Support Staff ───────────────────────────────────────────────────── */ }
+          <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />} >
+            <Route path="/supportStaff"           element={<SupportStaffDashboard />} />
+            <Route path="/supportStaff/teams"     element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" />} />
+            <Route path="/supportStaff/messages"  element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
           </Route>
 
         </Route>

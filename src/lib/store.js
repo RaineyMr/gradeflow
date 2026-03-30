@@ -694,6 +694,49 @@ export const useStore = create((set, get) => ({
     return lessons[0] || null
   },
 
+  /**
+   * SupportStaff messaging targets: assigned students → their teachers + admin
+   */
+  getMessagingTargetsForSupportStaff: () => {
+    const { currentUser, students, classes } = get()
+    if (currentUser?.role !== 'supportStaff') return []
+
+    // Demo: first 3 students assigned
+    const assignedStudents = students.filter(s => s.id <= 3)
+    
+    const targets = []
+
+    // Assigned students
+    targets.push(...assignedStudents.map(s => ({
+      type: 'student',
+      ...s,
+      messagingLabel: `Message ${s.name}`,
+    })))
+
+    // Their teachers (demo classes 1-3 → teachers 1,2)
+    const teachers = [
+      { id: 't1', name: 'Mr. Rivera', avatar: '🧑‍🔬', role: 'teacher' },
+      { id: 't2', name: 'Ms. Davis', avatar: '👩‍💼', role: 'teacher' },
+    ]
+    targets.push(...teachers.map(t => ({
+      type: 'teacher',
+      ...t,
+      messagingLabel: `Message ${t.name}`,
+    })))
+
+    // Admin
+    const admins = [
+      { id: 'a1', name: 'Principal Davis', avatar: '🏫', role: 'admin' },
+    ]
+    targets.push(...admins.map(a => ({
+      type: 'admin',
+      ...a,
+      messagingLabel: `Message ${a.name}`,
+    })))
+
+    return targets
+  },
+
   calcWeightedGrade: (studentId, classId) => {
     const { assignments, grades, categories, gradingMethod } = get()
     const clsAssigns = assignments.filter(a => a.classId === classId)

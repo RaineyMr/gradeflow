@@ -102,6 +102,23 @@ create table if not exists feed_posts (
   created_at timestamptz default now()
 );
 
+-- Sync Logs
+create table if not exists public.sync_logs (
+  id uuid primary key default gen_random_uuid(),
+  triggered_by text not null,
+  payload jsonb not null,
+  created_at timestamp with time zone default now()
+);
+
+-- Support Staff Teams
+create table if not exists public.support_staff_teams (
+  id uuid primary key default gen_random_uuid(),
+  staff_id uuid not null references teachers(id),
+  student_id uuid not null references students(id),
+  created_at timestamp with time zone default now(),
+  unique(staff_id, student_id)
+);
+
 -- Enable Row Level Security
 alter table teachers enable row level security;
 alter table classes enable row level security;
@@ -111,3 +128,4 @@ alter table grades enable row level security;
 alter table parent_messages enable row level security;
 alter table lessons enable row level security;
 alter table feed_posts enable row level security;
+alter table sync_logs enable row level security;
