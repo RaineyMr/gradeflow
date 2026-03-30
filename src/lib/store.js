@@ -668,64 +668,19 @@ setDemoSupportStaffData: async () => {
 
   // ── Load all data from Supabase ─────────────────────────────────────────────
   loadFromDB: async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0]
-
-      const [
-        classesRes,
-        studentsRes,
-        assignmentsRes,
-        gradesRes,
-        messagesRes,
-        lessonsRes,
-        feedRes,
-      ] = await Promise.all([
-        supabase.from('classes').select('*').order('period'),
-        supabase.from('students').select('*').order('name'),
-        supabase.from('assignments').select('*').order('assign_date', { ascending: false }),
-        supabase.from('grades').select('*'),
-        supabase.from('parent_messages').select('*, students(name)').order('created_at', { ascending: false }),
-        supabase.from('lessons').select('*').eq('lesson_date', today),
-        supabase.from('feed_posts').select('*').order('created_at', { ascending: false }).limit(20),
-      ])
-
-      if (classesRes.error || studentsRes.error) {
-        console.warn('Supabase load failed, using demo data:', classesRes.error || studentsRes.error)
-        set({ dbLoaded: true, isHydrated: true, dbError: classesRes.error || studentsRes.error })
-        return
-      }
-
-      const classes     = (classesRes.data     || []).map(mapClass)
-      const students    = (studentsRes.data    || []).map(mapStudent)
-      const assignments = (assignmentsRes.data || []).map(mapAssignment)
-      const grades      = (gradesRes.data      || []).map(mapGrade)
-      const messages    = (messagesRes.data    || []).map(mapMessage)
-      const feed        = (feedRes.data        || []).map(mapFeedPost)
-
-      const lessonsById = {}
-      for (const row of (lessonsRes.data || [])) {
-        const lesson = mapLesson(row)
-        if (!lessonsById[row.class_id]) lessonsById[row.class_id] = []
-        lessonsById[row.class_id].push(lesson)
-      }
-
-      set({
-        classes:     classes.length     ? classes     : DEMO_CLASSES,
-        students:    students.length    ? students    : DEMO_STUDENTS,
-        assignments: assignments.length ? assignments : DEMO_ASSIGNMENTS,
-        grades:      grades.length      ? grades      : DEMO_GRADES,
-        messages:    messages.length    ? messages    : DEMO_MESSAGES,
-        feed:        feed.length        ? feed        : DEMO_FEED,
-        lessons:     Object.keys(lessonsById).length ? lessonsById : DEMO_LESSONS,
-        dbLoaded: true,
-        isHydrated: true,
-        dbError:  null,
-      })
-
-    } catch (err) {
-      console.warn('Supabase unreachable, using demo data:', err)
-      set({ dbLoaded: true, isHydrated: true, dbError: err })
-    }
+    // Demo mode - load demo data immediately
+    set({
+      classes: DEMO_CLASSES,
+      students: DEMO_STUDENTS,
+      assignments: DEMO_ASSIGNMENTS,
+      grades: DEMO_GRADES,
+      messages: DEMO_MESSAGES,
+      feed: DEMO_FEED,
+      lessons: DEMO_LESSONS,
+      dbLoaded: true,
+      isHydrated: true,
+      dbError: null
+    })
   },
 
   // ── Grade categories ────────────────────────────────────────────────────────
