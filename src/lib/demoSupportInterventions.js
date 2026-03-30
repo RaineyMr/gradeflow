@@ -59,3 +59,4 @@ export const INTERVENTION_TYPES = [
   { value: 'attendance',    label: 'Attendance Intervention', icon: '📅' },
   { value: 'communication', label: 'Family Communication Plan', icon: '👪' },
 ]
+
