@@ -2,6 +2,7 @@
 import React, { useState } from 'react'
 import { useStore } from '../../lib/store'
 import RecipientSelector from './RecipientSelector'
+import AIAssistantPanel from './AIAssistantPanel'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -16,6 +17,7 @@ export default function SupportStaffMessaging({
   preselectedMode = 'students' 
 }) {
   const { sendSupportStaffMessage } = useStore()
+  const [showAI, setShowAI] = useState(false)
 
   const [selectedRecipientIds, setSelectedRecipientIds] = useState(preselectedStudentIds)
   const [recipientMode, setRecipientMode] = useState(preselectedMode)
@@ -83,15 +85,35 @@ export default function SupportStaffMessaging({
               Support Staff Messaging
             </div>
           </div>
-          <button 
-            onClick={onClose} 
-            style={{ 
-              background:C.inner, border:'none', borderRadius:999, width:32, height:32, 
-              color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' 
-            }}
-          >
-            ×
-          </button>
+          <div style={{ display:'flex', gap:8 }}>
+            <button
+              onClick={() => setShowAI(true)}
+              style={{
+                background: C.blue,
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 12px',
+                color: '#fff',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4
+              }}
+            >
+              🤖 AI
+            </button>
+            <button 
+              onClick={onClose} 
+              style={{ 
+                background:C.inner, border:'none', borderRadius:999, width:32, height:32, 
+                color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' 
+              }}
+            >
+              ×
+            </button>
+          </div>
         </div>
 
         {/* Recipient Selector */}
@@ -195,6 +217,19 @@ export default function SupportStaffMessaging({
           All communications are logged for compliance.
         </div>
       </div>
+
+      {/* AI Assistant Panel */}
+      <AIAssistantPanel
+        isOpen={showAI}
+        onClose={() => setShowAI(false)}
+        initialContext={{ 
+          screen: 'messaging',
+          recipientMode: recipientMode,
+          selectedRecipientIds: selectedRecipientIds,
+          subject: subject,
+          body: body
+        }}
+      />
     </div>
   )
 }
