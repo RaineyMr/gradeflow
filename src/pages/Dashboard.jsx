@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
+import { useT } from '../lib/i18n'
 import BottomNav      from '../components/ui/BottomNav'
 import Gradebook      from './Gradebook'
 import LessonPlan     from './LessonPlan'
@@ -122,7 +123,7 @@ function TodaysLessonsWidget({ navigate }) {
 
   return (
     <Widget onClick={openLesson} style={{ background:'linear-gradient(135deg,#071a30 0%,#0a0a1a 100%)', border:'1px solid #1a3050' }}>
-      <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:10 }}>TODAY'S LESSONS</div>
+      <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:10 }}>{t('todays_lessons')}</div>
       <div style={{ display:'flex', gap:6, marginBottom:12, overflowX:'auto', paddingBottom:2 }}>
         {classes.map(c=>(
           <button key={c.id} onClick={e=>{ e.stopPropagation(); setActiveClassId(c.id) }}
@@ -154,23 +155,27 @@ function TodaysLessonsWidget({ navigate }) {
 }
 
 // ─── WIDGET CATALOG ───────────────────────────────────────────────────────────
-const WIDGET_CATALOG = [
-  { id:'overview',   label:'Daily Overview',      icon:'📅', desc:'Classes, messages, lesson plans & alerts' },
-  { id:'lessons',    label:"Today's Lessons",     icon:'📖', desc:'Lesson status and quick actions' },
-  { id:'classes',    label:'My Classes',          icon:'📚', desc:'Class GPA and at-risk students' },
-  { id:'attention',  label:'Needs Attention',     icon:'⚑',  desc:'Students flagged for follow-up' },
-  { id:'messages',   label:'Messages',            icon:'💬', desc:'Parent, student & teacher threads' },
-  { id:'reports',    label:'Reports',             icon:'📊', desc:'Grade trends and class analytics' },
-  { id:'grading',    label:'Grading',             icon:'✏️', desc:'Quick-grade recent submissions' },
-  { id:'lessonPlan', label:'Lesson Plan Builder', icon:'📋', desc:'Build and edit lesson plans' },
-  { id:'sketch',     label:'Sketch & Annotate',   icon:'🖊️', desc:'Draw on documents and photos' },
-  { id:'testing',    label:'Testing Suite',       icon:'🧪', desc:'Create and proctor assessments' },
-  { id:'scan',       label:'Scan Grade Sheet',    icon:'📷', desc:'Camera-grade paper assignments' },
-  { id:'gradebook',  label:'Gradebook',           icon:'📓', desc:'Full gradebook and student profiles' },
-]
+function getWidgetCatalog() {
+  const t = useT()
+  return [
+    { id:'overview',   label:t('daily_overview'),      icon:'📅', desc:t('nav_classes') + ', ' + t('nav_messages') + ', ' + t('lesson_plans') + ' & ' + t('nav_alerts') },
+    { id:'lessons',    label:t('todays_lessons'),     icon:'📖', desc:t('lesson_status') + ' and ' + t('quick_actions') },
+    { id:'classes',    label:t('my_classes'),          icon:'📚', desc:t('class_gpa') + ' and ' + t('at_risk') + ' ' + t('students_label') },
+    { id:'attention',  label:t('needs_attention'),     icon:'⚑',  desc:t('students') + ' ' + t('flagged') + ' for ' + t('follow_up') },
+    { id:'messages',   label:t('nav_messages'),            icon:'💬', desc:t('parent') + ', ' + t('student') + ' & ' + t('teachers_label') + ' ' + t('threads') },
+    { id:'reports',    label:t('nav_reports'),             icon:'📊', desc:t('grade') + ' ' + t('trends') + ' and ' + t('class') + ' ' + t('school_analytics') },
+    { id:'grading',    label:'Grading',             icon:'✏️', desc:'Quick-grade recent submissions' },
+    { id:'lessonPlan', label:'Lesson Plan Builder', icon:'📋', desc:'Build and edit lesson plans' },
+    { id:'sketch',     label:'Sketch & Annotate',   icon:'🖊️', desc:'Draw on documents and photos' },
+    { id:'testing',    label:'Testing Suite',       icon:'🧪', desc:'Create and proctor assessments' },
+    { id:'scan',       label:'Scan Grade Sheet',    icon:'📷', desc:'Camera-grade paper assignments' },
+    { id:'gradebook',  label:'Gradebook',           icon:'📓', desc:'Full gradebook and student profiles' },
+  ]
+}
 
 // ─── ADD WIDGETS MODAL ────────────────────────────────────────────────────────
 function AddWidgetsModal({ hidden, onToggle, onClose }) {
+  const catalog = getWidgetCatalog()
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(8px)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:480, background:C.bg, border:`1px solid ${C.border}`, borderRadius:'24px 24px 0 0', padding:'20px 20px max(28px,env(safe-area-inset-bottom))', maxHeight:'85vh', overflowY:'auto' }}>
@@ -788,7 +793,7 @@ function ClassesPage({ onBack, navigate }) {
     <SubPage>
       <div style={{ padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
         <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-        <h1 style={{ fontSize:22, fontWeight:800, color:C.text, margin:0 }}>📚 My Classes</h1>
+        <h1 style={{ fontSize:22, fontWeight:800, color:C.text, margin:0 }}>📚 {t('my_classes')}</h1>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px' }}>
         {classes.map(cls=>(
@@ -879,6 +884,7 @@ function HomeFeed({ navigate }) {
   const { classes, messages, getNeedsAttention } = store
   const pending = messages.filter(m=>m.status==='pending')
   const atRisk  = getNeedsAttention()
+  const t = useT()
 
   const [showModal, setShowModal] = useState(false)
   const [hidden,    setHidden]    = useState(() => {
@@ -905,10 +911,10 @@ function HomeFeed({ navigate }) {
   }
 
   const overviewTiles = [
-    { icon:'📚', val:classes.length,    label:'Classes',      page:'classes',        color:C.blue   },
-    { icon:'💬', val:pending.length||'',label:'Messages',     page:'parentMessages', color:C.purple },
-    { icon:'📋', val:'',                label:'Lesson Plans', page:'lessonPlan',     color:C.teal   },
-    { icon:'🔔', val:atRisk.length||'', label:'Alerts',       page:'alerts',         color:C.red    },
+    { icon:'📚', val:classes.length,    label:t('nav_classes'),      page:'classes',        color:C.blue   },
+    { icon:'💬', val:pending.length||'',label:t('nav_messages'),     page:'parentMessages', color:C.purple },
+    { icon:'📋', val:'',                label:t('lesson_plans'), page:'lessonPlan',     color:C.teal   },
+    { icon:'🔔', val:atRisk.length||'', label:t('nav_alerts'),       page:'alerts',         color:C.red    },
   ]
 
   return (
@@ -924,7 +930,7 @@ function HomeFeed({ navigate }) {
 
       {wrap('overview',
         <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }}>
-          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>DAILY OVERVIEW</div>
+          <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>{t('daily_overview')}</div>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
             {overviewTiles.map(tile=>(
               <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
@@ -943,7 +949,7 @@ function HomeFeed({ navigate }) {
       {wrap('lessons', <TodaysLessonsWidget navigate={navigate}/>)}
 
       {wrap('classes',
-        <Widget onClick={()=>navigate('classes')} title="📚 My Classes" titleRight={<ActionBtn label="+ Add" color={C.blue} onClick={()=>navigate('gradebook')}/>}>
+        <Widget onClick={()=>navigate('classes')} title={`📚 ${t('my_classes')}`} titleRight={<ActionBtn label={`+ ${t('add')}`} color={C.blue} onClick={()=>navigate('gradebook')}/>}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
             {classes.map(cls=>(
               <button key={cls.id} onClick={e=>{ e.stopPropagation(); store.setActiveClass(cls); navigate('gradebook') }}
