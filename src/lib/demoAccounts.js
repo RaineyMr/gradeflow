@@ -7,8 +7,8 @@ export const demoAccounts = {
     role: 'teacher',
     email: 'teacher@kippneworleans.org',
     password: 'demo123',
-    schoolName: 'Escuelas KIPP Nueva Orleans',
-    districtName: 'KIPP Nueva Orleans',
+    schoolName: 'KIPP New Orleans',
+    districtName: 'KIPP New Orleans',
     userName: 'Ms. Johnson',
     studentName: null,
     avatar: '👩‍🏫',
@@ -163,11 +163,11 @@ export const demoAccounts = {
 }
 
 export const demoLoginList = [
-  { role: 'teacher',      label: '🧑‍🏫 Demo de Maestro',      email: 'teacher@kippneworleans.org', password: 'demo123', school: 'KIPP New Orleans' },
-  { role: 'student',      label: '🎓 Demo de Estudiante',     email: 'student@houstonisd.org',     password: 'demo123', school: 'Houston ISD' },
-  { role: 'parent',       label: '👨‍👩‍👧 Demo de Padre/Madre',   email: 'parent@bellaire.org',        password: 'demo123', school: 'Bellaire High School' },
-  { role: 'admin',        label: '🏫 Demo de Admin',         email: 'admin@lamarhs.org',          password: 'demo123', school: 'Lamar High School' },
-  { role: 'supportStaff', label: '📣 Demo de Personal de Apoyo', email: 'support@houstonisd.org',     password: 'demo123', school: 'Houston ISD' },
+  { role: 'teacher',      label: '🧑‍🏫 Teacher Demo',      email: 'teacher@kippneworleans.org', password: 'demo123', school: 'KIPP New Orleans' },
+  { role: 'student',      label: '🎓 Student Demo',     email: 'student@houstonisd.org',     password: 'demo123', school: 'Houston ISD' },
+  { role: 'parent',       label: '👨‍👩‍👧 Parent Demo',   email: 'parent@bellaire.org',        password: 'demo123', school: 'Bellaire High School' },
+  { role: 'admin',        label: '🏫 Admin Demo',         email: 'admin@lamarhs.org',          password: 'demo123', school: 'Lamar High School' },
+  { role: 'supportStaff', label: '📣 Support Staff Demo', email: 'support@houstonisd.org',     password: 'demo123', school: 'Houston ISD' },
 ]
 
 export function getDemoAccountByRole(role) {
