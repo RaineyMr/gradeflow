@@ -282,6 +282,8 @@ export default function AppShell() {
               justifyContent:'center',
               fontSize:     18,
               transition:   'background 0.15s',
+              zIndex:       10,
+              position:     'relative',
             }}
             onMouseEnter={e => { e.currentTarget.style.background = theme.primary + '30' }}
             onMouseLeave={e => { e.currentTarget.style.background = theme.soft ?? 'rgba(249,115,22,0.14)' }}
@@ -292,7 +294,7 @@ export default function AppShell() {
           {currentUser.role === 'teacher' && <GradebookSyncButton />}
 
           {/* Hamburger menu */}
-          <div ref={menuRef} style={{ position: 'relative' }}>
+          <div ref={menuRef} style={{ position: 'relative', zIndex: 1 }}>
             <button
               onClick={() => setMenuOpen(o => !o)}
               aria-label="Open menu"
