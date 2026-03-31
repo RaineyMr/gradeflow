@@ -76,18 +76,21 @@ export default function Camera() {
   }, [attachStream])
 
   async function openCamera() {
+    console.log('openCamera called');
     setCameraError(null)
     setCameraReady(false)
 
     if (!navigator.mediaDevices?.getUserMedia) {
+      console.error('getUserMedia not supported');
       setCameraError(
         location.protocol === 'http:' && location.hostname !== 'localhost'
-          ? 'Camera requires HTTPS. Use the Vercel URL.'
+          ? 'Camera requires HTTPS. Use Vercel URL.'
           : 'Browser does not support camera. Try Chrome or Safari, or upload instead.'
       )
       return
     }
 
+    console.log('Requesting camera access...');
     const attempts = [
       { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
       { video: { facingMode: 'environment' } },
@@ -98,8 +101,17 @@ export default function Camera() {
     let stream = null
     let lastErr = null
     for (const c of attempts) {
-      try { stream = await navigator.mediaDevices.getUserMedia(c); break }
-      catch (err) { lastErr = err; if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break }
+      try { 
+        console.log('Trying camera config:', c);
+        stream = await navigator.mediaDevices.getUserMedia(c); 
+        console.log('Camera access granted');
+        break 
+      }
+      catch (err) { 
+        console.error('Camera error:', err);
+        lastErr = err; 
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break 
+      }
     }
 
     if (!stream) {
@@ -402,7 +414,7 @@ export default function Camera() {
       )}
 
       <div className="grid gap-4 mb-6">
-        <button onClick={openCamera}
+        <button onClick={() => { console.log('Camera button clicked!'); openCamera(); }}
           className="p-8 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
           style={{ background: 'linear-gradient(135deg, #1a2a4a, #0f1a2e)', border: '1px solid #3b7ef440' }}>
           <span className="text-5xl" role="img" aria-label="camera">&#128247;</span>
