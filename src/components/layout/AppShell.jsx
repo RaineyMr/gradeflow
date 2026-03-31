@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { useStore } from '@lib/store'
 import { useT } from '@lib/i18n'
+import { useHashRouter } from '@hooks/useHashRouter'
 import { GradebookSyncButton } from '@components/GradebookSyncButton.jsx'
 
 const ROLE_LABELS = {
@@ -43,7 +44,7 @@ const PAGES_BY_ROLE = {
 }
 
 export default function AppShell() {
-  const navigate = useNavigate()
+  const { navigateToPage, navigateToHome } = useHashRouter()
   const t = useT()
   const { currentUser, setCurrentUser, setLang, isHydrated } = useStore()
 
@@ -118,7 +119,7 @@ export default function AppShell() {
     localStorage.removeItem('gradeflow_user')
     setCurrentUser(null)
     setMenuOpen(false)
-    navigate('/login', { replace: true })
+    navigateToPage('login')
   }
 
   function handleToggleLang() {
@@ -131,27 +132,23 @@ export default function AppShell() {
   }
 
   function goTo(path) {
-    navigate(path)
+    // Extract page from path for hash router
+    const segments = path.split('/').filter(Boolean)
+    const page = segments[segments.length - 1] || 'home'
+    const role = segments[0] || currentUser?.role
+    
+    navigateToPage(page, role)
     setMenuOpen(false)
   }
 
   function homeClick() {
-    const role = currentUser?.role || 'teacher'
-    const homePath = role === 'admin' ? '/admin' : `/${role}`
     setMenuOpen(false)
-
-    if (window.location.pathname === homePath) {
-      // already at home path: trigger app-level home reset rather than full reload
-      window.dispatchEvent(new Event('gradeflow-home'))
-      return
-    }
-
-    navigate(homePath)
+    navigateToHome()
   }
 
   function handleCameraClick() {
     setMenuOpen(false)
-    navigate('/camera')
+    navigateToPage('camera')
   }
 
   // ── Dropdown sections ─────────────────────────────────────────────────────
