@@ -228,6 +228,13 @@ const TRANSLATIONS = {
   resources_label:       { en: 'Resources',          es: 'Recursos'            },
   support_label:         { en: 'Support',            es: 'Soporte'             },
 
+  // ── Demo login buttons ───────────────────────────────────────────────────────
+  teacher_demo:          { en: '🧑‍🏫 Teacher Demo',      es: '🧑‍🏫 Demo de Maestro'      },
+  student_demo:          { en: '🎓 Student Demo',         es: '🎓 Demo de Estudiante'     },
+  parent_demo:           { en: '👨‍👩‍👧 Parent Demo',       es: '👨‍👩‍👧 Demo de Padre/Madre'   },
+  admin_demo:            { en: '🏫 Admin Demo',           es: '🏫 Demo de Admin'           },
+  support_staff_demo:     { en: '📣 Support Staff Demo',   es: '📣 Demo de Personal de Apoyo' },
+
   // ── App header / hamburger menu ───────────────────────────────────────────
   profile_settings:      { en: 'Profile & Settings', es: 'Perfil y Ajustes'   },
   switch_account:        { en: 'Switch Account',     es: 'Cambiar Cuenta'      },
