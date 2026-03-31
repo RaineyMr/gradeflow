@@ -116,6 +116,7 @@ function TodaysLessonsWidget({ navigate }) {
   const { classes, setActiveLessonClass, setLessonStatus, getTodayLesson } = useStore()
   const [activeClassId, setActiveClassId] = useState(classes[0]?.id||1)
   const lesson = getTodayLesson(activeClassId)
+  const t = useT()
 
   function openLesson() { setActiveLessonClass(activeClassId); navigate('lessonPlan') }
   function markDone(e) { e.stopPropagation(); setLessonStatus(activeClassId,'done') }
@@ -989,6 +990,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
   const store = useStore()
   const { teacher, activeScreen, activeLessonClassId } = store
   const routerNav = useNavigate()
+  const t = useT()
 
   const [subPage, setSubPage] = useState(null)
   const history = useRef([])
