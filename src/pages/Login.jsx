@@ -4,11 +4,11 @@ import { useT } from '../lib/i18n'
 import { demoLoginList, getDemoAccountByCredentials } from '../lib/demoAccounts'
 
 const ROLES = [
-  { id: 'teacher',      label: 'Teacher',       icon: '🧑‍🏫' },
-  { id: 'student',      label: 'Student',       icon: '🎓'   },
-  { id: 'parent',       label: 'Parent',        icon: '👪'   },
-  { id: 'admin',        label: 'Admin',         icon: '🏫'   },
-  { id: 'supportStaff', label: 'Support Staff', icon: '📣'   },
+  { id: 'teacher',      labelKey: 'teacher_label',      icon: '🧑‍🏫' },
+  { id: 'student',      labelKey: 'student_label_tab',  icon: '🎓'   },
+  { id: 'parent',       labelKey: 'parent_label_tab',   icon: '👪'   },
+  { id: 'admin',        labelKey: 'admin_label_tab',    icon: '🏫'   },
+  { id: 'supportStaff', labelKey: 'support_label',     icon: '📣'   },
 ]
 
 const BRAND = {
@@ -134,7 +134,7 @@ function MobileLogin({ form }) {
             <button key={r.id} onClick={() => setSelectedRole(r.id)}
               style={{ padding:'8px 4px', borderRadius:12, border:`1.5px solid ${selectedRole===r.id?BRAND.primary:BRAND.border}`, background:selectedRole===r.id?'rgba(249,115,22,0.12)':BRAND.inner, color:selectedRole===r.id?BRAND.primary:BRAND.muted, cursor:'pointer', fontSize:10, fontWeight:700, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
               <span style={{ fontSize:18 }}>{r.icon}</span>
-              {r.label}
+              {t(r.labelKey)}
             </button>
           ))}
         </div>
@@ -267,7 +267,7 @@ function DesktopLogin({ form }) {
                 <button key={r.id} onClick={() => setSelectedRole(r.id)}
                   style={{ padding:'12px 6px', borderRadius:14, border:`1.5px solid ${selectedRole===r.id?BRAND.primary:BRAND.border}`, background:selectedRole===r.id?'rgba(249,115,22,0.12)':BRAND.inner, color:selectedRole===r.id?BRAND.primary:BRAND.muted, cursor:'pointer', fontSize:12, fontWeight:700, display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.15s' }}>
                   <span style={{ fontSize:22 }}>{r.icon}</span>
-                  {r.label}
+                  {t(r.labelKey)}
                 </button>
               ))}
             </div>
