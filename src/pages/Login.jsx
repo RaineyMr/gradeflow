@@ -30,6 +30,7 @@ function LangToggle({ onToggle, style = {} }) {
   return (
     <button
       onClick={onToggle}
+      data-testid="lang-toggle"
       style={{
         background:   'rgba(255,255,255,0.12)',
         border:       '1.5px solid rgba(255,255,255,0.25)',
