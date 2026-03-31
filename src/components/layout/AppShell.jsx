@@ -149,6 +149,13 @@ export default function AppShell() {
     navigate(homePath)
   }
 
+  function handleCameraClick() {
+    const role = currentUser?.role || 'teacher'
+    const cameraPath = `/${role}/camera`
+    setMenuOpen(false)
+    navigate(cameraPath)
+  }
+
   // ── Dropdown sections ─────────────────────────────────────────────────────
 
   const dropdownSections = [
@@ -258,10 +265,10 @@ export default function AppShell() {
             {isEs ? '🇺🇸 EN' : '🇲🇽 ES'}
           </button>
 
-          {/* Camera button */}
+          {/* Camera button — NOW FIXED */}
           <button
-            onClick={homeClick}
-            title="Go to home dashboard"
+            onClick={handleCameraClick}
+            title="Open Camera"
             type="button"
             style={{
               width:        38,
@@ -274,7 +281,10 @@ export default function AppShell() {
               alignItems:   'center',
               justifyContent:'center',
               fontSize:     18,
+              transition:   'background 0.15s',
             }}
+            onMouseEnter={e => { e.currentTarget.style.background = theme.primary + '30' }}
+            onMouseLeave={e => { e.currentTarget.style.background = theme.soft ?? 'rgba(249,115,22,0.14)' }}
           >
             📷
           </button>
