@@ -2,425 +2,170 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '@lib/store'
 
-// Demo accounts from your system
 const DEMO_ACCOUNTS = {
-  teacher: {
-    name: 'Ms. Johnson',
-    role: 'teacher',
-    school: 'KIPP New Orleans',
-    theme: { primary: '#BA0C2F', secondary: '#8a0a23' },
-    lang: 'en'
-  },
-  student: {
-    name: 'Marcus Houston',
-    role: 'student',
-    school: 'Houston ISD',
-    theme: { primary: '#003057', secondary: '#001f3f' },
-    lang: 'en'
-  },
-  parent: {
-    name: 'Sarah Parent',
-    role: 'parent',
-    school: 'Bellaire High School',
-    theme: { primary: '#C8102E', secondary: '#8a0a23' },
-    lang: 'en'
-  },
-  admin: {
-    name: 'Principal Admin',
-    role: 'admin',
-    school: 'Lamar High School',
-    theme: { primary: '#461D7C', secondary: '#2a0e4e' },
-    lang: 'en'
-  },
-  supportStaff: {
-    name: 'Support Coordinator',
-    role: 'supportStaff',
-    school: 'District Office',
-    theme: { primary: '#2a7f62', secondary: '#1a5a45' },
-    lang: 'en'
-  }
+  teacher: { name: 'Ms. Johnson', role: 'teacher', school: 'KIPP New Orleans', theme: { primary: '#BA0C2F', secondary: '#8a0a23' }, lang: 'en' },
+  student: { name: 'Marcus Houston', role: 'student', school: 'Houston ISD', theme: { primary: '#003057', secondary: '#001f3f' }, lang: 'en' },
+  parent: { name: 'Sarah Parent', role: 'parent', school: 'Bellaire High School', theme: { primary: '#C8102E', secondary: '#8a0a23' }, lang: 'en' },
+  admin: { name: 'Principal Admin', role: 'admin', school: 'Lamar High School', theme: { primary: '#461D7C', secondary: '#2a0e4e' }, lang: 'en' },
+  supportStaff: { name: 'Support Coordinator', role: 'supportStaff', school: 'District Office', theme: { primary: '#2a7f62', secondary: '#1a5a45' }, lang: 'en' }
 }
 
-// Route map per role (from App.jsx)
 const ROLE_ROUTES = {
-  teacher: [
-    '/teacher',
-    '/teacher/gradebook',
-    '/teacher/lessons',
-    '/teacher/reports',
-    '/teacher/messages',
-    '/teacher/testing',
-    '/teacher/feed',
-    '/teacher/widgets',
-    '/teacher/integrations'
-  ],
-  student: [
-    '/student',
-    '/student/widgets',
-    '/student/messages',
-    '/student/feed'
-  ],
-  parent: [
-    '/parent',
-    '/parent/widgets',
-    '/parent/messages'
-  ],
-  admin: [
-    '/admin',
-    '/admin/widgets',
-    '/admin/messages',
-    '/admin/feed',
-    '/admin/reports'
-  ],
-  supportStaff: [
-    '/supportStaff',
-    '/supportStaff/ai',
-    '/supportStaff/insights',
-    '/supportStaff/collaboration',
-    '/supportStaff/reports',
-    '/supportStaff/groups',
-    '/supportStaff/trends',
-    '/supportStaff/messages',
-    '/supportStaff/notes'
-  ]
+  teacher: ['/teacher', '/teacher/gradebook', '/teacher/lessons', '/teacher/reports', '/teacher/messages', '/teacher/testing', '/teacher/feed', '/teacher/widgets', '/teacher/integrations'],
+  student: ['/student', '/student/widgets', '/student/messages', '/student/feed'],
+  parent: ['/parent', '/parent/widgets', '/parent/messages'],
+  admin: ['/admin', '/admin/widgets', '/admin/messages', '/admin/feed', '/admin/reports'],
+  supportStaff: ['/supportStaff', '/supportStaff/ai', '/supportStaff/insights', '/supportStaff/collaboration', '/supportStaff/reports', '/supportStaff/groups', '/supportStaff/trends', '/supportStaff/messages', '/supportStaff/notes']
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Helper: Detect if page is blank/black
-// ────────────────────────────────────────────────────────────────────────────
 function checkPageHealth() {
-  // Wait for content to render
-  const main = document.querySelector('main')
-  const body = document.body
-
-  // Visible content check
-  const mainHasContent = main && main.offsetHeight > 100 && main.innerHTML.trim().length > 50
-  const bodyHasContent = body.innerHTML.trim().length > 200
-
-  // Black background check
-  const bodyBg = window.getComputedStyle(body).backgroundColor
-  const isBlackBg = bodyBg === 'rgb(0, 0, 0)' || bodyBg === 'black'
-
-  // Error state check
   const bodyText = document.body.innerText
-  const hasError = bodyText.includes('Error') && bodyText.length < 500
-  const hasException = bodyText.includes('Exception')
-
-  return {
-    hasContent: mainHasContent || bodyHasContent,
-    isBlack: isBlackBg && !mainHasContent && !bodyHasContent,
-    hasError: hasError || hasException,
-    contentLength: main?.innerHTML?.length || 0
-  }
+  const hasContent = bodyText.length > 100
+  const isBlack = window.getComputedStyle(document.body).backgroundColor === 'rgb(0, 0, 0)' && !hasContent
+  return { hasContent, isBlack }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Helper: Find all interactive elements
-// ────────────────────────────────────────────────────────────────────────────
-function findAllClickables() {
-  const clickables = []
-  const seen = new WeakSet()
-
-  // Selectors for interactive elements
-  const selectors = [
-    'button',
-    'a[href]',
-    '[role="button"]',
-    '[role="tab"]',
-    '[role="link"]',
-    '[onclick]',
-    'input[type="submit"]',
-    'input[type="button"]'
-  ]
-
-  selectors.forEach(selector => {
-    try {
-      document.querySelectorAll(selector).forEach(el => {
-        if (seen.has(el)) return
-        if (!el.offsetParent) return // Not visible
-
-        const rect = el.getBoundingClientRect()
-        const isInViewport = rect.top >= -100 && rect.left >= -100 && rect.top < window.innerHeight + 100
-
-        if (!isInViewport) return
-
-        const style = window.getComputedStyle(el)
-        const cursor = style.cursor
-        const hasClickListener = !!el.onclick || !!el.__reactEventHandlers?.onClick
-        const role = el.getAttribute('role')
-
-        // Only include if cursor=pointer OR is standard interactive element
-        const isCursorClickable = cursor === 'pointer'
-        const isStandardInteractive = ['button', 'a'].includes(el.tagName.toLowerCase())
-        const hasRole = ['button', 'tab', 'link'].includes(role || '')
-
-        if (isCursorClickable || isStandardInteractive || hasRole || hasClickListener) {
-          const text = (el.innerText || el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 40)
-          const href = el.getAttribute('href') || ''
-          const dataTestId = el.getAttribute('data-testid') || ''
-
-          clickables.push({
-            text,
-            tag: el.tagName,
-            href,
-            cursor: cursor,
-            hasClickListener,
-            role,
-            dataTestId,
-            element: el
-          })
-
-          seen.add(el)
-        }
-      })
-    } catch (e) {
-      // Skip broken selectors
-    }
-  })
-
-  return clickables
+function SummaryCard({ label, value, color }) {
+  return (
+    <div style={{ background: '#1a2140', padding: '12px', borderRadius: '8px', border: `1px solid ${color}30`, textAlign: 'center' }}>
+      <div style={{ fontSize: '11px', color: '#7289da', marginBottom: '6px' }}>{label}</div>
+      <div style={{ fontSize: '22px', fontWeight: 'bold', color }}>{value}</div>
+    </div>
+  )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Main Crawler Component
-// ────────────────────────────────────────────────────────────────────────────
-export default function Crawler() {
+export default function CrawlerDashboard() {
   const navigate = useNavigate()
-  const { setCurrentUser, currentUser } = useStore()
+  const { setCurrentUser } = useStore()
 
-  const [status, setStatus] = useState('Ready to crawl')
-  const [progress, setProgress] = useState({ role: '', page: '', tested: 0, broken: 0 })
-  const [results, setResults] = useState(null)
-  const [isRunning, setIsRunning] = useState(false)
-  const [showDebug, setShowDebug] = useState(true)
+  const [status, setStatus] = useState('IDLE')
+  const [progress, setProgress] = useState({ role: '', page: '', tested: 0 })
   const [actionLog, setActionLog] = useState([])
-  const [slowMotionMs, setSlowMotionMs] = useState(0)
-  const [currentPageContent, setCurrentPageContent] = useState('')
+  const [results, setResults] = useState(null)
+  const [slowMotionMs, setSlowMotionMs] = useState(500)
+  const [isPaused, setIsPaused] = useState(false)
+  const [pageSnapshot, setPageSnapshot] = useState('')
+  const [currentPageUrl, setCurrentPageUrl] = useState('')
+  const [timeoutSeconds, setTimeoutSeconds] = useState(10)
+  const [elapsedTime, setElapsedTime] = useState(0)
 
-  const resultsRef = useRef(null)
   const logRef = useRef(null)
+  const crawlRef = useRef(null)
+  const timerRef = useRef(null)
 
-  // Auto-scroll action log to bottom
-  useEffect(() => {
-    if (logRef.current) {
-      logRef.current.scrollTop = logRef.current.scrollHeight
-    }
-  }, [actionLog])
-
-  // Helper: Log actions with timestamp
   const log = (type, message, details = '') => {
-    const timestamp = new Date().toLocaleTimeString()
-    setActionLog(prev => [...prev, { timestamp, type, message, details }])
+    setActionLog(prev => {
+      const updated = [...prev, { timestamp: new Date().toLocaleTimeString(), type, message, details }]
+      setTimeout(() => { if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight }, 0)
+      return updated
+    })
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // Core crawl logic for a single role
-  // ────────────────────────────────────────────────────────────────────────────
-  const crawlRole = async (role) => {
-    const account = DEMO_ACCOUNTS[role]
-    const routes = ROLE_ROUTES[role]
+  const capturePageContent = () => {
+    const html = document.documentElement.outerHTML.slice(0, 2000)
+    setPageSnapshot(html)
+    setCurrentPageUrl(window.location.href)
+  }
 
-    log('ROLE', `Starting crawl for ${role}`, account.name)
-
-    const report = {
-      role,
-      account: account.name,
-      pages: {},
-      summary: {
-        pagesVisited: 0,
-        totalClickables: 0,
-        brokenButtons: [],
-        blackPages: [],
-        deadEnds: [],
-        errorPages: []
+  const waitWithPause = async (ms) => {
+    let remaining = ms
+    while (remaining > 0) {
+      if (!crawlRef.current) break
+      if (isPaused) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+        continue
       }
+      await new Promise(resolve => setTimeout(resolve, 100))
+      remaining -= 100
     }
+  }
 
-    // Set user in store
-    setCurrentUser(account)
-    log('AUTH', `Logged in as ${account.name}`)
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const crawlSingleRole = async (role) => {
+    const routes = ROLE_ROUTES[role]
+    const report = { role, pagesVisited: 0, totalClickables: 0, brokenButtons: [], blackPages: [], deadEnds: [], errorPages: [] }
 
     for (const route of routes) {
-      setProgress(prev => ({
-        ...prev,
-        page: route,
-        tested: report.summary.pagesVisited
-      }))
+      if (!crawlRef.current) break
+      if (elapsedTime > timeoutSeconds * 60) {
+        log('TIMEOUT', `Exceeded ${timeoutSeconds} minute limit`)
+        break
+      }
 
-      log('NAVIGATE', `Opening route: ${route}`)
+      setProgress(prev => ({ ...prev, page: route, tested: report.pagesVisited }))
+      log('NAVIGATE', route)
 
       try {
-        // Navigate to the route
         navigate(route)
+        await waitWithPause(500 + slowMotionMs)
+        capturePageContent()
 
-        // Wait for page to render with slow-motion delay
-        const waitTime = 800 + slowMotionMs
-        await new Promise(resolve => setTimeout(resolve, waitTime))
+        const { hasContent, isBlack } = checkPageHealth()
 
-        // Capture page content for debug view
-        setCurrentPageContent(document.body.innerHTML.slice(0, 500))
-
-        // Check page health
-        const health = checkPageHealth()
-
-        const pageReport = {
-          route,
-          timestamp: new Date().toISOString(),
-          health,
-          clickables: [],
-          issues: []
-        }
-
-        // If page is black or broken, skip deep dive
-        if (health.isBlack) {
-          log('ERROR', `Black/blank page detected`, route)
-          pageReport.issues.push({
-            type: 'BLACK_PAGE',
-            severity: 'critical',
-            message: 'Page rendered black/blank'
-          })
-          report.summary.blackPages.push(route)
-        } else if (health.hasError) {
-          log('ERROR', `Error state detected`, route)
-          pageReport.issues.push({
-            type: 'ERROR_STATE',
-            severity: 'critical',
-            message: 'Page shows error message'
-          })
-          report.summary.errorPages.push(route)
-        } else if (!health.hasContent) {
-          log('WARN', `No content found`, route)
-          pageReport.issues.push({
-            type: 'NO_CONTENT',
-            severity: 'medium',
-            message: 'Page has minimal content'
-          })
-          report.summary.deadEnds.push(route)
+        if (isBlack) {
+          log('BUG', `Black page: ${route}`)
+          report.blackPages.push(route)
+        } else if (!hasContent) {
+          log('WARN', `No content: ${route}`)
+          report.deadEnds.push(route)
         } else {
-          log('SUCCESS', `Page loaded: ${health.contentLength} bytes`)
-          // Page is healthy — find clickables
-          const clickables = findAllClickables()
-          log('SCAN', `Found ${clickables.length} clickable elements`)
-          
-          pageReport.clickables = clickables.map(c => ({
-            text: c.text,
-            tag: c.tag,
-            href: c.href,
-            cursor: c.cursor,
-            hasListener: c.hasClickListener,
-            role: c.role
-          }))
-
-          // Check for cursor-change without real click behavior
-          clickables.forEach(clickable => {
-            const { cursor, hasClickListener, href, tag, role } = clickable
-
-            // Cursor=pointer but no href and no click listener = likely broken
-            if (cursor === 'pointer' && !href && !hasClickListener && tag !== 'BUTTON') {
-              log('BUG', `Broken button found: "${clickable.text}"`, `cursor=pointer, no handler`)
-              pageReport.issues.push({
-                type: 'CURSOR_NO_ACTION',
-                severity: 'high',
-                button: clickable.text,
-                message: `Cursor changes but element has no click handler or href`
-              })
-              report.summary.brokenButtons.push({
-                route,
-                button: clickable.text
-              })
-            }
-
-            // Button tag with no onclick or role=button without handler
-            if ((tag === 'BUTTON' || role === 'button') && !hasClickListener && !href) {
-              log('BUG', `Button without handler: "${clickable.text}"`, route)
-              pageReport.issues.push({
-                type: 'BUTTON_NO_HANDLER',
-                severity: 'high',
-                button: clickable.text,
-                message: `Button exists but has no click handler`
-              })
-              report.summary.brokenButtons.push({
-                route,
-                button: clickable.text
-              })
-            }
-          })
-
-          // If no clickables found, it's a dead end
-          if (clickables.length === 0 && route !== `/${role}` && route !== `/${role}/widgets`) {
-            log('WARN', `Dead end (no navigation)`, route)
-            pageReport.issues.push({
-              type: 'NO_NAVIGATION',
-              severity: 'medium',
-              message: 'Page has no interactive elements'
-            })
-            report.summary.deadEnds.push(route)
-          }
-
-          report.summary.totalClickables += clickables.length
+          log('SUCCESS', `Loaded: ${document.body.innerText.length} chars`)
         }
 
-        report.pages[route] = pageReport
-        report.summary.pagesVisited += 1
-
-        setProgress(prev => ({
-          ...prev,
-          broken: report.summary.brokenButtons.length
-        }))
+        report.pagesVisited += 1
       } catch (err) {
-        // Route failed to render
-        log('ERROR', `Navigation failed`, err.message)
-        report.pages[route] = {
-          route,
-          issues: [
-            {
-              type: 'RENDER_ERROR',
-              severity: 'critical',
-              message: err.message
-            }
-          ]
-        }
-        report.summary.errorPages.push(route)
+        log('ERROR', `Navigation failed: ${route}`, err.message)
+        report.errorPages.push(route)
       }
     }
 
-    log('COMPLETE', `Finished ${role} (${report.summary.pagesVisited} pages)`)
     return report
   }
 
-  // ────────────────────────────────────────────────────────────────────────────
-  // Start the full crawl
-  // ────────────────────────────────────────────────────────────────────────────
   const startCrawl = async () => {
-    setIsRunning(true)
-    setStatus('Starting crawler...')
+    setStatus('RUNNING')
+    setActionLog([])
     setResults(null)
+    setElapsedTime(0)
+    crawlRef.current = true
 
-    const crawlResults = {
-      timestamp: new Date().toISOString(),
-      roles: {}
+    const crawlResults = { timestamp: new Date().toISOString(), roles: {} }
+
+    try {
+      for (const role of Object.keys(DEMO_ACCOUNTS)) {
+        if (!crawlRef.current) break
+        setProgress(prev => ({ ...prev, role }))
+        log('ROLE', `Starting ${role}`)
+        setCurrentUser(DEMO_ACCOUNTS[role])
+        await waitWithPause(800)
+        const roleReport = await crawlSingleRole(role)
+        crawlResults.roles[role] = roleReport
+      }
+
+      setResults(crawlResults)
+      setStatus('COMPLETE')
+      log('SUCCESS', 'Crawl completed!')
+    } catch (err) {
+      log('ERROR', 'Crawl failed', err.message)
+      setStatus('ERROR')
+      setResults(crawlResults)
     }
+  }
 
-    for (const role of Object.keys(DEMO_ACCOUNTS)) {
-      setStatus(`Crawling ${role}...`)
-      const roleReport = await crawlRole(role)
-      crawlResults.roles[role] = roleReport
-    }
+  const togglePause = () => {
+    setIsPaused(!isPaused)
+    log('ACTION', isPaused ? 'Resumed' : 'Paused')
+  }
 
-    // Compute summary
-    const summary = {
-      totalRoles: Object.keys(DEMO_ACCOUNTS).length,
-      totalPages: Object.values(crawlResults.roles).reduce((sum, r) => sum + r.summary.pagesVisited, 0),
-      totalClickables: Object.values(crawlResults.roles).reduce((sum, r) => sum + r.summary.totalClickables, 0),
-      totalIssues: Object.values(crawlResults.roles).reduce((sum, r) => sum + r.summary.brokenButtons.length, 0),
-      totalBlackPages: Object.values(crawlResults.roles).reduce((sum, r) => sum + r.summary.blackPages.length, 0),
-      totalDeadEnds: Object.values(crawlResults.roles).reduce((sum, r) => sum + r.summary.deadEnds.length, 0)
-    }
-
-    crawlResults.summary = summary
-    setResults(crawlResults)
-    setStatus('Crawl complete!')
-    setIsRunning(false)
+  const stopCrawl = () => {
+    crawlRef.current = false
+    setStatus('COMPLETE')
+    log('ACTION', 'Crawl stopped by user')
   }
 
   const downloadReport = () => {
@@ -434,303 +179,165 @@ export default function Crawler() {
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+  }
+
+  useEffect(() => {
+    if (status === 'RUNNING' && !isPaused) {
+      timerRef.current = setInterval(() => { setElapsedTime(prev => prev + 1) }, 1000)
+    }
+    return () => clearInterval(timerRef.current)
+  }, [status, isPaused])
+
+  if (status === 'COMPLETE' && results) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0e27', color: '#eef0f8', padding: '40px 20px', fontFamily: "'Inter', sans-serif" }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+          <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <h1 style={{ fontSize: '32px', fontWeight: 'bold', margin: '0 0 8px 0' }}>✅ Crawl Report</h1>
+              <p style={{ fontSize: '13px', color: '#7b8cb1', margin: 0 }}>
+                Completed at {new Date(results.timestamp).toLocaleString()} • Total time: {formatTime(elapsedTime)}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => { setStatus('IDLE'); setActionLog([]); }}
+                style={{ background: '#5865f2', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                🔄 New Crawl
+              </button>
+              <button
+                onClick={downloadReport}
+                style={{ background: '#2a7f62', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px', fontWeight: '600' }}>
+                📥 Download JSON
+              </button>
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '30px' }}>
+            <SummaryCard label="Roles Tested" value={Object.keys(results.roles).length} color="#5865f2" />
+            <SummaryCard label="Total Pages" value={Object.values(results.roles).reduce((sum, r) => sum + r.pagesVisited, 0)} color="#5865f2" />
+            <SummaryCard label="Broken Buttons" value={Object.values(results.roles).reduce((sum, r) => sum + r.brokenButtons.length, 0)} color="#f04747" />
+            <SummaryCard label="Black Pages" value={Object.values(results.roles).reduce((sum, r) => sum + r.blackPages.length, 0)} color="#f04747" />
+          </div>
+
+          {Object.entries(results.roles).map(([role, roleReport]) => (
+            <div key={role} style={{ background: '#0f1629', border: '1px solid #2a3d66', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 'bold', color: '#5865f2', marginBottom: '12px' }}>{role.toUpperCase()}</h2>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '16px' }}>
+                <SummaryCard label="Pages" value={roleReport.pagesVisited} color="#7289da" />
+                <SummaryCard label="Broken" value={roleReport.brokenButtons.length} color="#f04747" />
+                <SummaryCard label="Black Pages" value={roleReport.blackPages.length} color="#f04747" />
+                <SummaryCard label="Dead Ends" value={roleReport.deadEnds.length} color="#faa61a" />
+              </div>
+
+              {roleReport.brokenButtons.length > 0 && (
+                <div style={{ marginTop: '16px', padding: '12px', background: '#1a1f3a', borderLeft: '3px solid #f04747', borderRadius: '6px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f04747', marginBottom: '8px' }}>🔴 Broken Buttons ({roleReport.brokenButtons.length})</div>
+                  {roleReport.brokenButtons.slice(0, 5).map((btn, idx) => (
+                    <div key={idx} style={{ fontSize: '11px', color: '#8fa3c4', marginBottom: '4px' }}>• {btn.route} → "{btn.button}"</div>
+                  ))}
+                </div>
+              )}
+
+              {roleReport.blackPages.length > 0 && (
+                <div style={{ marginTop: '12px', padding: '12px', background: '#1a1f3a', borderLeft: '3px solid #f04747', borderRadius: '6px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f04747', marginBottom: '8px' }}>⬛ Black Pages ({roleReport.blackPages.length})</div>
+                  {roleReport.blackPages.map((page, idx) => (
+                    <div key={idx} style={{ fontSize: '11px', color: '#8fa3c4', marginBottom: '4px' }}>• {page}</div>
+                  ))}
+                </div>
+              )}
+
+              {roleReport.deadEnds.length > 0 && (
+                <div style={{ marginTop: '12px', padding: '12px', background: '#1a1f3a', borderLeft: '3px solid #faa61a', borderRadius: '6px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#faa61a', marginBottom: '8px' }}>⚠️ Dead Ends ({roleReport.deadEnds.length})</div>
+                  {roleReport.deadEnds.map((page, idx) => (
+                    <div key={idx} style={{ fontSize: '11px', color: '#8fa3c4', marginBottom: '4px' }}>• {page}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0a0e27',
-      color: '#eef0f8',
-      padding: '20px',
-      fontFamily: "'Inter', 'Arial', sans-serif"
-    }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '30px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px' }}>
-            🕷️ GradeFlow Navigation Crawler
-          </h1>
-          <p style={{ color: '#7b8cb1', fontSize: '14px' }}>
-            Systematically tests all 5 roles, finds broken buttons (cursor changes but not clickable),
-            detects black pages, and maps your entire navigation graph.
-          </p>
-        </div>
+    <div style={{ minHeight: '100vh', background: '#0a0e27', color: '#eef0f8', fontFamily: "'Inter', sans-serif", display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '16px 20px', borderBottom: '1px solid #2a3d66', background: '#0f1629' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: '0 0 8px 0' }}>🕷️ GradeFlow Navigation Crawler</h1>
+        <p style={{ fontSize: '13px', color: '#7b8cb1', margin: 0 }}>Real-time testing — watch each navigation and log issues</p>
+      </div>
 
-        {/* Control Panel */}
-        <div style={{
-          background: '#0f1629',
-          border: '1px solid #2a3d66',
-          borderRadius: '12px',
-          padding: '20px',
-          marginBottom: '20px'
-        }}>
-          <button
-            onClick={startCrawl}
-            disabled={isRunning}
-            style={{
-              background: isRunning ? '#4a5680' : '#5865f2',
-              color: '#fff',
-              border: 'none',
-              padding: '12px 32px',
-              borderRadius: '6px',
-              cursor: isRunning ? 'not-allowed' : 'pointer',
-              fontSize: '14px',
-              fontWeight: '600',
-              transition: 'background 0.2s'
-            }}>
-            {isRunning ? '⏳ Crawling...' : '🚀 Start Full Crawl (All 5 Roles)'}
-          </button>
-
-          {/* Slow-motion toggle */}
-          <div style={{ marginTop: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <label style={{ fontSize: '13px', color: '#8fa3c4' }}>
-              <input
-                type="checkbox"
-                checked={showDebug}
-                onChange={(e) => setShowDebug(e.target.checked)}
-                style={{ marginRight: '6px' }}
-              />
-              Show Debug Log
-            </label>
-            <label style={{ fontSize: '13px', color: '#8fa3c4' }}>
-              Slow-Motion:
-              <input
-                type="range"
-                min="0"
-                max="3000"
-                step="500"
-                value={slowMotionMs}
-                onChange={(e) => setSlowMotionMs(Number(e.target.value))}
-                disabled={isRunning}
-                style={{ marginLeft: '6px', cursor: isRunning ? 'not-allowed' : 'pointer' }}
-              />
-              {slowMotionMs}ms
-            </label>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        <div style={{ flex: '0 0 45%', display: 'flex', flexDirection: 'column', background: '#0f1629', borderRight: '1px solid #2a3d66', padding: '16px', overflow: 'hidden' }}>
+          <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#5865f2', marginBottom: '8px' }}>📱 LIVE PAGE PREVIEW</div>
+          <div style={{ background: '#1a2140', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', color: '#8fa3c4', marginBottom: '8px', wordBreak: 'break-all', fontFamily: 'monospace', maxHeight: '40px', overflowY: 'auto' }}>
+            {currentPageUrl || 'Waiting...'}
           </div>
-
-          {/* Live Status */}
-          <div style={{ marginTop: '16px', fontSize: '13px', color: '#8fa3c4' }}>
-            <div style={{ marginBottom: '8px' }}>
-              <span style={{ color: '#5865f2', fontWeight: '600' }}>Status:</span> {status}
-            </div>
-            {progress.role && (
-              <>
-                <div style={{ marginBottom: '4px' }}>
-                  <span style={{ color: '#7289da' }}>Current Role:</span> {progress.role}
-                </div>
-                <div style={{ marginBottom: '4px' }}>
-                  <span style={{ color: '#7289da' }}>Current Page:</span> {progress.page}
-                </div>
-                <div>
-                  <span style={{ color: '#7289da' }}>Pages Tested:</span> {progress.tested} | <span style={{ color: '#f04747' }}>Issues Found:</span> {progress.broken}
-                </div>
-              </>
-            )}
+          <div style={{ flex: 1, background: '#1a2140', border: '1px solid #2a3d66', borderRadius: '8px', overflow: 'auto', padding: '12px', fontSize: '11px', fontFamily: 'monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#8fa3c4' }}>
+            {pageSnapshot || <div style={{ color: '#4a5680' }}>Page content will appear here...</div>}
           </div>
         </div>
 
-        {/* Debug Log Panel */}
-        {showDebug && (
-          <div style={{
-            background: '#0f1629',
-            border: '1px solid #2a3d66',
-            borderRadius: '12px',
-            padding: '16px',
-            marginBottom: '20px'
-          }}>
-            <div style={{ fontSize: '13px', fontWeight: 'bold', color: '#5865f2', marginBottom: '12px' }}>
-              📋 Real-Time Action Log
+        <div style={{ flex: '0 0 55%', display: 'flex', flexDirection: 'column', padding: '16px', overflow: 'hidden' }}>
+          <div style={{ background: '#0f1629', border: '1px solid #2a3d66', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <div>
+                <div style={{ fontSize: '12px', color: '#5865f2', fontWeight: 'bold', marginBottom: '4px' }}>Status: {status}</div>
+                {progress.role && (
+                  <>
+                    <div style={{ fontSize: '13px', color: '#8fa3c4', marginTop: '4px' }}>{progress.role.toUpperCase()}</div>
+                    <div style={{ fontSize: '12px', color: '#7289da' }}>{progress.page}</div>
+                    <div style={{ fontSize: '11px', color: '#7289da', marginTop: '2px' }}>Pages: {progress.tested}</div>
+                  </>
+                )}
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#5865f2' }}>{formatTime(elapsedTime)}</div>
+                <div style={{ fontSize: '11px', color: '#7289da' }}>Timeout: {timeoutSeconds}m</div>
+              </div>
             </div>
-            <div
-              ref={logRef}
-              style={{
-                background: '#0a0e27',
-                border: '1px solid #1a2140',
-                borderRadius: '8px',
-                padding: '12px',
-                fontSize: '11px',
-                fontFamily: 'monospace',
-                maxHeight: '300px',
-                overflowY: 'auto',
-                color: '#7289da'
-              }}>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '12px' }}>
+              <button onClick={startCrawl} disabled={status === 'RUNNING'} style={{ background: status === 'RUNNING' ? '#4a5680' : '#5865f2', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', cursor: status === 'RUNNING' ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: '600' }}>🚀 Start</button>
+              <button onClick={togglePause} disabled={status !== 'RUNNING'} style={{ background: status !== 'RUNNING' ? '#4a5680' : isPaused ? '#2a7f62' : '#5865f2', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', cursor: status !== 'RUNNING' ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: '600' }}>{isPaused ? '▶️ Resume' : '⏸️ Pause'}</button>
+              <button onClick={stopCrawl} disabled={status !== 'RUNNING'} style={{ background: status !== 'RUNNING' ? '#4a5680' : '#f04747', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', cursor: status !== 'RUNNING' ? 'not-allowed' : 'pointer', fontSize: '12px', fontWeight: '600' }}>⏹️ Stop</button>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div>
+                <label style={{ fontSize: '11px', color: '#7289da', display: 'block', marginBottom: '4px' }}>Slow-Motion (ms)</label>
+                <input type="range" min="0" max="3000" step="250" value={slowMotionMs} onChange={e => setSlowMotionMs(Number(e.target.value))} disabled={status === 'RUNNING'} style={{ width: '100%' }} />
+                <div style={{ fontSize: '10px', color: '#4a5680', marginTop: '2px' }}>+{slowMotionMs}ms per page</div>
+              </div>
+              <div>
+                <label style={{ fontSize: '11px', color: '#7289da', display: 'block', marginBottom: '4px' }}>Timeout (min)</label>
+                <input type="number" min="1" max="60" value={timeoutSeconds} onChange={e => setTimeoutSeconds(Number(e.target.value))} disabled={status === 'RUNNING'} style={{ width: '100%', padding: '6px', borderRadius: '4px', border: '1px solid #2a3d66', background: '#1a2140', color: '#eef0f8' }} />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#5865f2', marginBottom: '8px' }}>📋 ACTION LOG</div>
+            <div ref={logRef} style={{ flex: 1, background: '#0f1629', border: '1px solid #2a3d66', borderRadius: '8px', padding: '12px', overflowY: 'auto', fontSize: '11px', fontFamily: 'monospace' }}>
               {actionLog.length === 0 ? (
-                <div style={{ color: '#4a5680' }}>Waiting for crawl to start...</div>
+                <div style={{ color: '#4a5680' }}>Click "Start" to begin...</div>
               ) : (
                 actionLog.map((entry, idx) => (
-                  <div key={idx} style={{ marginBottom: '4px', paddingBottom: '4px', borderBottom: '1px solid #1a2140' }}>
+                  <div key={idx} style={{ marginBottom: '6px', paddingBottom: '6px', borderBottom: '1px solid #1a2140' }}>
                     <span style={{ color: '#5865f2' }}>[{entry.timestamp}]</span>
-                    <span style={{
-                      color: entry.type === 'ERROR' ? '#f04747' :
-                        entry.type === 'BUG' ? '#faa61a' :
-                        entry.type === 'WARN' ? '#faa61a' :
-                        entry.type === 'SUCCESS' ? '#43b581' :
-                        entry.type === 'COMPLETE' ? '#43b581' :
-                        '#7289da',
-                      fontWeight: 'bold',
-                      marginLeft: '8px'
-                    }}>
-                      {entry.type}
-                    </span>
-                    <span style={{ marginLeft: '8px', color: '#8fa3c4' }}>{entry.message}</span>
+                    <span style={{ color: entry.type === 'ERROR' ? '#f04747' : entry.type === 'BUG' ? '#faa61a' : entry.type === 'WARN' ? '#faa61a' : entry.type === 'SUCCESS' ? '#43b581' : '#7289da', fontWeight: 'bold', marginLeft: '8px', marginRight: '8px' }}>{entry.type}</span>
+                    <span style={{ color: '#8fa3c4' }}>{entry.message}</span>
                     {entry.details && <span style={{ color: '#4a5680', marginLeft: '8px' }}>({entry.details})</span>}
                   </div>
                 ))
               )}
             </div>
           </div>
-        )}
-
-        {/* Results */}
-        {results && (
-          <div ref={resultsRef} style={{ background: '#0f1629', border: '1px solid #2a3d66', borderRadius: '12px', padding: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 'bold' }}>
-                ✅ Crawl Results
-              </h2>
-              <button
-                onClick={downloadReport}
-                style={{
-                  background: '#5865f2',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '10px 20px',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  fontWeight: '600'
-                }}>
-                📥 Download JSON
-              </button>
-            </div>
-
-            {/* Global Summary */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-              gap: '12px',
-              marginBottom: '24px'
-            }}>
-              <div style={{ background: '#1a2140', padding: '16px', borderRadius: '8px', border: '1px solid #2a3d66' }}>
-                <div style={{ fontSize: '12px', color: '#7289da', marginBottom: '6px' }}>Roles Tested</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#5865f2' }}>
-                  {results.summary.totalRoles}
-                </div>
-              </div>
-              <div style={{ background: '#1a2140', padding: '16px', borderRadius: '8px', border: '1px solid #2a3d66' }}>
-                <div style={{ fontSize: '12px', color: '#7289da', marginBottom: '6px' }}>Total Pages</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#5865f2' }}>
-                  {results.summary.totalPages}
-                </div>
-              </div>
-              <div style={{ background: '#1a2140', padding: '16px', borderRadius: '8px', border: '1px solid #2a3d66' }}>
-                <div style={{ fontSize: '12px', color: '#7289da', marginBottom: '6px' }}>Total Clickables</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#5865f2' }}>
-                  {results.summary.totalClickables}
-                </div>
-              </div>
-              <div style={{ background: '#1a2140', padding: '16px', borderRadius: '8px', border: '1px solid #f04747' }}>
-                <div style={{ fontSize: '12px', color: '#f04747', marginBottom: '6px' }}>❌ Broken Buttons</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f04747' }}>
-                  {results.summary.totalIssues}
-                </div>
-              </div>
-              <div style={{ background: '#1a2140', padding: '16px', borderRadius: '8px', border: '1px solid #f04747' }}>
-                <div style={{ fontSize: '12px', color: '#f04747', marginBottom: '6px' }}>Black Pages</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#f04747' }}>
-                  {results.summary.totalBlackPages}
-                </div>
-              </div>
-              <div style={{ background: '#1a2140', padding: '16px', borderRadius: '8px', border: '1px solid #faa61a' }}>
-                <div style={{ fontSize: '12px', color: '#faa61a', marginBottom: '6px' }}>Dead Ends</div>
-                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#faa61a' }}>
-                  {results.summary.totalDeadEnds}
-                </div>
-              </div>
-            </div>
-
-            {/* Per-Role Reports */}
-            {Object.entries(results.roles).map(([role, roleReport]) => (
-              <div key={role} style={{ marginBottom: '24px', borderBottom: '1px solid #2a3d66', paddingBottom: '20px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 'bold', color: '#5865f2', marginBottom: '12px' }}>
-                  {role.toUpperCase()} — {roleReport.account}
-                </h3>
-
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                  gap: '10px',
-                  marginBottom: '16px'
-                }}>
-                  <div style={{ background: '#1a2140', padding: '10px', borderRadius: '6px', fontSize: '12px' }}>
-                    <div style={{ color: '#7289da', marginBottom: '2px' }}>Pages</div>
-                    <div style={{ fontWeight: 'bold' }}>{roleReport.summary.pagesVisited}</div>
-                  </div>
-                  <div style={{ background: '#1a2140', padding: '10px', borderRadius: '6px', fontSize: '12px' }}>
-                    <div style={{ color: '#7289da', marginBottom: '2px' }}>Clickables</div>
-                    <div style={{ fontWeight: 'bold' }}>{roleReport.summary.totalClickables}</div>
-                  </div>
-                  <div style={{ background: '#1a2140', padding: '10px', borderRadius: '6px', fontSize: '12px', border: '1px solid #f04747' }}>
-                    <div style={{ color: '#f04747', marginBottom: '2px' }}>Broken</div>
-                    <div style={{ fontWeight: 'bold', color: '#f04747' }}>{roleReport.summary.brokenButtons.length}</div>
-                  </div>
-                  <div style={{ background: '#1a2140', padding: '10px', borderRadius: '6px', fontSize: '12px', border: '1px solid #f04747' }}>
-                    <div style={{ color: '#f04747', marginBottom: '2px' }}>Black Pages</div>
-                    <div style={{ fontWeight: 'bold', color: '#f04747' }}>{roleReport.summary.blackPages.length}</div>
-                  </div>
-                </div>
-
-                {/* Broken Buttons for this role */}
-                {roleReport.summary.brokenButtons.length > 0 && (
-                  <div style={{ marginTop: '12px', padding: '12px', background: '#1a1f3a', borderLeft: '3px solid #f04747', borderRadius: '6px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f04747', marginBottom: '8px' }}>
-                      🔴 Broken Buttons:
-                    </div>
-                    {roleReport.summary.brokenButtons.slice(0, 8).map((item, idx) => (
-                      <div key={idx} style={{ fontSize: '11px', color: '#8fa3c4', marginBottom: '4px' }}>
-                        <span style={{ color: '#faa61a' }}>•</span> {item.route} → "<strong>{item.button}</strong>"
-                      </div>
-                    ))}
-                    {roleReport.summary.brokenButtons.length > 8 && (
-                      <div style={{ fontSize: '11px', color: '#7289da', marginTop: '6px' }}>
-                        +{roleReport.summary.brokenButtons.length - 8} more
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Black Pages for this role */}
-                {roleReport.summary.blackPages.length > 0 && (
-                  <div style={{ marginTop: '12px', padding: '12px', background: '#1a1f3a', borderLeft: '3px solid #f04747', borderRadius: '6px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#f04747', marginBottom: '8px' }}>
-                      ⬛ Black Pages:
-                    </div>
-                    {roleReport.summary.blackPages.slice(0, 5).map((page, idx) => (
-                      <div key={idx} style={{ fontSize: '11px', color: '#8fa3c4', marginBottom: '4px' }}>
-                        • {page}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Dead Ends for this role */}
-                {roleReport.summary.deadEnds.length > 0 && (
-                  <div style={{ marginTop: '12px', padding: '12px', background: '#1a1f3a', borderLeft: '3px solid #faa61a', borderRadius: '6px' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#faa61a', marginBottom: '8px' }}>
-                      ⚠️ Dead Ends (no navigation):
-                    </div>
-                    {roleReport.summary.deadEnds.slice(0, 5).map((page, idx) => (
-                      <div key={idx} style={{ fontSize: '11px', color: '#8fa3c4', marginBottom: '4px' }}>
-                        • {page}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )
