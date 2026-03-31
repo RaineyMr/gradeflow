@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { supabase } from './supabase'
 import { demoSupportNotes } from './demoSupportNotes'
+import { pageToHash } from './hashRouter'
 import {
   generateFollowUpReminders,
   generateRiskTriggeredTasks,
@@ -321,6 +322,7 @@ export const useStore = create((set, get) => ({
   // ── Auth / User ─────────────────────────────────────────────────────────────
   currentUser: null,
   lang: 'en',
+  page: 'home', // Current page from hash router
 
   setCurrentUser: (user) => set({
     currentUser: user,
@@ -333,6 +335,39 @@ export const useStore = create((set, get) => ({
       ? { ...state.currentUser, lang }
       : state.currentUser,
   })),
+
+  /**
+   * Set the current page and update browser hash
+   * Call this from components instead of manually setState
+   */
+  setPage: (page) => {
+    const { currentUser } = get();
+    const role = currentUser?.role || null;
+
+    // Update hash first
+    const hash = pageToHash(page, role);
+    if (window.location.hash !== hash) {
+      window.history.pushState({ page, role }, '', hash);
+    }
+
+    // Update state
+    set({ page });
+  },
+
+  /**
+   * Reset to home page (used on logout, demo reset, etc)
+   */
+  resetToHome: () => {
+    set({ page: 'home' });
+    window.history.replaceState({}, '', '#/');
+  },
+
+  /**
+   * Go back in history (alternative to browser back button)
+   */
+  goBack: () => {
+    window.history.back();
+  },
 
   // ── Teacher profile ─────────────────────────────────────────────────────────
   teacher: {
