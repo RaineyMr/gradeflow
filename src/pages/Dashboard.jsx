@@ -155,8 +155,7 @@ function TodaysLessonsWidget({ navigate }) {
 }
 
 // ─── WIDGET CATALOG ───────────────────────────────────────────────────────────
-function getWidgetCatalog() {
-  const t = useT()
+function getWidgetCatalog(t) {
   return [
     { id:'overview',   label:t('daily_overview'),      icon:'📅', desc:t('nav_classes') + ', ' + t('nav_messages') + ', ' + t('lesson_plans') + ' & ' + t('nav_alerts') },
     { id:'lessons',    label:t('todays_lessons'),     icon:'📖', desc:t('lesson_status') + ' and ' + t('quick_actions') },
@@ -175,7 +174,8 @@ function getWidgetCatalog() {
 
 // ─── ADD WIDGETS MODAL ────────────────────────────────────────────────────────
 function AddWidgetsModal({ hidden, onToggle, onClose }) {
-  const catalog = getWidgetCatalog()
+  const t = useT()
+  const catalog = getWidgetCatalog(t)
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(8px)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
       <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:480, background:C.bg, border:`1px solid ${C.border}`, borderRadius:'24px 24px 0 0', padding:'20px 20px max(28px,env(safe-area-inset-bottom))', maxHeight:'85vh', overflowY:'auto' }}>
