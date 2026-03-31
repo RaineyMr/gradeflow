@@ -228,10 +228,25 @@ const TRANSLATIONS = {
   resources_label:       { en: 'Resources',          es: 'Recursos'            },
   support_label:         { en: 'Support',            es: 'Soporte'             },
 
+  // ── Widget names ───────────────────────────────────────────────────────────
+  grading:               { en: 'Grading',             es: 'Calificación'           },
+  lesson_plan_builder:   { en: 'Lesson Plan Builder', es: 'Constructor de Planes de Lección' },
+  sketch_annotate:       { en: 'Sketch & Annotate',   es: 'Dibujar y Anotar'       },
+  testing_suite:         { en: 'Testing Suite',       es: 'Suite de Exámenes'      },
+  scan_grade_sheet:      { en: 'Scan Grade Sheet',    es: 'Escanear Hoja de Calificaciones' },
+  quick_grade:           { en: 'Quick-grade',         es: 'Calificación Rápida'    },
+  recent_submissions:     { en: 'recent submissions',  es: 'envíos recientes'       },
+  build_edit_lesson_plans: { en: 'Build and edit lesson plans', es: 'Construir y editar planes de lección' },
+  draw_documents_photos: { en: 'Draw on documents and photos', es: 'Dibujar en documentos y fotos' },
+  create_proctor_assessments: { en: 'Create and proctor assessments', es: 'Crear y supervisar evaluaciones' },
+  camera_grade_assignments: { en: 'Camera-grade paper assignments', es: 'Calificar tareas en papel con cámara' },
+  full_gradebook_profiles: { en: 'Full gradebook and student profiles', es: 'Libro de calificaciones completo y perfiles de estudiantes' },
+
   // ── Common UI actions ───────────────────────────────────────────────────────
   new:                  { en: 'new',           es: 'nuevo'               },
   see_all:              { en: 'See all',       es: 'Ver todos'           },
   tap_to_view_all:      { en: 'Tap to view all', es: 'Toca para ver todos' },
+  message_individually_group: { en: 'Message individually or as group', es: 'Mensaje individual o como grupo' },
 
   // ── Demo login buttons ───────────────────────────────────────────────────────
   teacher_demo:          { en: '🧑‍🏫 Teacher Demo',      es: '🧑‍🏫 Demo de Maestro'      },
