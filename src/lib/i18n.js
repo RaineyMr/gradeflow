@@ -228,6 +228,11 @@ const TRANSLATIONS = {
   resources_label:       { en: 'Resources',          es: 'Recursos'            },
   support_label:         { en: 'Support',            es: 'Soporte'             },
 
+  // ── Common UI actions ───────────────────────────────────────────────────────
+  new:                  { en: 'new',           es: 'nuevo'               },
+  see_all:              { en: 'See all',       es: 'Ver todos'           },
+  tap_to_view_all:      { en: 'Tap to view all', es: 'Toca para ver todos' },
+
   // ── Demo login buttons ───────────────────────────────────────────────────────
   teacher_demo:          { en: '🧑‍🏫 Teacher Demo',      es: '🧑‍🏫 Demo de Maestro'      },
   student_demo:          { en: '🎓 Student Demo',         es: '🎓 Demo de Estudiante'     },
