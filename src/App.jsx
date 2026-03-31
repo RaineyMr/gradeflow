@@ -132,9 +132,12 @@ function LoginRoute() {
     localStorage.setItem('gradeflow_user', JSON.stringify(account))
     document.documentElement.lang = account.lang ?? 'en'
     
-    // Reset browser history and navigate to home
+    // Reset browser history and navigate to role-specific dashboard
     useStore.getState().resetToHome()
-    navigateToPage('home', account.role)
+    
+    // Navigate to the correct role-specific home path
+    const homePath = account.role === 'admin' ? '/admin' : `/${account.role}`
+    navigate(homePath)
   }
 
   return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={null} />
