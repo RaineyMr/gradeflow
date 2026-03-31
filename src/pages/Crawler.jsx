@@ -2,31 +2,30 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { useStore } from '@lib/store'
 
 const DEMO_ACCOUNTS = {
-  teacher: { name: 'Ms. Johnson', role: 'teacher', school: 'KIPP New Orleans', theme: { primary: '#BA0C2F', secondary: '#8a0a23' }, lang: 'en' },
-  student: { name: 'Marcus Houston', role: 'student', school: 'Houston ISD', theme: { primary: '#003057', secondary: '#001f3f' }, lang: 'en' },
-  parent: { name: 'Sarah Parent', role: 'parent', school: 'Bellaire High School', theme: { primary: '#C8102E', secondary: '#8a0a23' }, lang: 'en' },
-  admin: { name: 'Principal Admin', role: 'admin', school: 'Lamar High School', theme: { primary: '#461D7C', secondary: '#2a0e4e' }, lang: 'en' },
-  supportStaff: { name: 'Support Coordinator', role: 'supportStaff', school: 'District Office', theme: { primary: '#2a7f62', secondary: '#1a5a45' }, lang: 'en' }
+  teacher: { name: 'Ms. Johnson', role: 'teacher' },
+  student: { name: 'Marcus Houston', role: 'student' },
+  parent: { name: 'Sarah Parent', role: 'parent' },
+  admin: { name: 'Principal Admin', role: 'admin' },
+  supportStaff: { name: 'Support Coordinator', role: 'supportStaff' }
 }
 
-const ROLE_ROUTES = {
-  teacher: ['/teacher', '/teacher/gradebook', '/teacher/lessons', '/teacher/reports', '/teacher/messages', '/teacher/testing', '/teacher/feed', '/teacher/widgets', '/teacher/integrations'],
-  student: ['/student', '/student/widgets', '/student/messages', '/student/feed'],
-  parent: ['/parent', '/parent/widgets', '/parent/messages'],
-  admin: ['/admin', '/admin/widgets', '/admin/messages', '/admin/feed', '/admin/reports'],
-  supportStaff: ['/supportStaff', '/supportStaff/ai', '/supportStaff/insights', '/supportStaff/collaboration', '/supportStaff/reports', '/supportStaff/groups', '/supportStaff/trends', '/supportStaff/messages', '/supportStaff/notes']
+const STARTING_ROUTES = {
+  teacher: '/teacher',
+  student: '/student',
+  parent: '/parent',
+  admin: '/admin',
+  supportStaff: '/supportStaff'
 }
 
 export default function CrawlerDashboard() {
   const { setCurrentUser } = useStore()
 
-  // Recording/Playback state
   const [isRecording, setIsRecording] = useState(false)
   const [isPlayback, setIsPlayback] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [recordings, setRecordings] = useState([])
   const [playbackIndex, setPlaybackIndex] = useState(0)
-  const [slowMotionMs, setSlowMotionMs] = useState(500)
+  const [slowMotionMs, setSlowMotionMs] = useState(2000)
   const [actionLog, setActionLog] = useState([])
   const [results, setResults] = useState(null)
   const [elapsedTime, setElapsedTime] = useState(0)
@@ -34,17 +33,38 @@ export default function CrawlerDashboard() {
 
   const logRef = useRef(null)
   const iframeRef = useRef(null)
-  const timerRef = useRef(null)
   const crawlRef = useRef({ active: false })
 
   const log = (type, message, details = '') => {
     setActionLog(prev => [...prev, { timestamp: new Date().toLocaleTimeString(), type, message, details, id: Math.random() }])
   }
 
-  // Get current page being shown
   const currentRecording = useMemo(() => recordings[playbackIndex], [recordings, playbackIndex])
 
-  // Start recording crawl
+  // Wait with pause support
+  const waitWithPause = async (ms) => {
+    const start = Date.now()
+    while (Date.now() - start < ms) {
+      if (!crawlRef.current.active || isPaused) {
+        await new Promise(resolve => setTimeout(resolve, 100))
+      } else {
+        await new Promise(resolve => setTimeout(resolve, 50))
+      }
+    }
+  }
+
+  // Track clicks for cursor indicator
+  useEffect(() => {
+    const handleClick = (e) => {
+      setCursorPos({ x: e.clientX, y: e.clientY })
+      setTimeout(() => setCursorPos(null), 400)
+    }
+    if (isRecording || isPlayback) {
+      window.addEventListener('click', handleClick)
+    }
+    return () => window.removeEventListener('click', handleClick)
+  }, [isRecording, isPlayback])
+
   const startCrawl = async () => {
     setIsRecording(true)
     setIsPlayback(false)
@@ -52,52 +72,63 @@ export default function CrawlerDashboard() {
     setActionLog([])
     setResults(null)
     setElapsedTime(0)
-    crawlRef.current = { active: true }
+    crawlRef.current.active = true
 
-    const crawlResults = { timestamp: new Date().toISOString(), roles: {}, summary: { total: 0, issues: 0, blackPages: 0 } }
+    const crawlResults = { timestamp: new Date().toISOString(), roles: {}, summary: { total: 0, blackPages: 0 } }
+    let totalPages = 0
 
     try {
       for (const role of Object.keys(DEMO_ACCOUNTS)) {
         if (!crawlRef.current.active) break
+
         log('ROLE_START', `Testing ${role}`)
         setCurrentUser(DEMO_ACCOUNTS[role])
-        await new Promise(resolve => setTimeout(resolve, 800))
-        const roleReport = await recordSingleRole(role)
+        await waitWithPause(1500)
+
+        const roleReport = await crawlRole(role)
         crawlResults.roles[role] = roleReport
-        crawlResults.summary.total += roleReport.pagesVisited || 0
-        crawlResults.summary.issues += roleReport.brokenButtons?.length || 0
+        totalPages += roleReport.pagesVisited || 0
+        crawlResults.summary.total = totalPages
         crawlResults.summary.blackPages += roleReport.blackPages?.length || 0
+
         log('ROLE_END', `Finished ${role}`)
       }
+
       setResults(crawlResults)
       setIsRecording(false)
       setIsPlayback(true)
       setPlaybackIndex(0)
-      log('SUCCESS', '✅ Recording complete! Use playback controls to review.')
+      log('SUCCESS', `✅ Recording complete! ${recordings.length} pages.`)
     } catch (err) {
       log('ERROR', 'Recording failed', err.message)
       setIsRecording(false)
     }
   }
 
-  // Record single role
-  const recordSingleRole = async (role) => {
-    const routes = ROLE_ROUTES[role]
-    const report = { role, pagesVisited: 0, totalClickables: 0, brokenButtons: [], blackPages: [], deadEnds: [] }
+  const crawlRole = async (role) => {
+    const report = { role, pagesVisited: 0, blackPages: [] }
+    const visited = new Set()
+    const queue = [STARTING_ROUTES[role]]
 
-    for (const route of routes) {
-      if (!crawlRef.current.active) break
-      log('FETCH', `Recording ${route}`)
+    while (queue.length > 0 && crawlRef.current.active) {
+      const route = queue.shift()
+      if (visited.has(route)) continue
+      visited.add(route)
+
+      const pageUrl = `${window.location.origin}${route}`
+      log('FETCH', `Loading ${route}`)
 
       try {
-        const pageUrl = `${window.location.origin}${route}`
+        // Wait with pause support
+        await waitWithPause(slowMotionMs)
+
+        // Add to recordings
+        setRecordings(prev => [...prev, { url: pageUrl, role, route, timestamp: new Date().toLocaleTimeString() }])
+
+        // Check page health
         const response = await fetch(pageUrl)
         const html = await response.text()
 
-        // Store page snapshot (URL only, iframe will load it)
-        setRecordings(prev => [...prev, { url: pageUrl, role, route, timestamp: new Date().toLocaleTimeString() }])
-
-        // Check health
         const isBlank = html.length < 200
         const isBlack = html.includes('rgb(0, 0, 0)') && isBlank
 
@@ -106,35 +137,44 @@ export default function CrawlerDashboard() {
           report.blackPages.push(route)
         } else if (isBlank) {
           log('WARN', `⚠️ No content`, route)
-          report.deadEnds.push(route)
         } else {
           log('OK', `✓ Recorded`)
+          
+          // Find clickables (buttons/links) to follow
+          const parser = new DOMParser()
+          const doc = parser.parseFromString(html, 'text/html')
+          
+          doc.querySelectorAll('a[href]').forEach(a => {
+            const href = a.getAttribute('href')
+            if (href && !href.startsWith('#') && !href.startsWith('javascript:') && !visited.has(href)) {
+              try {
+                const url = new URL(href, pageUrl)
+                if (url.origin === new URL(pageUrl).origin && !visited.has(url.pathname)) {
+                  queue.push(url.pathname)
+                }
+              } catch (e) {}
+            }
+          })
         }
 
         report.pagesVisited += 1
       } catch (err) {
-        log('ERROR', `Record failed`, err.message)
+        log('ERROR', `Fetch failed`, err.message)
       }
     }
 
     return report
   }
 
-  // Playback controls
-  const goToStep = (index) => {
-    if (index >= 0 && index < recordings.length) {
-      setPlaybackIndex(index)
-      setIsPaused(true)
-    }
-  }
-
   const togglePlayPause = () => {
     setIsPaused(!isPaused)
+    log('ACTION', isPaused ? '▶️ Resumed' : '⏸️ Paused')
   }
 
   const rewind = () => {
     setPlaybackIndex(0)
     setIsPaused(true)
+    log('ACTION', '⏮️ Rewound to start')
   }
 
   const nextStep = () => {
@@ -149,7 +189,7 @@ export default function CrawlerDashboard() {
     }
   }
 
-  // Auto-playback timer
+  // Auto-playback
   useEffect(() => {
     if (isPlayback && !isPaused && recordings.length > 0) {
       const timer = setTimeout(() => {
@@ -161,18 +201,6 @@ export default function CrawlerDashboard() {
       return () => clearTimeout(timer)
     }
   }, [isPlayback, isPaused, playbackIndex, recordings.length, slowMotionMs])
-
-  // Show cursor on click
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (isRecording || isPlayback) {
-        setCursorPos({ x: e.clientX, y: e.clientY })
-        setTimeout(() => setCursorPos(null), 200)
-      }
-    }
-    window.addEventListener('click', handleClick)
-    return () => window.removeEventListener('click', handleClick)
-  }, [isRecording, isPlayback])
 
   useEffect(() => {
     if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
@@ -191,12 +219,12 @@ export default function CrawlerDashboard() {
         <p style={{ fontSize: '13px', color: '#7b8cb1', margin: 0 }}>Record & playback navigation tests with visual inspection</p>
       </div>
 
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: '16px', gap: '16px' }}>
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: '16px', gap: '16px', position: 'relative' }}>
         {/* Left: Page Preview */}
-        <div style={{ flex: '45%', display: 'flex', flexDirection: 'column', background: '#0f1629', border: '1px solid #2a3d66', borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
+        <div style={{ flex: '45%', display: 'flex', flexDirection: 'column', background: '#0f1629', border: '1px solid #2a3d66', borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ padding: '12px', borderBottom: '1px solid #2a3d66', fontSize: '12px', fontWeight: 'bold', color: '#5865f2' }}>📱 Preview</div>
           <div style={{ padding: '8px 12px', background: '#1a2140', fontSize: '10px', color: '#8fa3c4', fontFamily: 'monospace', wordBreak: 'break-all', borderBottom: '1px solid #2a3d66' }}>
-            {currentRecording?.url || 'Start recording to begin...'}
+            {currentRecording?.url || 'Start recording...'}
           </div>
           
           <iframe
@@ -211,26 +239,51 @@ export default function CrawlerDashboard() {
             sandbox="allow-same-origin allow-scripts allow-stylesheets allow-forms allow-popups"
             title="Page Preview"
           />
+        </div>
 
-          {/* Click Indicator */}
-          {cursorPos && (
+        {/* Large Cursor Indicator */}
+        {cursorPos && (
+          <>
+            {/* Outer ring */}
             <div
               style={{
                 position: 'fixed',
-                left: cursorPos.x - 12,
-                top: cursorPos.y - 12,
-                width: '24px',
-                height: '24px',
-                border: '2px solid #f97316',
+                left: cursorPos.x - 24,
+                top: cursorPos.y - 24,
+                width: '48px',
+                height: '48px',
+                border: '4px solid #ff6b35',
                 borderRadius: '50%',
                 pointerEvents: 'none',
-                zIndex: 9999,
-                animation: 'fadeOut 0.3s ease-out'
+                zIndex: 99999,
+                boxShadow: '0 0 30px #ff6b35, 0 0 60px rgba(255, 107, 53, 0.6)',
+                animation: 'fadeOutCursor 0.4s ease-out forwards'
               }}>
-              <style>{`@keyframes fadeOut { to { opacity: 0; } }`}</style>
+              <style>{`
+                @keyframes fadeOutCursor {
+                  0% { opacity: 1; transform: scale(1); }
+                  100% { opacity: 0; transform: scale(0.3); }
+                }
+              `}</style>
             </div>
-          )}
-        </div>
+            {/* Center dot */}
+            <div
+              style={{
+                position: 'fixed',
+                left: cursorPos.x - 6,
+                top: cursorPos.y - 6,
+                width: '12px',
+                height: '12px',
+                background: '#ff6b35',
+                borderRadius: '50%',
+                pointerEvents: 'none',
+                zIndex: 100000,
+                boxShadow: '0 0 20px #ff6b35',
+                animation: 'fadeOutCursor 0.4s ease-out forwards'
+              }}
+            />
+          </>
+        )}
 
         {/* Right: Control + Log */}
         <div style={{ flex: '55%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -246,7 +299,7 @@ export default function CrawlerDashboard() {
                     <div>{currentRecording.role.toUpperCase()}</div>
                     <div style={{ color: '#7289da', fontSize: '11px' }}>{currentRecording.route}</div>
                     <div style={{ marginTop: '4px', fontSize: '11px' }}>
-                      Step {playbackIndex + 1} of {recordings.length}
+                      Step {playbackIndex + 1} / {recordings.length}
                     </div>
                   </div>
                 )}
@@ -257,7 +310,6 @@ export default function CrawlerDashboard() {
               </div>
             </div>
 
-            {/* Record Button */}
             {!isPlayback && (
               <button
                 onClick={startCrawl}
@@ -267,7 +319,6 @@ export default function CrawlerDashboard() {
               </button>
             )}
 
-            {/* Playback Controls */}
             {isPlayback && (
               <>
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
@@ -285,14 +336,13 @@ export default function CrawlerDashboard() {
                   </button>
                 </div>
 
-                {/* Timeline Slider */}
                 <div style={{ marginBottom: '12px' }}>
                   <input
                     type="range"
                     min="0"
                     max={Math.max(0, recordings.length - 1)}
                     value={playbackIndex}
-                    onChange={e => goToStep(Number(e.target.value))}
+                    onChange={e => setPlaybackIndex(Number(e.target.value))}
                     style={{ width: '100%', cursor: 'pointer', marginBottom: '6px' }}
                   />
                   <div style={{ fontSize: '10px', color: '#7289da' }}>
@@ -302,33 +352,31 @@ export default function CrawlerDashboard() {
               </>
             )}
 
-            {/* Real-time Slow-Motion Slider */}
             <div>
-              <div style={{ fontSize: '11px', color: '#7289da', marginBottom: '6px' }}>🐢 Playback Speed: {slowMotionMs}ms</div>
+              <div style={{ fontSize: '11px', color: '#7289da', marginBottom: '6px' }}>🐢 Speed: {slowMotionMs}ms</div>
               <input
                 type="range"
-                min="100"
-                max="3000"
-                step="100"
+                min="500"
+                max="5000"
+                step="250"
                 value={slowMotionMs}
                 onChange={e => setSlowMotionMs(Number(e.target.value))}
                 style={{ width: '100%', cursor: 'pointer' }}
               />
-              <div style={{ fontSize: '10px', color: '#4a5680', marginTop: '4px' }}>Adjust in real-time while playing</div>
+              <div style={{ fontSize: '10px', color: '#4a5680', marginTop: '4px' }}>Adjust in real-time</div>
             </div>
           </div>
 
           {/* Action Log */}
           <div style={{ flex: 1, background: '#0f1629', border: '1px solid #2a3d66', borderRadius: '12px', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <div style={{ padding: '12px', borderBottom: '1px solid #2a3d66', fontSize: '12px', fontWeight: 'bold', color: '#5865f2' }}>📋 Action Log</div>
+            <div style={{ padding: '12px', borderBottom: '1px solid #2a3d66', fontSize: '12px', fontWeight: 'bold', color: '#5865f2' }}>📋 Log</div>
             <div ref={logRef} style={{ flex: 1, overflow: 'auto', padding: '12px', fontSize: '11px', fontFamily: 'monospace', lineHeight: '1.5' }}>
               {actionLog.length === 0 ? (
-                <div style={{ color: '#4a5680' }}>Click "Start Recording" to begin...</div>
+                <div style={{ color: '#4a5680' }}>Click "Start Recording"...</div>
               ) : (
                 actionLog.map(entry => (
-                  <div key={entry.id} style={{ marginBottom: '4px', color: entry.type === 'ERROR' ? '#f04747' : entry.type === 'BUG' ? '#faa61a' : entry.type === 'WARN' ? '#faa61a' : entry.type === 'OK' ? '#43b581' : '#7289da' }}>
-                    <span style={{ color: '#5865f2' }}>[{entry.timestamp}]</span> <span style={{ fontWeight: 'bold' }}>{entry.type}</span> {entry.message}
-                    {entry.details && <span style={{ color: '#4a5680' }}> ({entry.details})</span>}
+                  <div key={entry.id} style={{ marginBottom: '4px', color: entry.type === 'ERROR' ? '#f04747' : entry.type === 'BUG' ? '#faa61a' : entry.type === 'OK' ? '#43b581' : '#7289da' }}>
+                    <span style={{ color: '#5865f2' }}>[{entry.timestamp}]</span> {entry.type} {entry.message}
                   </div>
                 ))
               )}
@@ -337,22 +385,20 @@ export default function CrawlerDashboard() {
         </div>
       </div>
 
-      {/* Results Section */}
       {results && (
-        <div style={{ padding: '16px 20px', borderTop: '1px solid #2a3d66', background: '#0f1629', maxHeight: '120px', overflow: 'auto' }}>
-          <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: '#5865f2' }}>✅ Summary</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', fontSize: '12px' }}>
+        <div style={{ padding: '16px 20px', borderTop: '1px solid #2a3d66', background: '#0f1629' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
             <div style={{ background: '#1a2140', padding: '12px', borderRadius: '6px' }}>
-              <div style={{ color: '#7289da', marginBottom: '4px', fontSize: '11px' }}>Pages Recorded</div>
+              <div style={{ color: '#7289da', fontSize: '11px', marginBottom: '4px' }}>Pages</div>
               <div style={{ fontWeight: 'bold', fontSize: '18px', color: '#5865f2' }}>{results.summary.total}</div>
             </div>
             <div style={{ background: '#1a2140', padding: '12px', borderRadius: '6px' }}>
-              <div style={{ color: '#7289da', marginBottom: '4px', fontSize: '11px' }}>Black Pages</div>
+              <div style={{ color: '#7289da', fontSize: '11px', marginBottom: '4px' }}>Black Pages</div>
               <div style={{ fontWeight: 'bold', fontSize: '18px', color: '#faa61a' }}>{results.summary.blackPages}</div>
             </div>
             <div style={{ background: '#1a2140', padding: '12px', borderRadius: '6px' }}>
-              <div style={{ color: '#7289da', marginBottom: '4px', fontSize: '11px' }}>Issues</div>
-              <div style={{ fontWeight: 'bold', fontSize: '18px', color: '#f04747' }}>{results.summary.issues}</div>
+              <div style={{ color: '#7289da', fontSize: '11px', marginBottom: '4px' }}>Duration</div>
+              <div style={{ fontWeight: 'bold', fontSize: '18px', color: '#43b581' }}>{formatTime(elapsedTime)}</div>
             </div>
           </div>
         </div>
