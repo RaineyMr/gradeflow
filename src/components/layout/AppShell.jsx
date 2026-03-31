@@ -150,10 +150,8 @@ export default function AppShell() {
   }
 
   function handleCameraClick() {
-    const role = currentUser?.role || 'teacher'
-    const cameraPath = `/${role}/camera`
     setMenuOpen(false)
-    navigate(cameraPath)
+    navigate('/camera')
   }
 
   // ── Dropdown sections ─────────────────────────────────────────────────────
