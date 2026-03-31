@@ -23,6 +23,70 @@ const BRAND = {
   gradient: 'linear-gradient(135deg, #f97316 0%, #2563EB 100%)',
 }
 
+// ─── Translations ─────────────────────────────────────────────────────────────
+const T = {
+  en: {
+    tagline:      'The all-in-one platform for teachers, students, parents & admins',
+    headline:     'Teach.',
+    subheadline:  'GradeFlow handles the rest.',
+    body:         'One platform for teachers, students, parents, and admins — built around your school\'s identity.',
+    demoLogin:    'DEMO LOGIN',
+    signIn:       'Sign in to GradeFlow',
+    subtitle:     'Select your role, then sign in or use a quick-demo button.',
+    emailLabel:   'EMAIL',
+    passLabel:    'PASSWORD',
+    emailPh:      'Enter your email',
+    passPh:       'Enter your password',
+    signInBtn:    'Sign In',
+    signingIn:    'Signing in...',
+    orJump:       'or jump straight in',
+    quickDemo:    'QUICK DEMO ACCESS',
+    switchLang:   'ES',
+    switchFlag:   '🇲🇽',
+    footerNote:   "Each demo uses a real school's branding & colors throughout.",
+    roles: { teacher:'Teacher', student:'Student', parent:'Parent', admin:'Admin', supportStaff:'Support Staff' },
+    demoLabels: { teacher:'Teacher Demo', student:'Student Demo', parent:'Parent Demo', admin:'Admin Demo', supportStaff:'Support Staff Demo' },
+    features: [
+      { icon:'📷', title:'Auto-grade with camera',      body:'Snap a photo — GradeFlow grades & updates your gradebook instantly.' },
+      { icon:'📋', title:'All assignments in one place', body:'Upload, collect, proctor, and generate reports from one screen.'      },
+      { icon:'🔔', title:'Automatic parent alerts',     body:'GradeFlow notifies teachers, students & parents automatically.'        },
+      { icon:'🎨', title:'Built for your school',        body:'Your school colors and branding throughout every view.'               },
+      { icon:'📊', title:'Real-time analytics',          body:'Class mastery, grade trends, and at-risk student detection live.'     },
+      { icon:'🤝', title:'Parent-teacher bridge',        body:'Private messaging and student-view transparency in one toggle.'       },
+    ],
+  },
+  es: {
+    tagline:      'La plataforma todo-en-uno para maestros, estudiantes, padres y administradores',
+    headline:     'Ensena.',
+    subheadline:  'GradeFlow se encarga del resto.',
+    body:         'Una plataforma para maestros, estudiantes, padres y administradores — construida con la identidad de tu escuela.',
+    demoLogin:    'ACCESO DEMO',
+    signIn:       'Inicia sesion en GradeFlow',
+    subtitle:     'Selecciona tu rol, luego inicia sesion o usa un boton de acceso rapido.',
+    emailLabel:   'CORREO',
+    passLabel:    'CONTRASENA',
+    emailPh:      'Ingresa tu correo',
+    passPh:       'Ingresa tu contrasena',
+    signInBtn:    'Iniciar sesion',
+    signingIn:    'Iniciando sesion...',
+    orJump:       'o entra directamente',
+    quickDemo:    'ACCESO RAPIDO DEMO',
+    switchLang:   'EN',
+    switchFlag:   '🇺🇸',
+    footerNote:   'Cada demo usa los colores y marca de una escuela real.',
+    roles: { teacher:'Maestro', student:'Estudiante', parent:'Padre/Madre', admin:'Admin', supportStaff:'Personal de Apoyo' },
+    demoLabels: { teacher:'Demo Maestro', student:'Demo Estudiante', parent:'Demo Padre/Madre', admin:'Demo Admin', supportStaff:'Demo Personal de Apoyo' },
+    features: [
+      { icon:'📷', title:'Califica con la camara',       body:'Toma una foto — GradeFlow califica y actualiza tu libro de calificaciones al instante.' },
+      { icon:'📋', title:'Todas las tareas en un lugar',  body:'Sube, recopila, supervisa y genera informes desde una sola pantalla.'                   },
+      { icon:'🔔', title:'Alertas automaticas a padres',  body:'GradeFlow notifica a maestros, estudiantes y padres automaticamente.'                   },
+      { icon:'🎨', title:'Hecho para tu escuela',         body:'Los colores y la marca de tu escuela en toda la plataforma.'                             },
+      { icon:'📊', title:'Analiticas en tiempo real',     body:'Dominio de clase, tendencias de calificaciones y deteccion de estudiantes en riesgo.'    },
+      { icon:'🤝', title:'Puente padre-maestro',          body:'Mensajeria privada y transparencia de vista del estudiante en un solo toggle.'           },
+    ],
+  },
+}
+
 // ─── Language toggle button ───────────────────────────────────────────────────
 function LangToggle({ onToggle, style = {} }) {
   const t = useT()
