@@ -164,12 +164,12 @@ function getWidgetCatalog(t) {
     { id:'attention',  label:t('needs_attention'),     icon:'⚑',  desc:t('students') + ' ' + t('flagged') + ' for ' + t('follow_up') },
     { id:'messages',   label:t('nav_messages'),            icon:'💬', desc:t('parent') + ', ' + t('student') + ' & ' + t('teachers_label') + ' ' + t('threads') },
     { id:'reports',    label:t('nav_reports'),             icon:'📊', desc:t('grade') + ' ' + t('trends') + ' and ' + t('class') + ' ' + t('school_analytics') },
-    { id:'grading',    label:'Grading',             icon:'✏️', desc:'Quick-grade recent submissions' },
-    { id:'lessonPlan', label:'Lesson Plan Builder', icon:'📋', desc:'Build and edit lesson plans' },
-    { id:'sketch',     label:'Sketch & Annotate',   icon:'🖊️', desc:'Draw on documents and photos' },
-    { id:'testing',    label:'Testing Suite',       icon:'🧪', desc:'Create and proctor assessments' },
-    { id:'scan',       label:'Scan Grade Sheet',    icon:'📷', desc:'Camera-grade paper assignments' },
-    { id:'gradebook',  label:'Gradebook',           icon:'📓', desc:'Full gradebook and student profiles' },
+    { id:'grading',    label:t('grading'),             icon:'✏️', desc:t('quick_grade') + ' ' + t('recent_submissions') },
+    { id:'lessonPlan', label:t('lesson_plan_builder'), icon:'📋', desc:t('build_edit_lesson_plans') },
+    { id:'sketch',     label:t('sketch_annotate'),     icon:'🖊️', desc:t('draw_documents_photos') },
+    { id:'testing',    label:t('testing_suite'),       icon:'🧪', desc:t('create_proctor_assessments') },
+    { id:'scan',       label:t('scan_grade_sheet'),    icon:'📷', desc:t('camera_grade_assignments') },
+    { id:'gradebook',  label:t('gradebook'),           icon:'📓', desc:t('full_gradebook_profiles') },
   ]
 }
 
@@ -287,12 +287,13 @@ function MessagesWidget({ navigate }) {
 
 // ─── NEEDS ATTENTION WIDGET ───────────────────────────────────────────────────
 function NeedsAttentionWidget({ atRisk, navigate }) {
+  const t = useT()
   if (atRisk.length === 0) return null
   return (
     <Widget style={{ border:`1px solid ${C.red}25`, background:C.card }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>⚑ Needs Attention</div>
-        <span style={{ background:`${C.red}18`, color:C.red, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999 }}>{atRisk.length} students</span>
+        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>⚑ {t('needs_attention')}</div>
+        <span style={{ background:`${C.red}18`, color:C.red, fontSize:10, fontWeight:700, padding:'3px 10px', borderRadius:999 }}>{atRisk.length} {t('students_label')}</span>
       </div>
       {/* Inline student names like layout */}
       <div style={{ fontSize:12, color:C.soft, lineHeight:1.8, marginBottom:10 }}>
@@ -307,12 +308,12 @@ function NeedsAttentionWidget({ atRisk, navigate }) {
       </div>
       <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
         <button onClick={e=>{ e.stopPropagation(); navigate('attention') }}
-          style={{ background:`${C.red}18`, color:C.red, border:`1px solid ${C.red}30`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-          Tap to view all
+          style={{ background:`${C.red}18`, color:C.red, border:'1px solid ${C.red}30', borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+          {t('tap_to_view_all')}
         </button>
         <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
-          style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-          📩 Message individually or as group
+          style={{ background:`${C.purple}18`, color:C.purple, border:'1px solid ${C.purple}30', borderRadius:9, padding:'6px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+          📩 {t('message_individually_group')}
         </button>
       </div>
     </Widget>
