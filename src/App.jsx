@@ -206,8 +206,10 @@ export default function App() {
     return cleanup
   }, [store])
 
-  // Sync page state changes back to hash
+  // Sync page state changes back to hash (only if authenticated)
   useEffect(() => {
+    if (!currentUser) return // Don't sync hash if not authenticated
+    
     const role = currentUser?.role || null
     
     // Import here to avoid circular dependency

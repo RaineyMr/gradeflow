@@ -49,21 +49,27 @@ export const pageToHash = (page, role = null) => {
 
 /**
  * Initialize router on app mount
- * - Syncs initial hash to page state
+ * - Syncs initial hash to page state (only if user is authenticated)
  * - Listens for browser back/forward events
  * Returns cleanup function
  */
 export const initializeRouter = (store) => {
-  // Sync hash to page on mount
-  const initialPage = hashToPage(window.location.hash);
-  if (initialPage !== store.getState().page) {
-    store.setState({ page: initialPage });
+  // Only sync hash to page if user is authenticated
+  const currentUser = store.getState().currentUser;
+  if (currentUser) {
+    const initialPage = hashToPage(window.location.hash);
+    if (initialPage !== store.getState().page) {
+      store.setState({ page: initialPage });
+    }
   }
 
   // Listen for popstate (browser back/forward)
   const handlePopState = () => {
-    const newPage = hashToPage(window.location.hash);
-    store.setState({ page: newPage });
+    const currentUser = store.getState().currentUser;
+    if (currentUser) {
+      const newPage = hashToPage(window.location.hash);
+      store.setState({ page: newPage });
+    }
   };
 
   window.addEventListener('popstate', handlePopState);

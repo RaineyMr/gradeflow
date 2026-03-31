@@ -342,16 +342,18 @@ export const useStore = create((set, get) => ({
    */
   setPage: (page) => {
     const { currentUser } = get();
-    const role = currentUser?.role || null;
-
-    // Update hash first
-    const hash = pageToHash(page, role);
-    if (window.location.hash !== hash) {
-      window.history.pushState({ page, role }, '', hash);
-    }
-
+    
     // Update state
     set({ page });
+    
+    // Only update hash if user is authenticated
+    if (currentUser) {
+      const role = currentUser?.role || null;
+      const hash = pageToHash(page, role);
+      if (window.location.hash !== hash) {
+        window.history.pushState({ page, role }, '', hash);
+      }
+    }
   },
 
   /**
