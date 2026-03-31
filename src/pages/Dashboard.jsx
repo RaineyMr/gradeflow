@@ -235,19 +235,20 @@ function RoleBadge({ role }) {
 }
 
 function MessagesWidget({ navigate }) {
+  const t = useT()
   const unread = MSG_THREADS.filter(t=>t.unread).length
   return (
     <Widget style={{ background:'linear-gradient(135deg,#0d0820 0%,#060810 100%)', border:`1px solid ${C.purple}25` }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
         <div>
-          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>💬 Messages</div>
-          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Teachers · Students · Parents · Admin</div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>💬 {t('nav_messages')}</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{t('teachers_label')} · {t('students_label')} · {t('parent')} · {t('admin')}</div>
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          {unread>0 && <span style={{ background:`${C.red}28`, color:C.red, borderRadius:999, padding:'2px 8px', fontSize:10, fontWeight:700 }}>{unread} new</span>}
+          {unread>0 && <span style={{ background:`${C.red}28`, color:C.red, borderRadius:999, padding:'2px 8px', fontSize:10, fontWeight:700 }}>{unread} {t('new')}</span>}
           <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
-            style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
-            See all →
+            style={{ background:`${C.purple}18`, color:C.purple, border:'1px solid ${C.purple}30', borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+            {t('see_all')} →
           </button>
         </div>
       </div>
@@ -318,16 +319,17 @@ function NeedsAttentionWidget({ atRisk, navigate }) {
   )
 }
 
-// ─── REPORTS WIDGET ───────────────────────────────────────────────────────────
+// ─── REPORTS WIDGET ──────────────────────────────────────────────────────────
 function ReportsWidget({ navigate }) {
-  const reportLinks = ['Class Mastery', 'Student Report', 'Grade Distribution', 'Needs Attention', 'Comm. Log', 'Progress']
+  const t = useT()
+  const reportLinks = ['Class Mastery', 'Student Report', 'Grade Distribution', 'Needs Attention', 'Comm. Log', 'Progress', 'New Report', 'New Report 2'] // Added 'New Report 2' to the list
   return (
     <Widget style={{ background:'linear-gradient(135deg,#0a1628 0%,#060810 100%)', border:'1px solid #1a2a40' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📊 Reports</div>
+        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📊 {t('nav_reports')}</div>
         <button onClick={e=>{ e.stopPropagation(); navigate('reports') }}
-          style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
-          See all →
+          style={{ background:`${C.blue}18`, color:C.blue, border:'1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          {t('see_all')} →
         </button>
       </div>
       {/* Text link list */}
