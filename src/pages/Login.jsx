@@ -90,7 +90,10 @@ function useLoginForm(onLogin, onDemoLogin) {
 
   function handleDemoClick(demo) {
     const account = getDemoAccountByCredentials(demo.email, demo.password, demo.role)
-    if (account) { window.scrollTo(0, 0); onDemoLogin?.({ ...account, lang: account.lang || lang }) }
+    if (account) { 
+      window.scrollTo(0, 0); 
+      onDemoLogin?.({ ...account, lang: lang }) // Use current language, not account.lang
+    }
   }
 
   return { selectedRole, setSelectedRole, email, setEmail, password, setPassword, error, loading, handleSubmit, handleDemoClick, lang, toggleLang }
