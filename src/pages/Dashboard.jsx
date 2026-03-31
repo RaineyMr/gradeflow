@@ -356,11 +356,20 @@ function GradingWidget({ navigate }) {
   return (
     <Widget onClick={()=>navigate('gradebook')} style={{ background:C.card }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📷 Grading</div>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <span 
+            onClick={e=>{ console.log('Camera icon clicked!'); e.stopPropagation(); navigate('/camera'); }}
+            style={{ cursor:'pointer', fontSize:13, fontWeight:800, color:C.text, padding:0, display:'inline-block' }}>
+            📷
+          </span>
+          <span style={{ fontSize:13, fontWeight:800, color:C.text }}>Grading</span>
+        </div>
         <span style={{ fontSize:10, color:C.green, fontWeight:700 }}>Synced: PowerSchool ✓</span>
       </div>
       <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>
-        Last: Today 8:42am · 24 grades · Tap 📷 to scan
+        Last: Today 8:42am · 24 grades · Tap <span 
+            onClick={e=>{ console.log('Camera icon clicked!'); e.stopPropagation(); navigate('/camera'); }}
+            style={{ cursor:'pointer', color:C.text, fontSize:11, fontWeight:600, padding:0, textDecoration:'underline', display:'inline-block' }}>📷</span> to scan
       </div>
       {/* Weight chips */}
       <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:10 }}>
