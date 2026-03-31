@@ -133,8 +133,7 @@ function LoginRoute() {
     document.documentElement.lang = account.lang ?? 'en'
     
     // Reset browser history and navigate to home
-    const store = useStore.getState()
-    store.resetToHome()
+    useStore.getState().resetToHome()
     navigateToPage('home', account.role)
   }
 
@@ -175,7 +174,6 @@ function Loading() {
 
 export default function App() {
   const { loadFromDB, setCurrentUser, setLang, isHydrated, page, currentUser } = useStore()
-  const store = useStore()
 
   // Rehydrate auth session + apply school CSS vars on first load
   useEffect(() => {
@@ -202,9 +200,9 @@ export default function App() {
 
   // Initialize hash router on app mount
   useEffect(() => {
-    const cleanup = initializeRouter(store)
+    const cleanup = initializeRouter(useStore)
     return cleanup
-  }, [store])
+  }, [])
 
   // Sync page state changes back to hash (only if authenticated)
   useEffect(() => {
