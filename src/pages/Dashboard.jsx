@@ -938,12 +938,12 @@ function HomeFeed({ navigate }) {
           <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
             {overviewTiles.map(tile=>(
               <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
-                style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'background 0.15s' }}
+                style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:2, transition:'background 0.15s', justifyContent:'center', minHeight:'60px' }}
                 onMouseEnter={e=>(e.currentTarget.style.background=`${tile.color}30`)}
                 onMouseLeave={e=>(e.currentTarget.style.background=`${tile.color}18`)}>
-                <span style={{ fontSize:16 }}>{tile.icon}</span>
+                <span style={{ fontSize:16, lineHeight:1 }}>{tile.icon}</span>
                 {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
-                <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600 }}>{tile.label}</span>
+                <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600, marginTop:'auto' }}>{tile.label}</span>
               </button>
             ))}
           </div>
