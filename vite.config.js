@@ -4,6 +4,10 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    host: true, // Expose to network
+    port: 5174, // Specify port
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -22,8 +26,11 @@ export default defineConfig({
           // Create separate chunks for node_modules dependencies
           if (id.includes('node_modules')) {
             // Group React ecosystem together to avoid conflicts
-            if (id.includes('react') || id.includes('react-dom') || id.includes('framer-motion')) {
+            if (id.includes('react') || id.includes('react-dom')) {
               return 'vendor-react';
+            }
+            if (id.includes('framer-motion')) {
+              return 'vendor-motion';
             }
             if (id.includes('react-router')) {
               return 'vendor-router';
