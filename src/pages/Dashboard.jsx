@@ -11,6 +11,7 @@ import StudentProfile from '@pages/StudentProfile'
 import ParentMessages from '@pages/ParentMessages'
 import Integrations   from './Integrations'
 import Camera         from './Camera'
+import HashRouterDemo from '../components/HashRouterDemo'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -972,6 +973,7 @@ function HomeFeed({ navigate }) {
       {wrap('testing',   <TestingSuiteWidget navigate={navigate}/>)}
       {wrap('scan',      <ScanGradeSheetWidget navigate={navigate}/>)}
       {wrap('gradebook', <GradebookWidget navigate={navigate}/>)}
+      {wrap('hashRouter', <HashRouterDemo />)}
 
       <AddWidgetsBar onOpen={() => setShowModal(true)}/>
     </div>
@@ -1024,13 +1026,18 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     history.current = []
     setSubPage(null)
     store.setScreen('dashboard')
+    store.resetToHome() // Use the store's router method
     scrollTop()
   }
 
   function goBack() {
     history.current.pop()
     const prev = history.current[history.current.length - 1] || null
-    if (!prev) { goHome(); return }
+    if (!prev) { 
+      store.goBack() // Use the store's router method
+      goHome(); 
+      return 
+    }
     setSubPage(prev)
     scrollTop()
   }
@@ -1041,6 +1048,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     if(id==='logout')    { goHome(); return }
     history.current.push(id)
     setSubPage(id)
+    store.setPage(id) // Use the store's router method
     scrollTop()
   }
 
