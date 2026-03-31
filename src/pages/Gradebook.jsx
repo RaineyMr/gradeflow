@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
+import { useT } from '../lib/i18n'
 import { GradeBar, Modal } from '../components/ui'
 import { GradebookSyncButton } from '../components/GradebookSyncButton.jsx'
 import { GradebookSyncStatus } from '../components/GradebookSyncStatus.jsx'
@@ -15,6 +16,7 @@ const C = {
 // weights belong to categories, not individual assignments.
 function WeightEditor({ onClose }) {
   const { categories, setCategories, gradingMethod, setGradingMethod } = useStore()
+  const t = useT()
   const [draft, setDraft] = useState(categories.map(c => ({ ...c })))
   const [newCatName, setNewCatName] = useState('')
 
@@ -58,9 +60,9 @@ function WeightEditor({ onClose }) {
     <div>
       {/* Grading method toggle */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 8 }}>Grading Method</div>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 8 }}>{t('grading_method')}</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {[['weighted', '⚖ Category Weights'], ['total_points', '∑ Total Points']].map(([val, label]) => (
+          {[['weighted', '⚖ ' + t('category_weights')], ['total_points', '∑ ' + t('total_points')]].map(([val, label]) => (
             <button key={val} onClick={() => setGradingMethod(val)}
               style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
                 background: gradingMethod === val ? 'var(--school-color, #BA0C2F)' : C.inner,
@@ -70,12 +72,12 @@ function WeightEditor({ onClose }) {
           ))}
         </div>
         {gradingMethod === 'total_points' && (
-          <p style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>All assignments are worth equal points. Final grade = points earned ÷ total points possible.</p>
+          <p style={{ fontSize: 11, color: C.muted, marginTop: 8 }}>{t('total_points_description')}</p>
         )}
       </div>
 
       {gradingMethod === 'weighted' && (<>
-        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 10 }}>Category Weights</div>
+        <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 10 }}>{t('category_weights')}</div>
 
         {draft.map(cat => (
           <div key={cat.id} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
@@ -97,7 +99,7 @@ function WeightEditor({ onClose }) {
         {/* Add category */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           <input
-            placeholder="New category name..."
+            placeholder={t('new_category_name')}
             value={newCatName}
             onChange={e => setNewCatName(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addCategory()}
@@ -105,14 +107,14 @@ function WeightEditor({ onClose }) {
           />
           <button onClick={addCategory}
             style={{ background: `${C.teal}22`, color: C.teal, border: 'none', borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-            + Add
+            {t('add')}
           </button>
         </div>
 
         {/* Live total bar */}
         <div style={{ background: C.inner, borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-            <span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>Total</span>
+            <span style={{ fontSize: 11, color: C.muted, fontWeight: 600 }}>{t('total')}</span>
             <span style={{ fontSize: 16, fontWeight: 800, color: totalColor }}>{total}%</span>
           </div>
           <div style={{ height: 6, background: C.border, borderRadius: 3, overflow: 'hidden' }}>
@@ -120,14 +122,14 @@ function WeightEditor({ onClose }) {
           </div>
           {!totalOk && (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
-              <span style={{ fontSize: 11, color: totalColor }}>{total < 100 ? `${100 - total}% unallocated` : `${total - 100}% over 100%`}</span>
+              <span style={{ fontSize: 11, color: totalColor }}>{total < 100 ? `${100 - total}% ${t('unallocated')}` : `${total - 100}% ${t('over_100')}`}</span>
               <button onClick={autoBalance}
                 style={{ background: `${C.blue}22`, color: C.blue, border: 'none', borderRadius: 999, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                Auto-balance
+                {t('auto_balance')}
               </button>
             </div>
           )}
-          {totalOk && <div style={{ fontSize: 11, color: C.green, marginTop: 6 }}>✓ Weights sum to 100%</div>}
+          {totalOk && <div style={{ fontSize: 11, color: C.green, marginTop: 6 }}>✓ {t('weights_sum_100')}</div>}
         </div>
 
         {/* Category breakdown visual */}
@@ -140,7 +142,7 @@ function WeightEditor({ onClose }) {
 
       <button onClick={handleSave} disabled={gradingMethod === 'weighted' && !totalOk}
         style={{ width: '100%', background: (gradingMethod === 'total_points' || totalOk) ? 'var(--school-color, #BA0C2F)' : '#2a2f42', color: (gradingMethod === 'total_points' || totalOk) ? '#fff' : C.muted, border: 'none', borderRadius: 999, padding: '14px', fontSize: 15, fontWeight: 800, cursor: (gradingMethod === 'total_points' || totalOk) ? 'pointer' : 'not-allowed' }}>
-        {gradingMethod === 'weighted' && !totalOk ? `Weights must equal 100% (currently ${total}%)` : 'Save Grading Setup'}
+        {gradingMethod === 'weighted' && !totalOk ? `${t('weights_must_equal_100')} (${total}%)` : t('save_grading_setup')}
       </button>
     </div>
   )
