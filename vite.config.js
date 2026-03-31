@@ -15,4 +15,74 @@ export default defineConfig({
       "@layouts": path.resolve(__dirname, "./src/layouts"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Create separate chunks for node_modules dependencies
+          if (id.includes('node_modules')) {
+            // Group React ecosystem together
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('react-router')) {
+              return 'vendor-router';
+            }
+            // Group other major libraries
+            if (id.includes('zustand')) {
+              return 'vendor-state';
+            }
+            // Other vendor libraries
+            return 'vendor';
+          }
+          
+          // Create chunks for different parts of the application
+          if (id.includes('@components/ui')) {
+            return 'ui-components';
+          }
+          if (id.includes('@components/support')) {
+            return 'support-components';
+          }
+          if (id.includes('@components/layout')) {
+            return 'layout-components';
+          }
+          if (id.includes('@pages')) {
+            // Further split major pages
+            if (id.includes('Dashboard')) {
+              return 'page-dashboard';
+            }
+            if (id.includes('Gradebook')) {
+              return 'page-gradebook';
+            }
+            if (id.includes('LessonPlan')) {
+              return 'page-lesson-plan';
+            }
+            if (id.includes('Login')) {
+              return 'page-login';
+            }
+            return 'pages';
+          }
+          if (id.includes('@lib')) {
+            // Split core lib modules
+            if (id.includes('i18n')) {
+              return 'lib-i18n';
+            }
+            if (id.includes('store')) {
+              return 'lib-store';
+            }
+            if (id.includes('demoAccounts')) {
+              return 'lib-demo';
+            }
+            return 'lib';
+          }
+          if (id.includes('@hooks')) {
+            return 'hooks';
+          }
+          
+          // Return null to let Rollup handle it normally
+          return null;
+        },
+      },
+    },
+  },
 });
