@@ -19,6 +19,10 @@ export default defineConfig({
       "@layouts": path.resolve(__dirname, "./src/layouts"),
     },
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom'],
+    force: true, // Force optimization
+  },
   build: {
     rollupOptions: {
       output: {
@@ -94,9 +98,5 @@ export default defineConfig({
     // Ensure clean builds
     minify: 'terser',
     sourcemap: true,
-  },
-  // Optimize dependencies during development
-  optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom'],
   },
 });
