@@ -14,6 +14,7 @@ export default defineConfig({
       "@styles": path.resolve(__dirname, "./src/styles"),
       "@layouts": path.resolve(__dirname, "./src/layouts"),
     },
+    dedupe: ["react", "react-dom"],
   },
   build: {
     rollupOptions: {
@@ -22,7 +23,7 @@ export default defineConfig({
           // Create separate chunks for node_modules dependencies
           if (id.includes('node_modules')) {
             // Group React ecosystem together
-            if (id.includes('react') || id.includes('react-dom')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('framer-motion')) {
               return 'vendor-react';
             }
             if (id.includes('react-router')) {
