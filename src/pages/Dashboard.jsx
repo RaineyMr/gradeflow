@@ -11,7 +11,6 @@ import StudentProfile from '@pages/StudentProfile'
 import ParentMessages from '@pages/ParentMessages'
 import Integrations   from './Integrations'
 import Camera         from './Camera'
-import HashRouterDemo from '../components/HashRouterDemo'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -973,7 +972,6 @@ function HomeFeed({ navigate }) {
       {wrap('testing',   <TestingSuiteWidget navigate={navigate}/>)}
       {wrap('scan',      <ScanGradeSheetWidget navigate={navigate}/>)}
       {wrap('gradebook', <GradebookWidget navigate={navigate}/>)}
-      {wrap('hashRouter', <HashRouterDemo />)}
 
       <AddWidgetsBar onOpen={() => setShowModal(true)}/>
     </div>
