@@ -542,24 +542,38 @@ function SketchAnnotateWidget({ navigate }) {
 
 // ─── TESTING SUITE WIDGET ─────────────────────────────────────────────────────
 function TestingSuiteWidget({ navigate }) {
+  const t = useT()
   const modes = [
-    { icon:'🔒', label:'Lockdown',      sub:'Browser · External test from any ed site · locked', color:C.blue   },
-    { icon:'🏗',  label:'Native Builder', sub:'Build in GradeFlow · MC · Short ans · T/F · Essay · Fill blank', color:C.green  },
-    { icon:'📄', label:'PDF Convert',   sub:'Upload any PDF · AI digitizes it · Questions editable', color:C.purple },
+    { icon:'🔒', label:t('lockdown'),      sub:t('lockdown_description'), color:C.blue   },
+    { icon:'🏗',  label:t('native_builder'), sub:t('native_builder_description'), color:C.green  },
+    { icon:'📄', label:t('pdf_convert'),   sub:t('pdf_convert_description'), color:C.purple },
   ]
-  const sources = ['Take photo of test', '↑ Upload any format', '🔵 Search database', '✨ AI-generate by grade level + subject + standard', '↗ Pull from ed site']
-  const features = ['Timer + auto-submit', '👁 Real-time monitoring', '✕ Randomize order', '🚩 Flag exit attempts', '✨ AI auto-grade short answers', '📋 Flag essays']
+  const sources = [
+    t('take_photo_test'), 
+    t('upload_any_format'), 
+    t('search_database'), 
+    t('ai_generate_grade_level'), 
+    t('pull_from_ed_site')
+  ]
+  const features = [
+    t('timer_auto_submit'), 
+    t('real_time_monitoring'), 
+    t('randomize_order'), 
+    t('flag_exit_attempts'), 
+    t('ai_auto_grade'), 
+    t('flag_essays')
+  ]
 
   return (
     <Widget style={{ background:'linear-gradient(135deg,#0d0a1e 0%,#060810 100%)', border:`1px solid ${C.purple}25` }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:4 }}>
         <div>
-          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>🧪 Testing Suite</div>
-          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>3 modes · All devices · Lockdown · Auto-grade · Real-time monitoring</div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>🧪 {t('testing_suite')}</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{t('testing_suite_description')}</div>
         </div>
         <button onClick={e=>{ e.stopPropagation(); navigate('testingSuite') }}
-          style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
-          Create Test →
+          style={{ background:`${C.purple}18`, color:C.purple, border:'1px solid ${C.purple}30', borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          {t('create_test')} →
         </button>
       </div>
 
@@ -609,6 +623,7 @@ function TestingSuiteWidget({ navigate }) {
 
 // ─── SCAN GRADE SHEET WIDGET ──────────────────────────────────────────────────
 function ScanGradeSheetWidget({ navigate }) {
+  const t = useT()
   const weights = [
     { label:'Test',  pct:'40%', color:C.red    },
     { label:'Quiz',  pct:'30%', color:C.amber  },
@@ -618,25 +633,25 @@ function ScanGradeSheetWidget({ navigate }) {
   return (
     <Widget style={{ background:C.card }}>
       <div style={{ marginBottom:12 }}>
-        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📷 Scan Grade Sheet</div>
-        <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Camera · Upload · AI reads all formats → auto-convert to %</div>
+        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📷 {t('scan_grade_sheet')}</div>
+        <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{t('camera_upload_ai_convert')}</div>
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:12 }}>
         <button onClick={e=>{ e.stopPropagation(); navigate('camera') }}
           style={{ background:'var(--school-color)18', border:`2px solid var(--school-color)40`, borderRadius:14, padding:'16px 8px', cursor:'pointer', textAlign:'center' }}>
           <div style={{ fontSize:28, marginBottom:4 }}>📷</div>
-          <div style={{ fontSize:12, fontWeight:700, color:'var(--school-color)' }}>Use Camera</div>
-          <div style={{ fontSize:9, color:C.muted }}>Phone · tablet · laptop</div>
+          <div style={{ fontSize:12, fontWeight:700, color:'var(--school-color)' }}>{t('use_camera')}</div>
+          <div style={{ fontSize:9, color:C.muted }}>{t('phone_tablet_laptop')}</div>
         </button>
         <button onClick={e=>e.stopPropagation()}
           style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:14, padding:'16px 8px', cursor:'pointer', textAlign:'center' }}>
           <div style={{ fontSize:28, marginBottom:4 }}>📁</div>
-          <div style={{ fontSize:12, fontWeight:700, color:C.soft }}>Upload File</div>
-          <div style={{ fontSize:9, color:C.muted }}>Any format</div>
+          <div style={{ fontSize:12, fontWeight:700, color:C.soft }}>{t('upload_file')}</div>
+          <div style={{ fontSize:9, color:C.muted }}>{t('any_format')}</div>
         </button>
       </div>
       <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
-        <span style={{ fontSize:10, color:C.muted }}>Assignment type:</span>
+        <span style={{ fontSize:10, color:C.muted }}>{t('assignment_type')}:</span>
         {weights.map(w=>(
           <span key={w.label} style={{ background:`${w.color}20`, color:w.color, border:`1px solid ${w.color}35`, borderRadius:999, padding:'3px 9px', fontSize:10, fontWeight:700 }}>
             {w.label} {w.pct}
@@ -644,7 +659,7 @@ function ScanGradeSheetWidget({ navigate }) {
         ))}
       </div>
       <div style={{ fontSize:10, color:C.muted, marginTop:8 }}>
-        Weights auto-pulled from school system · teacher editable anytime in Settings
+        {t('weights_auto_pulled')}
       </div>
     </Widget>
   )
@@ -652,6 +667,7 @@ function ScanGradeSheetWidget({ navigate }) {
 
 // ─── GRADEBOOK WIDGET ─────────────────────────────────────────────────────────
 function GradebookWidget({ navigate }) {
+  const t = useT()
   const { classes, setActiveClass } = useStore()
   const [activeId, setActiveId] = useState(classes[0]?.id||1)
   const cls = classes.find(c=>c.id===activeId)||classes[0]
@@ -666,12 +682,12 @@ function GradebookWidget({ navigate }) {
     <Widget style={{ background:'linear-gradient(135deg,#0a0f1e 0%,#060810 100%)', border:`1px solid ${C.blue}20` }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
         <div>
-          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📚 Gradebook + Student Profile</div>
-          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{cls?.students||24} students · Synced: PowerSchool ✓ · Tap student → full editable profile</div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📚 {t('gradebook')} + {t('student_profile')}</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>{cls?.students||24} {t('students_label')} · {t('synced')}: PowerSchool ✓ · {t('tap_student_profile')}</div>
         </div>
         <button onClick={e=>{ e.stopPropagation(); navigate('gradebook') }}
-          style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
-          Open →
+          style={{ background:`${C.blue}18`, color:C.blue, border:'1px solid ${C.blue}30', borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          {t('open')} →
         </button>
       </div>
 
@@ -707,8 +723,12 @@ function GradebookWidget({ navigate }) {
 
       {/* Action buttons */}
       <div style={{ display:'flex', gap:8, marginTop:10, borderTop:`1px solid ${C.border}`, paddingTop:10 }}>
-        {[['✨ AI Insights',C.purple],['📊 Student Report',C.green],['📩 Message Parent',C.amber]].map(([l,c])=>(
-          <button key={l} onClick={e=>{ e.stopPropagation(); navigate(l.includes('Message')?'parentMessages':'gradebook') }}
+        {[
+          ['✨ ' + t('ai_insights'), C.purple],
+          ['📊 ' + t('student_report'), C.green], 
+          ['📩 ' + t('message_parent'), C.amber]
+        ].map(([l,c])=>(
+          <button key={l} onClick={e=>{ e.stopPropagation(); navigate(l.includes(t('message'))?'parentMessages':'gradebook') }}
             style={{ flex:1, background:`${c}18`, color:c, border:`1px solid ${c}30`, borderRadius:9, padding:'7px 4px', fontSize:9, fontWeight:700, cursor:'pointer', textAlign:'center' }}>
             {l}
           </button>
