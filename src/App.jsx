@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useStore } from '@lib/store'
 import { useHashRouter } from '@hooks/useHashRouter'
-import { initializeRouter } from '@lib/hashRouter'
+import { initializeRouter, pageToHash } from '@lib/hashRouter'
 
 // ── Layout & guards ───────────────────────────────────────────────────────────
 import AppShell      from '@components/layout/AppShell'
@@ -209,9 +209,6 @@ export default function App() {
     if (!currentUser) return // Don't sync hash if not authenticated
     
     const role = currentUser?.role || null
-    
-    // Import here to avoid circular dependency
-    const { pageToHash } = require('@lib/hashRouter')
     const hash = pageToHash(page, role)
 
     if (window.location.hash !== hash) {
