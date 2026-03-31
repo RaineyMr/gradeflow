@@ -53,22 +53,22 @@ export const pageToHash = (page, role = null) => {
  * - Listens for browser back/forward events
  * Returns cleanup function
  */
-export const initializeRouter = (store) => {
+export const initializeRouter = (useStoreHook) => {
   // Only sync hash to page if user is authenticated
-  const currentUser = store.getState().currentUser;
+  const currentUser = useStoreHook.getState().currentUser;
   if (currentUser) {
     const initialPage = hashToPage(window.location.hash);
-    if (initialPage !== store.getState().page) {
-      store.setState({ page: initialPage });
+    if (initialPage !== useStoreHook.getState().page) {
+      useStoreHook.setState({ page: initialPage });
     }
   }
 
   // Listen for popstate (browser back/forward)
   const handlePopState = () => {
-    const currentUser = store.getState().currentUser;
+    const currentUser = useStoreHook.getState().currentUser;
     if (currentUser) {
       const newPage = hashToPage(window.location.hash);
-      store.setState({ page: newPage });
+      useStoreHook.setState({ page: newPage });
     }
   };
 
