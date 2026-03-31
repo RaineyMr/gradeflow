@@ -94,8 +94,8 @@ export default function CrawlerDashboard() {
         const response = await fetch(pageUrl)
         const html = await response.text()
 
-        // Store page snapshot
-        setRecordings(prev => [...prev, { url: pageUrl, role, route, html, timestamp: new Date().toLocaleTimeString() }])
+        // Store page snapshot (URL only, iframe will load it)
+        setRecordings(prev => [...prev, { url: pageUrl, role, route, timestamp: new Date().toLocaleTimeString() }])
 
         // Check health
         const isBlank = html.length < 200
@@ -201,14 +201,14 @@ export default function CrawlerDashboard() {
           
           <iframe
             ref={iframeRef}
-            key={playbackIndex}
-            srcDoc={currentRecording?.html}
+            key={currentRecording?.url}
+            src={currentRecording?.url || 'about:blank'}
             style={{
               flex: 1,
               border: 'none',
               background: '#fff'
             }}
-            sandbox="allow-same-origin allow-scripts allow-stylesheets allow-forms"
+            sandbox="allow-same-origin allow-scripts allow-stylesheets allow-forms allow-popups"
             title="Page Preview"
           />
 
