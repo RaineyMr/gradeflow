@@ -427,14 +427,10 @@ export const useStore = create((set, get) => ({
 
   /**
    * Reset to home page (used on logout, demo reset, etc.)
-   * Goes to appropriate user dashboard based on current user role
    */
   resetToHome: () => {
-    const { currentUser } = get();
-    const userRole = currentUser?.role || 'teacher';
-    const homePath = userRole === 'admin' ? '/admin' : `/${userRole}`;
     set({ page: 'home' });
-    window.history.replaceState({}, '', `#${homePath}/`);
+    window.history.replaceState({}, '#/');
   },
 
   /**

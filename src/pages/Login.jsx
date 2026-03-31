@@ -30,7 +30,6 @@ function LangToggle({ onToggle, style = {} }) {
   return (
     <button
       onClick={onToggle}
-      data-testid="lang-toggle"
       style={{
         background:   'rgba(255,255,255,0.12)',
         border:       '1.5px solid rgba(255,255,255,0.25)',
@@ -304,7 +303,7 @@ function DesktopLogin({ form }) {
 
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
               {demoLoginList.map(demo => (
-                <button key={demo.role} onClick={() => handleDemoClick(demo)} data-testid={`${demo.role}-demo`}
+                <button key={demo.role} onClick={() => handleDemoClick(demo)}
                   style={{ background:BRAND.inner, border:`1px solid ${BRAND.border}`, borderRadius:16, padding:'16px 14px', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor=BRAND.primary; e.currentTarget.style.background='rgba(249,115,22,0.07)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor=BRAND.border; e.currentTarget.style.background=BRAND.inner }}>
