@@ -131,7 +131,7 @@ function MobileLogin({ form }) {
             <button key={r.id} onClick={() => setSelectedRole(r.id)}
               style={{ padding:'8px 4px', borderRadius:12, border:`1.5px solid ${selectedRole===r.id?BRAND.primary:BRAND.border}`, background:selectedRole===r.id?'rgba(249,115,22,0.12)':BRAND.inner, color:selectedRole===r.id?BRAND.primary:BRAND.muted, cursor:'pointer', fontSize:10, fontWeight:700, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
               <span style={{ fontSize:18 }}>{r.icon}</span>
-              {t(r.id)}
+              {r.label}
             </button>
           ))}
         </div>
@@ -264,7 +264,7 @@ function DesktopLogin({ form }) {
                 <button key={r.id} onClick={() => setSelectedRole(r.id)}
                   style={{ padding:'12px 6px', borderRadius:14, border:`1.5px solid ${selectedRole===r.id?BRAND.primary:BRAND.border}`, background:selectedRole===r.id?'rgba(249,115,22,0.12)':BRAND.inner, color:selectedRole===r.id?BRAND.primary:BRAND.muted, cursor:'pointer', fontSize:12, fontWeight:700, display:'flex', flexDirection:'column', alignItems:'center', gap:4, transition:'all 0.15s' }}>
                   <span style={{ fontSize:22 }}>{r.icon}</span>
-                  {t.roles[r.id]}
+                  {r.label}
                 </button>
               ))}
             </div>
