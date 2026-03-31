@@ -42,6 +42,7 @@ import SupportStaffInsights from '@pages/SupportStaffInsights'
 import SupportCollaborationFeed from '@pages/SupportCollaborationFeed'
 import SupportReports from '@pages/SupportReports'
 import CaseConference from '@pages/CaseConference'
+import Crawler from '@pages/Crawler'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -249,6 +250,9 @@ export default function App() {
           <Route path="/tutorials" element={<Tutorials />} />
           <Route path="/profile"   element={<ProfileSettings />} />
           <Route path="/camera"    element={<Page Component={Camera} backTo={-1} />} />
+
+          {/* ── Debug Tools ─────────────────────────────────────────────── */}
+          <Route path="/debug/crawler" element={<Crawler />} />
 
           {/* ── Teacher ─────────────────────────────────────────────── */}
           <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
