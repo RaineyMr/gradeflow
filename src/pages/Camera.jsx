@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { useStore } from '../lib/store'
 import { scanGradedDocument } from '../lib/ai'
 
-export default function Camera() {
+export default function Camera({ onBack }) {
   const { classes, activeClass, addAssignment } = useStore()
   const [mode, setMode] = useState('menu')
   const [assignType, setAssignType] = useState('quiz')
@@ -69,19 +69,18 @@ export default function Camera() {
     }
   }, [])
 
-  // Callback ref fires the moment <video> mounts — eliminates the race condition
   const videoCallbackRef = useCallback((node) => {
     videoRef.current = node
     if (node && streamRef.current) attachStream(streamRef.current)
   }, [attachStream])
 
   async function openCamera() {
-    console.log('openCamera called');
+    console.log('openCamera called')
     setCameraError(null)
     setCameraReady(false)
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      console.error('getUserMedia not supported');
+      console.error('getUserMedia not supported')
       setCameraError(
         location.protocol === 'http:' && location.hostname !== 'localhost'
           ? 'Camera requires HTTPS. Use Vercel URL.'
@@ -90,7 +89,7 @@ export default function Camera() {
       return
     }
 
-    console.log('Requesting camera access...');
+    console.log('Requesting camera access...')
     const attempts = [
       { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
       { video: { facingMode: 'environment' } },
@@ -102,14 +101,14 @@ export default function Camera() {
     let lastErr = null
     for (const c of attempts) {
       try { 
-        console.log('Trying camera config:', c);
-        stream = await navigator.mediaDevices.getUserMedia(c); 
-        console.log('Camera access granted');
+        console.log('Trying camera config:', c)
+        stream = await navigator.mediaDevices.getUserMedia(c)
+        console.log('Camera access granted')
         break 
       }
       catch (err) { 
-        console.error('Camera error:', err);
-        lastErr = err; 
+        console.error('Camera error:', err)
+        lastErr = err
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break 
       }
     }
@@ -182,15 +181,25 @@ export default function Camera() {
     }
   }
 
+  function resetAll() {
+    setMode('menu')
+    setCapturedImage(null)
+    setScanResult(null)
+    setScanError(null)
+    setAssignName('')
+    setManualScore('')
+    setManualTotal('100')
+  }
+
   function calcPercentage() {
-    const earned = parseFloat(manualScore)
-    const total  = parseFloat(manualTotal)
-    if (isNaN(earned) || isNaN(total) || total === 0) return null
-    return Math.round((earned / total) * 100)
+    const score = parseFloat(manualScore)
+    const total = parseFloat(manualTotal)
+    if (isNaN(score) || isNaN(total) || total <= 0) return null
+    return Math.round((score / total) * 100)
   }
 
   function letterFromPct(pct) {
-    if (pct == null) return '--'
+    if (pct == null) return ''
     if (pct >= 90) return 'A'
     if (pct >= 80) return 'B'
     if (pct >= 70) return 'C'
@@ -198,97 +207,90 @@ export default function Camera() {
     return 'F'
   }
 
-  function resetAll() {
-    stopStream()
-    setCapturedImage(null)
-    setScanResult(null)
-    setScanError(null)
-    setManualScore('')
-    setManualTotal('100')
-    setAssignName('')
-    setMode('menu')
-  }
-
-  function postToGradebook() {
+  async function postToGradebook() {
     const pct = calcPercentage()
-    if (pct == null) return
-    addAssignment({
-      classId: Number(selectedClass),
-      name: assignName || ('Scanned ' + assignType),
-      type: assignType,
-      weight: typeConfig.find(t => t.id === assignType)?.weight || 30,
-      date: new Date().toISOString().split('T')[0],
-      dueDate: new Date().toISOString().split('T')[0],
-      hasKey: true,
-      scannedScore: pct,
-      aiGraded: !!scanResult,
-      aiConfidence: scanResult?.confidence || 'low',
-    })
-    setMode('posted')
+    if (pct == null || !assignName.trim()) return
+
+    try {
+      addAssignment({
+        classId: selectedClass,
+        name: assignName.trim(),
+        type: assignType,
+        earnedPoints: parseFloat(manualScore),
+        totalPoints: parseFloat(manualTotal),
+        percentage: pct,
+      })
+      resetAll()
+      // Show success feedback
+      alert(`Posted to gradebook: ${assignName} - ${pct}%`)
+    } catch (err) {
+      setScanError(err.message || 'Failed to post')
+    }
   }
 
-  if (mode === 'posted') return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <div className="text-6xl mb-4">&#10003;</div>
-      <h2 className="font-display font-bold text-xl text-text-primary mb-2">Posted to Gradebook</h2>
-      <p className="text-text-muted text-sm mb-6">Assignment added</p>
-      <button onClick={resetAll} className="px-6 py-2.5 rounded-pill font-bold text-white" style={{ background: 'var(--school-color)' }}>
-        Scan Another
-      </button>
-    </div>
-  )
+  // Processing spinner
+  if (mode === 'processing') {
+    return (
+      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🔄</div>
+        <p style={{ color: '#c8cce0', fontSize: 14, marginBottom: 8 }}>AI is scanning your document...</p>
+        <p style={{ color: '#6b7494', fontSize: 12 }}>Reading grading format, extracting points</p>
+      </div>
+    )
+  }
 
-  if (mode === 'processing') return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      {capturedImage && (
-        <div className="w-28 h-28 rounded-card overflow-hidden mb-6 border border-elevated opacity-70">
-          <img src={capturedImage} alt="Scanning" className="w-full h-full object-cover" />
-        </div>
-      )}
-      <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-      <p className="font-semibold text-text-primary mb-1">Claude Vision is reading this paper</p>
-      <p className="text-text-muted text-sm">Detecting score format...</p>
-    </div>
-  )
-
-  if (mode === 'camera') return (
-    <div>
-      <button onClick={() => { stopStream(); setMode('menu') }} className="flex items-center gap-2 text-text-muted text-sm mb-4 hover:text-text-primary">
-        X Cancel
-      </button>
-      <div className="relative rounded-widget overflow-hidden bg-black mb-4" style={{ aspectRatio: '4/3', maxHeight: '60vh' }}>
-        <video ref={videoCallbackRef} autoPlay playsInline muted className="w-full h-full object-cover" style={{ display: 'block' }} />
+  // Camera mode
+  if (mode === 'camera') {
+    return (
+      <div style={{ padding: '0 16px 20px' }}>
+        <button onClick={resetAll} style={{ background: 'none', border: 'none', color: '#0fb8a0', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 16, padding: 0 }}>
+          ← Back
+        </button>
+        <video ref={videoCallbackRef} 
+          style={{ width: '100%', borderRadius: 12, marginBottom: 16, backgroundColor: '#000', display: 'block' }}
+          autoPlay={true}
+          playsInline={true}
+          muted={true}
+        />
         {!cameraReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black">
-            <div className="text-center">
-              <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-white text-sm opacity-60">Starting camera...</p>
-            </div>
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 12 }}>Starting camera...</p>
           </div>
         )}
         {cameraReady && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="relative w-4/5 h-4/5">
-              <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white" />
-              <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white" />
-              <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white" />
-              <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white" />
+          <div style={{ position: 'relative', marginBottom: 16 }}>
+            <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', border: '2px solid #0fb8a0', borderRadius: 12, backgroundColor: 'transparent' }}>
+              <div style={{ position: 'absolute', top: 8, left: 8, width: 16, height: 16, border: '2px solid white', borderRight: 'none', borderBottom: 'none' }} />
+              <div style={{ position: 'absolute', top: 8, right: 8, width: 16, height: 16, border: '2px solid white', borderLeft: 'none', borderBottom: 'none' }} />
+              <div style={{ position: 'absolute', bottom: 8, left: 8, width: 16, height: 16, border: '2px solid white', borderRight: 'none', borderTop: 'none' }} />
+              <div style={{ position: 'absolute', bottom: 8, right: 8, width: 16, height: 16, border: '2px solid white', borderLeft: 'none', borderTop: 'none' }} />
             </div>
           </div>
         )}
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
+        <p style={{ textAlign: 'center', color: '#6b7494', fontSize: 12, marginBottom: 12 }}>Fill the frame with the graded paper</p>
+        <button
+          onClick={capturePhoto}
+          disabled={!cameraReady}
+          style={{
+            width: '100%',
+            padding: '16px',
+            borderRadius: 12,
+            fontWeight: 700,
+            fontSize: 14,
+            color: '#fff',
+            border: 'none',
+            cursor: cameraReady ? 'pointer' : 'not-allowed',
+            background: cameraReady ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2436',
+            opacity: cameraReady ? 1 : 0.5,
+          }}>
+          {cameraReady ? 'Capture and Scan' : 'Starting camera...'}
+        </button>
       </div>
-      <canvas ref={canvasRef} className="hidden" />
-      <p className="text-center text-text-muted text-xs mb-4">Fill the frame with the graded paper</p>
-      <button
-        onClick={capturePhoto}
-        disabled={!cameraReady}
-        className="w-full py-4 rounded-widget font-display font-bold text-lg text-white disabled:opacity-40"
-        style={{ background: cameraReady ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231' }}>
-        {cameraReady ? 'Capture and Scan' : 'Starting camera...'}
-      </button>
-    </div>
-  )
+    )
+  }
 
+  // Review mode
   if (mode === 'review') {
     const pct = calcPercentage()
     const letter = letterFromPct(pct)
@@ -296,152 +298,189 @@ export default function Camera() {
     const scoreColor = pct >= 90 ? '#22c97a' : pct >= 70 ? '#f5a623' : '#f04a4a'
 
     return (
-      <div>
-        <button onClick={resetAll} className="flex items-center gap-2 text-text-muted text-sm mb-4 hover:text-text-primary">
-          &larr; Scan Again
+      <div style={{ padding: '0 16px 20px' }}>
+        <button onClick={resetAll} style={{ background: 'none', border: 'none', color: '#0fb8a0', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 12, padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+          ← Scan Again
         </button>
-        <h1 className="font-display font-bold text-xl text-text-primary mb-4">Review and Post</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#eef0f8', marginBottom: 16 }}>Review and Post</h1>
 
         {sr && !scanError && (
-          <div className="p-4 rounded-card mb-4" style={{ background: '#0d1520', border: '1px solid #3b7ef430' }}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs px-2 py-0.5 rounded-pill font-bold" style={{ background: '#9b6ef520', color: '#9b6ef5' }}>
+          <div style={{ background: '#0d1520', border: '1px solid #3b7ef430', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <span style={{ background: '#9b6ef520', color: '#9b6ef5', fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999 }}>
                 Claude Vision
               </span>
-              <span className="text-xs px-2 py-0.5 rounded-pill font-bold" style={{
+              <span style={{
                 background: sr.confidence === 'high' ? '#22c97a20' : '#f5a62320',
-                color: sr.confidence === 'high' ? '#22c97a' : '#f5a623'
+                color: sr.confidence === 'high' ? '#22c97a' : '#f5a623',
+                fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999
               }}>
                 {sr.confidence === 'high' ? 'High confidence' : 'Low confidence - verify'}
               </span>
             </div>
-            <p className="text-sm text-text-primary">{sr.rawText}</p>
+            <p style={{ fontSize: 13, color: '#eef0f8' }}>{sr.rawText}</p>
           </div>
         )}
 
         {scanError && (
-          <div className="p-4 rounded-card mb-4" style={{ background: '#1c1012', border: '1px solid #f04a4a30' }}>
-            <p className="font-semibold mb-1" style={{ color: '#f04a4a' }}>Scan error</p>
-            <p className="text-sm" style={{ color: '#f04a4a', opacity: 0.85 }}>{scanError}</p>
-            <p className="text-text-muted text-sm mt-2">Enter score manually below.</p>
+          <div style={{ background: '#1c1012', border: '1px solid #f04a4a30', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <p style={{ fontWeight: 700, marginBottom: 4, color: '#f04a4a' }}>Scan error</p>
+            <p style={{ fontSize: 12, color: '#f04a4a', opacity: 0.85, marginBottom: 8 }}>{scanError}</p>
+            <p style={{ fontSize: 11, color: '#6b7494' }}>Enter score manually below.</p>
           </div>
         )}
 
-        <div className="space-y-3 mb-4">
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Assignment name</label>
+          <input value={assignName} onChange={e => setAssignName(e.target.value)}
+            placeholder="e.g. Ch.4 Quiz"
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 13, color: '#eef0f8', background: '#1e2231', border: '1px solid #2a2f42', boxSizing: 'border-box' }} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
           <div>
-            <label className="tag-label block mb-1">Assignment name</label>
-            <input value={assignName} onChange={e => setAssignName(e.target.value)}
-              placeholder="e.g. Ch.4 Quiz"
-              className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
-              style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="tag-label block mb-1">Points earned</label>
-              <input value={manualScore} onChange={e => setManualScore(e.target.value)}
-                placeholder="e.g. 82" type="number"
-                className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
-                style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
-            </div>
-            <div>
-              <label className="tag-label block mb-1">Total points</label>
-              <input value={manualTotal} onChange={e => setManualTotal(e.target.value)}
-                placeholder="e.g. 100" type="number"
-                className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
-                style={{ background: '#1e2231', border: '1px solid #2a2f42' }} />
-            </div>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Points earned</label>
+            <input value={manualScore} onChange={e => setManualScore(e.target.value)}
+              placeholder="e.g. 82" type="number"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 13, color: '#eef0f8', background: '#1e2231', border: '1px solid #2a2f42', boxSizing: 'border-box' }} />
           </div>
           <div>
-            <label className="tag-label block mb-1">Assignment type</label>
-            <div className="flex gap-2">
-              {typeConfig.map(t => (
-                <button key={t.id} onClick={() => setAssignType(t.id)}
-                  className="flex-1 py-1.5 rounded-pill text-xs font-bold transition-all"
-                  style={{
-                    background: assignType === t.id ? t.color + '30' : '#1e2231',
-                    color: assignType === t.id ? t.color : '#6b7494',
-                    border: '1px solid ' + (assignType === t.id ? t.color + '60' : 'transparent')
-                  }}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div>
-            <label className="tag-label block mb-1">Class</label>
-            <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
-              className="w-full px-3 py-2 rounded-card text-sm text-text-primary"
-              style={{ background: '#1e2231', border: '1px solid #2a2f42' }}>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.period} - {c.subject}</option>
-              ))}
-            </select>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Total points</label>
+            <input value={manualTotal} onChange={e => setManualTotal(e.target.value)}
+              placeholder="e.g. 100" type="number"
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 13, color: '#eef0f8', background: '#1e2231', border: '1px solid #2a2f42', boxSizing: 'border-box' }} />
           </div>
         </div>
 
-        <div className="p-4 rounded-card mb-4" style={{ background: '#0d1520', border: '1px solid ' + (pct != null ? scoreColor + '40' : '#2a2f42') }}>
-          <p className="tag-label mb-1">Calculated Grade</p>
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Assignment type</label>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {typeConfig.map(t => (
+              <button key={t.id} onClick={() => setAssignType(t.id)}
+                style={{
+                  flex: 1,
+                  padding: '10px 8px',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  background: assignType === t.id ? t.color + '30' : '#1e2231',
+                  color: assignType === t.id ? t.color : '#6b7494',
+                  border: '1px solid ' + (assignType === t.id ? t.color + '60' : 'transparent')
+                }}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Class</label>
+          <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
+            style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 13, color: '#eef0f8', background: '#1e2231', border: '1px solid #2a2f42', boxSizing: 'border-box' }}>
+            {classes.map(c => (
+              <option key={c.id} value={c.id}>{c.period} - {c.subject}</option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ background: '#0d1520', border: '1px solid ' + (pct != null ? scoreColor + '40' : '#2a2f42'), borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Calculated Grade</p>
           {pct != null ? (
-            <div className="flex items-center gap-3">
-              <span className="font-display font-bold text-3xl" style={{ color: scoreColor }}>{pct}%</span>
-              <span className="font-bold text-lg text-text-muted">{letter}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 32, fontWeight: 800, color: scoreColor }}>{pct}%</span>
+              <span style={{ fontWeight: 700, fontSize: 16, color: '#6b7494' }}>{letter}</span>
             </div>
           ) : (
-            <p className="text-text-muted text-sm">Enter points above to calculate</p>
+            <p style={{ color: '#6b7494', fontSize: 12 }}>Enter points above to calculate</p>
           )}
         </div>
 
         <button onClick={postToGradebook} disabled={pct == null || !assignName.trim()}
-          className="w-full py-3 rounded-widget font-bold text-white disabled:opacity-40 transition-all"
-          style={{ background: pct != null ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231' }}>
-          {pct != null ? 'Post ' + pct + '% (' + letter + ') to Gradebook' : 'Enter score above'}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            borderRadius: 12,
+            fontWeight: 700,
+            fontSize: 14,
+            color: '#fff',
+            border: 'none',
+            cursor: pct != null && assignName.trim() ? 'pointer' : 'not-allowed',
+            background: pct != null ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231',
+            opacity: pct != null && assignName.trim() ? 1 : 0.4,
+          }}>
+          {pct != null ? `Post ${pct}% (${letter}) to Gradebook` : 'Enter score above'}
         </button>
       </div>
     )
   }
 
-  // Menu
+  // Menu mode (default)
   return (
-    <div>
-      <h1 className="font-display font-bold text-2xl text-text-primary mb-1">Scan and Grade</h1>
-      <p className="text-text-muted text-sm mb-6">AI reads any scoring format: 82/100, -8 missed, 17/20, letter grades, percentages</p>
+    <div style={{ padding: '0 16px 20px' }}>
+      <h1 style={{ fontSize: 22, fontWeight: 800, color: '#eef0f8', marginBottom: 4 }}>Scan and Grade</h1>
+      <p style={{ color: '#6b7494', fontSize: 12, marginBottom: 20 }}>AI reads any scoring format: 82/100, -8 missed, 17/20, letter grades, percentages</p>
 
       {cameraError && (
-        <div className="p-4 rounded-card mb-4" style={{ background: '#1c1012', border: '1px solid #f04a4a30' }}>
-          <p className="font-semibold mb-1" style={{ color: '#f04a4a' }}>Camera unavailable</p>
-          <p className="text-sm" style={{ color: '#f04a4a', opacity: 0.85 }}>{cameraError}</p>
+        <div style={{ background: '#1c1012', border: '1px solid #f04a4a30', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <p style={{ fontWeight: 700, marginBottom: 4, color: '#f04a4a' }}>Camera unavailable</p>
+          <p style={{ fontSize: 12, color: '#f04a4a', opacity: 0.85 }}>{cameraError}</p>
         </div>
       )}
 
-      <div className="grid gap-4 mb-6">
-        <button onClick={() => { console.log('Camera button clicked!'); openCamera(); }}
-          className="p-8 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
-          style={{ background: 'linear-gradient(135deg, #1a2a4a, #0f1a2e)', border: '1px solid #3b7ef440' }}>
-          <span className="text-5xl" role="img" aria-label="camera">&#128247;</span>
-          <p className="font-display font-bold text-lg text-text-primary">Use Camera</p>
-          <p className="text-text-muted text-sm text-center">Point at the graded paper - AI reads the score</p>
+      <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
+        <button onClick={openCamera}
+          style={{ 
+            padding: '32px 16px',
+            borderRadius: 12,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+            background: 'linear-gradient(135deg, #1a2a4a, #0f1a2e)',
+            border: '1px solid #3b7ef440',
+            cursor: 'pointer',
+            transition: 'all 0.15s'
+          }}
+          onMouseEnter={e => e.target.style.transform = 'scale(1.01)'}
+          onMouseLeave={e => e.target.style.transform = 'scale(1)'}>
+          <span style={{ fontSize: 40 }}>📷</span>
+          <p style={{ fontWeight: 800, fontSize: 16, color: '#eef0f8', margin: 0 }}>Use Camera</p>
+          <p style={{ color: '#6b7494', fontSize: 12, textAlign: 'center', margin: 0 }}>Point at the graded paper - AI reads the score</p>
         </button>
 
         <button onClick={() => fileRef.current?.click()}
-          className="p-6 rounded-widget flex flex-col items-center gap-3 transition-all hover:scale-[1.01] active:scale-[0.99]"
-          style={{ background: '#161923', border: '1px solid #2a2f42' }}>
-          <span className="text-4xl" role="img" aria-label="photo">&#128444;</span>
-          <p className="font-bold text-text-primary">Upload Photo or File</p>
-          <p className="text-text-muted text-sm">Photo from camera roll - PDF - Any image</p>
+          style={{
+            padding: '24px 16px',
+            borderRadius: 12,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+            background: '#161923',
+            border: '1px solid #2a2f42',
+            cursor: 'pointer',
+            transition: 'all 0.15s'
+          }}
+          onMouseEnter={e => e.target.style.transform = 'scale(1.01)'}
+          onMouseLeave={e => e.target.style.transform = 'scale(1)'}>
+          <span style={{ fontSize: 32 }}>📁</span>
+          <p style={{ fontWeight: 700, fontSize: 14, color: '#eef0f8', margin: 0 }}>Upload Photo or File</p>
+          <p style={{ color: '#6b7494', fontSize: 12, textAlign: 'center', margin: 0 }}>Photo from camera roll - PDF - Any image</p>
         </button>
       </div>
 
-      <div className="p-3 rounded-card" style={{ background: '#161923' }}>
-        <p className="tag-label mb-2 text-center">Scoring formats AI understands</p>
-        <div className="flex flex-wrap gap-2 justify-center">
+      <div style={{ background: '#161923', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+        <p style={{ fontSize: 10, fontWeight: 700, color: '#6b7494', textAlign: 'center', marginBottom: 8, margin: 0 }}>Scoring formats AI understands</p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           {['82 / 100', '-8 missed', '17 / 20', '94%', 'Letter A-F', 'Rubric score', 'Raw points'].map(f => (
-            <span key={f} className="px-2 py-0.5 rounded-pill text-xs" style={{ background: '#1e2231', color: '#6b7494' }}>{f}</span>
+            <span key={f} style={{ background: '#1e2231', color: '#6b7494', fontSize: 10, padding: '4px 10px', borderRadius: 8 }}>{f}</span>
           ))}
         </div>
       </div>
 
-      <input ref={fileRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileSelect} />
-      <canvas ref={canvasRef} className="hidden" />
+      <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{ display: 'none' }} onChange={handleFileSelect} />
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
     </div>
   )
 }

@@ -10,6 +10,7 @@ import ClassFeed      from './ClassFeed'
 import StudentProfile from '@pages/StudentProfile'
 import ParentMessages from '@pages/ParentMessages'
 import Integrations   from './Integrations'
+import Camera         from './Camera'
 
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
@@ -358,7 +359,7 @@ function GradingWidget({ navigate }) {
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           <span 
-            onClick={e=>{ console.log('Camera icon clicked!'); e.stopPropagation(); navigate('/camera'); }}
+            onClick={e=>{ e.stopPropagation(); navigate('camera'); }}
             style={{ cursor:'pointer', fontSize:13, fontWeight:800, color:C.text, padding:0, display:'inline-block' }}>
             📷
           </span>
@@ -368,7 +369,7 @@ function GradingWidget({ navigate }) {
       </div>
       <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>
         Last: Today 8:42am · 24 grades · Tap <span 
-            onClick={e=>{ console.log('Camera icon clicked!'); e.stopPropagation(); navigate('/camera'); }}
+            onClick={e=>{ e.stopPropagation(); navigate('camera'); }}
             style={{ cursor:'pointer', color:C.text, fontSize:11, fontWeight:600, padding:0, textDecoration:'underline', display:'inline-block' }}>📷</span> to scan
       </div>
       {/* Weight chips */}
@@ -796,10 +797,10 @@ function ClassesPage({ onBack, navigate }) {
             <div style={{ fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>{cls.period} · {cls.subject}</div>
             <div style={{ fontSize:10, color:C.muted, marginBottom:10 }}>{cls.students} students</div>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ fontSize:26, fontWeight:900, color:'#fff' }}>{cls.gpa}</span>
+              <span style={{ fontSize:22, fontWeight:900, color:'#fff' }}>{cls.gpa}</span>
               <TrendBadge trend={cls.trend}/>
             </div>
-            {cls.needsAttention>0 && <div style={{ fontSize:9, color:C.red, marginTop:6, fontWeight:700 }}>⚑ {cls.needsAttention} need attention</div>}
+            {cls.needsAttention>0 && <div style={{ fontSize:9, color:C.red, marginTop:4, fontWeight:700 }}>⚑ {cls.needsAttention} need attention</div>}
           </button>
         ))}
       </div>
@@ -1014,10 +1015,10 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     attention:      'alerts',
     classes:        'classes',
     settings:       'dashboard',
+    camera:         'classes',
   }
 
-
-const activeNav = subPage ? (PAGE_TO_NAV[subPage] || 'dashboard') : 'dashboard'
+  const activeNav = subPage ? (PAGE_TO_NAV[subPage] || 'dashboard') : 'dashboard'
 
   function goHome() {
     history.current = []
@@ -1038,7 +1039,6 @@ const activeNav = subPage ? (PAGE_TO_NAV[subPage] || 'dashboard') : 'dashboard'
     if(!id) return
     if(id==='dashboard') { goHome(); return }
     if(id==='logout')    { goHome(); return }
-    if(id==='camera')    { routerNav('/camera'); return }
     history.current.push(id)
     setSubPage(id)
     scrollTop()
@@ -1068,6 +1068,7 @@ const activeNav = subPage ? (PAGE_TO_NAV[subPage] || 'dashboard') : 'dashboard'
   if(subPage==='feed')           return withNav(<SubPage><ClassFeed      onBack={goBack} viewerRole="teacher"/></SubPage>)
   if(subPage==='studentProfile') return withNav(<SubPage><StudentProfile onBack={goBack}/></SubPage>)
   if(subPage==='integrations')   return withNav(<SubPage><Integrations   onBack={goBack}/></SubPage>)
+  if(subPage==='camera')         return withNav(<SubPage><Camera         onBack={goBack}/></SubPage>)
   if(subPage==='reminders')      return withNav(<RemindersPage      onBack={goBack}/>)
   if(subPage==='attention')      return withNav(<NeedsAttentionPage  onBack={goBack}/>)
   if(subPage==='alerts')         return withNav(<AlertsPage          onBack={goBack}/>)
