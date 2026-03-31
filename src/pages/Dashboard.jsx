@@ -328,7 +328,7 @@ function ReportsWidget({ navigate }) {
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
         <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📊 {t('nav_reports')}</div>
         <button onClick={e=>{ e.stopPropagation(); navigate('reports') }}
-          style={{ background:`${C.blue}18`, color:C.blue, border:'1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          style={{ background:`${C.blue}18`, color:C.blue, border:'1px solid ${C.blue}30', borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
           {t('see_all')} →
         </button>
       </div>
