@@ -174,19 +174,24 @@ export default function CrawlerDashboard() {
       </div>
 
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden', padding: '16px', gap: '16px' }}>
-        {/* Left: Page Preview */}
+        {/* Left: Page Preview (Visual Iframe) */}
         <div style={{ flex: '45%', display: 'flex', flexDirection: 'column', background: '#0f1629', border: '1px solid #2a3d66', borderRadius: '12px', overflow: 'hidden' }}>
           <div style={{ padding: '12px', borderBottom: '1px solid #2a3d66', fontSize: '12px', fontWeight: 'bold', color: '#5865f2' }}>📱 Page Preview</div>
           <div style={{ padding: '8px 12px', background: '#1a2140', fontSize: '10px', color: '#8fa3c4', fontFamily: 'monospace', wordBreak: 'break-all', borderBottom: '1px solid #2a3d66' }}>
             {currentPageUrl || 'Waiting...'}
           </div>
-          <div style={{ flex: 1, overflow: 'auto', padding: '12px', fontSize: '11px', fontFamily: 'monospace', color: '#8fa3c4', lineHeight: '1.4' }}>
-            {pageSnapshot ? (
-              <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{pageSnapshot}</pre>
-            ) : (
-              <div style={{ color: '#4a5680' }}>Click Start to begin testing...</div>
-            )}
-          </div>
+          <iframe
+            key={currentPageUrl}
+            src={currentPageUrl || 'about:blank'}
+            style={{
+              flex: 1,
+              border: 'none',
+              background: '#fff',
+              width: '100%'
+            }}
+            sandbox="allow-same-origin allow-scripts allow-stylesheets allow-forms allow-popups"
+            title="Page Preview"
+          />
         </div>
 
         {/* Right: Control + Log */}
