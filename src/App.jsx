@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useStore } from '@lib/store'
+import { useHashRouter } from '@hooks/useHashRouter'
+import { initializeRouter } from '@lib/hashRouter'
 
 // ── Layout & guards ───────────────────────────────────────────────────────────
 import AppShell      from '@components/layout/AppShell'
@@ -81,6 +83,7 @@ function RootRedirect() {
 /** /login → always show Login page */
 function LoginRoute() {
   const navigate  = useNavigate()
+  const { navigateToPage } = useHashRouter()
   const { isHydrated } = useStore(s => ({ isHydrated: s.isHydrated }))
   const { setCurrentUser, setLang } = useStore()
 
@@ -128,7 +131,11 @@ function LoginRoute() {
     setLang(account.lang ?? 'en')
     localStorage.setItem('gradeflow_user', JSON.stringify(account))
     document.documentElement.lang = account.lang ?? 'en'
-    navigate(`/${account.role}`, { replace: true })
+    
+    // Reset browser history and navigate to home
+    const store = useStore.getState()
+    store.resetToHome()
+    navigateToPage('home', account.role)
   }
 
   return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={null} />
@@ -167,7 +174,8 @@ function Loading() {
 }
 
 export default function App() {
-  const { loadFromDB, setCurrentUser, setLang, isHydrated } = useStore()
+  const { loadFromDB, setCurrentUser, setLang, isHydrated, page, currentUser } = useStore()
+  const store = useStore()
 
   // Rehydrate auth session + apply school CSS vars on first load
   useEffect(() => {
@@ -191,6 +199,25 @@ export default function App() {
     }
     loadFromDB()
   }, [loadFromDB, setCurrentUser, setLang])
+
+  // Initialize hash router on app mount
+  useEffect(() => {
+    const cleanup = initializeRouter(store)
+    return cleanup
+  }, [store])
+
+  // Sync page state changes back to hash
+  useEffect(() => {
+    const role = currentUser?.role || null
+    
+    // Import here to avoid circular dependency
+    const { pageToHash } = require('@lib/hashRouter')
+    const hash = pageToHash(page, role)
+
+    if (window.location.hash !== hash) {
+      window.history.replaceState({ page, role }, '', hash)
+    }
+  }, [page, currentUser])
 
   if (!isHydrated) {
     return <Loading />
