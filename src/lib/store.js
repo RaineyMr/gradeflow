@@ -89,6 +89,70 @@ const DEMO_REMINDERS = [
   { id: 4, text: 'Submit attendance',       due: 'Fri',      done: true,  priority: 'low'    },
 ]
 
+// ─── Spanish Demo Data (used when language is set to 'es') ─────────────────────
+const DEMO_CLASSES_ES = [
+  { id: 1, period: '1ero', subject: 'Matemáticas', students: 24, gpa: 87.4, trend: 'up',     color: '#3b7ef4', needsAttention: 3 },
+  { id: 2, period: '2do',  subject: 'Lectura',    students: 22, gpa: 91.2, trend: 'up',     color: '#22c97a', needsAttention: 1 },
+  { id: 3, period: '3ero', subject: 'Ciencias',   students: 26, gpa: 63.8, trend: 'down',   color: '#f04a4a', needsAttention: 8 },
+  { id: 4, period: '4to',  subject: 'Escritura',  students: 20, gpa: 84.0, trend: 'stable', color: '#f54a7a', needsAttention: 0 },
+]
+
+const DEMO_STUDENTS_ES = [
+  { id: 1,  classId: 1, name: 'Aaliyah Brooks',  grade: 95, letter: 'A', submitted: false, submitUngraded: false, flagged: false },
+  { id: 2,  classId: 1, name: 'Marcus Thompson', grade: 58, letter: 'F', submitted: true,  submitUngraded: true,  flagged: true  },
+  { id: 3,  classId: 1, name: 'Sofia Rodriguez', grade: 82, letter: 'B', submitted: false, submitUngraded: false, flagged: false },
+  { id: 4,  classId: 1, name: 'Jordan Williams', grade: 74, letter: 'C', submitted: true,  submitUngraded: false, flagged: false },
+  { id: 5,  classId: 1, name: 'Priya Patel',     grade: 91, letter: 'A', submitted: false, submitUngraded: false, flagged: false },
+  { id: 6,  classId: 2, name: 'Noah Johnson',    grade: 88, letter: 'B', submitted: false, submitUngraded: false, flagged: false },
+  { id: 7,  classId: 2, name: 'Emma Davis',      grade: 96, letter: 'A', submitted: false, submitUngraded: false, flagged: false },
+  { id: 8,  classId: 3, name: 'Liam Martinez',   grade: 61, letter: 'D', submitted: true,  submitUngraded: true,  flagged: true  },
+  { id: 9,  classId: 3, name: 'Zoe Anderson',    grade: 55, letter: 'F', submitted: false, submitUngraded: false, flagged: true  },
+  { id: 10, classId: 4, name: 'Ethan Brown',     grade: 79, letter: 'C', submitted: true,  submitUngraded: false, flagged: false },
+]
+
+const DEMO_ASSIGNMENTS_ES = [
+  { id: 1, classId: 1, name: 'Cap.3 Examen',     type: 'quiz',         categoryId: 2, date: '2024-10-14', dueDate: '2024-10-14', hasKey: true,  options: {} },
+  { id: 2, classId: 1, name: 'Cap.3 Tarea',     type: 'homework',     categoryId: 3, date: '2024-10-12', dueDate: '2024-10-12', hasKey: true,  options: {} },
+  { id: 3, classId: 1, name: 'Examen Unidad 1', type: 'test',         categoryId: 1, date: '2024-10-10', dueDate: '2024-10-10', hasKey: false, options: {} },
+  { id: 4, classId: 1, name: 'Participación',    type: 'participation', categoryId: 4, date: '2024-10-01', dueDate: '2024-10-31', hasKey: false, options: { max_points: 10 } },
+]
+
+const DEMO_MESSAGES_ES = [
+  { id: 1, studentName: 'Marcus Thompson', subject: 'Matemáticas', trigger: 'Falló 58%',      status: 'pending', tone: 'Warm & Friendly', draft: 'Estimado Padre, Marcus recibió 58% en su evaluación de Matemáticas. Me encantaría conectar esta semana para discutir opciones de apoyo.', positiveDraft: '¡Hola! Solo quería compartir que Marcus está mostrando un esfuerzo real en clase. Sigamos construyendo ese momento.', dayOld: false },
+  { id: 2, studentName: 'Aaliyah Brooks',  subject: 'Lectura',    trigger: 'Mejoró +12pts', status: 'sent',    tone: 'Celebrating',     draft: '¡Buenas noticias! Aaliyah mejoró su puntaje de Lectura en 12 puntos. Está trabajando muy duro.', positiveDraft: 'Aaliyah está haciendo un trabajo increíble. Su dedicación realmente está dando resultados.', dayOld: false },
+  { id: 3, studentName: 'Liam Martinez',   subject: 'Ciencias',   trigger: 'Falló 61%',      status: 'pending', tone: 'Warm & Friendly', draft: 'Estimado Padre, quería contactarlo regarding la evaluación reciente de Ciencias de Liam.', positiveDraft: 'Liam está mostrando curiosidad en la clase de Ciencias. Aquí hay algunas formas de apoyar en casa.', dayOld: true  },
+]
+
+const DEMO_LESSONS_ES = {
+  1: [
+    { id: 'math-0', classId: 1, dayLabel: 'Hoy',    date: 'Mar · 10', title: 'Cap. 4 · Fracciones y Decimales', duration: '45 min', pages: 'Páginas 84–91', objective: 'Los estudiantes compararán fracciones y decimales y convertirán entre formas.', warmup: ['Decimal del día', 'Comparación rápida: 0.4 vs 3/8'], activities: ['Mini-lección sobre conversión fracción/decimal', 'Ordenamiento por estaciones de parejas', 'Problemas de práctica guiada 1–8', 'Boleto de salida'], materials: ['Libro de trabajo', 'Pizarra', 'Tiras de fracciones'], homework: 'Libro de trabajo página 91, problemas 9–14', status: 'pending' },
+    { id: 'math-1', classId: 1, dayLabel: 'Anterior', date: 'Mar · 9',  title: 'Cap. 4 · Fracciones Equivalentes', duration: '45 min', pages: 'Páginas 80–83', objective: 'Los estudiantes identificarán y generarán fracciones equivalentes.', warmup: ['Revisión de modelos visuales de fracciones'], activities: ['Modelado del maestro', 'Práctica en grupos pequeños', 'Verificación independiente'], materials: ['Libro de trabajo', 'Fichas de fracciones'], homework: 'Hoja de práctica A', status: 'done' },
+    { id: 'math-2', classId: 1, dayLabel: 'Siguiente', date: 'Mar · 11', title: 'Cap. 4 · Ordenar Fracciones',   duration: '45 min', pages: 'Páginas 92–96', objective: 'Los estudiantes ordenarán fracciones, decimales y porcentajes.', warmup: ['Desafío de línea numérica'], activities: ['Problema de calendario', 'Ejemplos guiados', 'Rotación de estaciones'], materials: ['Libro de trabajo', 'Líneas numéricas'], homework: 'Libro de trabajo página 96', status: 'pending' },
+  ],
+  2: [
+    { id: 'read-0', classId: 2, dayLabel: 'Hoy',    date: 'Mar · 10', title: 'Unidad 3 · Idea Principal y Detalles', duration: '45 min', pages: 'Páginas 56–63', objective: 'Los estudiantes identificarán la idea principal y los detalles de apoyo en no ficción.', warmup: ['Escritura rápida: ¿cuál es la idea principal de un párrafo?'], activities: ['Modelar con texto mentor', 'Práctica guiada', 'Trabajo de parejas', 'Compartir'], materials: ['Antología', 'Resaltadores'], homework: 'Leer páginas 64–67 y anotar', status: 'pending' },
+    { id: 'read-1', classId: 2, dayLabel: 'Anterior', date: 'Mar · 9',  title: 'Unidad 3 · Estructura del Texto',      duration: '45 min', pages: 'Páginas 50–55', objective: 'Los estudiantes identificarán estructuras causa/efecto y comparar/contrastar.', warmup: ['Ordenamiento de palabras de señal'], activities: ['Cuadro de estructura de texto', 'Lectura de parejas', 'Boleto de salida'], materials: ['Antología'], homework: 'Terminar organizador gráfico', status: 'done' },
+  ],
+  3: [
+    { id: 'sci-0', classId: 3, dayLabel: 'Hoy', date: 'Mar · 10', title: 'Cap. 6 · Estados de la Materia', duration: '50 min', pages: 'Páginas 120–128', objective: 'Los estudiantes describirán las propiedades de sólidos, líquidos y gases.', warmup: ['Clasificación de materia: objetos cotidianos'], activities: ['Demostración de laboratorio — hielo deritiéndose', 'Etiquetado de diagrama', 'Discusión', 'Escritura rápida'], materials: ['Hielo', 'Vasos de precipitados', 'Hojas de laboratorio'], homework: 'Leer páginas 129–131', status: 'pending' },
+  ],
+  4: [
+    { id: 'writ-0', classId: 4, dayLabel: 'Hoy', date: 'Mar · 10', title: 'Unidad 2 · Escritura Argumentativa', duration: '45 min', pages: 'Páginas 34–41', objective: 'Los estudiantes escribirán una afirmación con al menos dos razones de apoyo.', warmup: ['Tomar posición: prompt de acuerdo o desacuerdo'], activities: ['Modelar escritura de afirmación', 'Borrador de esquema', 'Retroalimentación de pares'], materials: ['Diarios de escritura', 'Textos mentores'], homework: 'Completar borrador de esquema', status: 'pending' },
+  ],
+}
+
+const DEMO_FEED_ES = [
+  { id: 1, classId: 1, author: 'Sra. Johnson', content: '📅 Examen de Unidad el viernes! Repasar capítulos 3-4. Guía de estudio publicada abajo.', time: 'hace 2 horas', reactions: { '👍': 12, '❤': 5, '😂': 2 }, confused: 3, questions: 1, approved: true },
+  { id: 2, classId: 1, author: 'Sra. Johnson', content: '🎉 ¡Gran trabajo en la tarea de ayer! El promedio de la clase fue 87%.',       time: 'Ayer',  reactions: { '👍': 18, '❤': 9, '😂': 4 }, confused: 0, questions: 0, approved: true },
+]
+
+const DEMO_REMINDERS_ES = [
+  { id: 1, text: 'Calificar Exámenes Cap.3',   due: 'Hoy',    done: false, priority: 'high'   },
+  { id: 2, text: 'Llamada a padre — Marcus T.', due: 'Hoy',    done: false, priority: 'high'   },
+  { id: 3, text: 'Actualizar plan de lección Mie',  due: 'Mañana', done: false, priority: 'medium' },
+  { id: 4, text: 'Enviar asistencia',       due: 'Vie',      done: true,  priority: 'low'    },
+]
+
 const DEFAULT_CATEGORIES = [
   { id: 1, name: 'Tests',         weight: 40, color: '#f04a4a', icon: '📝' },
   { id: 2, name: 'Quizzes',       weight: 30, color: '#f5a623', icon: '✏' },
@@ -329,12 +393,17 @@ export const useStore = create((set, get) => ({
     lang: user?.lang || 'en',
   }),
 
-  setLang: (lang) => set(state => ({
-    lang,
-    currentUser: state.currentUser
-      ? { ...state.currentUser, lang }
-      : state.currentUser,
-  })),
+  setLang: (lang) => {
+    localStorage.setItem('gradeflow_lang', lang)
+    set(state => ({
+      lang,
+      currentUser: state.currentUser
+        ? { ...state.currentUser, lang }
+        : state.currentUser,
+    }))
+    // Reload demo data in new language
+    get().loadFromDB()
+  },
 
   /**
    * Set the current page and update browser hash
@@ -1604,15 +1673,32 @@ setDemoSupportStaffData: async () => {
 
   // ── Load all data from Supabase ─────────────────────────────────────────────
   loadFromDB: async () => {
-    // Demo mode - load demo data immediately
+    // Demo mode - load demo data based on current language
+    const lang = get().lang
+    const data = lang === 'es' 
+      ? {
+          classes:     DEMO_CLASSES_ES,
+          students:    DEMO_STUDENTS_ES,
+          assignments: DEMO_ASSIGNMENTS_ES,
+          grades:      DEMO_GRADES, // Same for both
+          messages:    DEMO_MESSAGES_ES,
+          feed:        DEMO_FEED_ES,
+          lessons:     DEMO_LESSONS_ES,
+          reminders:   DEMO_REMINDERS_ES,
+        }
+      : {
+          classes:     DEMO_CLASSES,
+          students:    DEMO_STUDENTS,
+          assignments: DEMO_ASSIGNMENTS,
+          grades:      DEMO_GRADES,
+          messages:    DEMO_MESSAGES,
+          feed:        DEMO_FEED,
+          lessons:     DEMO_LESSONS,
+          reminders:   DEMO_REMINDERS,
+        }
+    
     set({
-      classes: DEMO_CLASSES,
-      students: DEMO_STUDENTS,
-      assignments: DEMO_ASSIGNMENTS,
-      grades: DEMO_GRADES,
-      messages: DEMO_MESSAGES,
-      feed: DEMO_FEED,
-      lessons: DEMO_LESSONS,
+      ...data,
       dbLoaded: true,
       isHydrated: true,
       dbError: null
