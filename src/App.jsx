@@ -197,6 +197,13 @@ export default function App() {
         localStorage.removeItem('gradeflow_user')
         console.log('Cleared invalid localStorage user')
       }
+    } else {
+      // No saved user, but check for saved language preference
+      const savedLang = localStorage.getItem('gradeflow_lang')
+      if (savedLang) {
+        setLang(savedLang)
+        document.documentElement.lang = savedLang
+      }
     }
     loadFromDB()
   }, [loadFromDB, setCurrentUser, setLang])
