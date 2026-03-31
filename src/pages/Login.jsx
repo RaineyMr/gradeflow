@@ -131,32 +131,32 @@ function MobileLogin({ form }) {
             <button key={r.id} onClick={() => setSelectedRole(r.id)}
               style={{ padding:'8px 4px', borderRadius:12, border:`1.5px solid ${selectedRole===r.id?BRAND.primary:BRAND.border}`, background:selectedRole===r.id?'rgba(249,115,22,0.12)':BRAND.inner, color:selectedRole===r.id?BRAND.primary:BRAND.muted, cursor:'pointer', fontSize:10, fontWeight:700, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
               <span style={{ fontSize:18 }}>{r.icon}</span>
-              {t.roles[r.id]}
+              {t(r.id)}
             </button>
           ))}
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:BRAND.muted, marginBottom:5 }}>{t.emailLabel}</label>
-          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t.emailPh}
+          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:BRAND.muted, marginBottom:5 }}>{t('email')}</label>
+          <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder={t('enter_email')}
             style={{ width:'100%', background:BRAND.inner, border:`1px solid ${BRAND.border}`, borderRadius:12, padding:'12px 14px', color:BRAND.text, fontSize:14, outline:'none', boxSizing:'border-box', marginBottom:12 }}/>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:BRAND.muted, marginBottom:5 }}>{t.passLabel}</label>
-          <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t.passPh}
+          <label style={{ display:'block', fontSize:10, fontWeight:700, letterSpacing:'0.06em', textTransform:'uppercase', color:BRAND.muted, marginBottom:5 }}>{t('password')}</label>
+          <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t('enter_password')}
             style={{ width:'100%', background:BRAND.inner, border:`1px solid ${BRAND.border}`, borderRadius:12, padding:'12px 14px', color:BRAND.text, fontSize:14, outline:'none', boxSizing:'border-box', marginBottom:14 }}/>
           {error && <div style={{ background:'#1c1012', border:'1px solid rgba(240,74,74,0.3)', borderRadius:10, padding:'10px 12px', color:'#f04a4a', fontSize:12, marginBottom:14 }}>{error}</div>}
           <button type="submit" disabled={loading}
             style={{ width:'100%', background:BRAND.gradient, color:'#fff', border:'none', borderRadius:999, padding:14, fontSize:15, fontWeight:800, cursor:loading?'not-allowed':'pointer', opacity:loading?0.7:1, marginBottom:10 }}>
-            {loading ? t.signingIn : `${t.signInBtn} →`}
+            {loading ? t('loading_data') : `${t('sign_in')} →`}
           </button>
         </form>
 
         <div style={{ textAlign:'center', marginBottom:16 }}>
-          <span style={{ fontSize:12, color:BRAND.muted }}>{t.orJump}</span>
+          <span style={{ fontSize:12, color:BRAND.muted }}>{t('or_jump')}</span>
         </div>
 
         {/* Quick demo */}
-        <div style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:BRAND.muted, marginBottom:10 }}>{t.quickDemo}</div>
+        <div style={{ fontSize:10, fontWeight:700, letterSpacing:'0.08em', textTransform:'uppercase', color:BRAND.muted, marginBottom:10 }}>{t('quick_demo')}</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(120px,1fr))', gap:8 }}>
           {demoLoginList.map(demo => (
             <button key={demo.role} onClick={() => handleDemoClick(demo)}
@@ -164,7 +164,7 @@ function MobileLogin({ form }) {
               onMouseEnter={e => e.currentTarget.style.borderColor=BRAND.primary}
               onMouseLeave={e => e.currentTarget.style.borderColor=BRAND.border}>
               <div style={{ fontSize:15, marginBottom:4 }}>{demo.label.split(' ')[0]}</div>
-              <div style={{ fontSize:12, fontWeight:700, color:BRAND.text }}>{t.demoLabels[demo.role]}</div>
+              <div style={{ fontSize:12, fontWeight:700, color:BRAND.text }}>{demo.label}</div>
               <div style={{ fontSize:10, color:BRAND.muted, marginTop:2 }}>{demo.school}</div>
             </button>
           ))}
@@ -173,7 +173,12 @@ function MobileLogin({ form }) {
 
       {/* Feature tiles */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:10, marginTop:20, width:'100%', maxWidth:420 }}>
-        {t.features.slice(0,4).map(f => (
+        {[
+          { icon:'📷', title:t('scan'), body:t('grade_student_work') },
+          { icon:'📋', title:t('assignments'), body:t('view_all') },
+          { icon:'🔔', title:t('alerts'), body:t('parent_messages') },
+          { icon:'🎨', title:t('school'), body:t('settings') },
+        ].slice(0,4).map(f => (
           <div key={f.title} style={{ background:BRAND.card, border:`1px solid ${BRAND.border}`, borderRadius:14, padding:14 }}>
             <div style={{ fontSize:20, marginBottom:5 }}>{f.icon}</div>
             <div style={{ fontSize:11, fontWeight:700, marginBottom:3 }}>{f.title}</div>
@@ -181,7 +186,7 @@ function MobileLogin({ form }) {
           </div>
         ))}
       </div>
-      <p style={{ marginTop:20, fontSize:11, color:BRAND.muted, textAlign:'center' }}>{t.footerNote}</p>
+      <p style={{ marginTop:20, fontSize:11, color:BRAND.muted, textAlign:'center' }}>{t('footer_note') || "Each demo uses a real school's branding & colors throughout."}</p>
     </div>
   )
 }
@@ -229,7 +234,12 @@ function DesktopLogin({ form }) {
 
             {/* Feature grid */}
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-              {t.features.map(f => (
+              {[
+              { icon:'📷', title:t('scan'), body:t('grade_student_work') },
+              { icon:'📋', title:t('assignments'), body:t('view_all') },
+              { icon:'🔔', title:t('alerts'), body:t('parent_messages') },
+              { icon:'🎨', title:t('school'), body:t('settings') },
+            ].map(f => (
                 <div key={f.icon} style={{ background:'rgba(255,255,255,0.04)', border:`1px solid ${BRAND.border}`, borderRadius:16, padding:'16px 18px' }}>
                   <div style={{ fontSize:22, marginBottom:8 }}>{f.icon}</div>
                   <div style={{ fontSize:13, fontWeight:700, color:BRAND.text, marginBottom:4 }}>{f.title}</div>
