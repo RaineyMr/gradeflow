@@ -166,7 +166,6 @@ function MobileLogin({ form }) {
               style={{ background:BRAND.inner, border:`1px solid ${BRAND.border}`, borderRadius:14, padding:'12px 10px', cursor:'pointer', textAlign:'left', transition:'border-color 0.15s' }}
               onMouseEnter={e => e.currentTarget.style.borderColor=BRAND.primary}
               onMouseLeave={e => e.currentTarget.style.borderColor=BRAND.border}>
-              <div style={{ fontSize:15, marginBottom:4 }}>{t(demo.labelKey).split(' ')[0]}</div>
               <div style={{ fontSize:12, fontWeight:700, color:BRAND.text }}>{t(demo.labelKey)}</div>
               <div style={{ fontSize:10, color:BRAND.muted, marginTop:2 }}>{demo.school}</div>
             </button>
@@ -307,7 +306,6 @@ function DesktopLogin({ form }) {
                   style={{ background:BRAND.inner, border:`1px solid ${BRAND.border}`, borderRadius:16, padding:'16px 14px', cursor:'pointer', textAlign:'left', transition:'all 0.15s' }}
                   onMouseEnter={e => { e.currentTarget.style.borderColor=BRAND.primary; e.currentTarget.style.background='rgba(249,115,22,0.07)' }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor=BRAND.border; e.currentTarget.style.background=BRAND.inner }}>
-                  <div style={{ fontSize:20, marginBottom:5 }}>{t(demo.labelKey).split(' ')[0]}</div>
                   <div style={{ fontSize:13, fontWeight:700, color:BRAND.text }}>{t(demo.labelKey)}</div>
                   <div style={{ fontSize:11, color:BRAND.muted, marginTop:3 }}>{demo.school}</div>
                 </button>
