@@ -617,6 +617,9 @@ export default function Login({ onLogin, onDemoLogin }) {
 
   // ── Create Account overlay (shared between mobile + desktop) ──────────────
   if (showCreate) {
+    const { lang, toggleLang } = useStore()
+    const t = useT()
+    
     return (
       <div style={{
         minHeight: '100vh', background: BRAND.bg,
@@ -628,10 +631,10 @@ export default function Login({ onLogin, onDemoLogin }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>⚡ GradeFlow</span>
             <span style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.88)', fontWeight: 500 }}>{form.t('tagline')}</span>
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.88)', fontWeight: 500 }}>{t('tagline')}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <LangToggle onToggle={form.toggleLang} />
+            <LangToggle onToggle={toggleLang} />
             {['Features', 'Schools', 'Pricing', 'About'].map(link => (
               <span key={link} style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, cursor: 'pointer' }}
                 onMouseEnter={e => e.currentTarget.style.color = '#fff'}
