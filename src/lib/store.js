@@ -387,6 +387,7 @@ export const useStore = create((set, get) => ({
   currentUser: null,
   lang: 'en',
   page: 'home', // Current page from hash router
+  schools: [], // Array of schools with branding data
 
   setCurrentUser: (user) => set({
     currentUser: user,
@@ -1673,36 +1674,57 @@ setDemoSupportStaffData: async () => {
 
   // ── Load all data from Supabase ─────────────────────────────────────────────
   loadFromDB: async () => {
-    // Demo mode - load demo data based on current language
-    const lang = get().lang
-    const data = lang === 'es' 
-      ? {
-          classes:     DEMO_CLASSES_ES,
-          students:    DEMO_STUDENTS_ES,
-          assignments: DEMO_ASSIGNMENTS_ES,
-          grades:      DEMO_GRADES, // Same for both
-          messages:    DEMO_MESSAGES_ES,
-          feed:        DEMO_FEED_ES,
-          lessons:     DEMO_LESSONS_ES,
-          reminders:   DEMO_REMINDERS_ES,
-        }
-      : {
-          classes:     DEMO_CLASSES,
-          students:    DEMO_STUDENTS,
-          assignments: DEMO_ASSIGNMENTS,
-          grades:      DEMO_GRADES,
-          messages:    DEMO_MESSAGES,
-          feed:        DEMO_FEED,
-          lessons:     DEMO_LESSONS,
-          reminders:   DEMO_REMINDERS,
-        }
-    
-    set({
-      ...data,
-      dbLoaded: true,
-      isHydrated: true,
-      dbError: null
-    })
+    try {
+      // Load schools data from Supabase
+      const { data: schoolsData, error: schoolsError } = await supabase
+        .from('schools')
+        .select('*');
+
+      if (schoolsError) {
+        console.error('Error loading schools:', schoolsError);
+      }
+
+      // Demo mode - load demo data based on current language
+      const lang = get().lang
+      const data = lang === 'es' 
+        ? {
+            classes:     DEMO_CLASSES_ES,
+            students:    DEMO_STUDENTS_ES,
+            assignments: DEMO_ASSIGNMENTS_ES,
+            grades:      DEMO_GRADES, // Same for both
+            messages:    DEMO_MESSAGES_ES,
+            feed:        DEMO_FEED_ES,
+            lessons:     DEMO_LESSONS_ES,
+            reminders:   DEMO_REMINDERS_ES,
+            schools:     schoolsData || [], // Add schools data
+          }
+        : {
+            classes:     DEMO_CLASSES,
+            students:    DEMO_STUDENTS,
+            assignments: DEMO_ASSIGNMENTS,
+            grades:      DEMO_GRADES,
+            messages:    DEMO_MESSAGES,
+            feed:        DEMO_FEED,
+            lessons:     DEMO_LESSONS,
+            reminders:   DEMO_REMINDERS,
+            schools:     schoolsData || [], // Add schools data
+          }
+      
+      set({
+        ...data,
+        dbLoaded: true,
+        isHydrated: true,
+        dbError: schoolsError ? schoolsError.message : null
+      })
+    } catch (error) {
+      console.error('Error in loadFromDB:', error);
+      set({
+        dbLoaded: true,
+        isHydrated: true,
+        dbError: error.message,
+        schools: [], // Fallback to empty schools array
+      });
+    }
   },
 
   // ── Grade categories ────────────────────────────────────────────────────────
