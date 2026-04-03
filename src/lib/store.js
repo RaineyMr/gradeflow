@@ -676,14 +676,28 @@ const DEFAULT_CATEGORIES = [
 ]
 
 const CURRICULUM_SOURCES = [
-  { id: 'gomath',         name: 'Go Math',              publisher: 'Houghton Mifflin', subjects: ['Math'],           logo: '📐', searchable: true  },
-  { id: 'readingwonders', name: 'Reading Wonders',      publisher: 'McGraw-Hill',      subjects: ['Reading', 'ELA'], logo: '📖', searchable: true  },
-  { id: 'amplify',        name: 'Amplify Science',      publisher: 'Amplify',          subjects: ['Science'],        logo: '🔬', searchable: true  },
-  { id: 'studysync',      name: 'StudySync',            publisher: 'McGraw-Hill',      subjects: ['Writing', 'ELA'], logo: '✍', searchable: true  },
-  { id: 'eureka',         name: 'Eureka Math',          publisher: 'Great Minds',      subjects: ['Math'],           logo: '∑',  searchable: true  },
-  { id: 'ckscience',      name: 'CK-12 Science',        publisher: 'CK-12',            subjects: ['Science'],        logo: '⚗', searchable: true  },
-  { id: 'commonlit',      name: 'CommonLit',            publisher: 'CommonLit',        subjects: ['Reading', 'ELA'], logo: '📜', searchable: true  },
-  { id: 'custom',         name: 'Custom / No textbook', publisher: '',                 subjects: [],                 logo: '🏗',  searchable: false },
+  // HISD Curriculum
+  { id: 'hisd-zearn',           name: 'HISD Zearn Math',            publisher: 'HISD/Zearn',           subjects: ['Math'], logo: '🔢', searchable: true  },
+  { id: 'hisd-literacy',        name: 'HISD Literacy Project',      publisher: 'HISD',                  subjects: ['Reading', 'ELA'], logo: '📚', searchable: true  },
+  { id: 'hisd-science',         name: 'HISD Science',               publisher: 'HISD',                  subjects: ['Science'], logo: '🔬', searchable: true  },
+  
+  // KIPP Curriculum  
+  { id: 'illustrative-math',    name: 'Illustrative Math',           publisher: 'Illustrative Math',      subjects: ['Math'], logo: '📐', searchable: true  },
+  { id: 'ckla',                name: 'CKLA Reading',               publisher: 'Amplify',              subjects: ['Reading', 'ELA'], logo: '📖', searchable: true  },
+  { id: 'fishtank-ela',        name: 'Fishtank ELA',              publisher: 'Fishtank Learning',    subjects: ['Reading', 'ELA'], logo: '🐟', searchable: true  },
+  { id: 'novel-ela',           name: 'Novel ELA',                 publisher: 'Novel Partners',        subjects: ['Reading', 'ELA'], logo: '📕', searchable: true  },
+  { id: 'amplify-science',     name: 'Amplify Science',            publisher: 'Amplify',              subjects: ['Science'], logo: '🧪', searchable: true  },
+  { id: 'democratic-knowledge',  name: 'Democratic Knowledge Project', publisher: 'DKP',                  subjects: ['Social Studies'], logo: '🏛️', searchable: true  },
+  { id: 'investigating-history', name: 'Investigating History',      publisher: 'MA DOE',               subjects: ['Social Studies'], logo: '🔍', searchable: true  },
+  
+  // Common National Curriculum (existing)
+  { id: 'gomath',              name: 'Go Math',                    publisher: 'Houghton Mifflin',     subjects: ['Math'], logo: '📐', searchable: true  },
+  { id: 'readingwonders',      name: 'Reading Wonders',            publisher: 'McGraw-Hill',          subjects: ['Reading', 'ELA'], logo: '📖', searchable: true  },
+  { id: 'studysync',           name: 'StudySync',                  publisher: 'McGraw-Hill',          subjects: ['Writing', 'ELA'], logo: '✍', searchable: true  },
+  { id: 'eureka',              name: 'Eureka Math',                publisher: 'Great Minds',          subjects: ['Math'], logo: '∑',  searchable: true  },
+  { id: 'ckscience',           name: 'CK-12 Science',              publisher: 'CK-12',                subjects: ['Science'], logo: '⚗', searchable: true  },
+  { id: 'commonlit',           name: 'CommonLit',                  publisher: 'CommonLit',            subjects: ['Reading', 'ELA'], logo: '📜', searchable: true  },
+  { id: 'custom',              name: 'Custom / No textbook',       publisher: '',                      subjects: [], logo: '🏗', searchable: false },
 ]
 
 const DEFAULT_CONNECTIONS = {
@@ -2262,6 +2276,26 @@ setDemoSupportStaffData: async () => {
   setConnectedCurriculum: (subject, sourceId) => set(state => ({
     connectedCurricula: { ...state.connectedCurricula, [subject]: sourceId },
   })),
+
+  // ── Educational Standards ───────────────────────────────────────────────────
+  currentStandards: [],
+  selectedStandards: [],
+  standardsLoading: false,
+  standardsError: null,
+
+  setCurrentStandards: (standards) => set({ currentStandards: standards }),
+  setSelectedStandards: (standards) => set({ selectedStandards: standards }),
+  setStandardsLoading: (loading) => set({ standardsLoading: loading }),
+  setStandardsError: (error) => set({ standardsError: error }),
+
+  // Add/remove standards from selection
+  addSelectedStandard: (standard) => set(state => ({
+    selectedStandards: [...state.selectedStandards, standard]
+  })),
+  removeSelectedStandard: (standardCode) => set(state => ({
+    selectedStandards: state.selectedStandards.filter(s => s.code !== standardCode)
+  })),
+  clearSelectedStandards: () => set({ selectedStandards: [] }),
 
   // ── External integrations ───────────────────────────────────────────────────
   connections: DEFAULT_CONNECTIONS,
