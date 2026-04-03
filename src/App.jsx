@@ -14,6 +14,7 @@ import ProtectedRoute from './router/ProtectedRoute'
 // ── Pages ─────────────────────────────────────────────────────────────────────
 import Login from '@pages/Login'
 import TeacherOnboarding from '@pages/TeacherOnboarding'
+import CurriculumOnboarding from '@pages/CurriculumOnboarding'
 import WorkingDashboard from '@pages/Dashboard_Working'
 import AdminDashboard from '@pages/AdminDashboard'
 import Dashboard from '@pages/Dashboard'
