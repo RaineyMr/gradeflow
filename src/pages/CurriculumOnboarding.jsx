@@ -106,33 +106,6 @@ const GRADING_TEMPLATES = [
   },
 ]
 
-// ─── Step: Subjects ────────────────────────────────────────────────────────────
-function StepSubjects({ subjects, setSubjects, onNext }) {
-  function toggle(s) {
-    setSubjects(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s])
-  }
-  return (
-    <div>
-      <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px' }}>What do you teach?</h2>
-      <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px' }}>Select all subjects you teach. You can change this later.</p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
-        {COMMON_SUBJECTS.map(s => (
-          <button key={s} onClick={() => toggle(s)}
-            style={{ padding: '9px 16px', borderRadius: 999, border: `2px solid ${subjects.includes(s) ? C.teal : C.border}`, cursor: 'pointer', fontSize: 13, fontWeight: 700, transition: 'all 0.15s',
-              background: subjects.includes(s) ? `${C.teal}18` : C.inner,
-              color:      subjects.includes(s) ? C.teal : C.muted }}>
-            {subjects.includes(s) ? '✓ ' : ''}{s}
-          </button>
-        ))}
-      </div>
-      <button onClick={onNext} disabled={!subjects.length}
-        style={{ width: '100%', background: subjects.length ? 'var(--school-color, #BA0C2F)' : '#2a2f42', color: subjects.length ? '#fff' : C.muted, border: 'none', borderRadius: 999, padding: '14px', fontSize: 15, fontWeight: 800, cursor: subjects.length ? 'pointer' : 'not-allowed' }}>
-        Next →
-      </button>
-    </div>
-  )
-}
-
 // ─── Step: Curriculum ──────────────────────────────────────────────────────────
 function StepCurriculum({ subjects, onNext, onSkip }) {
   const { curriculumSources, connectedCurricula, setConnectedCurriculum } = useStore()
@@ -311,15 +284,15 @@ function StepDone({ onFinish }) {
 // Rendered after school registration and before first dashboard view.
 // Pass onComplete() to navigate to dashboard when done.
 export default function CurriculumOnboarding() {
-  const { completeOnboarding, lang, setLang } = useStore()
+  const { completeOnboarding, lang, setLang, currentUser } = useStore()
   const navigate = useNavigate()
-  const [step,     setStep]     = useState(0)  // 0=subjects, 1=curriculum, 2=gradebook, 3=done
-  const [subjects, setSubjects] = useState([])
+  const [step,     setStep]     = useState(0)  // 0=curriculum, 1=gradebook, 2=done
+  const [subjects, setSubjects] = useState(currentUser?.subjects || []) // Get subjects from previous onboarding
   const t = useT()
   
   function toggleLang() { setLang(lang === 'en' ? 'es' : 'en') }
 
-  const STEPS = ['Subjects', 'Curriculum', 'Gradebook', 'Done']
+  const STEPS = ['Curriculum', 'Gradebook', 'Done']
 
   function finish() {
     const { completeOnboarding, setCurrentUser, setScreen, currentUser } = useStore()
@@ -386,10 +359,9 @@ export default function CurriculumOnboarding() {
 
       {/* Step content */}
       <div style={{ padding: '24px 16px' }}>
-        {step === 0 && <StepSubjects subjects={subjects} setSubjects={setSubjects} onNext={() => setStep(1)} />}
-        {step === 1 && <StepCurriculum subjects={subjects} onNext={() => setStep(2)} onSkip={() => setStep(2)} />}
-        {step === 2 && <StepGradebook  onNext={() => setStep(3)} onSkip={() => setStep(3)} />}
-        {step === 3 && <StepDone onFinish={finish} />}
+        {step === 0 && <StepCurriculum subjects={subjects} onNext={() => setStep(1)} onSkip={() => setStep(1)} />}
+        {step === 1 && <StepGradebook  onNext={() => setStep(2)} onSkip={() => setStep(2)} />}
+        {step === 2 && <StepDone onFinish={finish} />}
       </div>
     </div>
   )
