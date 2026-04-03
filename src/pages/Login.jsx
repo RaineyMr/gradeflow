@@ -95,6 +95,30 @@ function useLoginForm(onLogin, onDemoLogin) {
     if (account) { window.scrollTo(0, 0); onDemoLogin?.({ ...account, lang }) }
   }
 
+  return { selectedRole, setSelectedRole, email, setEmail, password, setPassword, error, loading, handleSubmit, handleDemoClick, lang, toggleLang }
+}
+
+// ─── Shared create-account form state ────────────────────────────────────────
+function useCreateForm(onLogin) {
+  const [step,         setStep]         = useState(1)   // 1 = role, 2 = details
+  const [selectedRole, setSelectedRole] = useState('teacher')
+  const [firstName,    setFirstName]    = useState('')
+  const [lastName,     setLastName]     = useState('')
+  const [email,        setEmail]        = useState('')
+  const [password,     setPassword]     = useState('')
+  const [confirmPw,    setConfirmPw]    = useState('')
+  const [schoolCode,   setSchoolCode]   = useState('')
+  const [showPassword,  setShowPassword]  = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
+  const [error,        setError]        = useState('')
+  const [loading,      setLoading]      = useState(false)
+  const { lang, schools } = useStore()
+
+  function handleRoleNext() {
+    setError('')
+    setStep(2)
+  }
+
   function validate() {
     if (!firstName.trim() || !lastName.trim()) return lang === 'es' ? 'Ingresa tu nombre completo.' : 'Please enter your full name.'
     if (!email.trim() || !email.includes('@'))  return lang === 'es' ? 'Ingresa un correo válido.' : 'Please enter a valid email.'
@@ -151,7 +175,7 @@ function useLoginForm(onLogin, onDemoLogin) {
     step, setStep,
     selectedRole, setSelectedRole,
     firstName, setFirstName,
-    lastName,  setLastName,
+    lastName, setLastName,
     email,     setEmail,
     password,  setPassword,
     confirmPw, setConfirmPw,
@@ -162,6 +186,8 @@ function useLoginForm(onLogin, onDemoLogin) {
     handleRoleNext, handleSubmit,
     lang,
   }
+}
+
 // ─── Create Account Panel (shared between mobile + desktop) ──────────────────
 function CreateAccountPanel({ onBack, onLogin, compact = false }) {
   const form = useCreateForm(onLogin)
@@ -170,7 +196,7 @@ function CreateAccountPanel({ onBack, onLogin, compact = false }) {
     step, setStep,
     selectedRole, setSelectedRole,
     firstName, setFirstName,
-    lastName,  setLastName,
+    lastName, setLastName,
     email,     setEmail,
     password,  setPassword,
     confirmPw, setConfirmPw,
