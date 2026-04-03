@@ -99,7 +99,17 @@ const DEMO_SCHOOLS = [
     primary_color: '#1F4788',
     secondary_color: '#FFFFFF',
     accent_color: '#E31937',
-    logo_url: 'https://kippneworleans.org/'
+    logo_url: 'https://kippneworleans.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
   },
   {
     id: 'BELLAIRE-HS',
@@ -109,7 +119,17 @@ const DEMO_SCHOOLS = [
     primary_color: '#C1272D',
     secondary_color: '#FFFFFF',
     accent_color: '#FFD700',
-    logo_url: 'https://www.houstonisd.org/'
+    logo_url: 'https://www.houstonisd.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
   },
   {
     id: '05KNIGHTS',
@@ -119,7 +139,26 @@ const DEMO_SCHOOLS = [
     primary_color: '#6B46C1',
     secondary_color: '#FFFFFF',
     accent_color: '#F59E0B',
-    logo_url: 'https://gradeflow.app/'
+    logo_url: 'https://gradeflow.app/',
+    type: 'k12',
+    grade_levels: [
+      'Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade',
+      '6th Grade', '7th Grade', '8th Grade', '9th Grade', '10th Grade', '11th Grade', '12th Grade'
+    ],
+    subjects: [
+      // Elementary
+      'Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE',
+      // Middle School
+      'English Language Arts', 'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History',
+      // High School
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science',
+      'Special Education'
+    ]
   }
 ]
 
