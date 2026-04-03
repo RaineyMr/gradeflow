@@ -125,6 +125,7 @@ export default function TeacherOnboarding() {
       ...currentUser,
       school_id: selectedSchool.id,
       school: selectedSchool.name,
+      district_id: selectedSchool.district_id, // Include district_id from selected school
       gradeLevel,
       subjects,
       theme: {
@@ -152,6 +153,7 @@ export default function TeacherOnboarding() {
         subjects,
         school: selectedSchool.name,
         school_id: selectedSchool.id,
+        district_id: selectedSchool.district_id, // Include district_id in teacher profile
         name: currentUser.name
       }
     })

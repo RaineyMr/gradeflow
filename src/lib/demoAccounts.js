@@ -9,6 +9,8 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'KIPP New Orleans',
     districtName: 'KIPP New Orleans',
+    school_id: 'JFK-HIGH', // Corresponds to JFK High School in store.js
+    district_id: 'kipp-la', // KIPP Louisiana district
     userName: 'Ms. Johnson',
     studentName: null,
     avatar: '👩‍🏫',
@@ -42,6 +44,8 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'Houston ISD',
     districtName: 'Houston Independent School District',
+    school_id: 'BELLAIRE-HS', // Corresponds to Bellaire High School in store.js
+    district_id: 'houston-isd', // Houston ISD district
     userName: 'Marcus Thompson',
     studentName: 'Marcus',
     avatar: '🎓',
@@ -75,6 +79,8 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'Bellaire High School',
     districtName: 'Houston ISD',
+    school_id: 'BELLAIRE-HS', // Corresponds to Bellaire High School in store.js
+    district_id: 'houston-isd', // Houston ISD district
     userName: 'Sarah Johnson',
     studentName: 'Emma Johnson',
     avatar: '👨‍👩‍👧',
@@ -109,6 +115,8 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'Lamar High School',
     districtName: 'Houston ISD',
+    school_id: 'lamar-hs', // Corresponds to Lamar High School in store.js
+    district_id: 'houston-isd', // Houston ISD district
     userName: 'Principal Carter',
     studentName: null,
     avatar: '🏫',
@@ -142,6 +150,8 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'Houston ISD',
     districtName: 'Houston Independent School District',
+    school_id: 'BELLAIRE-HS', // Corresponds to Bellaire High School in store.js
+    district_id: 'houston-isd', // Houston ISD district
     userName: 'Ms. Carter',
     studentName: null,
     avatar: '📣',
