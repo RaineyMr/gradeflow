@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
+import { useNavigate } from 'react-router-dom'
 
 const C = {
   bg: '#060810', card: '#161923', inner: '#1e2231', text: '#eef0f8',
@@ -52,8 +53,9 @@ function LangToggle({ onToggle, style = {} }) {
 }
 
 // ─── Unified Teacher Onboarding Form ───────────────────────────────────────────────
-export default function TeacherOnboarding({ onComplete }) {
+export default function TeacherOnboarding() {
   const { currentUser, setCurrentUser, schools, lang, setLang } = useStore()
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredSchools, setFilteredSchools] = useState(schools)
   const [isOpen, setIsOpen] = useState(false)
@@ -118,28 +120,24 @@ export default function TeacherOnboarding({ onComplete }) {
       return
     }
     
-    // Update teacher profile with selected school, grade level and subjects
-    const updatedUser = {
+    // Update user with school info and clear onboarding flags
+    setCurrentUser(currentUser => ({
       ...currentUser,
       school_id: selectedSchool.id,
       school: selectedSchool.name,
       gradeLevel,
       subjects,
-      profileComplete: true,
-      // Apply theme from selected school
       theme: {
         primary: selectedSchool.primary_color,
         secondary: selectedSchool.secondary_color,
-        accent: selectedSchool.accent_color
-      }
-    }
+        accent: selectedSchool.accent_color,
+      },
+      needsOnboarding: false,
+      isNewAccount: false,
+    }))
     
-    setCurrentUser(updatedUser)
-    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
-    
-    // Apply CSS variables immediately for theme change
-    document.documentElement.style.setProperty('--school-color', selectedSchool.primary_color)
-    document.documentElement.style.setProperty('--school-secondary', selectedSchool.secondary_color)
+    // Navigate to curriculum onboarding
+    navigate('/teacher/curriculum-onboarding')
     document.documentElement.style.setProperty('--school-accent', selectedSchool.accent_color)
     
     // Save to store for future reference
