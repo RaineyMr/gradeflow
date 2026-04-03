@@ -89,6 +89,40 @@ const DEMO_REMINDERS = [
   { id: 4, text: 'Submit attendance',       due: 'Fri',      done: true,  priority: 'low'    },
 ]
 
+// Demo schools data for registration validation
+const DEMO_SCHOOLS = [
+  {
+    id: 'JFK-HIGH',
+    district_id: 'kipp-la',
+    name: 'JFK High School',
+    address: 'New Orleans, LA',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://kippneworleans.org/'
+  },
+  {
+    id: 'BELLAIRE-HS',
+    district_id: 'houston-isd',
+    name: 'Bellaire High School',
+    address: 'Houston, TX',
+    primary_color: '#C1272D',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFD700',
+    logo_url: 'https://www.houstonisd.org/'
+  },
+  {
+    id: '05KNIGHTS',
+    district_id: 'knights-district',
+    name: 'Knights Academy',
+    address: 'Online',
+    primary_color: '#6B46C1',
+    secondary_color: '#FFFFFF',
+    accent_color: '#F59E0B',
+    logo_url: 'https://gradeflow.app/'
+  }
+]
+
 // ─── Spanish Demo Data (used when language is set to 'es') ─────────────────────
 const DEMO_CLASSES_ES = [
   { id: 1, period: '1ero', subject: 'Matemáticas', students: 24, gpa: 87.4, trend: 'up',     color: '#3b7ef4', needsAttention: 3 },
@@ -1696,7 +1730,7 @@ setDemoSupportStaffData: async () => {
             feed:        DEMO_FEED_ES,
             lessons:     DEMO_LESSONS_ES,
             reminders:   DEMO_REMINDERS_ES,
-            schools:     schoolsData || [], // Add schools data
+            schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
           }
         : {
             classes:     DEMO_CLASSES,
@@ -1707,7 +1741,7 @@ setDemoSupportStaffData: async () => {
             feed:        DEMO_FEED,
             lessons:     DEMO_LESSONS,
             reminders:   DEMO_REMINDERS,
-            schools:     schoolsData || [], // Add schools data
+            schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
           }
       
       set({
@@ -1722,7 +1756,7 @@ setDemoSupportStaffData: async () => {
         dbLoaded: true,
         isHydrated: true,
         dbError: error.message,
-        schools: [], // Fallback to empty schools array
+        schools: DEMO_SCHOOLS, // Fallback to demo schools array
       });
     }
   },
