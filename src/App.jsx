@@ -71,13 +71,21 @@ function Page({ Component, backTo, extraProps = {} }) {
  */
 function TeacherHome()  { 
   const currentUser = useStore(s => s.currentUser)
+  const navigate = useNavigate()
+  
+  console.log('TeacherHome - currentUser:', currentUser)
+  console.log('TeacherHome - needsOnboarding:', currentUser?.needsOnboarding)
+  console.log('TeacherHome - isNewAccount:', currentUser?.isNewAccount)
   
   // Check if new teacher needs onboarding
   if (currentUser?.needsOnboarding && currentUser?.isNewAccount) {
-    // Redirect to onboarding route instead of rendering inline
-    window.location.hash = '#/teacher/onboarding'
+    console.log('Redirecting to onboarding')
+    // Use React Router navigate instead of window.location.hash
+    navigate('/teacher/onboarding', { replace: true })
     return null
   }
+  
+  console.log('Rendering dashboard')
   
   // Use working dashboard for real users, demo dashboard for demo accounts
   const isDemoAccount = currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')
