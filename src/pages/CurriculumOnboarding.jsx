@@ -322,7 +322,7 @@ export default function CurriculumOnboarding() {
   const STEPS = ['Subjects', 'Curriculum', 'Gradebook', 'Done']
 
   function finish() {
-    const { completeOnboarding, setCurrentUser } = useStore()
+    const { completeOnboarding, setCurrentUser, setScreen } = useStore()
     
     // Clear onboarding flags and complete onboarding
     setCurrentUser(currentUser => ({
@@ -332,7 +332,12 @@ export default function CurriculumOnboarding() {
     }))
     
     completeOnboarding()
-    navigate('/teacher')
+    
+    // Enter real dashboard via store state
+    setScreen('dashboard')
+    
+    // Navigate to AppRouter route
+    navigate('/teacher/app')
   }
 
   return (

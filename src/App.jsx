@@ -297,9 +297,11 @@ export default function App() {
             <Route path="/teacher/reports"      element={<Page Component={Reports}        backTo="/teacher" />} />
             <Route path="/teacher/messages"     element={<Page Component={ParentMessages} backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
             <Route path="/teacher/testing"      element={<Page Component={TestingSuite}   backTo="/teacher" />} />
+            <Route path="/teacher/app"          element={<AppRouter />} />
             <Route path="/teacher/feed"         element={<Page Component={ClassFeed}      backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
             <Route path="/teacher/widgets"      element={<Page Component={Widgets}        backTo="/teacher" />} />
             <Route path="/teacher/integrations" element={<Page Component={Integrations}   backTo="/teacher" />} />
+
           </Route>
 
           {/* ── Student ─────────────────────────────────────────────── */}
