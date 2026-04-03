@@ -11,7 +11,8 @@ INSERT INTO districts (id, name, state) VALUES
 ('archdiocese-nola', 'Archdiocese of New Orleans', 'LA'),
 ('houston-isd', 'Houston ISD', 'TX'),
 ('kipp-texas', 'KIPP Texas', 'TX'),
-('yes-prep-tx', 'YES Prep Texas', 'TX');
+('yes-prep-tx', 'YES Prep Texas', 'TX'),
+('knights-district', 'Knights Academy District', 'US');
 
 -- SCHOOLS - KIPP Louisiana
 INSERT INTO schools (id, district_id, name, address, primary_color, secondary_color, accent_color, logo_url) VALUES
@@ -71,3 +72,7 @@ INSERT INTO schools (id, district_id, name, address, primary_color, secondary_co
 ('yes-south-secondary', 'yes-prep-tx', 'YES Prep Southside Secondary', 'Houston, TX', '#E31937', '#1F4788', '#FFD700', 'https://www.yesprep.org/'),
 ('yes-west-secondary', 'yes-prep-tx', 'YES Prep West Secondary', 'Houston, TX', '#E31937', '#1F4788', '#FFD700', 'https://www.yesprep.org/'),
 ('yes-north-forest', 'yes-prep-tx', 'YES Prep North Forest', 'Houston, TX', '#E31937', '#1F4788', '#FFD700', 'https://www.yesprep.org/');
+
+-- SCHOOLS - Knights Academy (Friends Access)
+INSERT INTO schools (id, district_id, name, address, primary_color, secondary_color, accent_color, logo_url) VALUES
+('05Knights', 'knights-district', 'Knights Academy', 'Online', '#6B46C1', '#FFFFFF', '#F59E0B', 'https://gradeflow.app/');

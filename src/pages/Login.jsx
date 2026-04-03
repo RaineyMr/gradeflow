@@ -110,7 +110,7 @@ function useCreateForm(onLogin) {
   const [schoolCode,   setSchoolCode]   = useState('')
   const [error,        setError]        = useState('')
   const [loading,      setLoading]      = useState(false)
-  const { lang } = useStore()
+  const { lang, schools } = useStore()
 
   function handleRoleNext() {
     setError('')
@@ -123,6 +123,15 @@ function useCreateForm(onLogin) {
     if (password.length < 6)                    return lang === 'es' ? 'La contraseña debe tener al menos 6 caracteres.' : 'Password must be at least 6 characters.'
     if (password !== confirmPw)                 return lang === 'es' ? 'Las contraseñas no coinciden.' : 'Passwords do not match.'
     if (!schoolCode.trim())                     return lang === 'es' ? 'Ingresa el código de tu escuela.' : 'Please enter your school code.'
+    
+    // Validate school code exists in database
+    const school = schools?.find(s => s.id === schoolCode.trim().toUpperCase())
+    if (!school) {
+      return lang === 'es' 
+        ? 'Código de escuela no encontrado. Contacta a tu escuela.' 
+        : 'School code not found. Contact your school for the correct code.'
+    }
+    
     return null
   }
 
@@ -132,6 +141,9 @@ function useCreateForm(onLogin) {
     if (err) { setError(err); return }
     setError('')
     setLoading(true)
+
+    // Find the validated school
+    const school = schools?.find(s => s.id === schoolCode.trim().toUpperCase())
 
     // Demo-mode: simulate account creation then log in with a synthetic account object.
     // In production this would call POST /api/auth/register → Supabase auth.signUp()
@@ -143,9 +155,14 @@ function useCreateForm(onLogin) {
         name:      `${firstName.trim()} ${lastName.trim()}`,
         email:     email.trim(),
         role:      selectedRole,
-        school:    schoolCode.trim().toUpperCase(),
-        // Inherit a neutral theme; production would resolve from the school code
-        theme:     { primary: BRAND.primary, bg: BRAND.bg },
+        school_id:  school?.id, // Use school_id for proper theming
+        school:    school?.name, // Store school name for display
+        // Use school's theme colors
+        theme:     { 
+          primary: school?.primary_color || BRAND.primary, 
+          secondary: school?.secondary_color || '#FFFFFF',
+          accent: school?.accent_color || BRAND.primary 
+        },
         lang,
         isNewAccount: true,
       })
