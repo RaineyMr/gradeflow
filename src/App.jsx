@@ -3,6 +3,7 @@ import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useStore } from '@lib/store'
 import { useHashRouter } from '@hooks/useHashRouter'
 import { initializeRouter, pageToHash } from '@lib/hashRouter'
+import { SchoolThemeProvider } from '@components/SchoolThemeProvider_Enhanced'
 
 // ── Layout & guards ───────────────────────────────────────────────────────────
 import AppShell      from '@components/layout/AppShell'
@@ -232,7 +233,8 @@ export default function App() {
   }
 
   return (
-    <Routes>
+    <SchoolThemeProvider>
+      <Routes>
 
       {/* ── Public ─────────────────────────────────────────────────────── */}
       <Route path="/"      element={<RootRedirect />} />
@@ -320,5 +322,6 @@ export default function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
+    </SchoolThemeProvider>
   )
 }
