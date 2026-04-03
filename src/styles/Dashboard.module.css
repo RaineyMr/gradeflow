@@ -28,7 +28,7 @@
 }
 
 .widget:hover {
-  border-color: var(--school-color, #3b7ef4);
+  border-color: var(--school-primary, #3b7ef4);
 }
 
 .widget-header {
@@ -42,10 +42,6 @@
   font-size: 13px;
   font-weight: 700;
   color: var(--text, #eef0f8);
-}
-
-.widget-content {
-  /* Content flex container if needed */
 }
 
 /* ActionBtn */
@@ -111,6 +107,47 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* School Theme Classes */
+.dashboardHeader {
+  background-color: var(--school-primary, #1F4788);
+  color: var(--school-secondary, #FFFFFF);
+  border-bottom: 4px solid var(--school-accent, #E31937);
+  padding: 16px 20px;
+}
+
+.dashboardButton {
+  background-color: var(--school-accent, #E31937);
+  color: var(--school-secondary, #FFFFFF);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.dashboardButton:hover {
+  opacity: 0.9;
+}
+
+.widgetCard {
+  background-color: var(--school-surface, #F5F5F5);
+  border-left: 4px solid var(--school-primary, #1F4788);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.schoolBadge {
+  background-color: var(--school-primary, #1F4788);
+  color: var(--school-secondary, #FFFFFF);
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-block;
 }
 
 /* Subpage layout */
