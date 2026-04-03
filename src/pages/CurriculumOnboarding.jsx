@@ -322,22 +322,26 @@ export default function CurriculumOnboarding() {
   const STEPS = ['Subjects', 'Curriculum', 'Gradebook', 'Done']
 
   function finish() {
-    const { completeOnboarding, setCurrentUser, setScreen } = useStore()
+    const { completeOnboarding, setCurrentUser, setScreen, currentUser } = useStore()
     
-    // Clear onboarding flags and complete onboarding
-    setCurrentUser(currentUser => ({
+    // Update user to clear onboarding flags
+    const updatedUser = {
       ...currentUser,
       needsOnboarding: false,
       isNewAccount: false,
-    }))
+    }
+    
+    // Save to localStorage to persist authentication
+    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
+    setCurrentUser(updatedUser)
     
     completeOnboarding()
     
     // Enter real dashboard via store state
     setScreen('dashboard')
     
-    // Navigate to AppRouter route
-    navigate('/teacher/app')
+    // Navigate to teacher dashboard instead of app route
+    navigate('/teacher')
   }
 
   return (
