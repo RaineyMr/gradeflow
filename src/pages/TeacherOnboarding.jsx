@@ -8,9 +8,52 @@ const C = {
   red: '#f04a4a', amber: '#f5a623', teal: '#0fb8a0', purple: '#9b6ef5',
 }
 
+const BRAND = {
+  primary:  '#f97316',
+  blue:     '#2563EB',
+  bg:       '#060810',
+  card:     '#0c0e14',
+  inner:    '#1e2231',
+  text:     '#eef0f8',
+  muted:    '#6b7494',
+  border:   '#2a2f42',
+  gradient: 'linear-gradient(135deg, #f97316 0%, #2563EB 100%)',
+}
+
+// Language toggle component
+function LangToggle({ onToggle, style = {} }) {
+  const { lang } = useStore()
+  return (
+    <button
+      onClick={onToggle}
+      style={{
+        background:    'rgba(255,255,255,0.12)',
+        border:        '1.5px solid rgba(255,255,255,0.25)',
+        borderRadius:  999,
+        padding:       '5px 12px',
+        color:         '#fff',
+        fontSize:      12,
+        fontWeight:    800,
+        cursor:        'pointer',
+        display:       'flex',
+        alignItems:    'center',
+        gap:           5,
+        letterSpacing: '0.04em',
+        transition:    'background 0.15s',
+        ...style,
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.22)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
+      title={lang === 'en' ? 'Switch to Spanish' : 'Switch to English'}
+    >
+      {lang === 'en' ? '🇲🇽 ES' : '🇺🇸 EN'}
+    </button>
+  )
+}
+
 // ─── Unified Teacher Onboarding Form ───────────────────────────────────────────────
 export default function TeacherOnboarding({ onComplete }) {
-  const { currentUser, setCurrentUser, schools } = useStore()
+  const { currentUser, setCurrentUser, schools, lang, setLang } = useStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [filteredSchools, setFilteredSchools] = useState(schools)
   const [isOpen, setIsOpen] = useState(false)
@@ -18,7 +61,10 @@ export default function TeacherOnboarding({ onComplete }) {
   const [gradeLevel, setGradeLevel] = useState('')
   const [subjects, setSubjects] = useState([])
   const [error, setError] = useState('')
+  const t = useT()
   
+  function toggleLang() { setLang(lang === 'en' ? 'es' : 'en') }
+
   // Filter schools based on search query
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -141,16 +187,22 @@ export default function TeacherOnboarding({ onComplete }) {
       display: 'flex', flexDirection: 'column',
       fontFamily: 'Inter, Arial, sans-serif', color: C.text,
     }}>
-      {/* Top bar */}
-      <div style={{ 
-        background: 'var(--school-color, #BA0C2F)', height: 54, 
-        display: 'flex', alignItems: 'center', padding: '0 32px' 
-      }}>
-        <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>
-          ⚡ GradeFlow
-        </span>
-        <div style={{ flex: 1, textAlign: 'center', color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600 }}>
-          Teacher Profile Setup
+      {/* Top bar - same as login page */}
+      <div style={{ background: BRAND.gradient, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 44px', height: 54 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>⚡ GradeFlow</span>
+          <span style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.88)', fontWeight: 500 }}>{t('tagline')}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <LangToggle onToggle={toggleLang} />
+          {['Features', 'Schools', 'Pricing', 'About'].map(link => (
+            <span key={link} style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.75)'}>
+              {link}
+            </span>
+          ))}
         </div>
       </div>
 
