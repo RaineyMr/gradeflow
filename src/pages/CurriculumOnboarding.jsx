@@ -284,7 +284,7 @@ function StepDone({ onFinish }) {
 // Rendered after school registration and before first dashboard view.
 // Pass onComplete() to navigate to dashboard when done.
 export default function CurriculumOnboarding() {
-  const { completeOnboarding, lang, setLang, currentUser } = useStore()
+  const { completeOnboarding, lang, setLang, currentUser, setCurrentUser } = useStore()
   const navigate = useNavigate()
   const [step,     setStep]     = useState(0)  // 0=curriculum, 1=gradebook, 2=done
   const [subjects, setSubjects] = useState(currentUser?.subjects || []) // Get subjects from previous onboarding
@@ -295,8 +295,6 @@ export default function CurriculumOnboarding() {
   const STEPS = ['Curriculum', 'Gradebook', 'Done']
 
   function finish() {
-    const { completeOnboarding, setCurrentUser, setScreen, currentUser } = useStore()
-    
     console.log('Finishing onboarding - current user:', currentUser)
     
     // Update user to clear onboarding flags
@@ -315,7 +313,6 @@ export default function CurriculumOnboarding() {
     // Update store state
     setCurrentUser(updatedUser)
     completeOnboarding()
-    setScreen('dashboard')
     
     console.log('Navigating to /teacher')
     
