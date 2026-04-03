@@ -2228,20 +2228,22 @@ setDemoSupportStaffData: async () => {
             schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
           }
       
-      set({
+      set(state => ({
+        ...state,
         ...data,
         dbLoaded: true,
         isHydrated: true,
         dbError: schoolsError ? schoolsError.message : null
-      })
+      }))
     } catch (error) {
       console.error('Error in loadFromDB:', error);
-      set({
+      set(state => ({
+        ...state,
         dbLoaded: true,
         isHydrated: true,
         dbError: error.message,
         schools: DEMO_SCHOOLS, // Fallback to demo schools array
-      });
+      }));
     }
   },
 

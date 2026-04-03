@@ -216,9 +216,11 @@ export default function App() {
   // Rehydrate auth session + apply school CSS vars on first load
   useEffect(() => {
     const raw = localStorage.getItem('gradeflow_user')
+    console.log('App useEffect - loading user from localStorage:', raw)
     if (raw) {
       try {
         const user = JSON.parse(raw)
+        console.log('App useEffect - parsed user:', user)
         setCurrentUser(user)
         setLang(user.lang ?? 'en')
         document.documentElement.lang = user.lang ?? 'en'
@@ -240,8 +242,12 @@ export default function App() {
         document.documentElement.lang = savedLang
       }
     }
-    loadFromDB()
-  }, [loadFromDB, setCurrentUser, setLang])
+    
+    // Load database after user state is set
+    setTimeout(() => {
+      loadFromDB()
+    }, 100)
+  }, [setCurrentUser, setLang])
 
   // Initialize hash router on app mount
   useEffect(() => {
