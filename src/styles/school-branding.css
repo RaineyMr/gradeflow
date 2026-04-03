@@ -1,0 +1,258 @@
+/* School Branding Integration CSS
+   Integrates seamlessly with existing dark theme (--bg, --card, --text, etc.)
+   Only overrides specific elements with school colors
+*/
+
+/* Dashboard Header with School Color */
+.dashboardHeader {
+  background: linear-gradient(135deg, var(--school-primary, #1F4788) 0%, var(--inner, #1a1f2e) 100%);
+  border-bottom: 3px solid var(--school-accent, #E31937);
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.dashboardHeader h1 {
+  color: var(--school-secondary, #FFFFFF);
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.dashboardHeader .schoolBadge {
+  background-color: var(--school-accent, #E31937);
+  color: var(--school-secondary, #FFFFFF);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+/* Widget with School Primary Border */
+.widget {
+  background: var(--card, #111520);
+  border: 1px solid var(--border, #252b3d);
+  border-left: 4px solid var(--school-primary, #1F4788);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.widget:hover {
+  border-color: var(--school-accent, #E31937);
+  border-left-color: var(--school-accent, #E31937);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Action Button with School Accent */
+.actionBtn {
+  background: rgba(var(--school-accent-rgb, 224, 26, 55), 0.12);
+  color: var(--school-accent, #E31937);
+  border: 1px solid rgba(var(--school-accent-rgb, 224, 26, 55), 0.25);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.actionBtn:hover {
+  background: rgba(var(--school-accent-rgb, 224, 26, 55), 0.2);
+  border-color: rgba(var(--school-accent-rgb, 224, 26, 55), 0.4);
+}
+
+.actionBtn:active {
+  background: rgba(var(--school-accent-rgb, 224, 26, 55), 0.3);
+}
+
+/* Primary Action Button (CTA) */
+.actionBtn.primary {
+  background: var(--school-accent, #E31937);
+  color: var(--school-secondary, #FFFFFF);
+  border-color: var(--school-accent, #E31937);
+}
+
+.actionBtn.primary:hover {
+  opacity: 0.85;
+}
+
+/* Grade Badge with School Color Accent */
+.gradeBadge {
+  background: rgba(var(--school-primary-rgb, 31, 71, 136), 0.08);
+  border: 1px solid var(--school-primary, #1F4788);
+  border-radius: 8px;
+  padding: 8px 12px;
+  text-align: right;
+}
+
+.gradeScore {
+  font-size: 20px;
+  font-weight: 900;
+  color: var(--school-primary, #1F4788);
+}
+
+.gradeLetter {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted, #6b7494);
+}
+
+/* Role Badge with School Colors */
+.roleBadge {
+  background: var(--school-primary, #1F4788);
+  color: var(--school-secondary, #FFFFFF);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.roleBadge.secondary {
+  background: var(--school-accent, #E31937);
+}
+
+/* Trend Badge */
+.trendBadge {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.trendBadge.positive {
+  color: var(--green, #22c97a);
+}
+
+.trendBadge.negative {
+  color: var(--red, #f04a4a);
+}
+
+/* Navigation/Tab with School Underline */
+.navTabs {
+  display: flex;
+  gap: 16px;
+  border-bottom: 1px solid var(--border, #252b3d);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.navTab {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted, #6b7494);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 4px;
+  transition: all 0.12s ease;
+}
+
+.navTab.active {
+  color: var(--school-primary, #1F4788);
+  border-bottom-color: var(--school-accent, #E31937);
+}
+
+.navTab:hover {
+  color: var(--text, #eef0f8);
+}
+
+/* Subpage with School Accent */
+.subPage {
+  min-height: 100vh;
+  background: var(--bg, #060810);
+  padding-bottom: 80px;
+}
+
+.subPageHeader {
+  background: linear-gradient(135deg, var(--school-primary, #1F4788) 0%, var(--inner, #1a1f2e) 100%);
+  padding: 20px;
+  border-bottom: 3px solid var(--school-accent, #E31937);
+  margin-bottom: 16px;
+  border-radius: 12px;
+}
+
+.subPageHeader h2 {
+  color: var(--school-secondary, #FFFFFF);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Back Button */
+.headerBackBtn {
+  background: var(--inner, #1a1f2e);
+  border: 1px solid var(--border, #252b3d);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: var(--text, #eef0f8);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.12s ease;
+}
+
+.headerBackBtn:hover {
+  background: var(--raised, #1e2436);
+  border-color: var(--school-primary, #1F4788);
+  color: var(--school-primary, #1F4788);
+}
+
+/* Utility Classes */
+.scrollX {
+  overflow-x: auto;
+  padding-bottom: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.flexGap {
+  display: flex;
+  gap: 6px;
+}
+
+.flexCenter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* School Theme Wrapper */
+.school-theme-wrapper {
+  /* School CSS variables applied by SchoolThemeProvider */
+  width: 100%;
+  height: 100%;
+}
+
+/* Loading State with School Color */
+.loadingSpinner {
+  border: 3px solid var(--border, #252b3d);
+  border-top-color: var(--school-accent, #E31937);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboardHeader {
+    padding: 16px;
+  }
+
+  .dashboardHeader h1 {
+    font-size: 18px;
+  }
+
+  .widget {
+    padding: 12px;
+  }
+
+  .navTabs {
+    gap: 12px;
+  }
+}
