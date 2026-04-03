@@ -155,9 +155,15 @@ function LoginRoute() {
     // Reset browser history and navigate to role-specific dashboard
     useStore.getState().resetToHome()
     
-    // Navigate to the correct role-specific home path
-    const homePath = account.role === 'admin' ? '/admin' : `/${account.role}`
-    navigate(homePath)
+    // Check if new account needs onboarding
+    if (account.isNewAccount && account.needsOnboarding && account.role === 'teacher') {
+      // Navigate to onboarding for new teachers
+      navigate('/teacher/onboarding')
+    } else {
+      // Navigate to the correct role-specific home path
+      const homePath = account.role === 'admin' ? '/admin' : `/${account.role}`
+      navigate(homePath)
+    }
   }
 
   return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={null} />
@@ -258,28 +264,20 @@ export default function App() {
       <Route path="/"      element={<RootRedirect />} />
       <Route path="/login" element={<LoginRoute />} />
 
+      {/* ── Onboarding Routes (outside AppShell, but protected) ───────────── */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+          <Route path="/teacher/onboarding" element={<TeacherOnboarding />} />
+          <Route path="/teacher/curriculum-onboarding" element={<CurriculumOnboarding />} />
+        </Route>
+      </Route>
+
       {/* ── Protected (requires auth) ───────────────────────────────────
            All protected routes share the AppShell layout (sticky header).
            Role-scoped subtrees add a second ProtectedRoute layer that
            redirects to the user's own dashboard if the role doesn't match.
       ──────────────────────────────────────────────────────────────── */}
       <Route element={<ProtectedRoute />}>
-        
-        {/* ── Onboarding Routes (outside AppShell) ───────────────────── */}
-        <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
-          <Route path="/teacher/onboarding" element={<TeacherOnboarding onComplete={() => {
-            // Clear onboarding flag and proceed to dashboard
-            useStore.setState(s => ({
-              currentUser: { ...s.currentUser, needsOnboarding: false, isNewAccount: false }
-            }))
-            window.location.hash = '#/teacher'
-          }} />} />
-          <Route path="/teacher/curriculum-onboarding" element={<CurriculumOnboarding onComplete={() => {
-            useStore.getState().completeOnboarding()
-            window.location.hash = '#/teacher'
-          }} />} />
-        </Route>
-
         {/* ── Main App Routes (with AppShell) ─────────────────────────── */}
         <Route element={<AppShell />}>
 
