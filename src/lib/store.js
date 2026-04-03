@@ -159,6 +159,194 @@ const DEMO_SCHOOLS = [
       'Physical Education', 'Health', 'Art', 'Music', 'Computer Science',
       'Special Education'
     ]
+  },
+  {
+    id: 'KENNEDY-HS',
+    district_id: 'houston-isd',
+    name: 'John F. Kennedy High School',
+    address: 'Houston, TX',
+    primary_color: '#0047AB',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FF6B35',
+    logo_url: 'https://www.houstonisd.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'WESTSIDE-HS',
+    district_id: 'houston-isd',
+    name: 'Westside High School',
+    address: 'Houston, TX',
+    primary_color: '#003057',
+    secondary_color: '#FFFFFF',
+    accent_color: '#B3A369',
+    logo_url: 'https://www.houstonisd.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'LAMAR-HS',
+    district_id: 'houston-isd',
+    name: 'Lamar High School',
+    address: 'Houston, TX',
+    primary_color: '#461D7C',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FDD023',
+    logo_url: 'https://www.houstonisd.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'RIVERVIEW-HS',
+    district_id: 'kipp-la',
+    name: 'Riverside High School',
+    address: 'New Orleans, LA',
+    primary_color: '#2E7D32',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFC107',
+    logo_url: 'https://kippneworleans.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'EAST-HIGH',
+    district_id: 'kipp-la',
+    name: 'East High School',
+    address: 'New Orleans, LA',
+    primary_color: '#D32F2F',
+    secondary_color: '#FFFFFF',
+    accent_color: '#1976D2',
+    logo_url: 'https://kippneworleans.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'NORTHWOOD-ACADEMY',
+    district_id: 'kipp-la',
+    name: 'Northwood Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#7B1FA2',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FF9800',
+    logo_url: 'https://kippneworleans.org/',
+    type: 'k12',
+    grade_levels: [
+      'Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade',
+      '6th Grade', '7th Grade', '8th Grade', '9th Grade', '10th Grade', '11th Grade', '12th Grade'
+    ],
+    subjects: [
+      'Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE',
+      'English Language Arts', 'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History',
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science',
+      'Special Education'
+    ]
+  },
+  {
+    id: 'SOUTHWOOD-MIDDLE',
+    district_id: 'kipp-la',
+    name: 'Southwood Middle School',
+    address: 'New Orleans, LA',
+    primary_color: '#1976D2',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFC107',
+    logo_url: 'https://kippneworleans.org/',
+    type: 'middle_school',
+    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
+    subjects: [
+      'Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE',
+      'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History'
+    ]
+  },
+  {
+    id: 'OAKWOOD-ELEMENTARY',
+    district_id: 'kipp-la',
+    name: 'Oakwood Elementary School',
+    address: 'New Orleans, LA',
+    primary_color: '#388E3C',
+    secondary_color: '#FFFFFF',
+    accent_color: '#F57C00',
+    logo_url: 'https://kippneworleans.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: [
+      'Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE'
+    ]
+  },
+  {
+    id: 'PINECREST-ELEMENTARY',
+    district_id: 'houston-isd',
+    name: 'Pinecrest Elementary School',
+    address: 'Houston, TX',
+    primary_color: '#00695C',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFD600',
+    logo_url: 'https://www.houstonisd.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: [
+      'Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE'
+    ]
+  },
+  {
+    id: 'CEDAR-RIDGE-MIDDLE',
+    district_id: 'houston-isd',
+    name: 'Cedar Ridge Middle School',
+    address: 'Houston, TX',
+    primary_color: '#5D4037',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFB300',
+    logo_url: 'https://www.houstonisd.org/',
+    type: 'middle_school',
+    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
+    subjects: [
+      'Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE',
+      'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History'
+    ]
   }
 ]
 

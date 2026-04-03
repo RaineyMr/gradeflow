@@ -8,9 +8,38 @@ const C = {
   red: '#f04a4a', amber: '#f5a623', teal: '#0fb8a0', purple: '#9b6ef5',
 }
 
-// ─── Step 1: School Selection ───────────────────────────────────────────────────────
+// ─── Step 1: School Selection (Searchable Autocomplete) ───────────────────────────────
 function StepSchoolSelection({ selectedSchool, setSelectedSchool, schools, onNext }) {
-  const t = useT()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [filteredSchools, setFilteredSchools] = useState(schools)
+  const [isOpen, setIsOpen] = useState(false)
+  
+  // Filter schools based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredSchools(schools.slice(0, 10)) // Show first 10 when no search
+    } else {
+      const filtered = schools.filter(school => 
+        school.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        school.address?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      setFilteredSchools(filtered)
+    }
+  }, [searchQuery, schools])
+  
+  function handleSchoolSelect(school) {
+    setSelectedSchool(school)
+    setSearchQuery(school.name)
+    setIsOpen(false)
+  }
+  
+  function handleInputChange(value) {
+    setSearchQuery(value)
+    setIsOpen(true)
+    if (selectedSchool && !value.includes(selectedSchool.name)) {
+      setSelectedSchool(null)
+    }
+  }
   
   return (
     <div>
@@ -18,37 +47,161 @@ function StepSchoolSelection({ selectedSchool, setSelectedSchool, schools, onNex
         Select your school
       </h2>
       <p style={{ color: C.muted, fontSize: 13, margin: '0 0 20px' }}>
-        Choose the school where you teach. This will determine your grade levels, subjects, and school colors.
+        Start typing your school name to search. This will determine your grade levels, subjects, and school colors.
       </p>
       
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 24 }}>
-        {schools.map(school => (
-          <button key={school.id} onClick={() => setSelectedSchool(school)}
-            style={{ 
-              padding: '16px', borderRadius: 12, border: `2px solid ${selectedSchool?.id === school.id ? C.teal : C.border}`, 
-              cursor: 'pointer', fontSize: 13, fontWeight: 700, transition: 'all 0.15s',
-              background: selectedSchool?.id === school.id ? `${C.teal}18` : C.inner,
-              color: selectedSchool?.id === school.id ? C.teal : C.muted,
-              textAlign: 'left'
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ 
-                width: 12, height: 12, borderRadius: '50%', 
-                background: school.primary_color || 'var(--school-color, #BA0C2F)' 
-              }} />
-              <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
-                {school.name}
+      {/* Search Input */}
+      <div style={{ position: 'relative', marginBottom: 24 }}>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={e => handleInputChange(e.target.value)}
+          onFocus={() => setIsOpen(true)}
+          placeholder="e.g. Kennedy High School, Bellaire High School..."
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            border: `2px solid ${selectedSchool ? C.teal : C.border}`,
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 500,
+            color: C.text,
+            background: C.inner,
+            outline: 'none',
+            transition: 'border-color 0.15s'
+          }}
+        />
+        
+        {/* Search Icon */}
+        <div style={{
+          position: 'absolute',
+          right: 16,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          color: C.muted,
+          fontSize: 16
+        }}>
+          🔍
+        </div>
+        
+        {/* Dropdown Results */}
+        {isOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: C.card,
+            border: `1px solid ${C.border}`,
+            borderRadius: 12,
+            marginTop: 8,
+            maxHeight: 300,
+            overflowY: 'auto',
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }}>
+            {filteredSchools.length > 0 ? (
+              filteredSchools.map(school => (
+                <button
+                  key={school.id}
+                  onClick={() => handleSchoolSelect(school)}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    border: 'none',
+                    background: 'transparent',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                    transition: 'background-color 0.15s',
+                    borderBottom: `1px solid ${C.border}`
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.backgroundColor = C.inner}
+                  onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <div style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: '50%',
+                    background: school.primary_color || 'var(--school-color, #BA0C2F)',
+                    flexShrink: 0
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: 14,
+                      fontWeight: 700,
+                      color: C.text,
+                      marginBottom: 2
+                    }}>
+                      {school.name}
+                    </div>
+                    <div style={{
+                      fontSize: 11,
+                      color: C.muted
+                    }}>
+                      {school.address}
+                    </div>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div style={{
+                padding: '20px',
+                textAlign: 'center',
+                color: C.muted,
+                fontSize: 13
+              }}>
+                No schools found matching "{searchQuery}"
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      
+      {/* Selected School Display */}
+      {selectedSchool && (
+        <div style={{
+          background: `${C.teal}18`,
+          border: `1px solid ${C.teal}40`,
+          borderRadius: 12,
+          padding: '16px',
+          marginBottom: 24
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{
+              width: 16,
+              height: 16,
+              borderRadius: '50%',
+              background: selectedSchool.primary_color
+            }} />
+            <div style={{ flex: 1 }}>
+              <div style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: C.text,
+                marginBottom: 4
+              }}>
+                {selectedSchool.name}
+              </div>
+              <div style={{
+                fontSize: 11,
+                color: C.muted
+              }}>
+                {selectedSchool.grade_levels?.slice(0, 3).join(', ')}{selectedSchool.grade_levels?.length > 3 ? '...' : ''}
               </div>
             </div>
-            <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>
-              {school.grade_levels?.slice(0, 3).join(', ')}{school.grade_levels?.length > 3 ? '...' : ''}
+            <div style={{
+              fontSize: 12,
+              color: C.teal,
+              fontWeight: 700
+            }}>
+              ✓ Selected
             </div>
-            <div style={{ fontSize: 10, color: C.muted }}>
-              {school.subjects?.slice(0, 2).join(', ')}{school.subjects?.length > 2 ? '...' : ''}
-            </div>
-          </button>
-        ))}
-      </div>
+          </div>
+        </div>
+      )}
       
       <button onClick={onNext} disabled={!selectedSchool}
         style={{ 
