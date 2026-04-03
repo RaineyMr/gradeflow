@@ -184,23 +184,15 @@ function useCreateForm(onLogin) {
   }
 }
 
-// ─── Create Account Panel (shared between mobile + desktop) ──────────────────
-function CreateAccountPanel({ onBack, onLogin, compact = false }) {
+// ─── Create Account Panel ────────────────────────────────────────────────────────
+function CreateAccountPanel({ onBack, onLogin, compact }) {
   const form = useCreateForm(onLogin)
-  const t    = useT()
-  const {
-    step, setStep,
-    selectedRole, setSelectedRole,
-    firstName, setFirstName,
-    lastName, setLastName,
-    email,     setEmail,
-    password,  setPassword,
-    confirmPw, setConfirmPw,
-    schoolCode, setSchoolCode,
+  const { 
+    selectedRole, setSelectedRole, firstName, setFirstName, lastName, setLastName,
+    email, setEmail, password, setPassword, schoolCode, setSchoolCode,
     showPassword, setShowPassword,
-    showConfirmPw, setShowConfirmPw,
     error, loading,
-    handleRoleNext, handleSubmit,
+    handleSubmit,
     lang,
   } = form
 
@@ -233,148 +225,104 @@ function CreateAccountPanel({ onBack, onLogin, compact = false }) {
         </div>
       </div>
 
-      {/* Step 1 — Choose role */}
-      {step === 1 && (
-        <>
-          <p style={{ color: BRAND.muted, fontSize: 13, marginBottom: 16, marginTop: 0 }}>
+      {/* Create Account Form */}
+      <form onSubmit={handleSubmit}>
+
+        {/* Role Selection */}
+        <div style={{ marginBottom: 24 }}>
+          <label style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: BRAND.muted, marginBottom: 8 }}>
             {lang === 'es' ? '¿Cuál es tu rol en la escuela?' : "What's your role at school?"}
-          </p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 18 }}>
+          </label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
             {ROLES.filter(r => REGISTERABLE_ROLES.includes(r.id)).map(r => (
-              <button key={r.id} onClick={() => setSelectedRole(r.id)}
+              <button key={r.id} type="button" onClick={() => setSelectedRole(r.id)}
                 style={{
-                  padding: '14px 8px', borderRadius: 14,
+                  padding: '12px 8px', borderRadius: 12,
                   border: `1.5px solid ${selectedRole === r.id ? BRAND.primary : BRAND.border}`,
                   background: selectedRole === r.id ? 'rgba(249,115,22,0.12)' : BRAND.inner,
                   color: selectedRole === r.id ? BRAND.primary : BRAND.muted,
-                  cursor: 'pointer', fontSize: 12, fontWeight: 700,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  cursor: 'pointer', fontSize: 11, fontWeight: 700,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                   transition: 'all 0.15s',
                 }}>
-                <span style={{ fontSize: 26 }}>{r.icon}</span>
-                {t(r.labelKey)}
+                <span style={{ fontSize: 20 }}>{r.icon}</span>
+                {useT()(r.labelKey)}
               </button>
             ))}
           </div>
+        </div>
 
-          {/* Admin/support note */}
-          <div style={{ background: 'rgba(37,99,235,0.08)', border: `1px solid rgba(37,99,235,0.2)`, borderRadius: 10, padding: '10px 12px', marginBottom: 18 }}>
-            <span style={{ fontSize: 11, color: '#60a5fa' }}>
-              {lang === 'es'
-                ? '¿Eres administrador o personal de apoyo? Tu cuenta es creada por tu distrito. Contacta a tu administrador.'
-                : 'Admin or support staff? Your account is created by your district. Contact your administrator.'}
-            </span>
+        {/* Admin/support note */}
+        <div style={{ background: 'rgba(37,99,235,0.08)', border: `1px solid rgba(37,99,235,0.2)`, borderRadius: 10, padding: '8px 10px', marginBottom: 20 }}>
+          <span style={{ fontSize: 10, color: '#60a5fa' }}>
+            {lang === 'es'
+              ? '¿Eres administrador o personal de apoyo? Tu cuenta es creada por tu distrito. Contacta a tu administrador.'
+              : 'Admin or support staff? Your account is created by your district. Contact your administrator.'}
+          </span>
+        </div>
+
+        {/* Name row */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+          <div>
+            <label style={lbl}>{lang === 'es' ? 'Nombre' : 'First Name'}</label>
+            <input style={inp} placeholder={lang === 'es' ? 'Juan' : 'Jane'} value={firstName} onChange={e => setFirstName(e.target.value)} />
           </div>
+          <div>
+            <label style={lbl}>{lang === 'es' ? 'Apellido' : 'Last Name'}</label>
+            <input style={inp} placeholder={lang === 'es' ? 'García' : 'Smith'} value={lastName} onChange={e => setLastName(e.target.value)} />
+          </div>
+        </div>
 
-          <button onClick={handleRoleNext}
-            style={{ width: '100%', background: BRAND.gradient, color: '#fff', border: 'none', borderRadius: 999, padding: compact ? 13 : 15, fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>
-            {lang === 'es' ? 'Continuar →' : 'Continue →'}
+        <label style={lbl}>{useT()('email')}</label>
+        <input type="email" style={inp} placeholder={useT()('enter_email')} value={email} onChange={e => setEmail(e.target.value)} />
+
+        <div style={{ position: 'relative' }}>
+          <label style={lbl}>{lang === 'es' ? 'Contraseña' : 'Password'}</label>
+          <input 
+            type={showPassword ? 'text' : 'password'} 
+            style={inp} 
+            placeholder={lang === 'es' ? 'Mínimo 6 caracteres' : 'Min. 6 characters'} 
+            value={password} 
+            onChange={e => setPassword(e.target.value)} 
+          />
+          <button 
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            style={{
+              position: 'absolute',
+              right: 12,
+              top: 32,
+              background: 'none',
+              border: 'none',
+              color: BRAND.muted,
+              cursor: 'pointer',
+              fontSize: 12
+            }}
+          >
+            {showPassword ? '👁️' : '👁️‍🗨️'}
           </button>
-        </>
-      )}
+        </div>
 
-      {/* Step 2 — Details */}
-      {step === 2 && (
-        <form onSubmit={handleSubmit}>
+        <label style={lbl}>{lang === 'es' ? 'Código de escuela' : 'School Code'}</label>
+        <input style={{ ...inp, textTransform: 'uppercase', letterSpacing: '0.1em' }}
+          placeholder={lang === 'es' ? 'Ej: RIVERVIEW-2024' : 'e.g. RIVERVIEW-2024'}
+          value={schoolCode} onChange={e => setSchoolCode(e.target.value)} />
+        <div style={{ fontSize: 11, color: BRAND.muted, marginTop: -8, marginBottom: 14 }}>
+          {lang === 'es' ? 'Opcional. Usa el código de tu escuela para obtener acceso rápido.' : 'Optional. Use your school code for quick access.'}
+        </div>
 
-          {/* Role pill */}
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(249,115,22,0.12)', border: `1px solid rgba(249,115,22,0.3)`, borderRadius: 999, padding: '4px 12px', marginBottom: 16 }}>
-            <span style={{ fontSize: 14 }}>{ROLES.find(r => r.id === selectedRole)?.icon}</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: BRAND.primary }}>{t(ROLES.find(r => r.id === selectedRole)?.labelKey)}</span>
-            <button type="button" onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: BRAND.muted, cursor: 'pointer', fontSize: 11, padding: 0 }}>✎</button>
-          </div>
+        {error && <div style={{ background: '#1c1012', border: '1px solid rgba(240,74,74,0.3)', borderRadius: 10, padding: '8px 10px', color: '#f04a4a', fontSize: 12, marginBottom: 14 }}>{error}</div>}
 
-          {/* Name row */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 0 }}>
-            <div>
-              <label style={lbl}>{lang === 'es' ? 'Nombre' : 'First Name'}</label>
-              <input style={inp} placeholder={lang === 'es' ? 'Juan' : 'Jane'} value={firstName} onChange={e => setFirstName(e.target.value)} />
-            </div>
-            <div>
-              <label style={lbl}>{lang === 'es' ? 'Apellido' : 'Last Name'}</label>
-              <input style={inp} placeholder={lang === 'es' ? 'García' : 'Smith'} value={lastName} onChange={e => setLastName(e.target.value)} />
-            </div>
-          </div>
-
-          <label style={lbl}>{t('email')}</label>
-          <input type="email" style={inp} placeholder={t('enter_email')} value={email} onChange={e => setEmail(e.target.value)} />
-
-          <div style={{ position: 'relative' }}>
-            <label style={lbl}>{lang === 'es' ? 'Contraseña' : 'Password'}</label>
-            <input 
-              type={showPassword ? 'text' : 'password'} 
-              style={inp} 
-              placeholder={lang === 'es' ? 'Mínimo 6 caracteres' : 'Min. 6 characters'} 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-            />
-            <button 
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              style={{
-                position: 'absolute',
-                right: 12,
-                top: 32,
-                background: 'none',
-                border: 'none',
-                color: BRAND.muted,
-                cursor: 'pointer',
-                fontSize: 12
-              }}
-            >
-              {showPassword ? '👁️' : '👁️‍🗨️'}
-            </button>
-          </div>
-
-          <div style={{ position: 'relative' }}>
-            <label style={lbl}>{lang === 'es' ? 'Confirmar contraseña' : 'Confirm Password'}</label>
-            <input 
-              type={showConfirmPw ? 'text' : 'password'} 
-              style={inp} 
-              placeholder={lang === 'es' ? 'Repite tu contraseña' : 'Repeat password'} 
-              value={confirmPw} 
-              onChange={e => setConfirmPw(e.target.value)} 
-            />
-            <button 
-              type="button"
-              onClick={() => setShowConfirmPw(!showConfirmPw)}
-              style={{
-                position: 'absolute',
-                right: 12,
-                top: 32,
-                background: 'none',
-                border: 'none',
-                color: BRAND.muted,
-                cursor: 'pointer',
-                fontSize: 12
-              }}
-            >
-              {showConfirmPw ? '👁️' : '👁️‍🗨️'}
-            </button>
-          </div>
-
-          <label style={lbl}>{lang === 'es' ? 'Código de escuela' : 'School Code'}</label>
-          <input style={{ ...inp, textTransform: 'uppercase', letterSpacing: '0.1em' }}
-            placeholder={lang === 'es' ? 'Ej: RIVERVIEW-2024' : 'e.g. RIVERVIEW-2024'}
-            value={schoolCode} onChange={e => setSchoolCode(e.target.value)} />
-          <div style={{ fontSize: 11, color: BRAND.muted, marginTop: -8, marginBottom: 14 }}>
-            {lang === 'es' ? 'Tu escuela te da este código.' : 'Your school provides this code.'}
-          </div>
-
-          {error && (
-            <div style={{ background: '#1c1012', border: '1px solid rgba(240,74,74,0.3)', borderRadius: 10, padding: '10px 12px', color: '#f04a4a', fontSize: 12, marginBottom: 14 }}>
-              {error}
-            </div>
-          )}
-
-          <button type="submit" disabled={loading}
-            style={{ width: '100%', background: BRAND.gradient, color: '#fff', border: 'none', borderRadius: 999, padding: compact ? 13 : 15, fontSize: 15, fontWeight: 800, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-            {loading
-              ? (lang === 'es' ? 'Creando cuenta…' : 'Creating account…')
-              : (lang === 'es' ? 'Crear cuenta →' : 'Create Account →')}
-          </button>
-        </form>
-      )}
+        <button type="submit" disabled={loading || !selectedRole || !firstName || !lastName || !email || !password}
+          style={{ 
+            width: '100%', background: BRAND.gradient, color: '#fff', border: 'none', 
+            borderRadius: 999, padding: compact ? 13 : 15, fontSize: 15, fontWeight: 800, 
+            cursor: (loading || !selectedRole || !firstName || !lastName || !email || !password) ? 'not-allowed' : 'pointer', 
+            opacity: (loading || !selectedRole || !firstName || !lastName || !email || !password) ? 0.7 : 1 
+          }}>
+          {loading ? (lang === 'es' ? 'Creando cuenta...' : 'Creating account...') : (lang === 'es' ? 'Crear cuenta' : 'Create Account')}
+        </button>
+      </form>
     </div>
   )
 }
