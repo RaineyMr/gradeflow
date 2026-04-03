@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
+import { useNavigate } from 'react-router-dom'
 
 const C = {
   bg: '#060810', card: '#161923', inner: '#1e2231', text: '#eef0f8',
@@ -309,8 +310,9 @@ function StepDone({ onFinish }) {
 // ─── Main export ───────────────────────────────────────────────────────────────
 // Rendered after school registration and before first dashboard view.
 // Pass onComplete() to navigate to dashboard when done.
-export default function CurriculumOnboarding({ onComplete }) {
+export default function CurriculumOnboarding() {
   const { completeOnboarding, lang, setLang } = useStore()
+  const navigate = useNavigate()
   const [step,     setStep]     = useState(0)  // 0=subjects, 1=curriculum, 2=gradebook, 3=done
   const [subjects, setSubjects] = useState([])
   const t = useT()
@@ -321,7 +323,7 @@ export default function CurriculumOnboarding({ onComplete }) {
 
   function finish() {
     completeOnboarding()
-    onComplete?.()
+    navigate('/teacher')
   }
 
   return (
