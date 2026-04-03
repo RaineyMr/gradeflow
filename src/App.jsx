@@ -86,10 +86,33 @@ function TeacherHome()  {
   }
   
   console.log('Rendering dashboard')
+  console.log('Teacher account info:', {
+    email: currentUser?.email,
+    id: currentUser?.id,
+    isRealAccount: currentUser?.id?.startsWith('new-'),
+    isDemoAccount: currentUser?.email?.includes('@demo') || 
+                   currentUser?.id?.startsWith('demo-') ||
+                   currentUser?.email?.includes('@kippneworleans.org') ||
+                   currentUser?.email?.includes('@houstonisd.org') ||
+                   currentUser?.email?.includes('@bellaire.org') ||
+                   currentUser?.email?.includes('@lamarhs.org')
+  })
   
   // Use working dashboard for real users, demo dashboard for demo accounts
-  const isDemoAccount = currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')
-  const DashboardComponent = isDemoAccount ? Dashboard : WorkingDashboard
+  // Demo accounts: predefined demo emails OR demo- prefix IDs
+  // Real accounts: newly created accounts with timestamp IDs
+  const isDemoAccount = currentUser?.email?.includes('@demo') || 
+                        currentUser?.id?.startsWith('demo-') ||
+                        // Known demo account domains
+                        currentUser?.email?.includes('@kippneworleans.org') ||
+                        currentUser?.email?.includes('@houstonisd.org') ||
+                        currentUser?.email?.includes('@bellaire.org') ||
+                        currentUser?.email?.includes('@lamarhs.org')
+  // Real accounts have timestamp-based IDs from registration
+  const isRealAccount = currentUser?.id?.startsWith('new-')
+  const DashboardComponent = isRealAccount ? WorkingDashboard : Dashboard
+  
+  console.log('Dashboard component selected:', isRealAccount ? 'WorkingDashboard' : 'Dashboard')
   
   return <DashboardComponent currentUser={currentUser} /> 
 }
