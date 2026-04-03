@@ -120,7 +120,7 @@ export default function TeacherOnboarding() {
       return
     }
     
-    // Update user with school info and clear onboarding flags
+    // Update user with school info but keep onboarding flags
     setCurrentUser(currentUser => ({
       ...currentUser,
       school_id: selectedSchool.id,
@@ -132,8 +132,9 @@ export default function TeacherOnboarding() {
         secondary: selectedSchool.secondary_color,
         accent: selectedSchool.accent_color,
       },
-      needsOnboarding: false,
-      isNewAccount: false,
+      // Keep onboarding flags until curriculum onboarding is complete
+      needsOnboarding: true,
+      isNewAccount: true,
     }))
     
     // Navigate to curriculum onboarding
@@ -151,7 +152,7 @@ export default function TeacherOnboarding() {
       }
     })
     
-    onComplete()
+    setError('')
   }
   
   if (!schools.length) {
