@@ -482,7 +482,10 @@ export const useStore = create((set, get) => ({
     school: 'KIPP New Orleans',
     schoolColor: '#BA0C2F',
     avatar: '👩‍🏫',
+    gradeLevel: '10th Grade',
+    subjects: ['Math', 'Science'],
   },
+  teacherProfile: null, // Will be set during onboarding
 
   // ── Data (fallback until Supabase loads) ────────────────────────────────────
   classes:     DEMO_CLASSES,

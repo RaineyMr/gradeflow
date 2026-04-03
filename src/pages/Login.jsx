@@ -167,6 +167,7 @@ function useCreateForm(onLogin) {
         },
         lang,
         isNewAccount: true,
+        needsOnboarding: selectedRole === 'teacher', // Teachers need profile setup
       })
     }, 700)
   }

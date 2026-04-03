@@ -12,26 +12,28 @@ import SupportStaffLayoutWrapper from '@components/layout/SupportStaffLayoutWrap
 import ProtectedRoute from './router/ProtectedRoute'
 
 // ── Pages ─────────────────────────────────────────────────────────────────────
-import Login           from '@pages/Login'
-import Dashboard       from '@pages/Dashboard'
+import Login from '@pages/Login'
+import TeacherOnboarding from '@pages/TeacherOnboarding'
+import WorkingDashboard from '@pages/Dashboard_Working'
+import AdminDashboard from '@pages/AdminDashboard'
+import Dashboard from '@pages/Dashboard'
+import Gradebook from '@pages/Gradebook'
+import LessonPlan from '@pages/LessonPlan'
+import ParentDashboard from '@pages/ParentDashboard'
+import ParentMessages from '@pages/ParentMessages'
+import Reports from '@pages/Reports'
 import StudentDashboard from '@pages/StudentDashboard'
-import ParentDashboard  from '@pages/ParentDashboard'
-import AdminDashboard   from '@pages/AdminDashboard'
-import Gradebook       from '@pages/Gradebook'
-import LessonPlan      from '@pages/LessonPlan'
-import Reports         from '@pages/Reports'
-import TestingSuite    from '@pages/TestingSuite'
-import ClassFeed       from '@pages/ClassFeed'
-import ParentMessages  from '@pages/ParentMessages'
-import Camera          from '@pages/Camera'
-import Integrations    from '@pages/Integrations'
-import Tutorials       from '@pages/Tutorials'
-import Widgets         from '@pages/Widgets'
-import ProfileSettings from '@components/ProfileSettings'
-import SupportStaffDashboard from '@pages/SupportStaffDashboard'
-import SupportStaffGroupScreen from '@pages/SupportStaffGroupScreen'
 import StudentProfile from '@pages/StudentProfile'
 import StudentTrends from '@pages/StudentTrends'
+import SupportStaffDashboard from '@pages/SupportStaffDashboard'
+import TestingSuite from '@pages/TestingSuite'
+import Widgets from '@pages/Widgets'
+import ClassFeed from '@pages/ClassFeed'
+import Integrations from '@pages/Integrations'
+import Camera          from '@pages/Camera'
+import Tutorials       from '@pages/Tutorials'
+import ProfileSettings from '@components/ProfileSettings'
+import SupportStaffGroupScreen from '@pages/SupportStaffGroupScreen'
 import SupportStaffMessaging from '@components/support/SupportStaffMessaging'
 import SupportStaffStudentProfile from '@components/support/SupportStaffStudentProfile'
 import SupportStaffHomeFeed from '@components/support/SupportStaffHomeFeed'
@@ -65,7 +67,25 @@ function Page({ Component, backTo, extraProps = {} }) {
  * Tiny wrappers that pull currentUser from the store and pass it
  * to role dashboards that still expect it as a prop.
  */
-function TeacherHome()  { return <Dashboard /> }
+function TeacherHome()  { 
+  const currentUser = useStore(s => s.currentUser)
+  
+  // Check if new teacher needs onboarding
+  if (currentUser?.needsOnboarding && currentUser?.isNewAccount) {
+    return <TeacherOnboarding onComplete={() => {
+      // Clear onboarding flag and proceed to dashboard
+      useStore.setState(s => ({
+        currentUser: { ...s.currentUser, needsOnboarding: false, isNewAccount: false }
+      }))
+    }} />
+  }
+  
+  // Use working dashboard for real users, demo dashboard for demo accounts
+  const isDemoAccount = currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')
+  const DashboardComponent = isDemoAccount ? Dashboard : WorkingDashboard
+  
+  return <DashboardComponent currentUser={currentUser} /> 
+}
 function StudentHome()  { const u = useStore(s => s.currentUser); return <StudentDashboard currentUser={u} /> }
 function ParentHome()   { const u = useStore(s => s.currentUser); return <ParentDashboard  currentUser={u} /> }
 function AdminHome()    { const u = useStore(s => s.currentUser); return <AdminDashboard   currentUser={u} /> }
