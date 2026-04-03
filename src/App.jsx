@@ -72,12 +72,9 @@ function TeacherHome()  {
   
   // Check if new teacher needs onboarding
   if (currentUser?.needsOnboarding && currentUser?.isNewAccount) {
-    return <TeacherOnboarding onComplete={() => {
-      // Clear onboarding flag and proceed to dashboard
-      useStore.setState(s => ({
-        currentUser: { ...s.currentUser, needsOnboarding: false, isNewAccount: false }
-      }))
-    }} />
+    // Redirect to onboarding route instead of rendering inline
+    window.location.hash = '#/teacher/onboarding'
+    return null
   }
   
   // Use working dashboard for real users, demo dashboard for demo accounts
@@ -266,6 +263,23 @@ export default function App() {
            redirects to the user's own dashboard if the role doesn't match.
       ──────────────────────────────────────────────────────────────── */}
       <Route element={<ProtectedRoute />}>
+        
+        {/* ── Onboarding Routes (outside AppShell) ───────────────────── */}
+        <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+          <Route path="/teacher/onboarding" element={<TeacherOnboarding onComplete={() => {
+            // Clear onboarding flag and proceed to dashboard
+            useStore.setState(s => ({
+              currentUser: { ...s.currentUser, needsOnboarding: false, isNewAccount: false }
+            }))
+            window.location.hash = '#/teacher'
+          }} />} />
+          <Route path="/teacher/curriculum-onboarding" element={<CurriculumOnboarding onComplete={() => {
+            useStore.getState().completeOnboarding()
+            window.location.hash = '#/teacher'
+          }} />} />
+        </Route>
+
+        {/* ── Main App Routes (with AppShell) ─────────────────────────── */}
         <Route element={<AppShell />}>
 
           {/* Shared across all roles */}
