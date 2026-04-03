@@ -95,28 +95,6 @@ function useLoginForm(onLogin, onDemoLogin) {
     if (account) { window.scrollTo(0, 0); onDemoLogin?.({ ...account, lang }) }
   }
 
-  return { selectedRole, setSelectedRole, email, setEmail, password, setPassword, error, loading, handleSubmit, handleDemoClick, lang, toggleLang }
-}
-
-// ─── Shared create-account form state ────────────────────────────────────────
-function useCreateForm(onLogin) {
-  const [step,         setStep]         = useState(1)   // 1 = role, 2 = details
-  const [selectedRole, setSelectedRole] = useState('teacher')
-  const [firstName,    setFirstName]    = useState('')
-  const [lastName,     setLastName]     = useState('')
-  const [email,        setEmail]        = useState('')
-  const [password,     setPassword]     = useState('')
-  const [confirmPw,    setConfirmPw]    = useState('')
-  const [schoolCode,   setSchoolCode]   = useState('')
-  const [error,        setError]        = useState('')
-  const [loading,      setLoading]      = useState(false)
-  const { lang, schools } = useStore()
-
-  function handleRoleNext() {
-    setError('')
-    setStep(2)
-  }
-
   function validate() {
     if (!firstName.trim() || !lastName.trim()) return lang === 'es' ? 'Ingresa tu nombre completo.' : 'Please enter your full name.'
     if (!email.trim() || !email.includes('@'))  return lang === 'es' ? 'Ingresa un correo válido.' : 'Please enter a valid email.'
@@ -178,12 +156,12 @@ function useCreateForm(onLogin) {
     password,  setPassword,
     confirmPw, setConfirmPw,
     schoolCode, setSchoolCode,
+    showPassword, setShowPassword,
+    showConfirmPw, setShowConfirmPw,
     error, loading,
     handleRoleNext, handleSubmit,
     lang,
   }
-}
-
 // ─── Create Account Panel (shared between mobile + desktop) ──────────────────
 function CreateAccountPanel({ onBack, onLogin, compact = false }) {
   const form = useCreateForm(onLogin)
@@ -197,6 +175,8 @@ function CreateAccountPanel({ onBack, onLogin, compact = false }) {
     password,  setPassword,
     confirmPw, setConfirmPw,
     schoolCode, setSchoolCode,
+    showPassword, setShowPassword,
+    showConfirmPw, setShowConfirmPw,
     error, loading,
     handleRoleNext, handleSubmit,
     lang,
@@ -297,11 +277,59 @@ function CreateAccountPanel({ onBack, onLogin, compact = false }) {
           <label style={lbl}>{t('email')}</label>
           <input type="email" style={inp} placeholder={t('enter_email')} value={email} onChange={e => setEmail(e.target.value)} />
 
-          <label style={lbl}>{lang === 'es' ? 'Contraseña' : 'Password'}</label>
-          <input type="password" style={inp} placeholder={lang === 'es' ? 'Mínimo 6 caracteres' : 'Min. 6 characters'} value={password} onChange={e => setPassword(e.target.value)} />
+          <div style={{ position: 'relative' }}>
+            <label style={lbl}>{lang === 'es' ? 'Contraseña' : 'Password'}</label>
+            <input 
+              type={showPassword ? 'text' : 'password'} 
+              style={inp} 
+              placeholder={lang === 'es' ? 'Mínimo 6 caracteres' : 'Min. 6 characters'} 
+              value={password} 
+              onChange={e => setPassword(e.target.value)} 
+            />
+            <button 
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: 'absolute',
+                right: 12,
+                top: 32,
+                background: 'none',
+                border: 'none',
+                color: BRAND.muted,
+                cursor: 'pointer',
+                fontSize: 12
+              }}
+            >
+              {showPassword ? '👁️' : '👁️‍🗨️'}
+            </button>
+          </div>
 
-          <label style={lbl}>{lang === 'es' ? 'Confirmar contraseña' : 'Confirm Password'}</label>
-          <input type="password" style={inp} placeholder={lang === 'es' ? 'Repite tu contraseña' : 'Repeat password'} value={confirmPw} onChange={e => setConfirmPw(e.target.value)} />
+          <div style={{ position: 'relative' }}>
+            <label style={lbl}>{lang === 'es' ? 'Confirmar contraseña' : 'Confirm Password'}</label>
+            <input 
+              type={showConfirmPw ? 'text' : 'password'} 
+              style={inp} 
+              placeholder={lang === 'es' ? 'Repite tu contraseña' : 'Repeat password'} 
+              value={confirmPw} 
+              onChange={e => setConfirmPw(e.target.value)} 
+            />
+            <button 
+              type="button"
+              onClick={() => setShowConfirmPw(!showConfirmPw)}
+              style={{
+                position: 'absolute',
+                right: 12,
+                top: 32,
+                background: 'none',
+                border: 'none',
+                color: BRAND.muted,
+                cursor: 'pointer',
+                fontSize: 12
+              }}
+            >
+              {showConfirmPw ? '👁️' : '👁️‍🗨️'}
+            </button>
+          </div>
 
           <label style={lbl}>{lang === 'es' ? 'Código de escuela' : 'School Code'}</label>
           <input style={{ ...inp, textTransform: 'uppercase', letterSpacing: '0.1em' }}
