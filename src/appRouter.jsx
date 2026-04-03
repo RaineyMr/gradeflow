@@ -9,6 +9,7 @@ import Reports from './pages/Reports'
 import ParentMessages from './pages/ParentMessages'
 import Camera from './pages/Camera'
 import ClassFeed from './pages/ClassFeed'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 export default function AppRouter() {
   const { activeScreen, teacher, setScreen, notifications, setActiveClass, setActiveStudent } = useStore()

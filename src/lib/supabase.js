@@ -17,7 +17,21 @@ if (isDemoMode) {
     from() {
       return {
         select() {
-          return Promise.resolve({ data: [], error: null });
+          return {
+            eq() {
+              return this;
+            },
+            order() {
+              return this;
+            },
+            single() {
+              return Promise.resolve({ data: null, error: null });
+            },
+            then(resolve) {
+              // Handle the full chain like .from('schools').select('*')
+              return Promise.resolve({ data: [], error: null }).then(resolve);
+            }
+          };
         },
         insert() {
           return Promise.resolve({ data: null, error: null });

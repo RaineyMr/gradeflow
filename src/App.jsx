@@ -47,6 +47,7 @@ import SupportCollaborationFeed from '@pages/SupportCollaborationFeed'
 import SupportReports from '@pages/SupportReports'
 import CaseConference from '@pages/CaseConference'
 import Crawler from '@pages/Crawler'
+import AppRouter from './appRouter'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
