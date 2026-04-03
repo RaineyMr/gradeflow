@@ -89,8 +89,9 @@ const DEMO_REMINDERS = [
   { id: 4, text: 'Submit attendance',       due: 'Fri',      done: true,  priority: 'low'    },
 ]
 
-// Demo schools data for registration validation
+// Demo schools data for registration validation - using actual schools from SQL seed
 const DEMO_SCHOOLS = [
+  // KIPP Louisiana Schools
   {
     id: 'JFK-HIGH',
     district_id: 'kipp-la',
@@ -112,6 +113,322 @@ const DEMO_SCHOOLS = [
     ]
   },
   {
+    id: 'leadership-academy',
+    district_id: 'kipp-la',
+    name: 'Leadership Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://kippneworleans.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'central-city-academy',
+    district_id: 'kipp-la',
+    name: 'Central City Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://kippneworleans.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'frederick-douglass-hs',
+    district_id: 'kipp-la',
+    name: 'Frederick A. Douglass High School',
+    address: 'New Orleans, LA',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://kippneworleans.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  // YES Prep New Orleans Schools
+  {
+    id: 'yes-east-end',
+    district_id: 'yes-prep-nola',
+    name: 'YES Prep East End',
+    address: 'New Orleans, LA',
+    primary_color: '#E31937',
+    secondary_color: '#1F4788',
+    accent_color: '#FFD700',
+    logo_url: 'https://www.yesprep.org/',
+    type: 'middle_school',
+    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
+    subjects: ['Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'yes-brays-oaks',
+    district_id: 'yes-prep-nola',
+    name: 'YES Prep Brays Oaks',
+    address: 'New Orleans, LA',
+    primary_color: '#E31937',
+    secondary_color: '#1F4788',
+    accent_color: '#FFD700',
+    logo_url: 'https://www.yesprep.org/',
+    type: 'middle_school',
+    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
+    subjects: ['Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'yes-northside',
+    district_id: 'yes-prep-nola',
+    name: 'YES Prep Northside',
+    address: 'New Orleans, LA',
+    primary_color: '#E31937',
+    secondary_color: '#1F4788',
+    accent_color: '#FFD700',
+    logo_url: 'https://www.yesprep.org/',
+    type: 'middle_school',
+    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
+    subjects: ['Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  // ReNEW Schools
+  {
+    id: 'renew-moton',
+    district_id: 'renew-nola',
+    name: 'ReNEW Moton Lakefront',
+    address: 'New Orleans, LA',
+    primary_color: '#00A651',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FF6B35',
+    logo_url: 'https://www.renewschools.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'renew-laurel',
+    district_id: 'renew-nola',
+    name: 'ReNEW Laurel',
+    address: 'New Orleans, LA',
+    primary_color: '#00A651',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FF6B35',
+    logo_url: 'https://www.renewschools.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'renew-batiste',
+    district_id: 'renew-nola',
+    name: 'ReNEW Batiste Cultural Arts Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#00A651',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FF6B35',
+    logo_url: 'https://www.renewschools.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  // Collegiate Academies Schools
+  {
+    id: 'sci-academy',
+    district_id: 'collegiate-nola',
+    name: 'Sci Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#003366',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFB81C',
+    logo_url: 'https://www.collegiateacademies.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'gw-carver-collegiate',
+    district_id: 'collegiate-nola',
+    name: 'George Washington Carver Collegiate Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#003366',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFB81C',
+    logo_url: 'https://www.collegiateacademies.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'gw-carver-prep',
+    district_id: 'collegiate-nola',
+    name: 'George Washington Carver Preparatory Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#003366',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFB81C',
+    logo_url: 'https://www.collegiateacademies.org/',
+    type: 'middle_school',
+    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
+    subjects: ['Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'rosenwald-collegiate',
+    district_id: 'collegiate-nola',
+    name: 'Rosenwald Collegiate Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#003366',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFB81C',
+    logo_url: 'https://www.collegiateacademies.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'walter-cohen',
+    district_id: 'collegiate-nola',
+    name: 'Walter L. Cohen College Prep',
+    address: 'New Orleans, LA',
+    primary_color: '#003366',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFB81C',
+    logo_url: 'https://www.collegiateacademies.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  // New Orleans College Prep
+  {
+    id: 'hoffman-preschool',
+    district_id: 'nocp-nola',
+    name: 'Hoffman Early Learning Center',
+    address: 'New Orleans, LA',
+    primary_color: '#4A90E2',
+    secondary_color: '#FFFFFF',
+    accent_color: '#F5A623',
+    logo_url: 'https://www.nolacollegeprep.org/',
+    type: 'preschool',
+    grade_levels: ['Pre-K'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  // Archdiocese of New Orleans Schools
+  {
+    id: 'st-augustine-hs',
+    district_id: 'archdiocese-nola',
+    name: 'St. Augustine High School',
+    address: 'New Orleans, LA',
+    primary_color: '#006B3F',
+    secondary_color: '#FFFFFF',
+    accent_color: '#D4AF37',
+    logo_url: 'https://nolacatholic.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'st-marys-academy',
+    district_id: 'archdiocese-nola',
+    name: 'St. Mary\'s Academy',
+    address: 'New Orleans, LA',
+    primary_color: '#003D7A',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFD700',
+    logo_url: 'https://nolacatholic.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'st-marys-dominican',
+    district_id: 'archdiocese-nola',
+    name: 'St. Mary\'s Dominican High School',
+    address: 'New Orleans, LA',
+    primary_color: '#8B4513',
+    secondary_color: '#FFFFFF',
+    accent_color: '#DAA520',
+    logo_url: 'https://nolacatholic.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'st-katharine-drexel',
+    district_id: 'archdiocese-nola',
+    name: 'St. Katharine Drexel Preparatory School',
+    address: 'New Orleans, LA',
+    primary_color: '#800080',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFD700',
+    logo_url: 'https://nolacatholic.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  // Houston ISD Schools
+  {
     id: 'BELLAIRE-HS',
     district_id: 'houston-isd',
     name: 'Bellaire High School',
@@ -132,6 +449,134 @@ const DEMO_SCHOOLS = [
     ]
   },
   {
+    id: 'lincoln-elementary',
+    district_id: 'houston-isd',
+    name: 'Lincoln Elementary School',
+    address: 'Houston, TX',
+    primary_color: '#C1272D',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFD700',
+    logo_url: 'https://www.houstonisd.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'lamar-hs',
+    district_id: 'houston-isd',
+    name: 'Lamar High School',
+    address: 'Houston, TX',
+    primary_color: '#C1272D',
+    secondary_color: '#FFFFFF',
+    accent_color: '#FFD700',
+    logo_url: 'https://www.houstonisd.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  // KIPP Texas Schools
+  {
+    id: 'kipp-fifth-ward',
+    district_id: 'kipp-texas',
+    name: 'KIPP Fifth Ward Elementary',
+    address: 'Houston, TX',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://www.kipp.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'kipp-southside',
+    district_id: 'kipp-texas',
+    name: 'KIPP Southside Secondary',
+    address: 'Houston, TX',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://www.kipp.org/',
+    type: 'middle_school',
+    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
+    subjects: ['Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  {
+    id: 'kipp-houston-ls',
+    district_id: 'kipp-texas',
+    name: 'KIPP Houston Leadership School',
+    address: 'Houston, TX',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://www.kipp.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'kipp-houston-secondary',
+    district_id: 'kipp-texas',
+    name: 'KIPP Houston Secondary',
+    address: 'Houston, TX',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://www.kipp.org/',
+    type: 'high_school',
+    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
+    subjects: [
+      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
+      'English I', 'English II', 'English III', 'English IV',
+      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
+      'World History', 'US History', 'Government', 'Economics',
+      'Spanish I', 'Spanish II', 'French I', 'French II',
+      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
+    ]
+  },
+  {
+    id: 'kipp-northbrook',
+    district_id: 'kipp-texas',
+    name: 'KIPP Northbrook Elementary',
+    address: 'Houston, TX',
+    primary_color: '#1F4788',
+    secondary_color: '#FFFFFF',
+    accent_color: '#E31937',
+    logo_url: 'https://www.kipp.org/',
+    type: 'elementary_school',
+    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
+    subjects: ['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  // YES Prep Texas Schools
+  {
+    id: 'yes-north-forest',
+    district_id: 'yes-prep-tx',
+    name: 'YES Prep North Forest',
+    address: 'Houston, TX',
+    primary_color: '#E31937',
+    secondary_color: '#1F4788',
+    accent_color: '#FFD700',
+    logo_url: 'https://www.yesprep.org/',
+    type: 'middle_school',
+    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
+    subjects: ['Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE']
+  },
+  // Knights Academy (Friends Access)
+  {
     id: '05KNIGHTS',
     district_id: 'knights-district',
     name: 'Knights Academy',
@@ -146,135 +591,6 @@ const DEMO_SCHOOLS = [
       '6th Grade', '7th Grade', '8th Grade', '9th Grade', '10th Grade', '11th Grade', '12th Grade'
     ],
     subjects: [
-      // Elementary
-      'Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE',
-      // Middle School
-      'English Language Arts', 'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History',
-      // High School
-      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
-      'English I', 'English II', 'English III', 'English IV',
-      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
-      'World History', 'US History', 'Government', 'Economics',
-      'Spanish I', 'Spanish II', 'French I', 'French II',
-      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science',
-      'Special Education'
-    ]
-  },
-  {
-    id: 'KENNEDY-HS',
-    district_id: 'houston-isd',
-    name: 'John F. Kennedy High School',
-    address: 'Houston, TX',
-    primary_color: '#0047AB',
-    secondary_color: '#FFFFFF',
-    accent_color: '#FF6B35',
-    logo_url: 'https://www.houstonisd.org/',
-    type: 'high_school',
-    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
-    subjects: [
-      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
-      'English I', 'English II', 'English III', 'English IV',
-      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
-      'World History', 'US History', 'Government', 'Economics',
-      'Spanish I', 'Spanish II', 'French I', 'French II',
-      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
-    ]
-  },
-  {
-    id: 'WESTSIDE-HS',
-    district_id: 'houston-isd',
-    name: 'Westside High School',
-    address: 'Houston, TX',
-    primary_color: '#003057',
-    secondary_color: '#FFFFFF',
-    accent_color: '#B3A369',
-    logo_url: 'https://www.houstonisd.org/',
-    type: 'high_school',
-    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
-    subjects: [
-      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
-      'English I', 'English II', 'English III', 'English IV',
-      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
-      'World History', 'US History', 'Government', 'Economics',
-      'Spanish I', 'Spanish II', 'French I', 'French II',
-      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
-    ]
-  },
-  {
-    id: 'LAMAR-HS',
-    district_id: 'houston-isd',
-    name: 'Lamar High School',
-    address: 'Houston, TX',
-    primary_color: '#461D7C',
-    secondary_color: '#FFFFFF',
-    accent_color: '#FDD023',
-    logo_url: 'https://www.houstonisd.org/',
-    type: 'high_school',
-    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
-    subjects: [
-      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
-      'English I', 'English II', 'English III', 'English IV',
-      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
-      'World History', 'US History', 'Government', 'Economics',
-      'Spanish I', 'Spanish II', 'French I', 'French II',
-      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
-    ]
-  },
-  {
-    id: 'RIVERVIEW-HS',
-    district_id: 'kipp-la',
-    name: 'Riverside High School',
-    address: 'New Orleans, LA',
-    primary_color: '#2E7D32',
-    secondary_color: '#FFFFFF',
-    accent_color: '#FFC107',
-    logo_url: 'https://kippneworleans.org/',
-    type: 'high_school',
-    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
-    subjects: [
-      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
-      'English I', 'English II', 'English III', 'English IV',
-      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
-      'World History', 'US History', 'Government', 'Economics',
-      'Spanish I', 'Spanish II', 'French I', 'French II',
-      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
-    ]
-  },
-  {
-    id: 'EAST-HIGH',
-    district_id: 'kipp-la',
-    name: 'East High School',
-    address: 'New Orleans, LA',
-    primary_color: '#D32F2F',
-    secondary_color: '#FFFFFF',
-    accent_color: '#1976D2',
-    logo_url: 'https://kippneworleans.org/',
-    type: 'high_school',
-    grade_levels: ['9th Grade', '10th Grade', '11th Grade', '12th Grade'],
-    subjects: [
-      'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
-      'English I', 'English II', 'English III', 'English IV',
-      'Biology', 'Chemistry', 'Physics', 'Environmental Science',
-      'World History', 'US History', 'Government', 'Economics',
-      'Spanish I', 'Spanish II', 'French I', 'French II',
-      'Physical Education', 'Health', 'Art', 'Music', 'Computer Science'
-    ]
-  },
-  {
-    id: 'NORTHWOOD-ACADEMY',
-    district_id: 'kipp-la',
-    name: 'Northwood Academy',
-    address: 'New Orleans, LA',
-    primary_color: '#7B1FA2',
-    secondary_color: '#FFFFFF',
-    accent_color: '#FF9800',
-    logo_url: 'https://kippneworleans.org/',
-    type: 'k12',
-    grade_levels: [
-      'Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade',
-      '6th Grade', '7th Grade', '8th Grade', '9th Grade', '10th Grade', '11th Grade', '12th Grade'
-    ],
-    subjects: [
       'Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE',
       'English Language Arts', 'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History',
       'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus',
@@ -284,68 +600,6 @@ const DEMO_SCHOOLS = [
       'Spanish I', 'Spanish II', 'French I', 'French II',
       'Physical Education', 'Health', 'Art', 'Music', 'Computer Science',
       'Special Education'
-    ]
-  },
-  {
-    id: 'SOUTHWOOD-MIDDLE',
-    district_id: 'kipp-la',
-    name: 'Southwood Middle School',
-    address: 'New Orleans, LA',
-    primary_color: '#1976D2',
-    secondary_color: '#FFFFFF',
-    accent_color: '#FFC107',
-    logo_url: 'https://kippneworleans.org/',
-    type: 'middle_school',
-    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
-    subjects: [
-      'Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE',
-      'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History'
-    ]
-  },
-  {
-    id: 'OAKWOOD-ELEMENTARY',
-    district_id: 'kipp-la',
-    name: 'Oakwood Elementary School',
-    address: 'New Orleans, LA',
-    primary_color: '#388E3C',
-    secondary_color: '#FFFFFF',
-    accent_color: '#F57C00',
-    logo_url: 'https://kippneworleans.org/',
-    type: 'elementary_school',
-    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
-    subjects: [
-      'Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE'
-    ]
-  },
-  {
-    id: 'PINECREST-ELEMENTARY',
-    district_id: 'houston-isd',
-    name: 'Pinecrest Elementary School',
-    address: 'Houston, TX',
-    primary_color: '#00695C',
-    secondary_color: '#FFFFFF',
-    accent_color: '#FFD600',
-    logo_url: 'https://www.houstonisd.org/',
-    type: 'elementary_school',
-    grade_levels: ['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'],
-    subjects: [
-      'Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE'
-    ]
-  },
-  {
-    id: 'CEDAR-RIDGE-MIDDLE',
-    district_id: 'houston-isd',
-    name: 'Cedar Ridge Middle School',
-    address: 'Houston, TX',
-    primary_color: '#5D4037',
-    secondary_color: '#FFFFFF',
-    accent_color: '#FFB300',
-    logo_url: 'https://www.houstonisd.org/',
-    type: 'middle_school',
-    grade_levels: ['6th Grade', '7th Grade', '8th Grade'],
-    subjects: [
-      'Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE',
-      'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History'
     ]
   }
 ]
