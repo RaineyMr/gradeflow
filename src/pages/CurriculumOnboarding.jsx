@@ -124,7 +124,7 @@ function StepCurriculum({ subjects, onNext, onSkip }) {
           <div key={subject} style={{ marginBottom: 18 }}>
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 8 }}>{subject}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {options.map(opt => (
+              {options.length > 0 ? options.map(opt => (
                 <button key={opt.id} onClick={() => setConnectedCurriculum(subject, connected === opt.id ? null : opt.id)}
                   style={{ background: connected === opt.id ? `${C.teal}18` : C.inner, border: `1px solid ${connected === opt.id ? C.teal : C.border}`, borderRadius: 12, padding: '10px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left', transition: 'all 0.15s' }}>
                   <span style={{ fontSize: 18 }}>{opt.logo}</span>
@@ -137,7 +137,11 @@ function StepCurriculum({ subjects, onNext, onSkip }) {
                     : <span style={{ fontSize: 18, color: C.muted }}>○</span>
                   }
                 </button>
-              ))}
+              )) : (
+                <div style={{ padding: '10px 14px', color: C.muted, fontSize: 12 }}>
+                  No curriculum options available for {subject}
+                </div>
+              )}
             </div>
           </div>
         )
