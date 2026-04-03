@@ -1,10 +1,54 @@
 import React, { useState } from 'react'
 import { useStore } from '../lib/store'
+import { useT } from '../lib/i18n'
 
 const C = {
   bg: '#060810', card: '#161923', inner: '#1e2231', text: '#eef0f8',
   muted: '#6b7494', border: '#2a2f42', green: '#22c97a', blue: '#3b7ef4',
   red: '#f04a4a', amber: '#f5a623', teal: '#0fb8a0', purple: '#9b6ef5',
+}
+
+const BRAND = {
+  primary:  '#f97316',
+  blue:     '#2563EB',
+  bg:       '#060810',
+  card:     '#0c0e14',
+  inner:    '#1e2231',
+  text:     '#eef0f8',
+  muted:    '#6b7494',
+  border:   '#2a2f42',
+  gradient: 'linear-gradient(135deg, #f97316 0%, #2563EB 100%)',
+}
+
+// Language toggle component
+function LangToggle({ onToggle, style = {} }) {
+  const { lang } = useStore()
+  return (
+    <button
+      onClick={onToggle}
+      style={{
+        background:    'rgba(255,255,255,0.12)',
+        border:        '1.5px solid rgba(255,255,255,0.25)',
+        borderRadius:  999,
+        padding:       '5px 12px',
+        color:         '#fff',
+        fontSize:      12,
+        fontWeight:    800,
+        cursor:        'pointer',
+        display:       'flex',
+        alignItems:    'center',
+        gap:           5,
+        letterSpacing: '0.04em',
+        transition:    'background 0.15s',
+        ...style,
+      }}
+      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.22)'}
+      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.12)'}
+      title={lang === 'en' ? 'Switch to Spanish' : 'Switch to English'}
+    >
+      {lang === 'en' ? '🇲🇽 ES' : '🇺🇸 EN'}
+    </button>
+  )
 }
 
 // Subjects a teacher might pick on signup
@@ -266,9 +310,12 @@ function StepDone({ onFinish }) {
 // Rendered after school registration and before first dashboard view.
 // Pass onComplete() to navigate to dashboard when done.
 export default function CurriculumOnboarding({ onComplete }) {
-  const { completeOnboarding } = useStore()
+  const { completeOnboarding, lang, setLang } = useStore()
   const [step,     setStep]     = useState(0)  // 0=subjects, 1=curriculum, 2=gradebook, 3=done
   const [subjects, setSubjects] = useState([])
+  const t = useT()
+  
+  function toggleLang() { setLang(lang === 'en' ? 'es' : 'en') }
 
   const STEPS = ['Subjects', 'Curriculum', 'Gradebook', 'Done']
 
@@ -278,7 +325,27 @@ export default function CurriculumOnboarding({ onComplete }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: 'Inter, Arial, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, display: 'flex', flexDirection: 'column', fontFamily: 'Inter, Arial, sans-serif', color: C.text }}>
+      
+      {/* Top bar - same as login page */}
+      <div style={{ background: BRAND.gradient, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 44px', height: 54 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>⚡ GradeFlow</span>
+          <span style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
+          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.88)', fontWeight: 500 }}>{t('tagline')}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <LangToggle onToggle={toggleLang} />
+          {['Features', 'Schools', 'Pricing', 'About'].map(link => (
+            <span key={link} style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+              onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.75)'}>
+              {link}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Progress header */}
       <div style={{ background: 'linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, rgba(0,0,0,0.85) 100%)', padding: '20px 16px 16px' }}>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10, fontWeight: 600 }}>
