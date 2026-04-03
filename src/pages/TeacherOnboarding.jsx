@@ -141,23 +141,15 @@ export default function TeacherOnboarding({ onComplete }) {
       display: 'flex', flexDirection: 'column',
       fontFamily: 'Inter, Arial, sans-serif', color: C.text,
     }}>
-      {/* Top bar */}
-      <div style={{ 
-        background: 'var(--school-color, #BA0C2F)', height: 54, 
-        display: 'flex', alignItems: 'center', padding: '0 32px' 
-      }}>
-        <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>
-          ⚡ GradeFlow
-        </span>
-        <div style={{ flex: 1, textAlign: 'center', color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: 600 }}>
-          Teacher Profile Setup
-        </div>
+      {/* Big GradeFlow icon at top */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px 24px 20px' }}>
+        <span style={{ fontSize: 64, fontWeight: 900 }}>⚡</span>
       </div>
 
       {/* Content */}
       <div style={{ 
         flex: 1, display: 'flex', alignItems: 'flex-start', 
-        justifyContent: 'center', padding: '40px 24px', overflowY: 'auto' 
+        justifyContent: 'center', padding: '0 24px 40px', overflowY: 'auto' 
       }}>
         <div style={{ 
           width: '100%', maxWidth: 600, background: C.card, 
