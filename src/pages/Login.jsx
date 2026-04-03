@@ -608,6 +608,8 @@ export default function Login({ onLogin, onDemoLogin }) {
   const [isDesktop,      setIsDesktop]      = useState(() => window.innerWidth >= 900)
   const [showCreate,     setShowCreate]     = useState(false)
   const form = useLoginForm(onLogin, onDemoLogin)
+  const { lang, toggleLang } = useStore()
+  const t = useT()
 
   useEffect(() => {
     function handleResize() { setIsDesktop(window.innerWidth >= 900) }
@@ -617,9 +619,6 @@ export default function Login({ onLogin, onDemoLogin }) {
 
   // ── Create Account overlay (shared between mobile + desktop) ──────────────
   if (showCreate) {
-    const { lang, toggleLang } = useStore()
-    const t = useT()
-    
     return (
       <div style={{
         minHeight: '100vh', background: BRAND.bg,
