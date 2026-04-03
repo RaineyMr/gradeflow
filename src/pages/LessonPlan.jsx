@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { useStore } from '../lib/store'
 import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
+import StandardsSelector from '../components/StandardsSelector'
 
 const C = {
   bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8',
@@ -288,69 +289,73 @@ function LessonView({ lesson, onBack, onEdit }) {
   )
 }
 
-// ─── AI Generator ─────────────────────────────────────────────────────────────
-function AIGenerator({ onBack }) {
-  const { studentAccommodations, setLessonAdjustments } = useStore()
-  const [form, setForm] = useState({ state:'Texas', subject:'', grade:'', textbook:'', topic:'', standard:'' })
-  const [loading,             setLoading]             = useState(false)
-  const [generatingAdjust,    setGeneratingAdjust]    = useState(false)
-  const [plan,                setPlan]                = useState(null)
-  const [error,               setError]               = useState('')
+// ─── AI Generator ────────────────────────────────────────────────────────────
+function AIPlanGenerator({ onBack }) {
+  const { currentUser, selectedStandards } = useStore()
+  const [form, setForm] = useState({ state:'', subject:'', grade:'', textbook:'', topic:'', standard:'' })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [showStandards, setShowStandards] = useState(false)
+  const [plan, setPlan] = useState(null)
+  const [lessonAdjustments, setLessonAdjustments] = useState(null)
+  const [generatingAdjust, setGeneratingAdjust] = useState(false)
+  const activeClass = useStore(s => s.classes.find(c => c.id === s.activeClassId))
+  const students = useStore(s => s.students)
+  const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
 
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
-
-  const accommodationStudents = Object.values(studentAccommodations)
+  function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
 
   async function handleGenerate() {
-    if (!form.subject || !form.topic) { setError('Subject and topic are required.'); return }
-    setError('')
-    setLoading(true)
+    if (!form.topic.trim()) { setError('Topic is required'); return }
+    setLoading(true); setError(''); setPlan(null); setLessonAdjustments(null)
+
     try {
-      const result = await generateLessonPlan({
-        subject:   `${form.subject}${form.state ? ' (' + form.state + ')' : ''}`,
-        grade:     form.grade || 'Not specified',
-        topic:     form.topic,
-        duration:  50,
-        standards: [form.standard, form.textbook].filter(Boolean).join(', '),
-      })
+      // Build standards context for AI
+      const standardsContext = selectedStandards.length > 0 ? 
+        `\nRelevant Standards:\n${selectedStandards.map(s => `- ${s.code}: ${s.description}`).join('\n')}` : 
+        ''
 
-      const mapped = {
-        title:      result.title || `${form.topic} — ${form.subject}`,
-        objectives: result.objective ? [result.objective] : [],
-        materials:  result.materials || [],
-        steps: [
-          result.warmup?.activity     && `Warm-Up (${result.warmup.duration} min): ${result.warmup.activity}`,
-          ...(result.instruction?.steps || []),
-          result.practice?.activity   && `Practice (${result.practice.duration} min): ${result.practice.activity}`,
-          result.assessment?.method   && `Assessment (${result.assessment.duration} min): ${result.assessment.method}`,
-        ].filter(Boolean),
-        assessment: result.assessment?.method ? [result.assessment.method] : [],
-        homework:   result.homework ? [result.homework] : [],
-        notes:      '',
+      const prompt = `Generate a detailed lesson plan for ${form.grade} ${form.subject} on "${form.topic}".${form.textbook ? ` Textbook: ${form.textbook}.` : ''}${standardsContext}
+
+Return ONLY valid JSON with this structure:
+{
+  "title": "Lesson title",
+  "objectives": ["3-5 specific learning objectives"],
+  "materials": ["List of materials needed"],
+  "steps": ["Step-by-step instructions"],
+  "assessment": ["Assessment methods"],
+  "homework": ["Homework assignments"],
+  "notes": "Additional notes for teacher"
+}`
+
+      const system = 'You are an expert teacher creating detailed, practical lesson plans. Include specific activities, timing suggestions, and assessment strategies. Return ONLY valid JSON, no markdown fences.'
+
+      const responseText = await callAI(prompt, system, 2000)
+      const result = safeParseJSON(responseText)
+
+      if (!result || !result.title || !Array.isArray(result.objectives)) {
+        throw new Error('Invalid response format')
       }
-      setPlan(mapped)
 
-      // After plan is generated, auto-generate lesson adjustments for any students
-      // who have accommodations already loaded in the store
+      setPlan(result)
+
+      // Generate accommodations if needed
       if (accommodationStudents.length > 0) {
         setGeneratingAdjust(true)
         try {
-          const adjResult = await generateLessonAccommodations({
-            topic:    form.topic,
-            subject:  form.subject,
-            grade:    form.grade,
-            students: accommodationStudents.map(s => ({
-              name:              s.name,
-              accommodationType: s.accommodationType,
-              specificNeeds:     s.specificNeeds,
-            })),
-          })
-          if (adjResult?.adjustments?.length > 0) {
+          const accommodations = extractAccommodations(accommodationStudents)
+          const adjPrompt = `Create specific lesson adjustments for this lesson plan: ${JSON.stringify(result)}. 
+Student accommodations: ${JSON.stringify(accommodations)}
+Subject: ${form.subject}, Grade: ${form.grade}, Topic: ${form.topic}
+
+Return JSON: {"adjustments": ["specific adjustments for each accommodation type"]}`
+          
+          const adjResult = safeParseJSON(await callAI(adjPrompt, system, 1500))
+          if (adjResult?.adjustments) {
             setLessonAdjustments(adjResult.adjustments)
           }
         } catch (adjErr) {
           console.error('Adjustment generation failed:', adjErr)
-          // Non-fatal — plan still shows, teacher can generate adjustments manually
         }
         setGeneratingAdjust(false)
       }
@@ -368,6 +373,20 @@ function AIGenerator({ onBack }) {
       <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
       <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{form.subject} · {form.grade} · {form.topic}</p>
+
+      {/* Show selected standards */}
+      {selectedStandards.length > 0 && (
+        <div style={{ background: `${C.teal}12`, border: `1px solid ${C.teal}30`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+            Aligned Standards ({selectedStandards.length})
+          </div>
+          {selectedStandards.map(standard => (
+            <div key={standard.code} style={{ fontSize: 12, color: C.text, marginBottom: 4 }}>
+              <span style={{ fontWeight: 700, color: C.teal }}>{standard.code}:</span> {standard.description}
+            </div>
+          ))}
+        </div>
+      )}
 
       {plan.objectives?.length > 0  && <Section title="Objectives"  items={plan.objectives} />}
       {plan.materials?.length > 0   && <Section title="Materials"   items={plan.materials} />}
@@ -397,36 +416,83 @@ function AIGenerator({ onBack }) {
       <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>✨ AI Lesson Plan Generator</h1>
 
-      {[
-        ['state',    'State / Region',      'Texas'],
-        ['subject',  'Subject *',           'Math, Science, ELA...'],
-        ['grade',    'Grade Level',         '3rd Grade, High School...'],
-        ['textbook', 'Textbook (optional)', 'Publisher or title...'],
-        ['topic',    'Topic *',             'Fractions, Photosynthesis...'],
-        ['standard', 'Standard / TEKS',    'TEKS 4.3A, CCSS.MATH...'],
-      ].map(([key, label, placeholder]) => (
-        <div key={key} style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>{label}</label>
-          <input
-            value={form[key]} onChange={e => set(key, e.target.value)}
-            placeholder={placeholder}
-            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
-          />
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:16 }}>
+        {[
+          ['state',    'State / Region',      'Texas'],
+          ['subject',  'Subject *',           'Math, Science, ELA...'],
+          ['grade',    'Grade Level',         '3rd Grade, High School...'],
+          ['textbook', 'Textbook (optional)', 'Publisher or title...'],
+          ['topic',    'Topic *',             'Fractions, Photosynthesis...'],
+        ].map(([key, label, placeholder]) => (
+          <div key={key} style={{ marginBottom:12 }}>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>{label}</label>
+            <input
+              value={form[key]} 
+              onChange={e => set(key, e.target.value)}
+              placeholder={placeholder}
+              style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
+            />
+          </div>
+        ))}
+
+        {/* Standards Selection */}
+        <div style={{ marginBottom:12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted }}>
+              Standards / TEKS
+            </label>
+            <button
+              onClick={() => setShowStandards(!showStandards)}
+              style={{
+                background: showStandards ? `${C.teal}18` : C.inner,
+                border: `1px solid ${showStandards ? C.teal : C.border}`,
+                borderRadius: 8,
+                padding: '4px 8px',
+                color: showStandards ? C.teal : C.muted,
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              {showStandards ? 'Hide' : 'Select'} Standards
+            </button>
+          </div>
+          
+          {selectedStandards.length > 0 && (
+            <div style={{ 
+              background: `${C.teal}12`, 
+              border: `1px solid ${C.teal}30`, 
+              borderRadius: 8, 
+              padding: '8px 10px', 
+              marginBottom: 8,
+              fontSize: 12
+            }}>
+              {selectedStandards.length} standard{selectedStandards.length !== 1 ? 's' : ''} selected
+            </div>
+          )}
+
+          {showStandards && (
+            <StandardsSelector 
+              topic={form.topic}
+              maxSelections={3}
+              showRecommendations={true}
+            />
+          )}
         </div>
-      ))}
 
-      {accommodationStudents.length > 0 && (
-        <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
-          ✨ {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations — adjustments will be auto-generated after the lesson plan.
-        </div>
-      )}
+        {accommodationStudents.length > 0 && (
+          <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
+            ✨ {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations — adjustments will be auto-generated after the lesson plan.
+          </div>
+        )}
 
-      {error && <p style={{ color:C.red, fontSize:12, marginBottom:12 }}>{error}</p>}
+        {error && <p style={{ color:C.red, fontSize:12, marginBottom:12 }}>{error}</p>}
 
-      <button onClick={handleGenerate}
-        style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
-        ✨ Generate Lesson Plan
-      </button>
+        <button onClick={handleGenerate}
+          style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
+          ✨ Generate Lesson Plan
+        </button>
+      </div>
     </div>
   )
 }
@@ -621,7 +687,7 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   const [mode, setMode] = useState(startMode)
 
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
-  if (mode === 'ai')     return <AIGenerator     onBack={() => setMode('menu')} />
+  if (mode === 'ai')     return <AIPlanGenerator   onBack={() => setMode('menu')} />
   if (mode === 'build')  return <BuildFromScratch onBack={() => setMode('menu')} />
   if (mode === 'upload') return <UploadDoc        onBack={() => setMode('menu')} />
 
