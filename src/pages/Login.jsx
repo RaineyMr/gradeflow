@@ -623,9 +623,23 @@ export default function Login({ onLogin, onDemoLogin }) {
         display: 'flex', flexDirection: 'column',
         fontFamily: 'Inter,Arial,sans-serif', color: BRAND.text,
       }}>
-        {/* Minimal top bar */}
-        <div style={{ background: BRAND.gradient, height: 54, display: 'flex', alignItems: 'center', padding: '0 32px' }}>
-          <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>⚡ GradeFlow</span>
+        {/* Complete banner - same as login page */}
+        <div style={{ background: BRAND.gradient, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 44px', height: 54 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <span style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>⚡ GradeFlow</span>
+            <span style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.35)', flexShrink: 0 }} />
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.88)', fontWeight: 500 }}>{form.t('tagline')}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <LangToggle onToggle={form.toggleLang} />
+            {['Features', 'Schools', 'Pricing', 'About'].map(link => (
+              <span key={link} style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', fontWeight: 600, cursor: 'pointer' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.75)'}>
+                {link}
+              </span>
+            ))}
+          </div>
         </div>
 
         <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 24px', overflowY: 'auto' }}>
