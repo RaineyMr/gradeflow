@@ -75,4 +75,4 @@ INSERT INTO schools (id, district_id, name, address, primary_color, secondary_co
 
 -- SCHOOLS - Knights Academy (Friends Access)
 INSERT INTO schools (id, district_id, name, address, primary_color, secondary_color, accent_color, logo_url) VALUES
-('05Knights', 'knights-district', 'Knights Academy', 'Online', '#6B46C1', '#FFFFFF', '#F59E0B', 'https://gradeflow.app/');
+('05KNIGHTS', 'knights-district', 'Knights Academy', 'Online', '#6B46C1', '#FFFFFF', '#F59E0B', 'https://gradeflow.app/');
