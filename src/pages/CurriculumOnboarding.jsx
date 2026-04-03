@@ -322,6 +322,15 @@ export default function CurriculumOnboarding() {
   const STEPS = ['Subjects', 'Curriculum', 'Gradebook', 'Done']
 
   function finish() {
+    const { completeOnboarding, setCurrentUser } = useStore()
+    
+    // Clear onboarding flags and complete onboarding
+    setCurrentUser(currentUser => ({
+      ...currentUser,
+      needsOnboarding: false,
+      isNewAccount: false,
+    }))
+    
     completeOnboarding()
     navigate('/teacher')
   }
