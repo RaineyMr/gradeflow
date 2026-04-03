@@ -79,7 +79,7 @@ INSERT INTO schools (id, district_id, name, address, primary_color, secondary_co
 
 -- SCHOOLS - Archdiocese of New Orleans (Sample 4)
 INSERT INTO schools (id, district_id, name, address, primary_color, secondary_color, accent_color, logo_url, type, grade_levels, subjects) VALUES
-('st-augustine-hs', 'archdiocese-nola', 'St. Augustine High School', 'New Orleans, LA', '#006B3F', '#FFFFFF', '#D4AF37', 'https://nolacatholic.org/', 'high_school', 
+('st-augustine-hs', 'archdiocese-nola', 'St. Augustine High School', 'New Orleans, LA', '#4B0082', '#FFFFFF', '#D4AF37', 'https://nolacatholic.org/', 'high_school', 
  ARRAY['9th Grade', '10th Grade', '11th Grade', '12th Grade'], 
  ARRAY['Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus', 'English I', 'English II', 'English III', 'English IV', 'Biology', 'Chemistry', 'Physics', 'Environmental Science', 'World History', 'US History', 'Government', 'Economics', 'Spanish I', 'Spanish II', 'French I', 'French II', 'Physical Education', 'Health', 'Art', 'Music', 'Computer Science']),
 ('st-marys-academy', 'archdiocese-nola', 'St. Mary''s Academy', 'New Orleans, LA', '#003D7A', '#FFFFFF', '#FFD700', 'https://nolacatholic.org/', 'high_school', 
@@ -121,18 +121,14 @@ INSERT INTO schools (id, district_id, name, address, primary_color, secondary_co
 ('kipp-northbrook', 'kipp-texas', 'KIPP Northbrook Elementary', 'Houston, TX', '#1F4788', '#FFFFFF', '#E31937', 'https://www.kipp.org/', 'elementary_school', 
  ARRAY['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade'], 
  ARRAY['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE']);
-('kipp-southside', 'kipp-texas', 'KIPP Southside Secondary', 'Houston, TX', '#1F4788', '#FFFFFF', '#E31937', 'https://www.kipp.org/'),
-('kipp-houston-ls', 'kipp-texas', 'KIPP Houston Leadership School', 'Houston, TX', '#1F4788', '#FFFFFF', '#E31937', 'https://www.kipp.org/'),
-('kipp-houston-secondary', 'kipp-texas', 'KIPP Houston Secondary', 'Houston, TX', '#1F4788', '#FFFFFF', '#E31937', 'https://www.kipp.org/'),
-('kipp-northbrook', 'kipp-texas', 'KIPP Northbrook Elementary', 'Houston, TX', '#1F4788', '#FFFFFF', '#E31937', 'https://www.kipp.org/');
 
 -- SCHOOLS - Knights Academy (Friends Access)
 INSERT INTO schools (id, district_id, name, address, primary_color, secondary_color, accent_color, logo_url, type, grade_levels, subjects) VALUES
 ('05KNIGHTS', 'knights-district', 'Knights Academy', 'Online', '#6B46C1', '#FFFFFF', '#F59E0B', 'https://gradeflow.app/', 'k12',
  ARRAY['Kindergarten', '1st Grade', '2nd Grade', '3rd Grade', '4th Grade', '5th Grade', '6th Grade', '7th Grade', '8th Grade', '9th Grade', '10th Grade', '11th Grade', '12th Grade'],
  ARRAY['Reading', 'Writing', 'Math', 'Science', 'Social Studies', 'Art', 'Music', 'PE', 'English Language Arts', 'Pre-Algebra', 'Algebra I', 'Life Science', 'Earth Science', 'World History', 'Algebra I', 'Geometry', 'Algebra II', 'Trigonometry', 'Pre-Calculus', 'Calculus', 'English I', 'English II', 'English III', 'English IV', 'Biology', 'Chemistry', 'Physics', 'Environmental Science', 'World History', 'US History', 'Government', 'Economics', 'Spanish I', 'Spanish II', 'French I', 'French II', 'Physical Education', 'Health', 'Art', 'Music', 'Computer Science', 'Special Education']);
-('yes-north-forest', 'yes-prep-tx', 'YES Prep North Forest', 'Houston, TX', '#E31937', '#1F4788', '#FFD700', 'https://www.yesprep.org/');
 
--- SCHOOLS - Knights Academy (Friends Access)
-INSERT INTO schools (id, district_id, name, address, primary_color, secondary_color, accent_color, logo_url) VALUES
-('05KNIGHTS', 'knights-district', 'Knights Academy', 'Online', '#6B46C1', '#FFFFFF', '#F59E0B', 'https://gradeflow.app/');
+-- SCHOOLS - YES Prep Texas (complete entry)
+('yes-north-forest', 'yes-prep-tx', 'YES Prep North Forest', 'Houston, TX', '#E31937', '#1F4788', '#FFD700', 'https://www.yesprep.org/', 'middle_school', 
+ ARRAY['6th Grade', '7th Grade', '8th Grade'], 
+ ARRAY['Math', 'Science', 'English', 'Social Studies', 'Art', 'Music', 'PE']);

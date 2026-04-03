@@ -352,7 +352,7 @@ const DEMO_SCHOOLS = [
     district_id: 'archdiocese-nola',
     name: 'St. Augustine High School',
     address: 'New Orleans, LA',
-    primary_color: '#006B3F',
+    primary_color: '#4B0082',
     secondary_color: '#FFFFFF',
     accent_color: '#D4AF37',
     logo_url: 'https://nolacatholic.org/',
