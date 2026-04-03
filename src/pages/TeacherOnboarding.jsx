@@ -121,7 +121,7 @@ export default function TeacherOnboarding() {
     }
     
     // Update user with school info but keep onboarding flags
-    setCurrentUser(currentUser => ({
+    const updatedUser = {
       ...currentUser,
       school_id: selectedSchool.id,
       school: selectedSchool.name,
@@ -135,7 +135,11 @@ export default function TeacherOnboarding() {
       // Keep onboarding flags until curriculum onboarding is complete
       needsOnboarding: true,
       isNewAccount: true,
-    }))
+    }
+    
+    // Save to localStorage to persist authentication
+    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
+    setCurrentUser(updatedUser)
     
     // Navigate to curriculum onboarding
     navigate('/teacher/curriculum-onboarding')
