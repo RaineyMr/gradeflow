@@ -189,8 +189,8 @@ function CreateAccountPanel({ onBack, onLogin, compact }) {
   const form = useCreateForm(onLogin)
   const { 
     selectedRole, setSelectedRole, firstName, setFirstName, lastName, setLastName,
-    email, setEmail, password, setPassword, schoolCode, setSchoolCode,
-    showPassword, setShowPassword,
+    email, setEmail, password, setPassword, confirmPw, setConfirmPw, schoolCode, setSchoolCode,
+    showPassword, setShowPassword, showConfirmPw, setShowConfirmPw,
     error, loading,
     handleSubmit,
     lang,
@@ -335,17 +335,17 @@ function CreateAccountPanel({ onBack, onLogin, compact }) {
           placeholder={lang === 'es' ? 'Ej: RIVERVIEW-2024' : 'e.g. RIVERVIEW-2024'}
           value={schoolCode} onChange={e => setSchoolCode(e.target.value)} />
         <div style={{ fontSize: 11, color: BRAND.muted, marginTop: -8, marginBottom: 14 }}>
-          {lang === 'es' ? 'Opcional. Usa el código de tu escuela para obtener acceso rápido.' : 'Optional. Use your school code for quick access.'}
+          {lang === 'es' ? 'Usa el código de tu escuela para verificar tu identidad.' : 'Use your school code to verify your identity.'}
         </div>
 
         {error && <div style={{ background: '#1c1012', border: '1px solid rgba(240,74,74,0.3)', borderRadius: 10, padding: '8px 10px', color: '#f04a4a', fontSize: 12, marginBottom: 14 }}>{error}</div>}
 
-        <button type="submit" disabled={loading || !selectedRole || !firstName || !lastName || !email || !password || !confirmPw || password !== confirmPw}
+        <button type="submit" disabled={loading || !selectedRole || !firstName || !lastName || !email || !password || !confirmPw || password !== confirmPw || !schoolCode}
           style={{ 
             width: '100%', background: BRAND.gradient, color: '#fff', border: 'none', 
             borderRadius: 999, padding: compact ? 13 : 15, fontSize: 15, fontWeight: 800, 
-            cursor: (loading || !selectedRole || !firstName || !lastName || !email || !password || !confirmPw || password !== confirmPw) ? 'not-allowed' : 'pointer', 
-            opacity: (loading || !selectedRole || !firstName || !lastName || !email || !password || !confirmPw || password !== confirmPw) ? 0.7 : 1 
+            cursor: (loading || !selectedRole || !firstName || !lastName || !email || !password || !confirmPw || password !== confirmPw || !schoolCode) ? 'not-allowed' : 'pointer', 
+            opacity: (loading || !selectedRole || !firstName || !lastName || !email || !password || !confirmPw || password !== confirmPw || !schoolCode) ? 0.7 : 1 
           }}>
           {loading ? (lang === 'es' ? 'Creando cuenta...' : 'Creating account...') : (lang === 'es' ? 'Crear cuenta' : 'Create Account')}
         </button>
