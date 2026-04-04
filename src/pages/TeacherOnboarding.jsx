@@ -112,6 +112,22 @@ export default function TeacherOnboarding() {
     return null
   }
   
+  function handleSkipOrCancel() {
+    // Clear onboarding flags and navigate to dashboard
+    const updatedUser = {
+      ...currentUser,
+      needsOnboarding: false,
+      isNewAccount: false,
+    }
+    
+    // Save to localStorage to persist authentication
+    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
+    setCurrentUser(updatedUser)
+    
+    // Navigate to teacher dashboard
+    navigate('/teacher', { replace: true })
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
     const validationError = validateForm()
@@ -433,13 +449,33 @@ export default function TeacherOnboarding() {
                 width: '100%', background: 'var(--school-color, #BA0C2F)', 
                 color: '#fff', border: 'none', borderRadius: 999, 
                 padding: '16px', fontSize: 16, fontWeight: 800, cursor: 'pointer',
-                transition: 'transform 0.15s'
+                transition: 'transform 0.15s', marginBottom: 12
               }}
               onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
               onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
             >
               Complete Setup →
             </button>
+
+            {/* Skip/Cancel Buttons */}
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button type="button" onClick={handleSkipOrCancel}
+                style={{ 
+                  flex: 1, background: 'transparent', color: C.muted, 
+                  border: '1px solid ' + C.border, borderRadius: 999, 
+                  padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer' 
+                }}>
+                Skip Setup
+              </button>
+              <button type="button" onClick={handleSkipOrCancel}
+                style={{ 
+                  flex: 1, background: 'transparent', color: C.muted, 
+                  border: '1px solid ' + C.border, borderRadius: 999, 
+                  padding: '12px', fontSize: 14, fontWeight: 600, cursor: 'pointer' 
+                }}>
+                Cancel
+              </button>
+            </div>
           </form>
         </div>
       </div>

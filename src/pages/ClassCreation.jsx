@@ -19,11 +19,27 @@ function generateClassCode() {
 }
 
 export default function ClassCreation() {
-  const { currentUser, addClass } = useStore()
+  const { currentUser, addClass, setCurrentUser } = useStore()
   const navigate = useNavigate()
   const [classes, setClasses] = useState([
     { period: '', subject: '', studentCount: '', room: '', classCode: generateClassCode() }
   ])
+
+  function handleSkipOrCancel() {
+    // Clear onboarding flags and navigate to dashboard
+    const updatedUser = {
+      ...currentUser,
+      needsOnboarding: false,
+      isNewAccount: false,
+    }
+    
+    // Save to localStorage to persist authentication
+    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
+    setCurrentUser(updatedUser)
+    
+    // Navigate to teacher dashboard
+    navigate('/teacher', { replace: true })
+  }
 
   function updateClass(index, field, value) {
     const updated = [...classes]
@@ -230,7 +246,7 @@ export default function ClassCreation() {
             <div style={{ display: 'flex', gap: 12 }}>
               <button
                 type="button"
-                onClick={() => navigate('/teacher')}
+                onClick={handleSkipOrCancel}
                 style={{
                   background: 'transparent', color: C.muted, border: '1px solid ' + C.border,
                   borderRadius: 8, padding: '12px 20px', fontSize: 14, fontWeight: 600,
@@ -242,7 +258,7 @@ export default function ClassCreation() {
               
               <button
                 type="button"
-                onClick={() => navigate('/teacher')}
+                onClick={handleSkipOrCancel}
                 style={{
                   background: 'transparent', color: C.muted, border: '1px solid ' + C.border,
                   borderRadius: 8, padding: '12px 20px', fontSize: 14, fontWeight: 600,

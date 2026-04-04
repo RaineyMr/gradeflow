@@ -109,10 +109,28 @@ const GRADING_TEMPLATES = [
 // ─── Step: Curriculum ──────────────────────────────────────────────────────────
 function StepCurriculum({ subjects, onNext, onSkip }) {
   const { curriculumSources, connectedCurricula, setConnectedCurriculum } = useStore()
+  const navigate = useNavigate()
+  const { currentUser, setCurrentUser } = useStore()
 
   console.log('StepCurriculum - subjects:', subjects)
   console.log('StepCurriculum - curriculumSources:', curriculumSources)
   console.log('StepCurriculum - connectedCurricula:', connectedCurricula)
+
+  function handleSkipOrCancel() {
+    // Clear onboarding flags and navigate to dashboard
+    const updatedUser = {
+      ...currentUser,
+      needsOnboarding: false,
+      isNewAccount: false,
+    }
+    
+    // Save to localStorage to persist authentication
+    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
+    setCurrentUser(updatedUser)
+    
+    // Navigate to teacher dashboard
+    navigate('/teacher', { replace: true })
+  }
 
   return (
     <div>
@@ -181,7 +199,7 @@ function StepCurriculum({ subjects, onNext, onSkip }) {
       })}
 
       <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-        <button onClick={onSkip}
+        <button onClick={handleSkipOrCancel}
           style={{ flex: 1, background: C.inner, color: C.muted, border: 'none', borderRadius: 999, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
           Skip for now
         </button>
@@ -197,6 +215,8 @@ function StepCurriculum({ subjects, onNext, onSkip }) {
 // ─── Step: Gradebook setup ─────────────────────────────────────────────────────
 function StepGradebook({ onNext, onSkip }) {
   const { setCategories, setGradingMethod } = useStore()
+  const navigate = useNavigate()
+  const { currentUser, setCurrentUser } = useStore()
   const [selectedTemplate, setSelectedTemplate] = useState('standard')
   const [customCats, setCustomCats] = useState([
     { id: 1, name: 'Tests',         weight: 40, color: '#f04a4a', icon: '📝' },
@@ -204,6 +224,22 @@ function StepGradebook({ onNext, onSkip }) {
     { id: 3, name: 'Homework',      weight: 20, color: '#3b7ef4', icon: '📚' },
     { id: 4, name: 'Participation', weight: 10, color: '#22c97a', icon: '🙋' },
   ])
+
+  function handleSkipOrCancel() {
+    // Clear onboarding flags and navigate to dashboard
+    const updatedUser = {
+      ...currentUser,
+      needsOnboarding: false,
+      isNewAccount: false,
+    }
+    
+    // Save to localStorage to persist authentication
+    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
+    setCurrentUser(updatedUser)
+    
+    // Navigate to teacher dashboard
+    navigate('/teacher', { replace: true })
+  }
 
   const tpl       = GRADING_TEMPLATES.find(t => t.id === selectedTemplate)
   const activeCats = selectedTemplate === 'custom' ? customCats : (tpl?.categories || [])
@@ -273,7 +309,7 @@ function StepGradebook({ onNext, onSkip }) {
       )}
 
       <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={onSkip}
+        <button onClick={handleSkipOrCancel}
           style={{ flex: 1, background: C.inner, color: C.muted, border: 'none', borderRadius: 999, padding: '14px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
           Skip
         </button>
@@ -321,6 +357,23 @@ function StepDone({ onFinish }) {
 function StepGettingStarted({ onNext, onSkip }) {
   const { currentUser } = useStore()
   const navigate = useNavigate()
+  const { setCurrentUser } = useStore()
+  
+  function handleSkipOrCancel() {
+    // Clear onboarding flags and navigate to dashboard
+    const updatedUser = {
+      ...currentUser,
+      needsOnboarding: false,
+      isNewAccount: false,
+    }
+    
+    // Save to localStorage to persist authentication
+    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
+    setCurrentUser(updatedUser)
+    
+    // Navigate to teacher dashboard
+    navigate('/teacher', { replace: true })
+  }
   
   function handleAction(action) {
     // Navigate to the specific action, then continue onboarding
@@ -475,7 +528,7 @@ function StepGettingStarted({ onNext, onSkip }) {
       </div>
       
       <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-        <button onClick={onSkip}
+        <button onClick={handleSkipOrCancel}
           style={{ 
             background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', 
             border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, 
@@ -513,6 +566,22 @@ export default function CurriculumOnboarding() {
   function toggleLang() { setLang(lang === 'en' ? 'es' : 'en') }
 
   const STEPS = ['Curriculum', 'Gradebook', 'Getting Started', 'Done']
+
+  function handleSkipOrCancel() {
+    // Clear onboarding flags and navigate to dashboard
+    const updatedUser = {
+      ...currentUser,
+      needsOnboarding: false,
+      isNewAccount: false,
+    }
+    
+    // Save to localStorage to persist authentication
+    localStorage.setItem('gradeflow_user', JSON.stringify(updatedUser))
+    setCurrentUser(updatedUser)
+    
+    // Navigate to teacher dashboard
+    navigate('/teacher', { replace: true })
+  }
 
   function finish() {
     console.log('Finishing onboarding - current user:', currentUser)
