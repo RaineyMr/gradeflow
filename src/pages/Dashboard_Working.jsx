@@ -931,7 +931,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         {wrap('messages', <EmptyMessagesWidget navigate={navigateToPage} />)}
         
         {/* Gradebook */}
-        {wrap('gradebook', <EmptyGradebookWidget navigate={navigateToPage} />)}
+        {!hidden.includes('gradebook') && <EmptyGradebookWidget navigate={navigateToPage} onRemove={() => toggleWidget('gradebook')} />}
         
         {/* Reports */}
         {wrap('reports', <EmptyReportsWidget navigate={navigateToPage} />)}
