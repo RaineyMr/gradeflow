@@ -110,6 +110,10 @@ const GRADING_TEMPLATES = [
 function StepCurriculum({ subjects, onNext, onSkip }) {
   const { curriculumSources, connectedCurricula, setConnectedCurriculum } = useStore()
 
+  console.log('StepCurriculum - subjects:', subjects)
+  console.log('StepCurriculum - curriculumSources:', curriculumSources)
+  console.log('StepCurriculum - connectedCurricula:', connectedCurricula)
+
   return (
     <div>
       <h2 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 6px' }}>What curriculum do you use?</h2>
@@ -118,7 +122,36 @@ function StepCurriculum({ subjects, onNext, onSkip }) {
 
       {subjects.map(subject => {
         const connected = connectedCurricula[subject]
-        const options   = curriculumSources.filter(s => s.subjects.includes(subject) || s.subjects.length === 0)
+        
+        // Better subject matching - check if curriculum source subjects match this subject
+        const options = curriculumSources.filter(s => {
+          // Direct match
+          if (s.subjects.includes(subject)) return true
+          // Match subject categories (e.g., 'Algebra I' should match 'Math' curriculum)
+          if (subject.includes('Algebra') || subject.includes('Geometry') || subject.includes('Trigonometry') || 
+              subject.includes('Calculus') || subject.includes('Pre-Calculus') || subject === 'Math' || 
+              subject === 'Pre-Algebra') {
+            return s.subjects.includes('Math')
+          }
+          // English/Language Arts subjects
+          if (subject.includes('English') || subject.includes('Reading') || subject.includes('Writing') || subject.includes('ELA')) {
+            return s.subjects.includes('Reading') || s.subjects.includes('ELA') || s.subjects.includes('Writing')
+          }
+          // Science subjects
+          if (subject.includes('Biology') || subject.includes('Chemistry') || subject.includes('Physics') || 
+              subject.includes('Science') || subject.includes('Environmental')) {
+            return s.subjects.includes('Science')
+          }
+          // Social Studies subjects
+          if (subject.includes('History') || subject.includes('Government') || subject.includes('Economics') || 
+              subject.includes('Social Studies')) {
+            return s.subjects.includes('Social Studies')
+          }
+          // Curriculum sources with no subjects restriction (like 'Custom / No textbook')
+          return s.subjects.length === 0
+        })
+
+        console.log(`Subject: ${subject}, Connected: ${connected}, Options:`, options)
 
         return (
           <div key={subject} style={{ marginBottom: 18 }}>
@@ -293,6 +326,10 @@ export default function CurriculumOnboarding() {
   const [step,     setStep]     = useState(0)  // 0=curriculum, 1=gradebook, 2=done
   const [subjects, setSubjects] = useState(currentUser?.subjects || []) // Get subjects from previous onboarding
   const t = useT()
+  
+  console.log('CurriculumOnboarding - currentUser:', currentUser)
+  console.log('CurriculumOnboarding - subjects from user:', currentUser?.subjects)
+  console.log('CurriculumOnboarding - subjects state:', subjects)
   
   function toggleLang() { setLang(lang === 'en' ? 'es' : 'en') }
 
