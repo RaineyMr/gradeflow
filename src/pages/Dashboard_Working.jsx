@@ -49,6 +49,109 @@ function UserHeader({ currentUser }) {
   )
 }
 
+// ─── Getting Started Widget ─────────────────────────────────────────────────────
+function GettingStarted({ currentUser, navigate }) {
+  const { classes } = useStore()
+  
+  // Only show for real teachers with no classes
+  if (classes.length > 0) return null
+  
+  return (
+    <div style={{ 
+      background: `linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, var(--school-surface, #0a000a) 100%)`, 
+      border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 20, 
+      padding: '20px', marginBottom: 16 
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 12 }}>
+        🚀 Getting Started with GradeFlow
+      </div>
+      
+      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5, marginBottom: 16 }}>
+        Welcome! Let's get your classroom set up. Here's what we recommend:
+      </div>
+      
+      <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ 
+          background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px',
+          display: 'flex', alignItems: 'center', gap: 12
+        }}>
+          <div style={{ 
+            width: 24, height: 24, borderRadius: '50%', 
+            background: 'rgba(255,255,255,0.2)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 700, color: '#fff'
+          }}>
+            1
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+              Add Your Classes
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
+              Create periods or import your class roster
+            </div>
+          </div>
+        </div>
+        
+        <div style={{ 
+          background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px',
+          display: 'flex', alignItems: 'center', gap: 12
+        }}>
+          <div style={{ 
+            width: 24, height: 24, borderRadius: '50%', 
+            background: 'rgba(255,255,255,0.2)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 700, color: '#fff'
+          }}>
+            2
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+              Set Up Gradebook
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
+              Create assignments and grading categories
+            </div>
+          </div>
+        </div>
+        
+        <div style={{ 
+          background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px',
+          display: 'flex', alignItems: 'center', gap: 12
+        }}>
+          <div style={{ 
+            width: 24, height: 24, borderRadius: '50%', 
+            background: 'rgba(255,255,255,0.2)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 700, color: '#fff'
+          }}>
+            3
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+              Plan Your First Lesson
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
+              Use AI to generate TEKS-aligned lesson plans
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div style={{ textAlign: 'center', marginTop: 16 }}>
+        <button onClick={() => navigate('classes/create')} 
+          style={{ 
+            background: '#fff', color: 'var(--school-color, #BA0C2F)', border: 'none', 
+            borderRadius: 8, padding: '10px 20px', fontSize: 12, fontWeight: 700, 
+            cursor: 'pointer' 
+          }}>
+          Get Started →
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Quick Actions Widget ─────────────────────────────────────────────────────
 function QuickActions({ navigate }) {
   const t = useT()
@@ -119,57 +222,150 @@ function ClassesOverview({ currentUser, navigate }) {
       <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 16 }}>
         📚 My Classes
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
-        {classes.map(cls => (
-          <div key={cls.id} 
-            onClick={() => navigate('gradebook')} 
-            style={{ 
-              background: C.inner, border: `1px solid ${C.border}`, borderRadius: 12, 
-              padding: '16px', cursor: 'pointer', transition: 'all 0.15s' 
-            }}
-            onMouseEnter={e => { 
-              e.currentTarget.style.borderColor = 'var(--school-color, #BA0C2F)'
-              e.currentTarget.style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={e => { 
-              e.currentTarget.style.borderColor = C.border
-              e.currentTarget.style.transform = 'translateY(0px)'
-            }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ 
-                width: 8, height: 8, borderRadius: '50%', 
-                background: cls.color || 'var(--school-color, #BA0C2F)' 
-              }} />
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
-                  {cls.period} · {cls.subject}
-                </div>
-                <div style={{ fontSize: 11, color: C.muted }}>
-                  {cls.students} students · GPA {cls.gpa}%
-                </div>
-              </div>
-            </div>
-            {cls.needsAttention > 0 && (
-              <div style={{ 
-                background: `${C.red}20`, border: `1px solid ${C.red}40`, 
-                borderRadius: 6, padding: '4px 8px', fontSize: 10, 
-                color: C.red, fontWeight: 700, display: 'inline-block' 
-              }}>
-                ⚠️ {cls.needsAttention} need attention
-              </div>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
-              <span style={{ fontSize: 11, color: C.muted }}>Trend:</span>
-              <span style={{ 
-                fontSize: 11, fontWeight: 700, 
-                color: cls.trend === 'up' ? C.green : cls.trend === 'down' ? C.red : C.muted 
-              }}>
-                {cls.trend === 'up' ? '↑' : cls.trend === 'down' ? '↓' : '→'} {cls.trend}
-              </span>
-            </div>
+      
+      {classes.length === 0 ? (
+        // No classes yet - show setup options
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <div style={{ fontSize: 24, marginBottom: 12 }}>🎯</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: C.text, marginBottom: 8 }}>
+            Ready to set up your classes?
           </div>
-        ))}
-      </div>
+          <div style={{ fontSize: 12, color: C.muted, marginBottom: 20 }}>
+            Choose how you'd like to add your classes and students
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+            <button onClick={() => navigate('classes/create')} 
+              style={{ 
+                background: C.blue, color: '#fff', border: 'none', 
+                borderRadius: 12, padding: '16px', fontSize: 13, fontWeight: 700, 
+                cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+              ✏️ Create Classes
+              <div style={{ fontSize: 10, opacity: 0.8, marginTop: 4 }}>
+                Manually set up periods and subjects
+              </div>
+            </button>
+            
+            <button onClick={() => navigate('classes/upload')} 
+              style={{ 
+                background: C.green, color: '#fff', border: 'none', 
+                borderRadius: 12, padding: '16px', fontSize: 13, fontWeight: 700, 
+                cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+              📤 Upload Roster
+              <div style={{ fontSize: 10, opacity: 0.8, marginTop: 4 }}>
+                CSV, Excel, or PDF files
+              </div>
+            </button>
+            
+            <button onClick={() => navigate('camera')} 
+              style={{ 
+                background: C.purple, color: '#fff', border: 'none', 
+                borderRadius: 12, padding: '16px', fontSize: 13, fontWeight: 700, 
+                cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+              📸 Scan Document
+              <div style={{ fontSize: 10, opacity: 0.8, marginTop: 4 }}>
+                Camera scan for class lists
+              </div>
+            </button>
+            
+            <button onClick={() => navigate('classes/import')} 
+              style={{ 
+                background: C.amber, color: '#fff', border: 'none', 
+                borderRadius: 12, padding: '16px', fontSize: 13, fontWeight: 700, 
+                cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
+              }}
+              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+              onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+              🔄 Import from SIS
+              <div style={{ fontSize: 10, opacity: 0.8, marginTop: 4 }}>
+                Connect your school system
+              </div>
+            </button>
+          </div>
+          
+          <div style={{ 
+            background: `${C.blue}10`, border: `1px solid ${C.blue}30`, 
+            borderRadius: 12, padding: '12px', marginTop: 16, fontSize: 11, color: C.blue 
+          }}>
+            💡 <strong>Tip:</strong> You can always add more classes or update student lists later
+          </div>
+        </div>
+      ) : (
+        // Show existing classes
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
+          {classes.map(cls => (
+            <div key={cls.id} 
+              onClick={() => navigate('gradebook')} 
+              style={{ 
+                background: C.inner, border: `1px solid ${C.border}`, borderRadius: 12, 
+                padding: '16px', cursor: 'pointer', transition: 'all 0.15s' 
+              }}
+              onMouseEnter={e => { 
+                e.currentTarget.style.borderColor = 'var(--school-color, #BA0C2F)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
+              }}
+              onMouseLeave={e => { 
+                e.currentTarget.style.borderColor = C.border
+                e.currentTarget.style.transform = 'translateY(0px)'
+              }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <div style={{ 
+                  width: 8, height: 8, borderRadius: '50%', 
+                  background: cls.color || 'var(--school-color, #BA0C2F)' 
+                }} />
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
+                    {cls.period} · {cls.subject}
+                  </div>
+                  <div style={{ fontSize: 11, color: C.muted }}>
+                    {cls.students} students · GPA {cls.gpa}%
+                  </div>
+                </div>
+              </div>
+              {cls.needsAttention > 0 && (
+                <div style={{ 
+                  background: `${C.red}20`, border: `1px solid ${C.red}40`, 
+                  borderRadius: 6, padding: '4px 8px', fontSize: 10, 
+                  color: C.red, fontWeight: 700, display: 'inline-block' 
+                }}>
+                  ⚠️ {cls.needsAttention} need attention
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 8 }}>
+                <span style={{ fontSize: 11, color: C.muted }}>Trend:</span>
+                <span style={{ 
+                  fontSize: 11, fontWeight: 700, 
+                  color: cls.trend === 'up' ? C.green : cls.trend === 'down' ? C.red : C.muted 
+                }}>
+                  {cls.trend === 'up' ? '↑' : cls.trend === 'down' ? '↓' : '→'} {cls.trend}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {classes.length > 0 && (
+        <div style={{ textAlign: 'center', marginTop: 16 }}>
+          <button onClick={() => navigate('classes/create')} 
+            style={{ 
+              background: C.inner, color: C.text, border: `1px solid ${C.border}`, 
+              borderRadius: 8, padding: '8px 16px', fontSize: 12, fontWeight: 600, 
+              cursor: 'pointer' 
+            }}>
+            + Add Another Class
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -285,6 +481,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
           {/* Main Content */}
           <div>
+            <GettingStarted currentUser={currentUser} navigate={navigateToPage} />
             <QuickActions navigate={navigateToPage} />
             <ClassesOverview currentUser={currentUser} navigate={navigateToPage} />
           </div>

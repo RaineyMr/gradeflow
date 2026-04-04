@@ -2216,39 +2216,69 @@ setDemoSupportStaffData: async () => {
         console.error('Error loading schools:', schoolsError);
       }
 
-      // Demo mode - load demo data based on current language
-      const lang = get().lang
-      const data = lang === 'es' 
-        ? {
-            classes:     DEMO_CLASSES_ES,
-            students:    DEMO_STUDENTS_ES,
-            assignments: DEMO_ASSIGNMENTS_ES,
-            grades:      DEMO_GRADES, // Same for both
-            messages:    DEMO_MESSAGES_ES,
-            feed:        DEMO_FEED_ES,
-            lessons:     DEMO_LESSONS_ES,
-            reminders:   DEMO_REMINDERS_ES,
-            schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
-          }
-        : {
-            classes:     DEMO_CLASSES,
-            students:    DEMO_STUDENTS,
-            assignments: DEMO_ASSIGNMENTS,
-            grades:      DEMO_GRADES,
-            messages:    DEMO_MESSAGES,
-            feed:        DEMO_FEED,
-            lessons:     DEMO_LESSONS,
-            reminders:   DEMO_REMINDERS,
-            schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
-          }
-      
-      set(state => ({
-        ...state,
-        ...data,
-        dbLoaded: true,
-        isHydrated: true,
-        dbError: schoolsError ? schoolsError.message : null
-      }))
+      // Check if current user is a demo account
+      const currentUser = get().currentUser
+      const isDemoAccount = currentUser?.email?.includes('@demo') || 
+                           currentUser?.id?.startsWith('demo-') ||
+                           // Known demo account domains
+                           currentUser?.email?.includes('@kippneworleans.org') ||
+                           currentUser?.email?.includes('@houstonisd.org') ||
+                           currentUser?.email?.includes('@bellaire.org') ||
+                           currentUser?.email?.includes('@lamarhs.org')
+
+      // Only load demo data for actual demo accounts
+      if (isDemoAccount) {
+        // Demo mode - load demo data based on current language
+        const lang = get().lang
+        const data = lang === 'es' 
+          ? {
+              classes:     DEMO_CLASSES_ES,
+              students:    DEMO_STUDENTS_ES,
+              assignments: DEMO_ASSIGNMENTS_ES,
+              grades:      DEMO_GRADES, // Same for both
+              messages:    DEMO_MESSAGES_ES,
+              feed:        DEMO_FEED_ES,
+              lessons:     DEMO_LESSONS_ES,
+              reminders:   DEMO_REMINDERS_ES,
+              schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
+            }
+          : {
+              classes:     DEMO_CLASSES,
+              students:    DEMO_STUDENTS,
+              assignments: DEMO_ASSIGNMENTS,
+              grades:      DEMO_GRADES,
+              messages:    DEMO_MESSAGES,
+              feed:        DEMO_FEED,
+              lessons:     DEMO_LESSONS,
+              reminders:   DEMO_REMINDERS,
+              schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
+            }
+        
+        set(state => ({
+          ...state,
+          ...data,
+          dbLoaded: true,
+          isHydrated: true,
+          dbError: schoolsError ? schoolsError.message : null
+        }))
+      } else {
+        // Real teacher - load empty data (they'll set up their own classes)
+        set(state => ({
+          ...state,
+          classes: [], // Empty for real teachers
+          students: [],
+          assignments: [],
+          grades: [],
+          messages: [],
+          feed: [],
+          lessons: [],
+          reminders: [],
+          schools: schoolsData || DEMO_SCHOOLS, // Still load schools for validation
+          dbLoaded: true,
+          isHydrated: true,
+          dbError: schoolsError ? schoolsError.message : null
+        }))
+      }
     } catch (error) {
       console.error('Error in loadFromDB:', error);
       set(state => ({
