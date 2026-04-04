@@ -332,8 +332,8 @@ export default function App() {
           {/* ── Teacher ─────────────────────────────────────────────── */}
           <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
             <Route path="/teacher"              element={<TeacherHome />} />
-            <Route path="/teacher/gradebook"    element={<Page Component={Gradebook}      backTo="/teacher" />} />
             <Route path="/teacher/lessons"      element={<Page Component={LessonPlan}     backTo="/teacher" />} />
+            <Route path="/teacher/gradebook"    element={<Page Component={Gradebook}      backTo="/teacher" />} />
             <Route path="/teacher/lesson-plan-template" element={<Page Component={LessonPlanTemplate} backTo="/teacher" />} />
             <Route path="/teacher/reports"      element={<Page Component={Reports}        backTo="/teacher" />} />
             <Route path="/teacher/messages"     element={<Page Component={ParentMessages} backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
