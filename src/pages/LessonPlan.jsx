@@ -291,7 +291,7 @@ function LessonView({ lesson, onBack, onEdit }) {
 
 // ─── AI Generator ────────────────────────────────────────────────────────────
 function AIPlanGenerator({ onBack }) {
-  const { currentUser, selectedStandards } = useStore()
+  const { currentUser, selectedStandards, clearSelectedStandards } = useStore()
   const [form, setForm] = useState({ state:'', subject:'', grade:'', textbook:'', topic:'', standard:'' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -302,6 +302,35 @@ function AIPlanGenerator({ onBack }) {
   const activeClass = useStore(s => s.classes.find(c => c.id === s.activeClassId))
   const students = useStore(s => s.students)
   const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
+
+  // Auto-populate form based on teacher profile
+  useEffect(() => {
+    if (currentUser) {
+      setForm(prev => ({
+        ...prev,
+        state: prev.state || getTeacherState(),
+        subject: prev.subject || currentUser.subjects?.[0] || '',
+        grade: prev.grade || currentUser.gradeLevel || ''
+      }))
+    }
+  }, [currentUser])
+
+  // Get teacher's state based on school
+  function getTeacherState() {
+    if (!currentUser?.school) return ''
+    const districtId = currentUser.school.district_id
+    if (districtId === 'houston-isd' || districtId === 'kipp-texas' || districtId === 'yes-prep-tx') return 'Texas'
+    if (districtId === 'kipp-la' || districtId === 'renew-nola' || districtId === 'collegiate-nola') return 'Louisiana'
+    return ''
+  }
+
+  // Clear standards when topic changes significantly
+  useEffect(() => {
+    if (form.topic && showStandards) {
+      // Clear previous standards when topic changes to get fresh recommendations
+      clearSelectedStandards()
+    }
+  }, [form.topic])
 
   function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
 
@@ -409,41 +438,95 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>✨ AI Lesson Plan Generator</h1>
 
       <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:16 }}>
-        {[
-          ['state',    'State / Region',      'Texas'],
-          ['subject',  'Subject *',           'Math, Science, ELA...'],
-          ['grade',    'Grade Level',         '3rd Grade, High School...'],
-          ['textbook', 'Textbook (optional)', 'Publisher or title...'],
-          ['topic',    'Topic *',             'Fractions, Photosynthesis...'],
-        ].map(([key, label, placeholder]) => (
-          <div key={key} style={{ marginBottom:12 }}>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>{label}</label>
-            <input
-              value={form[key]} 
-              onChange={e => set(key, e.target.value)}
-              placeholder={placeholder}
-              style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
-            />
+        {/* Auto-populated fields - read-only */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>State/Region</label>
+            <div style={{ 
+              background: C.bg, 
+              border:`1px solid ${C.border}`, 
+              borderRadius:12, 
+              padding:'11px 14px', 
+              color:C.text, 
+              fontSize:13 
+            }}>
+              {form.state || 'Not detected'}
+            </div>
           </div>
-        ))}
+          <div>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Subject</label>
+            <div style={{ 
+              background: C.bg, 
+              border:`1px solid ${C.border}`, 
+              borderRadius:12, 
+              padding:'11px 14px', 
+              color:C.text, 
+              fontSize:13 
+            }}>
+              {form.subject || 'Not set in profile'}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Grade Level</label>
+          <div style={{ 
+            background: C.bg, 
+            border:`1px solid ${C.border}`, 
+            borderRadius:12, 
+            padding:'11px 14px', 
+            color:C.text, 
+            fontSize:13 
+          }}>
+            {form.grade || 'Not set in profile'}
+          </div>
+        </div>
+
+        {/* Editable fields */}
+        <div style={{ marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>
+            Topic * <span style={{ color: C.green, fontSize: 9, fontWeight: 400 }}>(Enter topic first, then select standards)</span>
+          </label>
+          <input
+            value={form.topic} 
+            onChange={e => {
+              set('topic', e.target.value)
+              setShowStandards(false) // Hide standards when topic changes
+            }}
+            placeholder="Fractions, Photosynthesis, Civil War..."
+            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
+          />
+        </div>
+
+        <div style={{ marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Textbook (optional)</label>
+          <input
+            value={form.textbook}
+            onChange={e => set('textbook', e.target.value)}
+            placeholder="Publisher or title..."
+            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
+          />
+        </div>
 
         {/* Standards Selection */}
         <div style={{ marginBottom:12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted }}>
-              Standards / TEKS
+              Standards / TEKS {!form.topic && <span style={{ color: C.amber }}>(Enter topic first)</span>}
             </label>
             <button
               onClick={() => setShowStandards(!showStandards)}
+              disabled={!form.topic}
               style={{
-                background: showStandards ? `${C.teal}18` : C.inner,
-                border: `1px solid ${showStandards ? C.teal : C.border}`,
+                background: !form.topic ? C.inner : (showStandards ? `${C.teal}18` : C.inner),
+                border: `1px solid ${!form.topic ? C.border : (showStandards ? C.teal : C.border)}`,
                 borderRadius: 8,
                 padding: '4px 8px',
-                color: showStandards ? C.teal : C.muted,
+                color: !form.topic ? C.muted : (showStandards ? C.teal : C.muted),
                 fontSize: 11,
                 fontWeight: 600,
-                cursor: 'pointer'
+                cursor: !form.topic ? 'not-allowed' : 'pointer',
+                opacity: !form.topic ? 0.6 : 1
               }}
             >
               {showStandards ? 'Hide' : 'Select'} Standards
@@ -463,7 +546,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
             </div>
           )}
 
-          {showStandards && (
+          {showStandards && form.topic && (
             <StandardsSelector 
               topic={form.topic}
               maxSelections={3}
