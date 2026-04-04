@@ -1119,3 +1119,17 @@ export default function Dashboard({ currentUser, onCameraClick }) {
     </div>
   )
 }
+
+// Export widget components for use in other dashboards
+export {
+  TodaysLessonsWidget,
+  NeedsAttentionWidget,
+  MessagesWidget,
+  ReportsWidget,
+  GradingWidget,
+  LessonPlanWidget,
+  SketchAnnotateWidget,
+  TestingSuiteWidget,
+  ScanGradeSheetWidget,
+  GradebookWidget
+}
