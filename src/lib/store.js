@@ -971,13 +971,13 @@ export const useStore = create((set, get) => ({
   },
 
   // ── Teacher profile ─────────────────────────────────────────────────────────
-  teacher: {
+teacher: {
     id: 1,
-    name: 'Ms. Johnson',
-    school: 'KIPP New Orleans',
-    schoolColor: '#BA0C2F',
+    name: 'Ms. Rodriguez',
+    school: 'Houston ISD',
+    schoolColor: '#003057',
     avatar: '👩‍🏫',
-    gradeLevel: '10th Grade',
+    gradeLevel: '5th Grade',
     subjects: ['Math', 'Science'],
   },
   teacherProfile: null, // Will be set during onboarding
