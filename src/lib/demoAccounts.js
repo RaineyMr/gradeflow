@@ -11,7 +11,7 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'Houston ISD',
     districtName: 'Houston Independent School District',
-    school_id: 'BELLAIRE-HS', // Corresponds to Bellaire High School in store.js
+    school_id: 'lincoln-elementary', // Use existing Houston ISD school ID from store
     district_id: 'houston-isd', // Houston ISD district
     userName: 'Ms. Rodriguez',
     studentName: null,
