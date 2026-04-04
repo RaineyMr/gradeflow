@@ -49,109 +49,6 @@ function UserHeader({ currentUser }) {
   )
 }
 
-// ─── Getting Started Widget ─────────────────────────────────────────────────────
-function GettingStarted({ currentUser, navigate }) {
-  const { classes } = useStore()
-  
-  // Only show for real teachers with no classes
-  if (classes.length > 0) return null
-  
-  return (
-    <div style={{ 
-      background: `linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, var(--school-surface, #0a000a) 100%)`, 
-      border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 20, 
-      padding: '20px', marginBottom: 16 
-    }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 12 }}>
-        🚀 Getting Started with GradeFlow
-      </div>
-      
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.5, marginBottom: 16 }}>
-        Welcome! Let's get your classroom set up. Here's what we recommend:
-      </div>
-      
-      <div style={{ display: 'grid', gap: 12 }}>
-        <div style={{ 
-          background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px',
-          display: 'flex', alignItems: 'center', gap: 12
-        }}>
-          <div style={{ 
-            width: 24, height: 24, borderRadius: '50%', 
-            background: 'rgba(255,255,255,0.2)', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 700, color: '#fff'
-          }}>
-            1
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
-              Add Your Classes
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-              Create periods or import your class roster
-            </div>
-          </div>
-        </div>
-        
-        <div style={{ 
-          background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px',
-          display: 'flex', alignItems: 'center', gap: 12
-        }}>
-          <div style={{ 
-            width: 24, height: 24, borderRadius: '50%', 
-            background: 'rgba(255,255,255,0.2)', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 700, color: '#fff'
-          }}>
-            2
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
-              Set Up Gradebook
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-              Create assignments and grading categories
-            </div>
-          </div>
-        </div>
-        
-        <div style={{ 
-          background: 'rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px',
-          display: 'flex', alignItems: 'center', gap: 12
-        }}>
-          <div style={{ 
-            width: 24, height: 24, borderRadius: '50%', 
-            background: 'rgba(255,255,255,0.2)', 
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, fontWeight: 700, color: '#fff'
-          }}>
-            3
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
-              Plan Your First Lesson
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-              Use AI to generate TEKS-aligned lesson plans
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div style={{ textAlign: 'center', marginTop: 16 }}>
-        <button onClick={() => navigate('classes/create')} 
-          style={{ 
-            background: '#fff', color: 'var(--school-color, #BA0C2F)', border: 'none', 
-            borderRadius: 8, padding: '10px 20px', fontSize: 12, fontWeight: 700, 
-            cursor: 'pointer' 
-          }}>
-          Get Started →
-        </button>
-      </div>
-    </div>
-  )
-}
-
 // ─── Quick Actions Widget ─────────────────────────────────────────────────────
 function QuickActions({ navigate }) {
   const t = useT()
@@ -481,7 +378,6 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
           {/* Main Content */}
           <div>
-            <GettingStarted currentUser={currentUser} navigate={navigateToPage} />
             <QuickActions navigate={navigateToPage} />
             <ClassesOverview currentUser={currentUser} navigate={navigateToPage} />
           </div>

@@ -317,13 +317,127 @@ function StepDone({ onFinish }) {
   )
 }
 
+// ─── Getting Started Step ───────────────────────────────────────────────────────
+function StepGettingStarted({ onNext, onSkip }) {
+  const { currentUser } = useStore()
+  const navigate = useNavigate()
+  
+  return (
+    <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: 32 }}>
+        <div style={{ fontSize: 48, marginBottom: 16 }}>🚀</div>
+        <h2 style={{ fontSize: 28, fontWeight: 800, color: '#fff', margin: '0 0 12px' }}>
+          Getting Started with GradeFlow
+        </h2>
+        <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', margin: '0 0 32px', lineHeight: 1.5 }}>
+          Welcome! Let's get your classroom set up. Here's what we recommend:
+        </p>
+      </div>
+      
+      <div style={{ display: 'grid', gap: 16, marginBottom: 32 }}>
+        <div style={{ 
+          background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
+          display: 'flex', alignItems: 'center', gap: 16
+        }}>
+          <div style={{ 
+            width: 48, height: 48, borderRadius: '50%', 
+            background: 'rgba(255,255,255,0.2)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20, fontWeight: 700, color: '#fff', flexShrink: 0
+          }}>
+            1
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+              Add Your Classes
+            </div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+              Create periods or import your class roster using CSV, Excel, PDF files, or camera scanning
+            </div>
+          </div>
+        </div>
+        
+        <div style={{ 
+          background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
+          display: 'flex', alignItems: 'center', gap: 16
+        }}>
+          <div style={{ 
+            width: 48, height: 48, borderRadius: '50%', 
+            background: 'rgba(255,255,255,0.2)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20, fontWeight: 700, color: '#fff', flexShrink: 0
+          }}>
+            2
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+              Set Up Gradebook
+            </div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+              Create assignments and grading categories that align with your teaching style
+            </div>
+          </div>
+        </div>
+        
+        <div style={{ 
+          background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
+          display: 'flex', alignItems: 'center', gap: 16
+        }}>
+          <div style={{ 
+            width: 48, height: 48, borderRadius: '50%', 
+            background: 'rgba(255,255,255,0.2)', 
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 20, fontWeight: 700, color: '#fff', flexShrink: 0
+          }}>
+            3
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
+              Plan Your First Lesson
+            </div>
+            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+              Use AI to generate TEKS-aligned lesson plans tailored to your students' needs
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div style={{ 
+        background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: '16px', 
+        marginBottom: 32, fontSize: 14, color: 'rgba(255,255,255,0.8)', textAlign: 'center' 
+      }}>
+        💡 <strong>Tip:</strong> You can always add more classes or update student lists later from your dashboard
+      </div>
+      
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+        <button onClick={onSkip}
+          style={{ 
+            background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', 
+            border: '1px solid rgba(255,255,255,0.2)', borderRadius: 12, 
+            padding: '14px 28px', fontSize: 14, fontWeight: 600, cursor: 'pointer' 
+          }}>
+          Skip Tour
+        </button>
+        <button onClick={onNext}
+          style={{ 
+            background: '#fff', color: 'var(--school-color, #BA0C2F)', 
+            border: 'none', borderRadius: 12, 
+            padding: '14px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' 
+          }}>
+          Get Started →
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── Main export ───────────────────────────────────────────────────────────────
 // Rendered after school registration and before first dashboard view.
 // Pass onComplete() to navigate to dashboard when done.
 export default function CurriculumOnboarding() {
   const { completeOnboarding, lang, setLang, currentUser, setCurrentUser } = useStore()
   const navigate = useNavigate()
-  const [step,     setStep]     = useState(0)  // 0=curriculum, 1=gradebook, 2=done
+  const [step,     setStep]     = useState(0)  // 0=curriculum, 1=gradebook, 2=getting-started, 3=done
   const [subjects, setSubjects] = useState(currentUser?.subjects || []) // Get subjects from previous onboarding
   const t = useT()
   
@@ -333,7 +447,7 @@ export default function CurriculumOnboarding() {
   
   function toggleLang() { setLang(lang === 'en' ? 'es' : 'en') }
 
-  const STEPS = ['Curriculum', 'Gradebook', 'Done']
+  const STEPS = ['Curriculum', 'Gradebook', 'Getting Started', 'Done']
 
   function finish() {
     console.log('Finishing onboarding - current user:', currentUser)
@@ -399,7 +513,8 @@ export default function CurriculumOnboarding() {
       <div style={{ padding: '24px 16px' }}>
         {step === 0 && <StepCurriculum subjects={subjects} onNext={() => setStep(1)} onSkip={() => setStep(1)} />}
         {step === 1 && <StepGradebook  onNext={() => setStep(2)} onSkip={() => setStep(2)} />}
-        {step === 2 && <StepDone onFinish={finish} />}
+        {step === 2 && <StepGettingStarted onNext={() => setStep(3)} onSkip={() => setStep(3)} />}
+        {step === 3 && <StepDone onFinish={finish} />}
       </div>
     </div>
   )
