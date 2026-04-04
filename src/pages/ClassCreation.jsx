@@ -237,6 +237,18 @@ export default function ClassCreation() {
                   cursor: 'pointer'
                 }}
               >
+                Skip
+              </button>
+              
+              <button
+                type="button"
+                onClick={() => navigate('/teacher')}
+                style={{
+                  background: 'transparent', color: C.muted, border: '1px solid ' + C.border,
+                  borderRadius: 8, padding: '12px 20px', fontSize: 14, fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
                 Cancel
               </button>
               

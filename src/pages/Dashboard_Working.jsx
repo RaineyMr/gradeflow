@@ -328,6 +328,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
   const navigate = useNavigate()
   const [subPage, setSubPage] = useState(null)
   const history = useRef([])
+  const { classes } = useStore()
 
   useEffect(() => { scrollTop() }, [])
 
@@ -364,6 +365,105 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         {node}
         <BottomNav active={activeNav} onSelect={navigateToPage} isSubPage={!!subPage} role="teacher"/>
       </>
+    )
+  }
+
+  // Show minimal dashboard for teachers with no classes
+  if (classes.length === 0) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', background: C.bg, color: C.text, 
+        fontFamily: "'DM Sans','Helvetica Neue',sans-serif", paddingBottom: 90 
+      }}>
+        <UserHeader currentUser={currentUser} />
+        
+        <div style={{ padding: '20px', maxWidth: 800, margin: '0 auto' }}>
+          {/* Welcome Message */}
+          <div style={{ 
+            background: `linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, var(--school-surface, #0a000a) 100%)`, 
+            border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 20, 
+            padding: '32px', marginBottom: 32, textAlign: 'center' 
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>👋</div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: '#fff', margin: '0 0 12px' }}>
+              Welcome to GradeFlow, {currentUser?.name?.split(' ')?.pop() || 'Teacher'}!
+            </h2>
+            <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', margin: '0 0 24px', lineHeight: 1.5 }}>
+              Your classroom is ready. When you're ready to add classes, you can do so from the dashboard or use the quick actions below.
+            </p>
+            <button onClick={() => navigateToPage('classes/create')} 
+              style={{ 
+                background: '#fff', color: 'var(--school-color, #BA0C2F)', 
+                border: 'none', borderRadius: 12, 
+                padding: '14px 28px', fontSize: 14, fontWeight: 700, 
+                cursor: 'pointer' 
+              }}>
+              Add Your First Class →
+            </button>
+          </div>
+
+          {/* Quick Actions */}
+          <div style={{ 
+            background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, 
+            padding: '24px', marginBottom: 16 
+          }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 20 }}>
+              ⚡ Quick Start
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+              <button onClick={() => navigateToPage('classes/create')} 
+                style={{ 
+                  background: C.blue, color: '#fff', border: 'none', 
+                  borderRadius: 12, padding: '20px', fontSize: 14, fontWeight: 700, 
+                  cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                📚 Add Classes
+                <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
+                  Create your teaching periods
+                </div>
+              </button>
+              
+              <button onClick={() => navigateToPage('lessons')} 
+                style={{ 
+                  background: C.green, color: '#fff', border: 'none', 
+                  borderRadius: 12, padding: '20px', fontSize: 14, fontWeight: 700, 
+                  cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                📋 Plan Lesson
+                <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
+                  Create AI-powered lessons
+                </div>
+              </button>
+              
+              <button onClick={() => navigateToPage('camera')} 
+                style={{ 
+                  background: C.purple, color: '#fff', border: 'none', 
+                  borderRadius: 12, padding: '20px', fontSize: 14, fontWeight: 700, 
+                  cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+              >
+                📸 Scan Document
+                <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
+                  Grade papers instantly
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Profile Summary */}
+          <ProfileSummary currentUser={currentUser} />
+        </div>
+        
+        <BottomNav active={activeNav} onSelect={navigateToPage} isSubPage={!!subPage} role="teacher"/>
+      </div>
     )
   }
 
