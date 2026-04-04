@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
 import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
 import StandardsSelector from '../components/StandardsSelector'
