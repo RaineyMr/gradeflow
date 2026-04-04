@@ -2,15 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
 import BottomNav from '../components/ui/BottomNav'
 import StandardsSelector from '../components/standards/StandardsSelector'
-import AccommodationsSection from '../components/lesson/AccommodationsSection'
 
 const C = {
-  bg: '#ffffff',
-  card: '#ffffff',
-  inner: '#f8f9fa',
-  text: '#1a1a1a',
-  muted: '#6c757d',
-  border: '#e0e0e0',
+  bg: '#060810',
+  card: '#161923',
+  inner: '#1e2231',
+  text: '#eef0f8',
+  muted: '#6b7494',
+  border: '#2a2f42',
   green: '#22c97a',
   blue: '#3b7ef4',
   amber: '#f5a623',
@@ -19,184 +18,98 @@ const C = {
   red: '#f04a4a',
 }
 
-// ─── Lesson Header Component ─────────────────────────────────────────────────────
-function LessonHeader({ lessonData, onChange, currentUser }) {
+// ─── AI Assist Button Component ────────────────────────────────────────────
+function AIAssistButton({ mode, sectionName, onGenerate, loading }) {
+  const label = mode === 'refine' ? '✨ Refine' : '✨ Generate'
+  const title = mode === 'refine' 
+    ? `Refine ${sectionName} using AI` 
+    : `Generate ${sectionName} from scratch`
+  
   return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
+    <button
+      onClick={() => onGenerate(mode)}
+      disabled={loading}
+      title={title}
+      style={{
+        background: loading ? C.muted : C.purple,
+        color: 'white',
+        border: 'none',
+        borderRadius: 6,
+        padding: '6px 12px',
+        fontSize: 11,
+        fontWeight: 600,
+        cursor: loading ? 'not-allowed' : 'pointer',
+        opacity: loading ? 0.6 : 1,
+        transition: 'all 0.2s',
+      }}
+    >
+      {loading ? '⏳ Generating...' : label}
+    </button>
+  )
+}
+
+// ─── Section Wrapper with AI Assist ───────────────────────────────────────
+function Section({ title, children, onAIRefine, onAIGenerate, isGenerating }) {
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 20,
     }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
-        Lesson Header
-      </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: 12, 
-            fontWeight: 600, 
-            color: C.muted, 
-            marginBottom: 6 
-          }}>
-            Lesson Name / Title *
-          </label>
-          <input
-            type="text"
-            value={lessonData.title || ''}
-            onChange={(e) => onChange('title', e.target.value)}
-            placeholder="Enter lesson title..."
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              fontSize: 14,
-              background: C.inner,
-              color: C.text,
-              outline: 'none'
-            }}
-          />
-        </div>
-        
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: 12, 
-            fontWeight: 600, 
-            color: C.muted, 
-            marginBottom: 6 
-          }}>
-            Date *
-          </label>
-          <input
-            type="date"
-            value={lessonData.date || ''}
-            onChange={(e) => onChange('date', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              fontSize: 14,
-              background: C.inner,
-              color: C.text,
-              outline: 'none'
-            }}
-          />
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+      }}>
+        <h2 style={{
+          fontSize: 16,
+          fontWeight: 700,
+          color: C.text,
+          margin: 0,
+        }}>
+          {title}
+        </h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {onAIGenerate && (
+            <AIAssistButton
+              mode="generate"
+              sectionName={title}
+              onGenerate={() => onAIGenerate('generate')}
+              loading={isGenerating}
+            />
+          )}
+          {onAIRefine && (
+            <AIAssistButton
+              mode="refine"
+              sectionName={title}
+              onGenerate={() => onAIRefine('refine')}
+              loading={isGenerating}
+            />
+          )}
         </div>
       </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: 12, 
-            fontWeight: 600, 
-            color: C.muted, 
-            marginBottom: 6 
-          }}>
-            Subject *
-          </label>
-          <input
-            type="text"
-            value={lessonData.subject || ''}
-            onChange={(e) => onChange('subject', e.target.value)}
-            placeholder="e.g., Mathematics, Science, English..."
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              fontSize: 14,
-              background: C.inner,
-              color: C.text,
-              outline: 'none'
-            }}
-          />
-        </div>
-        
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: 12, 
-            fontWeight: 600, 
-            color: C.muted, 
-            marginBottom: 6 
-          }}>
-            Grade Level *
-          </label>
-          <select
-            value={lessonData.gradeLevel || ''}
-            onChange={(e) => onChange('gradeLevel', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              fontSize: 14,
-              background: C.inner,
-              color: C.text,
-              outline: 'none'
-            }}
-          >
-            <option value="">Select Grade Level</option>
-            <option value="Kindergarten">Kindergarten</option>
-            <option value="1st Grade">1st Grade</option>
-            <option value="2nd Grade">2nd Grade</option>
-            <option value="3rd Grade">3rd Grade</option>
-            <option value="4th Grade">4th Grade</option>
-            <option value="5th Grade">5th Grade</option>
-            <option value="6th Grade">6th Grade</option>
-            <option value="7th Grade">7th Grade</option>
-            <option value="8th Grade">8th Grade</option>
-            <option value="9th Grade">9th Grade</option>
-            <option value="10th Grade">10th Grade</option>
-            <option value="11th Grade">11th Grade</option>
-            <option value="12th Grade">12th Grade</option>
-          </select>
-        </div>
-      </div>
+      {children}
     </div>
   )
 }
 
-// ─── Standards Component ───────────────────────────────────────────────────────
-function StandardsSection({ standards, onStandardsChange, lessonData, currentUser }) {
-  const [showStandards, setShowStandards] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
-  
+// ─── 1. LESSON HEADER ──────────────────────────────────────────────────────
+function LessonHeaderSection({ data, onChange }) {
   return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
-    }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
-        Standards
-      </div>
-      
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ 
-          display: 'block', 
-          fontSize: 12, 
-          fontWeight: 600, 
-          color: C.muted, 
-          marginBottom: 6 
-        }}>
-          Search TEKS / Common Core / State Standards
-        </label>
-        <div style={{ position: 'relative' }}>
+    <Section title="Lesson Header">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+            Lesson Title *
+          </label>
           <input
             type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search by: textbook, curriculum, pacing guide, unit, keyword, or standard code..."
+            value={data.title || ''}
+            onChange={(e) => onChange('header', { ...data, title: e.target.value })}
+            placeholder="e.g., Photosynthesis Basics"
             style={{
               width: '100%',
               padding: '10px 12px',
@@ -206,89 +119,158 @@ function StandardsSection({ standards, onStandardsChange, lessonData, currentUse
               background: C.inner,
               color: C.text,
               outline: 'none',
-              paddingRight: 120
             }}
           />
-          <button
-            onClick={() => setShowStandards(!showStandards)}
+        </div>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+            Date *
+          </label>
+          <input
+            type="date"
+            value={data.date || ''}
+            onChange={(e) => onChange('header', { ...data, date: e.target.value })}
             style={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              background: C.blue,
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              padding: '6px 12px',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer'
+              width: '100%',
+              padding: '10px 12px',
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              fontSize: 14,
+              background: C.inner,
+              color: C.text,
+              outline: 'none',
             }}
-          >
-            {showStandards ? 'Hide' : 'Search'}
-          </button>
+          />
         </div>
       </div>
-      
-      {showStandards && lessonData.subject && (
-        <div style={{ marginBottom: 16 }}>
-          <StandardsSelector 
-            topic={lessonData.title}
-            maxSelections={5}
-            showRecommendations={true}
-            schoolName={currentUser?.schoolName}
-            onStandardsChange={(standards) => {
-              // Convert to array format expected by API
-              const standardsArray = Array.isArray(standards) ? standards : []
-              onStandardsChange(standardsArray)
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+            Subject *
+          </label>
+          <input
+            type="text"
+            value={data.subject || ''}
+            onChange={(e) => onChange('header', { ...data, subject: e.target.value })}
+            placeholder="e.g., Biology, Mathematics, English"
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              fontSize: 14,
+              background: C.inner,
+              color: C.text,
+              outline: 'none',
             }}
           />
         </div>
-      )}
-      
-      {/* Selected Standards Tags */}
-      {standards && standards.length > 0 && (
         <div>
-          <div style={{ 
-            fontSize: 12, 
-            fontWeight: 600, 
-            color: C.muted, 
-            marginBottom: 8 
-          }}>
-            Selected Standards ({standards.length})
+          <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+            Grade Level *
+          </label>
+          <select
+            value={data.gradeLevel || ''}
+            onChange={(e) => onChange('header', { ...data, gradeLevel: e.target.value })}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              fontSize: 14,
+              background: C.inner,
+              color: C.text,
+              outline: 'none',
+            }}
+          >
+            <option value="">Select Grade Level</option>
+            {['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'].map(g => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+    </Section>
+  )
+}
+
+// ─── 2. STANDARDS ──────────────────────────────────────────────────────────
+function StandardsSection({ data, onChange, onAIGenerate }) {
+  const [showPicker, setShowPicker] = useState(false)
+  const [generating, setGenerating] = useState(false)
+
+  const handleAIGenerate = async (mode) => {
+    setGenerating(true)
+    await onAIGenerate('standards', mode, data)
+    setGenerating(false)
+  }
+
+  return (
+    <Section
+      title="2. Standards"
+      onAIGenerate={handleAIGenerate}
+      isGenerating={generating}
+    >
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+          Search TEKS / Common Core Standards
+        </label>
+        <button
+          onClick={() => setShowPicker(!showPicker)}
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: `1px solid ${C.blue}`,
+            background: C.inner,
+            color: C.blue,
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          {showPicker ? '▲ Hide Picker' : '▼ Browse Standards'}
+        </button>
+      </div>
+
+      {showPicker && (
+        <StandardsSelector
+          topic={data.title}
+          maxSelections={5}
+          showRecommendations
+          onStandardsChange={(standards) => {
+            onChange('standards', standards)
+            setShowPicker(false)
+          }}
+        />
+      )}
+
+      {data.standards && data.standards.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
+            Selected ({data.standards.length})
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {standards.map((standard, index) => (
+            {data.standards.map((std, i) => (
               <span
-                key={index}
+                key={i}
                 style={{
-                  background: `${C.blue}15`,
+                  background: `${C.blue}20`,
                   color: C.blue,
-                  border: `1px solid ${C.blue}30`,
-                  borderRadius: 20,
-                  padding: '4px 12px',
+                  border: `1px solid ${C.blue}40`,
+                  borderRadius: 6,
+                  padding: '4px 10px',
                   fontSize: 12,
                   fontWeight: 600,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 6
+                  gap: 6,
                 }}
               >
-                {standard.code ? `${standard.code}${standard.description ? ' - ' + standard.description : ''}` : standard}
+                {std}
                 <button
-                  onClick={() => {
-                    const newStandards = standards.filter((_, i) => i !== index)
-                    onStandardsChange(newStandards)
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: C.blue,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    padding: 0,
-                    lineHeight: 1
-                  }}
+                  onClick={() => onChange('standards', data.standards.filter((_, idx) => idx !== i))}
+                  style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
                 >
                   ×
                 </button>
@@ -297,275 +279,297 @@ function StandardsSection({ standards, onStandardsChange, lessonData, currentUse
           </div>
         </div>
       )}
-    </div>
+    </Section>
   )
 }
 
-// ─── Objectives Section ─────────────────────────────────────────────────────
-function ObjectivesSection({ objectives, onChange }) {
+// ─── 3. OBJECTIVES ────────────────────────────────────────────────────────
+function ObjectivesSection({ data, onChange, onAIGenerate }) {
+  const [generating, setGenerating] = useState(false)
+
+  const handleAIGenerate = async (mode) => {
+    setGenerating(true)
+    await onAIGenerate('objectives', mode, data)
+    setGenerating(false)
+  }
+
   return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
-    }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
-        Objectives
-      </div>
-      
+    <Section
+      title="3. Learning Objectives"
+      onAIGenerate={handleAIGenerate}
+      onAIRefine={handleAIGenerate}
+      isGenerating={generating}
+    >
+      <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+        By the end of this lesson, students will be able to...
+      </label>
+      <textarea
+        value={data.objectives || ''}
+        onChange={(e) => onChange('objectives', e.target.value)}
+        placeholder="e.g., - Identify the three main parts of a plant cell
+- Explain how photosynthesis converts light to chemical energy
+- Compare cellular respiration and photosynthesis"
+        style={{
+          width: '100%',
+          padding: '12px 14px',
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          fontSize: 13,
+          background: C.inner,
+          color: C.text,
+          outline: 'none',
+          fontFamily: 'Inter, monospace',
+          minHeight: 120,
+          lineHeight: 1.5,
+        }}
+      />
+    </Section>
+  )
+}
+
+// ─── 4. CFS (Culturally Responsive Teaching & Success Criteria) ──────────
+function CFSSection({ data, onChange, onAIGenerate }) {
+  const [generating, setGenerating] = useState(false)
+
+  const handleAIGenerate = async (mode) => {
+    setGenerating(true)
+    await onAIGenerate('cfs', mode, data)
+    setGenerating(false)
+  }
+
+  return (
+    <Section
+      title="4. Success Criteria & Culturally Responsive Teaching"
+      onAIGenerate={handleAIGenerate}
+      onAIRefine={handleAIGenerate}
+      isGenerating={generating}
+    >
       <div style={{ marginBottom: 16 }}>
-        <label style={{ 
-          display: 'block', 
-          fontSize: 12, 
-          fontWeight: 600, 
-          color: C.muted, 
-          marginBottom: 6 
-        }}>
-          Learning Objectives *
+        <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+          Success Criteria: Students will demonstrate understanding by...
         </label>
         <textarea
-          value={objectives || ''}
-          onChange={(e) => onChange('objectives', e.target.value)}
-          placeholder="What will students be able to do by the end of this lesson?"
-          rows={4}
+          value={data.successCriteria || ''}
+          onChange={(e) => onChange('cfs', { ...data, successCriteria: e.target.value })}
+          placeholder="e.g., - Correctly label plant cell structures on a diagram
+- Write a 3-sentence explanation of photosynthesis
+- Score 80% or higher on exit ticket"
           style={{
             width: '100%',
-            padding: '12px',
+            padding: '12px 14px',
             border: `1px solid ${C.border}`,
             borderRadius: 8,
-            fontSize: 14,
+            fontSize: 13,
             background: C.inner,
             color: C.text,
             outline: 'none',
-            resize: 'vertical',
-            lineHeight: 1.5
+            minHeight: 100,
+            lineHeight: 1.5,
           }}
         />
       </div>
-    </div>
-  )
-}
 
-// ─── Success Criteria Section ────────────────────────────────────────────
-function SuccessCriteriaSection({ successCriteria, onChange }) {
-  return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
-    }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
-        Criteria for Success
-      </div>
-      
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ 
-          display: 'block', 
-          fontSize: 12, 
-          fontWeight: 600, 
-          color: C.muted, 
-          marginBottom: 6 
-        }}>
-          Success Criteria *
+      <div>
+        <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+          Culturally Responsive Notes (optional)
         </label>
         <textarea
-          value={successCriteria || ''}
-          onChange={(e) => onChange('successCriteria', e.target.value)}
-          placeholder="How will you and students know they've met the objectives?"
-          rows={3}
+          value={data.culturalNotes || ''}
+          onChange={(e) => onChange('cfs', { ...data, culturalNotes: e.target.value })}
+          placeholder="e.g., Use examples from students' local ecosystems
+- Incorporate diverse scientists' contributions
+- Connect to real-world environmental justice issues"
           style={{
             width: '100%',
-            padding: '12px',
+            padding: '12px 14px',
             border: `1px solid ${C.border}`,
             borderRadius: 8,
-            fontSize: 14,
+            fontSize: 13,
             background: C.inner,
             color: C.text,
             outline: 'none',
-            resize: 'vertical',
-            lineHeight: 1.5
+            minHeight: 100,
+            lineHeight: 1.5,
           }}
         />
       </div>
-    </div>
+    </Section>
   )
 }
 
-// ─── Lesson Steps Component ─────────────────────────────────────────────────────
-function LessonStepsSection({ steps, onChange }) {
-  const stepSections = [
-    { key: 'warmUp', title: 'Warm-Up / Do Now', placeholder: 'Bell ringer activity, quick review, or engagement hook...' },
-    { key: 'directInstruction', title: 'Direct Instruction', placeholder: 'Teacher-led instruction, modeling, explanations...' },
-    { key: 'guidedPractice', title: 'Guided Practice', placeholder: 'Work through examples together, think-pair-share...' },
-    { key: 'independentPractice', title: 'Independent Practice', placeholder: 'Individual work, worksheets, application tasks...' },
-    { key: 'closure', title: 'Closure', placeholder: 'Wrap-up activity, review, or assessment...' },
-    { key: 'extension', title: 'Extension', placeholder: 'Additional challenges or enrichment activities...' }
+// ─── 5. LESSON STEPS (6 Substeps) ─────────────────────────────────────────
+function LessonStepsSection({ data, onChange, onAIGenerate }) {
+  const [generating, setGenerating] = useState(false)
+
+  const handleAIGenerate = async (mode) => {
+    setGenerating(true)
+    await onAIGenerate('lessonSteps', mode, data)
+    setGenerating(false)
+  }
+
+  const steps = [
+    { key: 'warmUp', label: 'Warm-Up / Hook', hint: 'Activate prior knowledge & engage students' },
+    { key: 'directInstruction', label: 'Direct Instruction', hint: 'Teacher-led instruction & modeling' },
+    { key: 'guidedPractice', label: 'Guided Practice', hint: 'Students practice with teacher support' },
+    { key: 'independentPractice', label: 'Independent Practice', hint: 'Students work independently' },
+    { key: 'closure', label: 'Closure', hint: 'Summarize key concepts & connect to objectives' },
+    { key: 'extension', label: 'Extension (if time)', hint: 'Enrichment or challenge activities' },
   ]
 
   return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
-    }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
-        Lesson Steps
-      </div>
-      
-      {stepSections.map((section, index) => (
-        <div key={section.key} style={{ marginBottom: 24 }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            marginBottom: 12 
-          }}>
-            <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>
-              {index + 1}. {section.title}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => {
-                  // AI Fill Section functionality
-                  console.log(`AI fill ${section.key}`)
-                }}
-                style={{
-                  background: `${C.teal}15`,
-                  color: C.teal,
-                  border: `1px solid ${C.teal}30`,
-                  borderRadius: 6,
-                  padding: '6px 12px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                🤖 AI Fill Section
-              </button>
-              <button
-                style={{
-                  background: `${C.blue}15`,
-                  color: C.blue,
-                  border: `1px solid ${C.blue}30`,
-                  borderRadius: 6,
-                  padding: '6px 12px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                📎 Attach
-              </button>
-            </div>
-          </div>
-          
+    <Section
+      title="5. Lesson Steps"
+      onAIGenerate={handleAIGenerate}
+      onAIRefine={handleAIGenerate}
+      isGenerating={generating}
+    >
+      {steps.map((step, i) => (
+        <div key={step.key} style={{ marginBottom: 16 }}>
+          <label style={{ fontSize: 12, fontWeight: 600, color: C.teal, marginBottom: 4, display: 'block', textTransform: 'uppercase' }}>
+            {i + 1}. {step.label}
+          </label>
+          <p style={{ fontSize: 11, color: C.muted, marginBottom: 8, margin: '4px 0 8px 0' }}>
+            {step.hint}
+          </p>
           <textarea
-            value={steps?.[section.key] || ''}
-            onChange={(e) => onChange(`steps.${section.key}`, e.target.value)}
-            placeholder={section.placeholder}
-            rows={3}
+            value={data.lessonSteps?.[step.key] || ''}
+            onChange={(e) => onChange('lessonSteps', { ...data.lessonSteps, [step.key]: e.target.value })}
+            placeholder={`Describe ${step.label.toLowerCase()}...`}
             style={{
               width: '100%',
-              padding: '12px',
+              padding: '12px 14px',
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              fontSize: 13,
+              background: C.inner,
+              color: C.text,
+              outline: 'none',
+              minHeight: 80,
+              lineHeight: 1.5,
+            }}
+          />
+          {i < steps.length - 1 && (
+            <div style={{ height: 1, background: C.border, margin: '16px 0' }} />
+          )}
+        </div>
+      ))}
+    </Section>
+  )
+}
+
+// ─── 6. EXIT TICKET ───────────────────────────────────────────────────────
+function ExitTicketSection({ data, onChange, onAIGenerate }) {
+  const [generating, setGenerating] = useState(false)
+
+  const handleAIGenerate = async (mode) => {
+    setGenerating(true)
+    await onAIGenerate('exitTicket', mode, data)
+    setGenerating(false)
+  }
+
+  return (
+    <Section
+      title="6. Exit Ticket"
+      onAIGenerate={handleAIGenerate}
+      onAIRefine={handleAIGenerate}
+      isGenerating={generating}
+    >
+      <p style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
+        Quick formative assessment to check student understanding before leaving class.
+      </p>
+      <textarea
+        value={data.exitTicket || ''}
+        onChange={(e) => onChange('exitTicket', e.target.value)}
+        placeholder="e.g., Question 1: In your own words, explain what photosynthesis is.
+Question 2: Name one way photosynthesis differs from cellular respiration.
+Question 3: Draw and label the parts of a plant cell involved in photosynthesis."
+        style={{
+          width: '100%',
+          padding: '12px 14px',
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          fontSize: 13,
+          background: C.inner,
+          color: C.text,
+          outline: 'none',
+          minHeight: 120,
+          lineHeight: 1.5,
+        }}
+      />
+    </Section>
+  )
+}
+
+// ─── 7. HOMEWORK ──────────────────────────────────────────────────────────
+function HomeworkSection({ data, onChange, onAIGenerate }) {
+  const [generating, setGenerating] = useState(false)
+
+  const handleAIGenerate = async (mode) => {
+    setGenerating(true)
+    await onAIGenerate('homework', mode, data)
+    setGenerating(false)
+  }
+
+  return (
+    <Section
+      title="7. Homework & Practice"
+      onAIGenerate={handleAIGenerate}
+      onAIRefine={handleAIGenerate}
+      isGenerating={generating}
+    >
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+          Assignment Description *
+        </label>
+        <textarea
+          value={data.homework?.assignment || ''}
+          onChange={(e) => onChange('homework', { ...data.homework, assignment: e.target.value })}
+          placeholder="Describe the homework assignment..."
+          style={{
+            width: '100%',
+            padding: '12px 14px',
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            fontSize: 13,
+            background: C.inner,
+            color: C.text,
+            outline: 'none',
+            minHeight: 100,
+            lineHeight: 1.5,
+          }}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div>
+          <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+            Due Date
+          </label>
+          <input
+            type="date"
+            value={data.homework?.dueDate || ''}
+            onChange={(e) => onChange('homework', { ...data.homework, dueDate: e.target.value })}
+            style={{
+              width: '100%',
+              padding: '10px 12px',
               border: `1px solid ${C.border}`,
               borderRadius: 8,
               fontSize: 14,
               background: C.inner,
               color: C.text,
               outline: 'none',
-              resize: 'vertical',
-              lineHeight: 1.5
             }}
           />
         </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Exit Ticket Section ───────────────────────────────────────────────────
-function ExitTicketSection({ exitTicket, onChange }) {
-  return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
-    }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
-        Exit Ticket
-      </div>
-      
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ 
-          display: 'block', 
-          fontSize: 12, 
-          fontWeight: 600, 
-          color: C.muted, 
-          marginBottom: 6 
-        }}>
-          Exit Ticket Questions
-        </label>
-        <textarea
-          value={exitTicket || ''}
-          onChange={(e) => onChange('exitTicket', e.target.value)}
-          placeholder="Quick assessment questions to check understanding (3-5 questions)..."
-          rows={3}
-          style={{
-            width: '100%',
-            padding: '12px',
-            border: `1px solid ${C.border}`,
-            borderRadius: 8,
-            fontSize: 14,
-            background: C.inner,
-            color: C.text,
-            outline: 'none',
-            resize: 'vertical',
-            lineHeight: 1.5
-          }}
-        />
-      </div>
-    </div>
-  )
-}
-
-// ─── Homework Section ───────────────────────────────────────────────────────
-function HomeworkSection({ homework, onChange }) {
-  return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
-    }}>
-      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
-        Homework
-      </div>
-      
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: 12, 
-            fontWeight: 600, 
-            color: C.muted, 
-            marginBottom: 6 
-          }}>
-            Assignment
+          <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+            Max Points (optional)
           </label>
           <input
-            type="text"
-            value={homework?.assignment || ''}
-            onChange={(e) => onChange('homework.assignment', e.target.value)}
-            placeholder="Homework assignment details..."
+            type="number"
+            value={data.homework?.maxPoints || ''}
+            onChange={(e) => onChange('homework', { ...data.homework, maxPoints: e.target.value })}
+            placeholder="e.g., 50"
             style={{
               width: '100%',
               padding: '10px 12px',
@@ -574,367 +578,442 @@ function HomeworkSection({ homework, onChange }) {
               fontSize: 14,
               background: C.inner,
               color: C.text,
-              outline: 'none'
-            }}
-          />
-        </div>
-        
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: 12, 
-            fontWeight: 600, 
-            color: C.muted, 
-            marginBottom: 6 
-          }}>
-            Due Date
-          </label>
-          <input
-            type="date"
-            value={homework?.dueDate || ''}
-            onChange={(e) => onChange('homework.dueDate', e.target.value)}
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              fontSize: 14,
-              background: C.inner,
-              color: C.text,
-              outline: 'none'
+              outline: 'none',
             }}
           />
         </div>
       </div>
-      
-      <div>
-        <label style={{ 
-          display: 'block', 
-          fontSize: 12, 
-          fontWeight: 600, 
-          color: C.muted, 
-          marginBottom: 6 
-        }}>
-          Maximum Points
-        </label>
-        <input
-          type="number"
-          value={homework?.maxPoints || ''}
-          onChange={(e) => onChange('homework.maxPoints', e.target.value)}
-          placeholder="100"
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            border: `1px solid ${C.border}`,
-            borderRadius: 8,
-            fontSize: 14,
-            background: C.inner,
-            color: C.text,
-            outline: 'none'
-          }}
-        />
-      </div>
-    </div>
+    </Section>
   )
 }
 
-// ─── Attachments Section ───────────────────────────────────────────────────
-function AttachmentsSection({ attachments, onChange }) {
+// ─── 8. ACCOMMODATIONS ────────────────────────────────────────────────────
+function AccommodationsSection({ data, onChange }) {
+  const [open, setOpen] = useState(false)
+
   return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 20,
     }}>
-      <div style={{ 
-        fontSize: 18, 
-        fontWeight: 700, 
-        color: C.text, 
-        marginBottom: 20 
-      }}>
-        Attachments
-      </div>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: C.inner,
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          padding: '12px 14px',
+          cursor: 'pointer',
+          color: C.text,
+          fontSize: 14,
+          fontWeight: 700,
+        }}
+      >
+        <span>♿ 8. Student Accommodations & Modifications</span>
+        <span style={{ color: C.muted, fontSize: 13 }}>{open ? '▲' : '▼'}</span>
+      </button>
 
-      <label style={{ 
-        display: 'block', 
-        fontSize: 12, 
-        fontWeight: 600, 
-        color: C.muted, 
-        marginBottom: 12 
-      }}>
-        Upload supporting materials
-      </label>
-
-      <div style={{
-        border: `2px dashed ${C.border}`,
-        borderRadius: 8,
-        padding: 20,
-        textAlign: 'center',
-        background: C.inner,
-        cursor: 'pointer'
-      }}>
-        <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>
-          📎 Drop files here or click to upload
-        </div>
-        <div style={{ fontSize: 12, color: C.muted, marginTop: 4 }}>
-          Worksheets, answer keys, rubrics, images, PDFs
-        </div>
-      </div>
-
-      {attachments && attachments.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 8 }}>
-            Attached Files ({attachments.length})
-          </div>
-          {attachments.map((file, index) => (
-            <div key={index} style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '8px 12px',
+      {open && (
+        <div style={{ marginTop: 12 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
+            Specify lesson-specific accommodations and modifications for students with IEPs, 504 plans, or ELL needs.
+          </p>
+          <textarea
+            value={data.accommodations || ''}
+            onChange={(e) => onChange('accommodations', e.target.value)}
+            placeholder="e.g., - Provide visual aids for plant cell diagram
+- Simplify vocabulary for ELL students
+- Allow extended time for exit ticket
+- Offer oral response option instead of written"
+            style={{
+              width: '100%',
+              padding: '12px 14px',
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              fontSize: 13,
               background: C.inner,
-              borderRadius: 6,
-              marginBottom: 8,
-              fontSize: 14
-            }}>
-              <span>📄 {file.name || `File ${index + 1}`}</span>
-              <button
-                onClick={() => {
-                  const newAttachments = attachments.filter((_, i) => i !== index)
-                  onChange('attachments', newAttachments)
-                }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: C.red,
-                  cursor: 'pointer',
-                  fontSize: 16
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
+              color: C.text,
+              outline: 'none',
+              minHeight: 120,
+              lineHeight: 1.5,
+            }}
+          />
         </div>
       )}
     </div>
   )
 }
 
-// ─── Main Lesson Plan Template Component ───────────────────────────────────────────
-export default function LessonPlanTemplate({ currentUser }) {
+// ─── 9. ATTACHMENTS ───────────────────────────────────────────────────────
+function AttachmentsSection({ data, onChange }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 20,
+    }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: C.inner,
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          padding: '12px 14px',
+          cursor: 'pointer',
+          color: C.text,
+          fontSize: 14,
+          fontWeight: 700,
+        }}
+      >
+        <span>📎 9. Attachments & Resources</span>
+        <span style={{ color: C.muted, fontSize: 13 }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 12 }}>
+          <p style={{ fontSize: 12, color: C.muted, marginBottom: 12 }}>
+            Worksheets, answer keys, rubrics, images, PDFs, or external links.
+          </p>
+          <div style={{
+            border: `2px dashed ${C.border}`,
+            borderRadius: 8,
+            padding: 20,
+            textAlign: 'center',
+            background: C.inner,
+            cursor: 'pointer',
+          }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>📤</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: C.text, marginBottom: 4 }}>
+              Tap to upload files
+            </div>
+            <div style={{ fontSize: 11, color: C.muted }}>
+              PDF, Word, Image, or any file type
+            </div>
+          </div>
+
+          {data.attachments && data.attachments.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
+                Attached Files ({data.attachments.length})
+              </div>
+              {data.attachments.map((file, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px 12px',
+                    background: C.inner,
+                    borderRadius: 6,
+                    marginBottom: 6,
+                    fontSize: 13,
+                  }}
+                >
+                  <span>📄 {file.name || `File ${i + 1}`}</span>
+                  <button
+                    onClick={() => {
+                      const updated = data.attachments.filter((_, idx) => idx !== i)
+                      onChange('attachments', updated)
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: C.red,
+                      cursor: 'pointer',
+                      fontSize: 16,
+                      padding: 0,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── 10. OPTIONAL ADD-ONS ─────────────────────────────────────────────────
+function OptionalAddOnsSection({ data, onChange }) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div style={{
+      background: C.card,
+      border: `1px solid ${C.border}`,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 20,
+    }}>
+      <button
+        onClick={() => setOpen(!open)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          background: C.inner,
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          padding: '12px 14px',
+          cursor: 'pointer',
+          color: C.text,
+          fontSize: 14,
+          fontWeight: 700,
+        }}
+      >
+        <span>⭐ 10. Optional Add-Ons</span>
+        <span style={{ color: C.muted, fontSize: 13 }}>{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+              Enrichment Activities (for early finishers)
+            </label>
+            <textarea
+              value={data.enrichment || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data, enrichment: e.target.value })}
+              placeholder="e.g., - Research photosynthesis in different plant types
+- Create a photosynthesis comic strip
+- Design an experiment to test light requirements"
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                fontSize: 13,
+                background: C.inner,
+                color: C.text,
+                outline: 'none',
+                minHeight: 100,
+                lineHeight: 1.5,
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+              Supplemental Resources & Links
+            </label>
+            <textarea
+              value={data.supplementalLinks || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data, supplementalLinks: e.target.value })}
+              placeholder="e.g., - Khan Academy: Plant Cells (https://...)
+- National Geographic: Photosynthesis Explainer
+- YouTube: Amoeba Sisters Photosynthesis Video"
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                fontSize: 13,
+                background: C.inner,
+                color: C.text,
+                outline: 'none',
+                minHeight: 100,
+                lineHeight: 1.5,
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+              Notes & Reflections
+            </label>
+            <textarea
+              value={data.reflections || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data, reflections: e.target.value })}
+              placeholder="e.g., - Pacing notes
+- Student misconceptions to watch for
+- What went well / what to improve next time"
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                fontSize: 13,
+                background: C.inner,
+                color: C.text,
+                outline: 'none',
+                minHeight: 100,
+                lineHeight: 1.5,
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── MAIN COMPONENT ───────────────────────────────────────────────────────
+export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
   const [lessonData, setLessonData] = useState({
-    header: {
-      title: '',
-      date: '',
-      subject: '',
-      gradeLevel: ''
-    },
+    header: { title: '', date: '', subject: '', gradeLevel: '' },
     standards: [],
     objectives: '',
-    cfs: {
-      successCriteria: '',
-      culturalNotes: ''
-    },
+    cfs: { successCriteria: '', culturalNotes: '' },
     lessonSteps: {
       warmUp: '',
       directInstruction: '',
       guidedPractice: '',
       independentPractice: '',
       closure: '',
-      extension: ''
+      extension: '',
     },
     exitTicket: '',
-    homework: {
-      assignment: '',
-      dueDate: '',
-      maxPoints: ''
-    },
+    homework: { assignment: '', dueDate: '', maxPoints: '' },
     accommodations: '',
     attachments: [],
-    optionalAddOns: {
-      enrichment: '',
-      supplementalLinks: '',
-      reflections: ''
-    }
+    optionalAddOns: { enrichment: '', supplementalLinks: '', reflections: '' },
   })
 
-  // Auto-populate grade level from user profile
-  useEffect(() => {
-    if (currentUser?.gradeLevel && !lessonData.header.gradeLevel) {
-      setLessonData(prev => ({ ...prev, header: { ...prev.header, gradeLevel: currentUser.gradeLevel } }))
-    }
-  }, [currentUser])
+  const [saving, setSaving] = useState(false)
+  const [generating, setGenerating] = useState(false)
 
-  function handleChange(field, value) {
-    if (field.includes('.')) {
-      const [parent, child] = field.split('.')
-      setLessonData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }))
-    } else {
-      setLessonData(prev => ({ ...prev, [field]: value }))
-    }
+  // Handle section updates
+  function handleSectionChange(section, value) {
+    setLessonData(prev => ({
+      ...prev,
+      [section]: value,
+    }))
   }
 
-  async function handleSave() {
-    console.log('Saving lesson plan:', lessonData)
-    
+  // AI Assist handler (placeholder for now)
+  async function handleAIAssist(section, mode, sectionData) {
+    setGenerating(true)
     try {
-      const response = await fetch('/api/lesson-plan?action=lessons', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${await currentUser.session.access_token}`
-        },
-        body: JSON.stringify(lessonData)
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        console.error('Save failed:', error)
-        alert(`Failed to save: ${error.error || 'Unknown error'}`)
-        return
-      }
-      
-      const result = await response.json()
-      console.log('Lesson saved successfully:', result)
-      alert('Lesson plan saved successfully!')
-      
-    } catch (error) {
-      console.error('Save error:', error)
-      alert('Failed to save lesson plan')
+      // Placeholder: actual AI integration will happen with /api/ai
+      console.log(`AI ${mode} for ${section}:`, sectionData)
+      // TODO: Call /api/ai with intent "lesson-plan-section"
+    } catch (err) {
+      console.error('AI assist failed:', err)
     }
+    setGenerating(false)
+  }
+
+  // Save lesson plan
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const payload = {
+        lessonId,
+        ...lessonData,
+      }
+      const response = await fetch('/api/lesson-plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) throw new Error('Save failed')
+      alert('Lesson plan saved!')
+      if (onBack) onBack()
+    } catch (err) {
+      console.error('Save error:', err)
+      alert('Failed to save. Please try again.')
+    }
+    setSaving(false)
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      background: '#f5f7fa',
+    <div style={{
+      minHeight: '100vh',
+      background: C.bg,
+      color: C.text,
       fontFamily: 'Inter, Arial, sans-serif',
-      paddingBottom: 80
+      paddingBottom: 100,
     }}>
       {/* Header */}
-      <div style={{ 
-        background: 'white', 
-        borderBottom: `1px solid ${C.border}`, 
+      <div style={{
+        background: C.card,
+        borderBottom: `1px solid ${C.border}`,
         padding: '16px 20px',
         position: 'sticky',
         top: 0,
-        zIndex: 100
+        zIndex: 100,
       }}>
-        <div style={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center' 
-        }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', maxWidth: 1200, margin: '0 auto' }}>
           <div>
-            <h1 style={{ 
-              fontSize: 20, 
-              fontWeight: 700, 
-              color: C.text, 
-              margin: 0 
-            }}>
-              Lesson Plan Template
+            <h1 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>
+              Lesson Plan
             </h1>
-            <p style={{ 
-              fontSize: 13, 
-              color: C.muted, 
-              margin: '4px 0 0 0' 
-            }}>
-              Create a comprehensive lesson plan
+            <p style={{ fontSize: 12, color: C.muted, margin: '4px 0 0 0' }}>
+              {lessonId ? 'Edit' : 'Create'} comprehensive lesson plan
             </p>
           </div>
-          <div style={{ display: 'flex', gap: 12 }}>
-            <button
-              onClick={() => console.log('Save draft')}
-              style={{
-                background: C.inner,
-                color: C.text,
-                border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                padding: '8px 16px',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              Save Draft
-            </button>
+          <div style={{ display: 'flex', gap: 10 }}>
+            {onBack && (
+              <button
+                onClick={onBack}
+                style={{
+                  background: C.inner,
+                  color: C.text,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  padding: '8px 16px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                ← Back
+              </button>
+            )}
             <button
               onClick={handleSave}
+              disabled={saving}
               style={{
                 background: C.blue,
                 color: 'white',
                 border: 'none',
                 borderRadius: 8,
                 padding: '8px 16px',
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: 600,
-                cursor: 'pointer'
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
               }}
             >
-              Save Lesson Plan
+              {saving ? '💾 Saving...' : '💾 Save Lesson Plan'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div style={{ padding: '20px', maxWidth: 1200, margin: '0 auto' }}>
-        <LessonHeader 
-          lessonData={lessonData.header} 
-          onChange={(field, value) => handleChange(`header.${field}`, value)} 
-          currentUser={currentUser} 
-        />
-        
-        <StandardsSection 
-          standards={lessonData.standards}
-          onStandardsChange={(standards) => handleChange('standards', standards)}
-          lessonData={lessonData}
-          currentUser={currentUser}
-        />
-        
-        <ObjectivesSection 
-          objectives={lessonData.objectives}
-          onChange={handleChange}
-        />
-        
-        <SuccessCriteriaSection 
-          successCriteria={lessonData.cfs.successCriteria}
-          onChange={(value) => handleChange('cfs.successCriteria', value)}
-        />
-        
-        <LessonStepsSection 
-          steps={lessonData.lessonSteps}
-          onChange={handleChange}
-        />
-        
-        <ExitTicketSection 
-          exitTicket={lessonData.exitTicket}
-          onChange={handleChange}
-        />
-        
-        <HomeworkSection 
-          homework={lessonData.homework}
-          onChange={handleChange}
-        />
-        
-        <AccommodationsSection 
-          accommodations={lessonData.accommodations}
-          onChange={handleChange}
-        />
-        
-        <AttachmentsSection 
-          attachments={lessonData.attachments}
-          onChange={handleChange}
-        />
+      {/* Content */}
+      <div style={{ padding: '20px', maxWidth: 1000, margin: '0 auto' }}>
+        <LessonHeaderSection data={lessonData.header} onChange={handleSectionChange} />
+        <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <ObjectivesSection data={lessonData.objectives} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <CFSSection data={lessonData.cfs} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <LessonStepsSection data={lessonData.lessonSteps} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <ExitTicketSection data={lessonData.exitTicket} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <HomeworkSection data={lessonData.homework} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <AccommodationsSection data={lessonData.accommodations} onChange={handleSectionChange} />
+        <AttachmentsSection data={lessonData.attachments} onChange={handleSectionChange} />
+        <OptionalAddOnsSection data={lessonData.optionalAddOns} onChange={handleSectionChange} />
       </div>
 
       {/* Bottom Navigation */}
