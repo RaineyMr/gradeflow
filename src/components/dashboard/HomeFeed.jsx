@@ -29,7 +29,7 @@ function HomeFeed({ navigate, showAddWidgets, setShowAddWidgets }) {
   const show = (id) => activeWidgets.includes(id);
 
   return (
-<div style={{ padding: '12px 12px 0' }}>
+style={{ padding: '12px 12px 0' }}
       {/* Add widgets modal logic */}
       <Widget style={{ background: 'var(--school-surface, #1a0008)' }}>
         <div>DAILY OVERVIEW</div>

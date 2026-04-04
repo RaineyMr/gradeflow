@@ -783,7 +783,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
       }}>
         <UserHeader currentUser={currentUser} />
         
-        <div style={{ padding: '20px', maxWidth: 800, margin: '0 auto' }}>
+        <div style={{ padding: '20px' }}>
           {/* Daily Overview */}
           {wrap('overview', <DailyOverviewWidget navigate={navigateToPage} onRemove={() => toggleWidget('overview')} />)}
 
@@ -900,7 +900,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
       <UserHeader currentUser={currentUser} />
       
       {/* Full-width container like demo dashboard */}
-      <div style={{ padding: '12px 12px 0' }}>
+      <div style={{ padding: '16px 20px 0' }}>
         
         {/* Widget Modal */}
         {showModal && (
