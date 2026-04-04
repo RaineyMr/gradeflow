@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
 import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
-import StandardsSelector from '../components/StandardsSelector'
+import StandardsSelector from '../components/standards/StandardsSelector'
 
 const C = {
   bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8',
@@ -551,6 +551,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
               topic={form.topic}
               maxSelections={3}
               showRecommendations={true}
+              schoolName={currentUser?.schoolName}
             />
           )}
         </div>
