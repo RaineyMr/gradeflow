@@ -94,23 +94,25 @@ export default function ClassCreation() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: 'Inter, Arial, sans-serif', padding: '20px' }}>
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: 'Inter, Arial, sans-serif', padding: '20px', position: 'relative' }}>
+      {/* Back Button */}
+      <button 
+        onClick={() => navigate('/teacher')}
+        style={{ 
+          position: 'absolute', top: 20, left: 20,
+          background: C.inner, border: 'none', borderRadius: 8, 
+          padding: '8px 14px', color: C.text, cursor: 'pointer', fontSize: 13,
+          zIndex: 10
+        }}
+      >
+        ← Back
+      </button>
+
+      <div style={{ maxWidth: 800, margin: '0 auto', paddingTop: 20 }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32 }}>
-          <button 
-            onClick={() => navigate('/teacher')}
-            style={{ 
-              background: C.inner, border: 'none', borderRadius: 8, 
-              padding: '8px 14px', color: C.text, cursor: 'pointer', fontSize: 13 
-            }}
-          >
-            ← Back
-          </button>
-          <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>Create Classes</h1>
-            <p style={{ fontSize: 14, color: C.muted, margin: 0 }}>Add your teaching periods and subjects. Students will use class codes to join.</p>
-          </div>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>Create Classes</h1>
+          <p style={{ fontSize: 14, color: C.muted, margin: 0 }}>Add your teaching periods and subjects. Students will use class codes to join.</p>
         </div>
 
         {/* Info Box */}

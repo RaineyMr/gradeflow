@@ -230,8 +230,23 @@ export default function TeacherOnboarding() {
       {/* Content */}
       <div style={{ 
         flex: 1, display: 'flex', alignItems: 'flex-start', 
-        justifyContent: 'center', padding: '40px 24px', overflowY: 'auto' 
+        justifyContent: 'center', padding: '40px 24px', overflowY: 'auto', position: 'relative' 
       }}>
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/login')}
+          style={{
+            position: 'absolute', top: 20, left: 24,
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 8, padding: '8px 14px', color: '#fff', cursor: 'pointer', 
+            fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+        >
+          ← Back
+        </button>
+
         <div style={{ 
           width: '100%', maxWidth: 600, background: C.card, 
           border: `1px solid ${C.border}`, borderRadius: 22, 

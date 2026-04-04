@@ -567,6 +567,16 @@ export default function CurriculumOnboarding() {
 
   const STEPS = ['Curriculum', 'Gradebook', 'Getting Started', 'Done']
 
+  function handleBack() {
+    if (step > 0) {
+      // Go to previous step
+      setStep(step - 1)
+    } else {
+      // Go back to teacher onboarding
+      navigate('/teacher/onboarding')
+    }
+  }
+
   function handleSkipOrCancel() {
     // Clear onboarding flags and navigate to dashboard
     const updatedUser = {
@@ -632,8 +642,23 @@ export default function CurriculumOnboarding() {
       </div>
 
       {/* Progress header */}
-      <div style={{ background: 'linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, rgba(0,0,0,0.85) 100%)', padding: '20px 16px 16px' }}>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10, fontWeight: 600 }}>
+      <div style={{ background: 'linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, rgba(0,0,0,0.85) 100%)', padding: '20px 16px 16px', position: 'relative' }}>
+        {/* Back Button */}
+        <button
+          onClick={handleBack}
+          style={{
+            position: 'absolute', top: 16, left: 16,
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 8, padding: '8px 14px', color: '#fff', cursor: 'pointer', 
+            fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+        >
+          ← Back
+        </button>
+
+        <div style={{ textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10, fontWeight: 600 }}>
           Step {step + 1} of {STEPS.length} — {STEPS[step]}
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
