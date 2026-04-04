@@ -176,7 +176,7 @@ function VoiceTutorModal({ onClose }) {
   async function startSession() {
     setStatus('connecting'); statusRef.current='connecting'; setTranscript([]); setErrorMsg('')
     try {
-      const tokenRes = await fetch('/api/elevenlabs-token',{ method:'POST' })
+      const tokenRes = await fetch('/api/audio',{ method:'POST' })
       if(!tokenRes.ok) throw new Error('Could not connect to tutor service')
       const { signed_url } = await tokenRes.json()
       const ws = new WebSocket(signed_url); wsRef.current=ws

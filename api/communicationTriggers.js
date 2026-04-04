@@ -169,10 +169,11 @@ export async function checkAndFireTriggers({
   // Send email
   if ((channel === 'email' || channel === 'both') && student.parentEmail) {
     try {
-      const r = await fetch('/api/send-parent-email', {
+      const r = await fetch('/api/communication', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          type: 'email',
           to:          student.parentEmail,
           subject,
           body:        draft,
@@ -198,10 +199,14 @@ export async function checkAndFireTriggers({
     const smsText = await translateMessage(smsDraft || draft, lang)
 
     try {
-      const r = await fetch('/api/send-parent-sms', {
+      const r = await fetch('/api/communication', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: student.parentPhone, message: smsText }),
+        body: JSON.stringify({
+          type: 'sms',
+          to: student.parentPhone,
+          message: smsText
+        }),
       })
       results.sms = await r.json()
     } catch (err) {
