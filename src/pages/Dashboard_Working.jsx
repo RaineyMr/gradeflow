@@ -873,7 +873,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
           {wrap('sketch', <SketchAnnotateWidget navigate={navigateToPage} />)}
           {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
           {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
-          {wrap('gradebook', <GradebookWidget navigate={navigateToPage} />)}
+          {wrap('gradebook', <EmptyGradebookWidget navigate={navigateToPage} />)}
 
           {/* Add Widgets Bar */}
           <AddWidgetsBar onOpen={() => setShowModal(true)} />
@@ -931,6 +931,9 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         {/* Messages */}
         {wrap('messages', <EmptyMessagesWidget navigate={navigateToPage} />)}
         
+        {/* Gradebook */}
+        {wrap('gradebook', <EmptyGradebookWidget navigate={navigateToPage} />)}
+        
         {/* Reports */}
         {wrap('reports', <EmptyReportsWidget navigate={navigateToPage} />)}
         
@@ -948,9 +951,6 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         
         {/* Scan Grade Sheet */}
         {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
-        
-        {/* Gradebook */}
-        {wrap('gradebook', <EmptyGradebookWidget navigate={navigateToPage} />)}
         
         {/* Add Widgets Bar at bottom */}
         <AddWidgetsBar onOpen={() => setShowModal(true)} />
