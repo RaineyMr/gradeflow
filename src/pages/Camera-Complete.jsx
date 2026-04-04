@@ -218,7 +218,7 @@ const CameraPage = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const response = await fetch('/api/grades/scan-entry', {
+      const response = await fetch('/api/grades?action=scan', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,

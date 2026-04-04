@@ -160,7 +160,7 @@ export default function Integrations({ onBack }) {
     if (key === 'googleClassroom') {
       setSyncing(s => ({ ...s, [key]: true }))
       try {
-        const res = await fetch('/api/classroom-sync', {
+        const res = await fetch('/api/integrations?action=sync-classroom', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ teacherId }),

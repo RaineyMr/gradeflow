@@ -1,6 +1,10 @@
-// api/classroom-sync.js
-// Pulls roster + assignments + grades from Google Classroom into Supabase.
-// Handles token refresh automatically.
+// api/integrations.js
+// ─── Consolidated Google Classroom + OAuth integration handler ────────────────
+// Merges: classroom-sync.js, google-auth.js, google-callback.js
+// Routes:
+//   POST ?action=sync-classroom → Sync Google Classroom roster/assignments/grades
+//   GET /google-auth?teacherId=... → Start Google OAuth flow
+//   GET /google-callback?code=...&state=... → Handle OAuth callback
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -68,10 +72,8 @@ async function classroomGet(path, token) {
   return res.json()
 }
 
-// ─── Main handler ──────────────────────────────────────────────────────────────
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-
+// ─── Sync Classroom logic ──────────────────────────────────────────────────────
+async function handleSyncClassroom(req, res) {
   const { teacherId = '00000000-0000-0000-0000-000000000001', courseId } = req.body || {}
 
   try {
@@ -222,4 +224,146 @@ export default async function handler(req, res) {
     console.error('Classroom sync error:', err)
     return res.status(500).json({ error: err.message || 'Sync failed' })
   }
+}
+
+// ─── Google OAuth start (google-auth.js) ───────────────────────────────────────
+async function handleGoogleAuth(req, res) {
+  const clientId    = process.env.GOOGLE_CLIENT_ID
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://gradeflow-omega.vercel.app/api/integrations/google-callback'
+
+  if (!clientId) {
+    return res.status(500).json({ error: 'Google Client ID not configured' })
+  }
+
+  const params = new URLSearchParams({
+    client_id:     clientId,
+    redirect_uri:  redirectUri,
+    response_type: 'code',
+    scope: [
+      'https://www.googleapis.com/auth/classroom.courses.readonly',
+      'https://www.googleapis.com/auth/classroom.rosters.readonly',
+      'https://www.googleapis.com/auth/classroom.coursework.students.readonly',
+      'https://www.googleapis.com/auth/classroom.student-submissions.students.readonly',
+      'openid',
+      'email',
+      'profile',
+    ].join(' '),
+    access_type:   'offline',  // get refresh token
+    prompt:        'consent',  // always show consent to get refresh token
+    // Pass teacher ID via state so we know who to store tokens for
+    state: req.query.teacherId || 'demo-teacher',
+  })
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`
+  res.redirect(authUrl)
+}
+
+// ─── Google OAuth callback (google-callback.js) ────────────────────────────────
+function getAppUrl() {
+  return process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : 'https://gradeflow-omega.vercel.app'
+}
+
+async function handleGoogleCallback(req, res) {
+  const { code, state: teacherId, error } = req.query
+
+  // Google OAuth error (user denied access)
+  if (error) {
+    console.error('Google OAuth error:', error)
+    return res.redirect(`${getAppUrl()}?classroom_error=${encodeURIComponent(error)}`)
+  }
+
+  if (!code) {
+    return res.redirect(`${getAppUrl()}?classroom_error=no_code`)
+  }
+
+  const clientId     = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const redirectUri  = process.env.GOOGLE_REDIRECT_URI || 'https://gradeflow-omega.vercel.app/api/integrations/google-callback'
+
+  try {
+    // Exchange code for tokens
+    const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id:     clientId,
+        client_secret: clientSecret,
+        redirect_uri:  redirectUri,
+        grant_type:    'authorization_code',
+      }).toString(),
+    })
+
+    if (!tokenRes.ok) {
+      const err = await tokenRes.text()
+      console.error('Token exchange error:', err)
+      return res.redirect(`${getAppUrl()}?classroom_error=token_exchange_failed`)
+    }
+
+    const { access_token, refresh_token, expires_in } = await tokenRes.json()
+
+    // Get user profile
+    const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { 'Authorization': `Bearer ${access_token}` }
+    })
+    const userProfile = await userRes.json()
+
+    const expiresAt = new Date(Date.now() + (expires_in * 1000)).toISOString()
+
+    // Store tokens in Supabase
+    const { error: supabaseErr } = await supabase
+      .from('google_tokens')
+      .upsert({
+        teacher_id:   teacherId,
+        access_token,
+        refresh_token,
+        expires_at:   expiresAt,
+        email:        userProfile.email,
+        last_sync:    null,
+      }, { onConflict: 'teacher_id' })
+
+    if (supabaseErr) {
+      console.error('Supabase error:', supabaseErr)
+      return res.redirect(`${getAppUrl()}?classroom_error=storage_failed`)
+    }
+
+    return res.redirect(`${getAppUrl()}?classroom_success=connected`)
+
+  } catch (err) {
+    console.error('OAuth callback error:', err)
+    return res.redirect(`${getAppUrl()}?classroom_error=callback_failed`)
+  }
+}
+
+// ─── Main router ───────────────────────────────────────────────────────────────
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') return res.status(200).end()
+
+  // Route by action parameter or path
+  const action = req.query.action
+
+  if (action === 'sync-classroom') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+    return handleSyncClassroom(req, res)
+  }
+
+  // Google auth (GET /api/integrations/google-auth?teacherId=...)
+  if (req.url.includes('/google-auth')) {
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+    return handleGoogleAuth(req, res)
+  }
+
+  // Google callback (GET /api/integrations/google-callback?code=...&state=...)
+  if (req.url.includes('/google-callback')) {
+    if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })
+    return handleGoogleCallback(req, res)
+  }
+
+  return res.status(400).json({ error: 'Invalid integration action' })
 }

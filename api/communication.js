@@ -1,20 +1,219 @@
 // api/communication.js
-// Combined email and SMS communication handler
+// ─── Consolidated communication handler ────────────────────────────────────────
+// Merges: communication.js + communicationTriggers.js
+// Routes by `type` field:
+//   POST with type='email' → Send email via Resend
+//   POST with type='sms' → Send SMS via Twilio
+//   POST with type='check-triggers' → Check & fire grade-triggered messages
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
+const MODEL         = 'claude-sonnet-4-20250514'
 
-  const { type, ...payload } = req.body
+// ─── Default trigger settings ─────────────────────────────────────────────────
+const DEFAULT_TRIGGER_SETTINGS = {
+  missingAssignment:   false,
+  anyGradePosted:      false,
+  dfOnAssignment:      true,   // D or F on any single assignment
+  dfOverallGrade:      true,   // D or F overall class grade
+  letterGradeChange:   true,   // grade letter changes (up or down)
+  preferredChannel:    'email', // 'email' | 'sms' | 'both'
+  preferredLanguage:   'en',   // 'en' | 'es' (more to come)
+}
 
-  if (type === 'email') {
-    return handleEmail(payload, res)
-  } else if (type === 'sms') {
-    return handleSMS(payload, res)
-  } else {
-    return res.status(400).json({ error: 'Invalid communication type. Use "email" or "sms"' })
+// ─── Letter grade helper ───────────────────────────────────────────────────────
+function getLetter(pct) {
+  if (pct >= 90) return 'A'
+  if (pct >= 80) return 'B'
+  if (pct >= 70) return 'C'
+  if (pct >= 60) return 'D'
+  return 'F'
+}
+
+// ─── Server-side Anthropic helper ─────────────────────────────────────────────
+async function callAnthropic(messages, system, max_tokens = 300) {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    console.warn('[communication] ANTHROPIC_API_KEY not set — skipping AI draft')
+    return null
+  }
+  try {
+    const res = await fetch(ANTHROPIC_API, {
+      method: 'POST',
+      headers: {
+        'Content-Type':      'application/json',
+        'x-api-key':         apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({ model: MODEL, max_tokens, system, messages }),
+    })
+    const data = await res.json()
+    return data.content?.[0]?.text || null
+  } catch (err) {
+    console.error('[communication] Anthropic call failed:', err.message)
+    return null
   }
 }
 
+// ─── Translate message via Claude (server-side) ───────────────────────────────
+async function translateMessage(text, targetLang) {
+  if (targetLang === 'en' || !targetLang) return text
+  const langNames = { es: 'Spanish', fr: 'French', zh: 'Chinese', pt: 'Portuguese', ar: 'Arabic' }
+  const langName  = langNames[targetLang] || targetLang
+
+  const result = await callAnthropic(
+    [{ role: 'user', content: `Translate this school communication to ${langName}. Return only the translated text, no explanation:\n\n${text}` }],
+    'You translate school communications accurately and naturally.',
+    500
+  )
+  return result || text
+}
+
+// ─── Generate AI draft for a trigger (server-side) ────────────────────────────
+async function generateDraft(trigger, studentName, subject, score, teacherName, channel) {
+  const isShort = channel === 'sms'
+  const lengthGuide = isShort
+    ? 'Under 160 characters total. Very concise.'
+    : 'Under 4 sentences. Warm and professional.'
+
+  const triggerDescriptions = {
+    dfOnAssignment:    `${studentName} scored ${score}% on a ${subject} assignment (D or F grade)`,
+    dfOverallGrade:    `${studentName}'s overall ${subject} grade has dropped to ${score}% (D or F)`,
+    letterGradeChange: `${studentName}'s ${subject} grade has changed to ${score}%`,
+    missingAssignment: `${studentName} has a missing assignment in ${subject}`,
+    anyGradePosted:    `${studentName} received ${score}% on a ${subject} assignment`,
+  }
+
+  const situation = triggerDescriptions[trigger] || `update about ${studentName} in ${subject}`
+
+  return callAnthropic(
+    [{ role: 'user', content: `Write a parent notification: ${situation}.` }],
+    `You write school-to-parent communications for ${teacherName}. ${lengthGuide} Return only the message text.`,
+    200
+  )
+}
+
+// ─── Check and fire triggers ───────────────────────────────────────────────────
+async function checkAndFireTriggers({
+  student,
+  assignment,
+  newScore,
+  oldScore,
+  classGrade,
+  oldClassGrade,
+  teacherSettings = DEFAULT_TRIGGER_SETTINGS,
+  teacherName     = 'Your Teacher',
+  teacherEmail    = 'teacher@school.edu',
+  schoolName      = 'GradeFlow',
+}) {
+  const settings = { ...DEFAULT_TRIGGER_SETTINGS, ...teacherSettings }
+  const triggers = []
+
+  const newLetter      = getLetter(newScore)
+  const oldLetter      = oldScore != null ? getLetter(oldScore) : null
+  const newClassLetter = getLetter(classGrade)
+  const oldClassLetter = oldClassGrade != null ? getLetter(oldClassGrade) : null
+
+  // 1. D or F on assignment
+  if (settings.dfOnAssignment && (newLetter === 'D' || newLetter === 'F')) {
+    triggers.push({ type: 'dfOnAssignment', score: newScore })
+  }
+
+  // 2. D or F overall class grade
+  if (settings.dfOverallGrade && (newClassLetter === 'D' || newClassLetter === 'F')) {
+    if (oldClassLetter !== newClassLetter) {
+      triggers.push({ type: 'dfOverallGrade', score: classGrade })
+    }
+  }
+
+  // 3. Letter grade change (up or down)
+  if (settings.letterGradeChange && oldLetter && newLetter !== oldLetter) {
+    triggers.push({ type: 'letterGradeChange', score: newScore })
+  }
+
+  // 4. Any grade posted
+  if (settings.anyGradePosted) {
+    triggers.push({ type: 'anyGradePosted', score: newScore })
+  }
+
+  if (triggers.length === 0) return { fired: false }
+
+  // Use highest-priority trigger only (avoid spamming)
+  const priority = ['dfOverallGrade', 'dfOnAssignment', 'letterGradeChange', 'anyGradePosted']
+  const trigger  = triggers.sort((a, b) => priority.indexOf(a.type) - priority.indexOf(b.type))[0]
+
+  // Generate draft
+  const draftEn = await generateDraft(
+    trigger.type,
+    student.name,
+    assignment?.subject || 'class',
+    trigger.score,
+    teacherName,
+    settings.preferredChannel,
+  )
+
+  if (!draftEn) return { fired: false, reason: 'Draft generation failed' }
+
+  // Translate if needed
+  const lang  = settings.preferredLanguage || 'en'
+  const draft = await translateMessage(draftEn, lang)
+
+  const subject = `Update about ${student.name} — ${assignment?.subject || 'class'}`
+  const channel = settings.preferredChannel
+
+  const results = {}
+
+  // Send email
+  if ((channel === 'email' || channel === 'both') && student.parentEmail) {
+    try {
+      const r = await fetch('/api/communication', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'email',
+          to:          student.parentEmail,
+          subject,
+          body:        draft,
+          teacherName,
+          teacherEmail,
+          studentName: student.name,
+          schoolName,
+        }),
+      })
+      results.email = await r.json()
+    } catch (err) {
+      results.email = { error: err.message }
+    }
+  }
+
+  // Send SMS
+  if ((channel === 'sms' || channel === 'both') && student.parentPhone) {
+    // SMS draft is shorter — re-generate if needed
+    const smsDraft = settings.preferredChannel === 'both'
+      ? await generateDraft(trigger.type, student.name, assignment?.subject || 'class', trigger.score, teacherName, 'sms')
+      : draft
+
+    const smsText = await translateMessage(smsDraft || draft, lang)
+
+    try {
+      const r = await fetch('/api/communication', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'sms',
+          to: student.parentPhone,
+          message: smsText
+        }),
+      })
+      results.sms = await r.json()
+    } catch (err) {
+      results.sms = { error: err.message }
+    }
+  }
+
+  return { fired: true, trigger: trigger.type, draft, results }
+}
+
+// ─── Email handler ────────────────────────────────────────────────────────────
 async function handleEmail(req, res) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return res.status(500).json({ error: 'Resend API key not configured' })
@@ -27,7 +226,7 @@ async function handleEmail(req, res) {
     teacherEmail, // used as Reply-To
     studentName,
     schoolName,
-  } = req
+  } = req.body
 
   if (!to || !subject || !body) {
     return res.status(400).json({ error: 'Missing required fields: to, subject, body' })
@@ -96,6 +295,7 @@ async function handleEmail(req, res) {
   }
 }
 
+// ─── SMS handler ──────────────────────────────────────────────────────────────
 async function handleSMS(req, res) {
   const accountSid  = process.env.TWILIO_ACCOUNT_SID
   const authToken   = process.env.TWILIO_AUTH_TOKEN
@@ -103,11 +303,11 @@ async function handleSMS(req, res) {
 
   // Graceful stub — returns success in demo mode so UI still works
   if (!accountSid || !authToken || !fromNumber) {
-    console.log('[SMS STUB] Twilio not configured — would have sent:', req?.to, req?.message?.slice(0, 60))
+    console.log('[SMS STUB] Twilio not configured — would have sent:', req.body?.to, req.body?.message?.slice(0, 60))
     return res.status(200).json({ success: true, stub: true, message: 'SMS queued (Twilio not yet configured)' })
   }
 
-  const { to, message } = req
+  const { to, message } = req.body
 
   if (!to || !message) {
     return res.status(400).json({ error: 'Missing required fields: to, message' })
@@ -148,3 +348,28 @@ async function handleSMS(req, res) {
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
+
+// ─── Main router ───────────────────────────────────────────────────────────────
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*')
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+
+  if (req.method === 'OPTIONS') return res.status(200).end()
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const { type } = req.body
+
+  if (type === 'email') {
+    return handleEmail(req, res)
+  } else if (type === 'sms') {
+    return handleSMS(req, res)
+  } else if (type === 'check-triggers') {
+    return res.status(200).json(await checkAndFireTriggers(req.body))
+  } else {
+    return res.status(400).json({ error: 'Invalid communication type. Use "email", "sms", or "check-triggers"' })
+  }
+}
+
+// ─── Export helpers for use from other api routes ────────────────────────────
+export { checkAndFireTriggers, DEFAULT_TRIGGER_SETTINGS, getLetter }
