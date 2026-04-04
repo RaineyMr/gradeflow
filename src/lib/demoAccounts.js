@@ -2,6 +2,8 @@
 // Each role uses shades of their school colors throughout — no generic dark bg.
 // Login page uses GradeFlow orange/blue only.
 
+import { DEMO_SCHOOLS } from './store'
+
 export const demoAccounts = {
   teacher: {
     role: 'teacher',
@@ -193,6 +195,18 @@ export function getDemoAccountByRole(role) {
 export function getDemoAccountByCredentials(email, password, role) {
   const account = demoAccounts[role]
   if (!account) return null
-  if (account.email === email && account.password === password) return account
+  if (account.email === email && account.password === password) {
+    // Attach full school object for standards system detection
+    const school = DEMO_SCHOOLS.find(s => s.id === account.school_id)
+    
+    return {
+      ...account,
+      school: school || {
+        id: account.school_id,
+        district_id: account.district_id,
+        name: account.schoolName
+      }
+    }
+  }
   return null
 }

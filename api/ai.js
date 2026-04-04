@@ -195,7 +195,7 @@ Return ONLY valid JSON with no markdown:
       const { subject, grade, topic, duration = 50, standards = '' } = body
       return {
         ...base, max_tokens: 2000,
-        system: 'You are an expert curriculum designer. Generate detailed, practical lesson plans.',
+        system: 'You are an expert curriculum designer. Generate detailed, practical lesson plans that align with educational standards.',
         messages: [{
           role: 'user',
           content: `Generate a ${duration}-minute lesson plan for:
@@ -204,16 +204,21 @@ Grade: ${grade}
 Topic: ${topic}
 ${standards ? `Standards: ${standards}` : ''}
 
-Return ONLY valid JSON:
+${standards ? `IMPORTANT: Design this lesson plan to specifically address the provided standards. Ensure that:
+- Learning objectives align directly with the standards
+- Activities help students master the standard content  
+- Assessments measure proficiency in the stated standards
+- Materials and resources support standard-specific learning` : ''}
+
+Return ONLY valid JSON with this exact structure:
 {
-  "title": "",
-  "objective": "",
-  "materials": [],
-  "warmup": { "duration": 5, "activity": "" },
-  "instruction": { "duration": 20, "steps": [] },
-  "practice": { "duration": 15, "activity": "" },
-  "assessment": { "duration": 10, "method": "" },
-  "homework": ""
+  "title": "Engaging lesson title",
+  "objectives": ["3-5 specific learning objectives that align with standards"],
+  "materials": ["List of materials needed"],
+  "steps": ["Step-by-step instructions with timing suggestions"],
+  "assessment": ["Assessment methods that measure standard proficiency"],
+  "homework": ["Homework assignments that reinforce learning"],
+  "notes": "Additional notes for teacher"
 }`,
         }],
       }

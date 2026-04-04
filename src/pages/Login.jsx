@@ -158,7 +158,7 @@ function useCreateForm(onLogin) {
         email:     email.trim(),
         role:      selectedRole,
         school_id:  school?.id, // Use school_id for proper theming
-        school:    school?.name, // Store school name for display
+        school:    school, // Store full school object with district_id for standards
         // Theme will be applied during onboarding when user selects their school
         lang,
         isNewAccount: true,

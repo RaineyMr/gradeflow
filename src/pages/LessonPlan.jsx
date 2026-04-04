@@ -311,27 +311,18 @@ function AIPlanGenerator({ onBack }) {
 
     try {
       // Build standards context for AI
-      const standardsContext = selectedStandards.length > 0 ? 
-        `\nRelevant Standards:\n${selectedStandards.map(s => `- ${s.code}: ${s.description}`).join('\n')}` : 
+      const standardsText = selectedStandards.length > 0 ? 
+        selectedStandards.map(s => `${s.code}: ${s.description}`).join('\n') : 
         ''
 
-      const prompt = `Generate a detailed lesson plan for ${form.grade} ${form.subject} on "${form.topic}".${form.textbook ? ` Textbook: ${form.textbook}.` : ''}${standardsContext}
-
-Return ONLY valid JSON with this structure:
-{
-  "title": "Lesson title",
-  "objectives": ["3-5 specific learning objectives"],
-  "materials": ["List of materials needed"],
-  "steps": ["Step-by-step instructions"],
-  "assessment": ["Assessment methods"],
-  "homework": ["Homework assignments"],
-  "notes": "Additional notes for teacher"
-}`
-
-      const system = 'You are an expert teacher creating detailed, practical lesson plans. Include specific activities, timing suggestions, and assessment strategies. Return ONLY valid JSON, no markdown fences.'
-
-      const responseText = await callAI(prompt, system, 2000)
-      const result = safeParseJSON(responseText)
+      // Use the proper lesson plan generation function
+      const result = await generateLessonPlan({
+        subject: form.subject,
+        grade: form.grade,
+        topic: form.topic,
+        duration: 50,
+        standards: standardsText
+      })
 
       if (!result || !result.title || !Array.isArray(result.objectives)) {
         throw new Error('Invalid response format')
@@ -347,10 +338,11 @@ Return ONLY valid JSON with this structure:
           const adjPrompt = `Create specific lesson adjustments for this lesson plan: ${JSON.stringify(result)}. 
 Student accommodations: ${JSON.stringify(accommodations)}
 Subject: ${form.subject}, Grade: ${form.grade}, Topic: ${form.topic}
+${standardsText ? `Standards: ${standardsText}` : ''}
 
 Return JSON: {"adjustments": ["specific adjustments for each accommodation type"]}`
           
-          const adjResult = safeParseJSON(await callAI(adjPrompt, system, 1500))
+          const adjResult = safeParseJSON(await callAI(adjPrompt, 'You are an expert special education consultant. Generate practical, specific instructional adjustments for individual students based on their accommodation needs and the current lesson.', 1500))
           if (adjResult?.adjustments) {
             setLessonAdjustments(adjResult.adjustments)
           }
