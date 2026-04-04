@@ -7,32 +7,35 @@ import { DEMO_SCHOOLS } from './store'
 export const demoAccounts = {
   teacher: {
     role: 'teacher',
-    email: 'teacher@kippneworleans.org',
+    email: 'teacher@houstonisd.org',
     password: 'demo123',
-    schoolName: 'KIPP New Orleans',
-    districtName: 'KIPP New Orleans',
-    school_id: 'JFK-HIGH', // Corresponds to JFK High School in store.js
-    district_id: 'kipp-la', // KIPP Louisiana district
-    userName: 'Ms. Johnson',
+    schoolName: 'Houston ISD',
+    districtName: 'Houston Independent School District',
+    school_id: 'BELLAIRE-HS', // Corresponds to Bellaire High School in store.js
+    district_id: 'houston-isd', // Houston ISD district
+    userName: 'Ms. Rodriguez',
     studentName: null,
     avatar: '👩‍🏫',
     lang: 'en', // Default language
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9b/KIPP_Foundation_logo.svg/200px-KIPP_Foundation_logo.svg.png',
+    // Teacher profile for standards integration
+    gradeLevel: '5th Grade',
+    subjects: ['Math', 'Science'],
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
     theme: {
-      // KIPP: black base, red accent, white text
-      primary:        '#BA0C2F',
+      // Houston ISD: deep blue base, white accent, light text
+      primary:        '#003057',
       secondary:      '#ffffff',
-      accent:         '#BA0C2F',
-      bg:             '#0a0000',
-      card:           '#1a0005',
-      inner:          '#280008',
-      border:         '#4a0018',
-      text:           '#f5e8ea',
-      muted:          '#9a6070',
-      heroGradient:   'linear-gradient(135deg,#BA0C2F,#7a0820)',
-      headerGradient: 'linear-gradient(135deg,#BA0C2F,#000000)',
-      soft:           'rgba(186,12,47,0.18)',
-      navActive:      '#BA0C2F',
+      accent:         '#ffffff',
+      bg:             '#000d1f',
+      card:           '#001830',
+      inner:          '#002040',
+      border:         '#003a6a',
+      text:           '#e8edf5',
+      muted:          '#6080a0',
+      heroGradient:   'linear-gradient(135deg,#003057,#001830)',
+      headerGradient: 'linear-gradient(135deg,#003057,#001020)',
+      soft:           'rgba(0,48,87,0.18)',
+      navActive:      '#003057',
       green:          '#22c97a',
       blue:           '#3b7ef4',
       amber:          '#f5a623',
