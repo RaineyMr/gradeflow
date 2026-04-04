@@ -430,8 +430,7 @@ function LessonStepsSection({ steps, onChange }) {
     { key: 'directInstruction', title: 'Direct Instruction', placeholder: 'Teacher-led instruction, modeling, explanations...' },
     { key: 'guidedPractice', title: 'Guided Practice', placeholder: 'Work through examples together, think-pair-share...' },
     { key: 'independentPractice', title: 'Independent Practice', placeholder: 'Individual work, worksheets, application tasks...' },
-    { key: 'differentiation', title: 'Differentiation', placeholder: 'Support for struggling students, extensions for advanced learners...' },
-    { key: 'checksForUnderstanding', title: 'Checks for Understanding', placeholder: 'Formative assessments, questioning strategies, thumbs up/down...' }
+    { key: 'extensions', title: 'Extensions / Differentiation', placeholder: 'Support for struggling students, extensions for advanced learners, accommodations for diverse learners...' }
   ]
 
   return (
@@ -890,8 +889,6 @@ export default function LessonPlanTemplate({ currentUser }) {
       directInstruction: '',
       guidedPractice: '',
       independentPractice: '',
-      differentiation: '',
-      checksForUnderstanding: '',
       extensions: ''
     },
     exitTicket: '',
