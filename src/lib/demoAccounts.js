@@ -49,7 +49,7 @@ export const demoAccounts = {
     password: 'demo123',
     schoolName: 'Houston ISD',
     districtName: 'Houston Independent School District',
-    school_id: 'BELLAIRE-HS', // Corresponds to Bellaire High School in store.js
+    school_id: 'lincoln-elementary', // Use existing Houston ISD school ID
     district_id: 'houston-isd', // Houston ISD district
     userName: 'Marcus Thompson',
     studentName: 'Marcus',
@@ -83,15 +83,14 @@ export const demoAccounts = {
     email: 'parent@bellaire.org',
     password: 'demo123',
     schoolName: 'Bellaire High School',
-    districtName: 'Houston ISD',
-    school_id: 'BELLAIRE-HS', // Corresponds to Bellaire High School in store.js
-    district_id: 'houston-isd', // Houston ISD district
+    districtName: 'Bellaire Parish School District',
+    school_id: 'BELLAIRE-HS', // Use existing Bellaire school ID
+    district_id: 'bellaire-parish', // Bellaire district
     userName: 'Sarah Johnson',
-    studentName: 'Emma Johnson',
-    avatar: '👨‍👩‍👧',
+    studentName: 'Emma',
+    avatar: '�',
     lang: 'en', // Default language
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/87/Bellaire_High_School_logo.svg/200px-Bellaire_High_School_logo.svg.png',
-    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/8/87/Bellaire_High_School_logo.svg/200px-Bellaire_High_School_logo.svg.png',
+    logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9b/KIPP_Foundation_logo.svg/200px-KIPP_Foundation_logo.svg.png',
     theme: {
       // Bellaire: deep crimson base, white accent, warm text
       primary:        '#C8102E',
@@ -184,7 +183,7 @@ export const demoAccounts = {
 }
 
 export const demoLoginList = [
-  { role: 'teacher',      labelKey: 'teacher_demo',      email: 'teacher@kippneworleans.org', password: 'demo123', school: 'KIPP New Orleans' },
+  { role: 'teacher',      labelKey: 'teacher_demo',      email: 'teacher@houstonisd.org', password: 'demo123', school: 'Houston ISD' },
   { role: 'student',      labelKey: 'student_demo',     email: 'student@houstonisd.org',     password: 'demo123', school: 'Houston ISD' },
   { role: 'parent',       labelKey: 'parent_demo',       email: 'parent@bellaire.org',        password: 'demo123', school: 'Bellaire High School' },
   { role: 'admin',        labelKey: 'admin_demo',         email: 'admin@lamarhs.org',          password: 'demo123', school: 'Lamar High School' },
