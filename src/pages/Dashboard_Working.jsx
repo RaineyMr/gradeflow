@@ -259,6 +259,40 @@ function EmptyLessonPlanWidget({ navigate, onRemove }) {
     </Widget>
   )
 }
+
+// Empty Gradebook Widget
+function EmptyGradebookWidget({ navigate, onRemove }) {
+  const t = useT()
+  
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#0a1628 0%,#060810 100%)', border:'1px solid #1a2a40' }} onRemove={onRemove}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📓 {t('nav_gradebook')}</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Grade management</div>
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('gradebook') }}
+          style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          Open →
+        </button>
+      </div>
+
+      <div style={{ textAlign:'center', padding:'32px 16px' }}>
+        <div style={{ fontSize:32, marginBottom:12, opacity:0.6 }}>📓</div>
+        <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:8 }}>
+          No grades yet
+        </div>
+        <div style={{ fontSize:12, color:C.muted, lineHeight:1.5, marginBottom:16 }}>
+          Add classes and start grading to see student progress
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('classes') }}
+          style={{ background:C.blue, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+          Add Classes First
+        </button>
+      </div>
+    </Widget>
+  )
+}
 function DailyOverviewWidget({ navigate, onRemove }) {
   const { classes, messages, getNeedsAttention } = useStore()
   const pending = messages.filter(m=>m.status==='pending')
@@ -866,42 +900,9 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
     }}>
       <UserHeader currentUser={currentUser} />
       
-      <div style={{ padding: '20px', maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
-          {/* Main Content */}
-          <div>
-            {/* Daily Overview */}
-            {wrap('overview', <DailyOverviewWidget navigate={navigateToPage} onRemove={() => toggleWidget('overview')} />)}
-            
-            {/* Quick Actions */}
-            <QuickActions navigate={navigateToPage} />
-            
-            {/* Classes Overview - Use empty state if no classes */}
-            {classes.length === 0 ? (
-              wrap('classes', <EmptyClassesWidget navigate={navigateToPage} />)
-            ) : (
-              wrap('classes', <ClassesOverview currentUser={currentUser} navigate={navigateToPage} />)
-            )}
-            
-            {/* Empty State Widgets */}
-            {wrap('messages', <EmptyMessagesWidget navigate={navigateToPage} />)}
-            {wrap('reports', <EmptyReportsWidget navigate={navigateToPage} />)}
-            {wrap('grading', <EmptyGradingWidget navigate={navigateToPage} />)}
-            {wrap('lessonPlan', <EmptyLessonPlanWidget navigate={navigateToPage} />)}
-            {wrap('sketch', <SketchAnnotateWidget navigate={navigateToPage} />)}
-            {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
-            {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
-            {wrap('gradebook', <GradebookWidget navigate={navigateToPage} />)}
-            
-            {/* Add Widgets Bar at bottom */}
-            <AddWidgetsBar onOpen={() => setShowModal(true)} />
-          </div>
-          
-          {/* Sidebar - Empty as requested */}
-          <div>
-          </div>
-        </div>
-
+      {/* Full-width container like demo dashboard */}
+      <div style={{ padding: '12px 12px 0' }}>
+        
         {/* Widget Modal */}
         {showModal && (
           <AddWidgetsModal
@@ -910,6 +911,49 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
             onClose={() => setShowModal(false)}
           />
         )}
+
+        {/* Daily Overview */}
+        {wrap('overview', <DailyOverviewWidget navigate={navigateToPage} onRemove={() => toggleWidget('overview')} />)}
+        
+        {/* Today's Lessons */}
+        {wrap('lessons', <TodaysLessonsWidget navigate={navigateToPage} />)}
+        
+        {/* Classes */}
+        {classes.length === 0 ? (
+          wrap('classes', <EmptyClassesWidget navigate={navigateToPage} />)
+        ) : (
+          wrap('classes', <ClassesOverview currentUser={currentUser} navigate={navigateToPage} />)
+        )}
+        
+        {/* Needs Attention */}
+        {wrap('attention', <NeedsAttentionWidget atRisk={getNeedsAttention()} navigate={navigateToPage} />)}
+        
+        {/* Messages */}
+        {wrap('messages', <EmptyMessagesWidget navigate={navigateToPage} />)}
+        
+        {/* Reports */}
+        {wrap('reports', <EmptyReportsWidget navigate={navigateToPage} />)}
+        
+        {/* Grading */}
+        {wrap('grading', <EmptyGradingWidget navigate={navigateToPage} />)}
+        
+        {/* Lesson Plan */}
+        {wrap('lessonPlan', <EmptyLessonPlanWidget navigate={navigateToPage} />)}
+        
+        {/* Sketch & Annotate */}
+        {wrap('sketch', <SketchAnnotateWidget navigate={navigateToPage} />)}
+        
+        {/* Testing Suite */}
+        {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
+        
+        {/* Scan Grade Sheet */}
+        {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
+        
+        {/* Gradebook */}
+        {wrap('gradebook', <EmptyGradebookWidget navigate={navigateToPage} />)}
+        
+        {/* Add Widgets Bar at bottom */}
+        <AddWidgetsBar onOpen={() => setShowModal(true)} />
       </div>
     </div>
   )
