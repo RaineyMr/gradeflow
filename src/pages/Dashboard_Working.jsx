@@ -4,6 +4,20 @@ import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
 import BottomNav from '../components/ui/BottomNav'
 
+// Import advanced widget components from the main dashboard
+import {
+  TodaysLessonsWidget,
+  NeedsAttentionWidget,
+  MessagesWidget,
+  ReportsWidget,
+  GradingWidget,
+  LessonPlanWidget,
+  SketchAnnotateWidget,
+  TestingSuiteWidget,
+  ScanGradeSheetWidget,
+  GradebookWidget
+} from './Dashboard'
+
 const C = {
   bg:'#060810', card:'#111520', inner:'#1a1f2e', raised:'#1e2436',
   text:'#eef0f8', soft:'#c8cce0', muted:'#6b7494', border:'#252b3d',
@@ -16,7 +30,169 @@ function scrollTop() {
   document.querySelector('[data-app-scroll]')?.scrollTo(0, 0)
 }
 
-// ─── Real User Header ──────────────────────────────────────────────────────────
+// Apply school theming
+function applyTheme(key) {
+  const themes = {
+    'houston-isd': { primary: '#003057', secondary: '#B3A369', surface: '#000d1a', text: '#e8f0ff' },
+    'kipp-la': { primary: '#BA0C2F', secondary: '#000000', surface: '#1a0008', text: '#ffe8ed' },
+    'bellaire-parish': { primary: '#B3A369', secondary: '#003057', surface: '#1a1800', text: '#faf7ee' },
+  }
+  const t = themes[key] || themes['houston-isd']
+  const r = document.documentElement
+  r.style.setProperty('--school-color', t.primary)
+  r.style.setProperty('--school-secondary', t.secondary)
+  r.style.setProperty('--school-surface', t.surface)
+  r.style.setProperty('--school-text', t.text)
+}
+
+// Widget component with remove button
+function Widget({ onClick, children, style={}, title, titleRight, onRemove }) {
+  return (
+    <div onClick={onClick}
+      style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:20, padding:'16px', marginBottom:12, cursor:onClick?'pointer':'default', transition:'border-color 0.12s, transform 0.15s', position:'relative', ...style }}
+      onMouseEnter={e => { if (!onClick) return; e.currentTarget.style.borderColor = 'var(--school-color, #003057)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+      onMouseLeave={e => { if (!onClick) return; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = 'translateY(0px)' }}>
+      {onRemove && (
+        <button onClick={e=>{ e.stopPropagation(); onRemove(); }} title="Remove widget"
+          style={{ position:'absolute', top:-10, right:8, zIndex:20, width:22, height:22, borderRadius:'50%', background:C.bg, border:'1px solid rgba(255,255,255,0.3)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', lineHeight:1, boxShadow:'0 2px 6px rgba(0,0,0,0.4)' }}>
+          ×
+        </button>
+      )}
+      {title && (
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>{title}</div>
+          {titleRight}
+        </div>
+      )}
+      {children}
+    </div>
+  )
+}
+
+// Action button component
+function ActionBtn({ label, color, onClick }) {
+  return (
+    <button onClick={onClick}
+      style={{ background:`${color}18`, color, border:`1px solid ${color}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer', transition:'all 0.15s' }}
+      onMouseEnter={e=>{ e.currentTarget.style.background=`${color}30` }}
+      onMouseLeave={e=>{ e.currentTarget.style.background=`${color}18` }}>
+      {label}
+    </button>
+  )
+}
+
+// Trend badge component
+function TrendBadge({ trend }) {
+  const map = { up:['↑',C.green], down:['↓',C.red], stable:['→',C.muted] }
+  const [icon, color] = map[trend] || map.stable
+  return <span style={{ fontSize:11, color, fontWeight:700 }}>{icon}</span>
+}
+
+// ─── Daily Overview Widget ─────────────────────────────────────────────────────
+function DailyOverviewWidget({ navigate, onRemove }) {
+  const { classes, messages, getNeedsAttention } = useStore()
+  const pending = messages.filter(m=>m.status==='pending')
+  const atRisk = getNeedsAttention()
+  const t = useT()
+
+  const overviewTiles = [
+    { icon:'📚', val:classes.length,    label:t('nav_classes'),      page:'classes',        color:C.blue   },
+    { icon:'💬', val:pending.length||'',label:t('nav_messages'),     page:'parentMessages', color:C.purple },
+    { icon:'📋', val:'',                label:t('lesson_plans'), page:'lessonPlan',     color:C.teal   },
+    { icon:'🔔', val:atRisk.length||'', label:t('nav_alerts'),       page:'alerts',         color:C.red    },
+  ]
+
+  return (
+    <Widget style={{ background:'var(--school-surface,#1a0008)', border:'1px solid rgba(255,255,255,0.06)' }} onRemove={onRemove}>
+      <div style={{ fontSize:9, fontWeight:700, letterSpacing:'0.1em', textTransform:'uppercase', color:'rgba(255,255,255,0.4)', marginBottom:12 }}>{t('daily_overview')}</div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
+        {overviewTiles.map(tile=>(
+          <button key={tile.label} onClick={e=>{ e.stopPropagation(); navigate(tile.page) }}
+            style={{ background:`${tile.color}18`, border:`1px solid ${tile.color}30`, borderRadius:14, padding:'10px 4px', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', gap:3, transition:'background 0.15s' }}
+            onMouseEnter={e=>(e.currentTarget.style.background=`${tile.color}30`)}
+            onMouseLeave={e=>(e.currentTarget.style.background=`${tile.color}18`)}>
+            <span style={{ fontSize:16, lineHeight:1 }}>{tile.icon}</span>
+            {tile.val!=='' && <span style={{ fontSize:16, fontWeight:900, color:tile.color, lineHeight:1 }}>{tile.val}</span>}
+            <span style={{ fontSize:8, color:'rgba(255,255,255,0.5)', textAlign:'center', fontWeight:600, marginTop:'auto' }}>{tile.label}</span>
+          </button>
+        ))}
+      </div>
+    </Widget>
+  )
+}
+
+// ─── Widget Management System ─────────────────────────────────────────────────
+function getWidgetCatalog(t) {
+  return [
+    { id:'overview',   label:t('daily_overview'),      icon:'📅', desc:t('nav_classes') + ', ' + t('nav_messages') + ', ' + t('lesson_plans') + ' & ' + t('nav_alerts') },
+    { id:'lessons',    label:t('todays_lessons'),     icon:'📖', desc:t('lesson_status') + ' and ' + t('quick_actions') },
+    { id:'classes',    label:t('my_classes'),         icon:'📚', desc:t('class_performance') + ' & ' + t('student_data') },
+    { id:'attention',  label:t('needs_attention'),    icon:'⚑',  desc:t('at_risk_students') + ' & ' + t('intervention_alerts') },
+    { id:'messages',   label:t('nav_messages'),       icon:'💬', desc:t('parent_communication') + ' & ' + t('ai_drafts') },
+    { id:'reports',    label:t('nav_reports'),        icon:'📊', desc:t('analytics') + ' & ' + t('performance_data') },
+    { id:'grading',    label:'Grading',               icon:'📷', desc:t('grade_scanning') + ' & ' + t('power_school_sync') },
+    { id:'lessonPlan', label:t('lesson_plans'),       icon:'📋', desc:t('ai_lesson_generation') + ' & ' + t('standards_integration') },
+    { id:'sketch',     label:'Sketch & Annotate',     icon:'✏️', desc:t('drawing_tools') + ' & ' + t('document_markup') },
+    { id:'testing',    label:'Testing Suite',          icon:'📝', desc:t('test_creation') + ' & ' + t('assessment_tools') },
+    { id:'scan',       label:'Scan Grade Sheet',       icon:'📷', desc:t('document_scanning') + ' & ' + t('instant_grading') },
+    { id:'gradebook',  label:t('nav_gradebook'),      icon:'📓', desc:t('grade_management') + ' & ' + t('student_tracking') },
+  ]
+}
+
+function AddWidgetsModal({ hidden, onToggle, onClose }) {
+  const t = useT()
+  const catalog = getWidgetCatalog(t)
+  return (
+    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:500, background:'rgba(0,0,0,0.75)', backdropFilter:'blur(8px)', display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+      <div onClick={e=>e.stopPropagation()} style={{ width:'100%', maxWidth:480, background:C.bg, border:`1px solid ${C.border}`, borderRadius:'24px 24px 0 0', padding:'20px 20px max(28px,env(safe-area-inset-bottom))', maxHeight:'85vh', overflowY:'auto' }}>
+        <div style={{ width:36, height:4, background:C.border, borderRadius:2, margin:'0 auto 18px' }}/>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+          <div>
+            <div style={{ fontSize:17, fontWeight:800, color:C.text }}>+ Add Widgets</div>
+            <div style={{ fontSize:11, color:C.muted, marginTop:3 }}>Tap a widget to add or remove</div>
+          </div>
+          <button onClick={onClose} style={{ background:C.inner, border:'none', borderRadius:999, width:32, height:32, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>×</button>
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+          {catalog.map(w => {
+            const isActive = !hidden.includes(w.id)
+            return (
+              <button key={w.id} onClick={() => onToggle(w.id)}
+                style={{ 
+                  background: isActive ? C.card : C.inner, 
+                  border: `1px solid ${isActive ? C.border : C.muted}30`, 
+                  borderRadius:12, padding:'12px', cursor:'pointer', textAlign:'left', transition:'all 0.15s',
+                  opacity: isActive ? 1 : 0.6
+                }}
+                onMouseEnter={e=>{ e.currentTarget.style.borderColor = 'var(--school-color, #003057)' }}
+                onMouseLeave={e=>{ e.currentTarget.style.borderColor = isActive ? C.border : C.muted + '30' }}>
+                <div style={{ fontSize:16, marginBottom:6 }}>{w.icon}</div>
+                <div style={{ fontSize:12, fontWeight:700, color:C.text, marginBottom:4 }}>{w.label}</div>
+                <div style={{ fontSize:10, color:C.muted, lineHeight:1.3 }}>{w.desc}</div>
+                {isActive && (
+                  <div style={{ marginTop:8, fontSize:9, color:C.green, fontWeight:700 }}>✓ Active</div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function AddWidgetsBar({ onOpen }) {
+  return (
+    <div style={{ margin:'4px 0 24px', textAlign:'center' }}>
+      <button onClick={onOpen} type="button"
+        style={{ background:'var(--school-color, #003057)', border:'none', borderRadius:14, padding:'12px 28px', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', transition:'transform 0.15s' }}
+        onMouseEnter={e=>{ e.currentTarget.style.transform = 'scale(1.02)' }}
+        onMouseLeave={e=>{ e.currentTarget.style.transform = 'scale(1)' }}>
+        + Add widgets
+      </button>
+    </div>
+  )
+}
 function UserHeader({ currentUser }) {
   const now = new Date()
   const hour = now.getHours()
@@ -323,14 +499,40 @@ function ProfileSummary({ currentUser }) {
   )
 }
 
-// ─── Main Working Dashboard ─────────────────────────────────────────────────────
 export default function WorkingDashboard({ currentUser, onCameraClick }) {
   const navigate = useNavigate()
   const [subPage, setSubPage] = useState(null)
   const history = useRef([])
-  const { classes } = useStore()
+  const { classes, messages, getNeedsAttention } = useStore()
 
-  useEffect(() => { scrollTop() }, [])
+  useEffect(() => { 
+    scrollTop() 
+    // Apply school theming based on user's district
+    if (currentUser?.school?.district_id) {
+      applyTheme(currentUser.school.district_id)
+    }
+  }, [currentUser])
+
+  // Widget management state
+  const [showModal, setShowModal] = useState(false)
+  const [hidden, setHidden] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('gf_hidden_widgets') || '[]') } catch { return [] }
+  })
+
+  function toggleWidget(id) {
+    const next = hidden.includes(id) ? hidden.filter(x => x !== id) : [...hidden, id]
+    setHidden(next)
+    localStorage.setItem('gf_hidden_widgets', JSON.stringify(next))
+  }
+
+  const wrap = (id, content) => {
+    if (hidden.includes(id)) return null
+    return (
+      <div key={id} style={{ position:'relative', marginTop:16 }}>
+        {content}
+      </div>
+    )
+  }
 
   function goHome() {
     history.current = []
@@ -378,9 +580,12 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         <UserHeader currentUser={currentUser} />
         
         <div style={{ padding: '20px', maxWidth: 800, margin: '0 auto' }}>
+          {/* Daily Overview */}
+          {wrap('overview', <DailyOverviewWidget navigate={navigateToPage} onRemove={() => toggleWidget('overview')} />)}
+
           {/* Welcome Message */}
           <div style={{ 
-            background: `linear-gradient(135deg, var(--school-color, #BA0C2F) 0%, var(--school-surface, #0a000a) 100%)`, 
+            background: `linear-gradient(135deg, var(--school-color, #003057) 0%, var(--school-surface, #0a000a) 100%)`, 
             border: `1px solid rgba(255,255,255,0.1)`, borderRadius: 20, 
             padding: '32px', marginBottom: 32, textAlign: 'center' 
           }}>
@@ -393,7 +598,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
             </p>
             <button onClick={() => navigateToPage('classes/create')} 
               style={{ 
-                background: '#fff', color: 'var(--school-color, #BA0C2F)', 
+                background: '#fff', color: 'var(--school-color, #003057)', 
                 border: 'none', borderRadius: 12, 
                 padding: '14px 28px', fontSize: 14, fontWeight: 700, 
                 cursor: 'pointer' 
@@ -418,8 +623,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
                   cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
                 }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
                 📚 Add Classes
                 <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
                   Create your teaching periods
@@ -433,8 +637,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
                   cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
                 }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
                 📋 Plan Lesson
                 <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
                   Create AI-powered lessons
@@ -448,8 +651,7 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
                   cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
                 }}
                 onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-              >
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
                 📸 Scan Document
                 <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
                   Grade papers instantly
@@ -458,8 +660,17 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
             </div>
           </div>
 
-          {/* Profile Summary */}
-          <ProfileSummary currentUser={currentUser} />
+          {/* Add Widgets Bar */}
+          <AddWidgetsBar onOpen={() => setShowModal(true)} />
+
+          {/* Widget Modal */}
+          {showModal && (
+            <AddWidgetsModal
+              hidden={hidden}
+              onToggle={toggleWidget}
+              onClose={() => setShowModal(false)}
+            />
+          )}
         </div>
         
         <BottomNav active={activeNav} onSelect={navigateToPage} isSubPage={!!subPage} role="teacher"/>
@@ -478,15 +689,43 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
           {/* Main Content */}
           <div>
+            {/* Daily Overview */}
+            {wrap('overview', <DailyOverviewWidget navigate={navigateToPage} onRemove={() => toggleWidget('overview')} />)}
+            
+            {/* Quick Actions */}
             <QuickActions navigate={navigateToPage} />
-            <ClassesOverview currentUser={currentUser} navigate={navigateToPage} />
+            
+            {/* Classes Overview */}
+            {wrap('classes', <ClassesOverview currentUser={currentUser} navigate={navigateToPage} />)}
+            
+            {/* Advanced Widgets */}
+            {wrap('lessons', <TodaysLessonsWidget navigate={navigateToPage} />)}
+            {wrap('attention', <NeedsAttentionWidget atRisk={getNeedsAttention()} navigate={navigateToPage} />)}
+            {wrap('messages', <MessagesWidget navigate={navigateToPage} />)}
+            {wrap('reports', <ReportsWidget navigate={navigateToPage} />)}
+            {wrap('grading', <GradingWidget navigate={navigateToPage} />)}
+            {wrap('lessonPlan', <LessonPlanWidget navigate={navigateToPage} />)}
+            {wrap('sketch', <SketchAnnotateWidget navigate={navigateToPage} />)}
+            {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
+            {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
+            {wrap('gradebook', <GradebookWidget navigate={navigateToPage} />)}
           </div>
           
           {/* Sidebar */}
           <div>
-            <ProfileSummary currentUser={currentUser} />
+            {/* Add Widgets Bar in Sidebar */}
+            <AddWidgetsBar onOpen={() => setShowModal(true)} />
           </div>
         </div>
+
+        {/* Widget Modal */}
+        {showModal && (
+          <AddWidgetsModal
+            hidden={hidden}
+            onToggle={toggleWidget}
+            onClose={() => setShowModal(false)}
+          />
+        )}
       </div>
     </div>
   )
