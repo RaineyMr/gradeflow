@@ -622,8 +622,8 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
                   borderRadius: 12, padding: '20px', fontSize: 14, fontWeight: 700, 
                   cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
                 }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)' }
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)' }>
                 📚 Add Classes
                 <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
                   Create your teaching periods
@@ -636,8 +636,8 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
                   borderRadius: 12, padding: '20px', fontSize: 14, fontWeight: 700, 
                   cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
                 }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)' }
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)' }>
                 📋 Plan Lesson
                 <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
                   Create AI-powered lessons
@@ -650,8 +650,8 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
                   borderRadius: 12, padding: '20px', fontSize: 14, fontWeight: 700, 
                   cursor: 'pointer', textAlign: 'left', transition: 'transform 0.15s' 
                 }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.02)' }
+                onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)' }>
                 📸 Scan Document
                 <div style={{ fontSize: 11, opacity: 0.8, marginTop: 4 }}>
                   Grade papers instantly
@@ -659,6 +659,16 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
               </button>
             </div>
           </div>
+
+          {/* Available Widgets for teachers with no classes */}
+          {wrap('messages', <MessagesWidget navigate={navigateToPage} />)}
+          {wrap('reports', <ReportsWidget navigate={navigateToPage} />)}
+          {wrap('grading', <GradingWidget navigate={navigateToPage} />)}
+          {wrap('lessonPlan', <LessonPlanWidget navigate={navigateToPage} />)}
+          {wrap('sketch', <SketchAnnotateWidget navigate={navigateToPage} />)}
+          {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
+          {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
+          {wrap('gradebook', <GradebookWidget navigate={navigateToPage} />)}
 
           {/* Add Widgets Bar */}
           <AddWidgetsBar onOpen={() => setShowModal(true)} />
