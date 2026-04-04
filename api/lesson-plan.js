@@ -1,7 +1,7 @@
 // api/lesson-plan.js
-// ─── GradeFlow Lesson Plan Combined API ─────────────────────────────────────
-// Combines lessons, standards, and accommodations into single function
-// Reduces Vercel function count from 14 to 12 (Hobby limit)
+// ─── GradeFlow Lesson Plan API (v2) ──────────────────────────────────────────
+// Handles the 10-section lesson plan model with CFS, proper lesson steps,
+// optional add-ons, and per-section AI assist tracking.
 
 import { supabase } from '../lib/supabase'
 
@@ -15,14 +15,32 @@ function handleApiError(res, error, message, statusCode = 500) {
 }
 
 function validateLessonData(data) {
-  const required = ['title', 'subject', 'gradeLevel']
-  const missing = required.filter(field => !data[field] || data[field].trim() === '')
+  const required = ['header']
+  const missing = required.filter(field => !data[field])
   
   if (missing.length > 0) {
     throw new Error(`Missing required fields: ${missing.join(', ')}`)
   }
+
+  const headerRequired = ['title', 'subject', 'gradeLevel']
+  const headerMissing = headerRequired.filter(f => !data.header[f] || data.header[f].toString().trim() === '')
+  
+  if (headerMissing.length > 0) {
+    throw new Error(`Missing required header fields: ${headerMissing.join(', ')}`)
+  }
   
   return true
+}
+
+// ── Extract Teacher ID from Auth Header ────────────────────────────────
+function extractTeacherId(authHeader) {
+  if (!authHeader) return null
+  
+  // For now, simplified extraction. In production, use proper JWT parsing
+  // Format: "Bearer <token>"
+  const token = authHeader.replace('Bearer ', '')
+  // TODO: Parse JWT and extract user ID
+  return token
 }
 
 // ── Main Handler ───────────────────────────────────────────────────────
@@ -34,33 +52,25 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end()
 
   try {
-    const { method } = req
-    
-    // Get user from auth header (simplified - you'll want proper JWT validation)
     const authHeader = req.headers.authorization
     if (!authHeader) {
       return res.status(401).json({ error: 'Authorization required' })
     }
     
-    // For now, extract teacher ID from auth header (replace with proper JWT parsing)
-    const teacherId = authHeader.replace('Bearer ', '') // Simplified - use proper JWT validation
+    const teacherId = extractTeacherId(authHeader)
+    const { method } = req
     
-    // Route based on action parameter
-    const { action } = req.query
-    
-    switch (action) {
-      
-      case 'lessons':
-        await handleLessons(req, res, teacherId)
-        break
-        
-      case 'standards':
-        await handleStandards(req, res)
-        break
-        
+    switch (method) {
+      case 'GET':
+        return handleGetLessons(req, res, teacherId)
+      case 'POST':
+        return handleCreateLesson(req, res, teacherId)
+      case 'PUT':
+        return handleUpdateLesson(req, res, teacherId)
+      case 'DELETE':
+        return handleDeleteLesson(req, res, teacherId)
       default:
-        // Default to lessons for backward compatibility
-        await handleLessons(req, res, teacherId)
+        return res.status(405).json({ error: 'Method not allowed' })
     }
     
   } catch (error) {
@@ -68,131 +78,37 @@ export default async function handler(req, res) {
   }
 }
 
-// ── Standards Handler ─────────────────────────────────────────────────────
-async function handleStandards(req, res) {
-  try {
-    const {
-      query = '',
-      source = '',
-      gradeLevel = '',
-      subject = '',
-      limit = 20,
-      offset = 0
-    } = req.query
-    
-    // Build search query
-    let dbQuery = supabase
-      .from('standards_catalog')
-      .select('*')
-    
-    // Apply filters
-    if (source) {
-      dbQuery = dbQuery.eq('standard_source', source.toUpperCase())
-    }
-    
-    if (gradeLevel) {
-      // Handle array of grade levels
-      const grades = Array.isArray(gradeLevel) ? gradeLevel : [gradeLevel]
-      dbQuery = dbQuery.contains('grade_levels', grades)
-    }
-    
-    if (subject) {
-      dbQuery = dbQuery.eq('subject', subject)
-    }
-    
-    // Text search across multiple fields
-    if (query && query.trim() !== '') {
-      const searchTerm = query.trim().toLowerCase()
-      
-      dbQuery = dbQuery.or([
-        `standard_id.ilike.%${searchTerm}%`,  // Code search
-        `standard_label.ilike.%${searchTerm}%`, // Description search
-        `keywords.cs.{${searchTerm}}` // Keywords array search
-      ])
-    }
-    
-    // Execute query with pagination
-    const { data: standards, error } = await dbQuery
-      .order('standard_source, { ascending: true })
-      .order('grade_levels', { ascending: true })
-      .order('subject', { ascending: true })
-      .order('standard_id', { ascending: true })
-      .range(parseInt(offset), parseInt(limit))
-    
-    if (error) throw error
-    
-    // Group results by source for better frontend handling
-    const groupedStandards = standards.reduce((acc, standard) => {
-      const source = standard.standard_source
-      if (!acc[source]) {
-        acc[source] = {
-          source,
-          description: getSourceDescription(source),
-          standards: []
-        }
-      }
-      acc[source].standards.push(standard)
-      return acc
-    }, {})
-    
-    return res.status(200).json({
-      standards: Object.values(groupedStandards),
-      pagination: {
-        limit: parseInt(limit),
-        offset: parseInt(offset),
-        hasMore: standards.length === parseInt(limit),
-        total: standards.length
-      },
-      filters: {
-        query,
-        source,
-        gradeLevel,
-        subject
-      }
-    })
-    
-  } catch (error) {
-    return handleApiError(res, error, 'Failed to search standards')
-  }
-}
-
-// ── Get Lessons ───────────────────────────────────────────────────────
+// ── Get Lessons ────────────────────────────────────────────────────────
 async function handleGetLessons(req, res, teacherId) {
   try {
-    const { classId, status, limit = 20, offset = 0 } = req.query
+    const { classId, limit = 20, offset = 0 } = req.query
     
     let query = supabase
       .from('lessons')
       .select(`
         *,
         lesson_standards(standard_id, standard_label),
-        lesson_attachments(id, file_name, file_type),
-        lesson_accommodations(id, student_id, accommodation_type, specific_needs)
+        lesson_attachments(id, file_name, file_url),
+        lesson_accommodations(id, student_id, accommodation_type, specific_needs, instructional_adjustments)
       `)
       .eq('teacher_id', teacherId)
     
-    // Apply filters
-    if (classId) query = query.eq('class_id', classId)
-    if (status) query = query.eq('status', status)
-    
-    // Apply joins
-    query = query
-      .leftJoin('lesson_standards', 'lessons.id', 'lesson_standards.lesson_id')
-      .leftJoin('lesson_attachments', 'lessons.id', 'lesson_attachments.lesson_id')
-      .leftJoin('lesson_accommodations', 'lessons.id', 'lesson_accommodations.lesson_id')
+    if (classId) {
+      query = query.eq('class_id', classId)
+    }
     
     const { data: lessons, error } = await query
-      .order('created_at', { ascending: false })
-      .range(parseInt(offset), parseInt(limit))
+      .order('lesson_date', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1)
     
     if (error) throw error
     
     return res.status(200).json({
-      lessons,
+      lessons: lessons || [],
       pagination: {
         limit: parseInt(limit),
         offset: parseInt(offset),
-        hasMore: lessons.length === parseInt(limit)
+        hasMore: lessons && lessons.length === parseInt(limit)
       }
     })
     
@@ -201,102 +117,138 @@ async function handleGetLessons(req, res, teacherId) {
   }
 }
 
-// ── Create Lesson ───────────────────────────────────────────────────
+// ── Create Lesson ──────────────────────────────────────────────────────
 async function handleCreateLesson(req, res, teacherId) {
   try {
     const lessonData = req.body
     
-    // Validate required fields
+    // Validate
     validateLessonData(lessonData)
     
-    // Create lesson with basic info
-    const { data: lesson, error } = await supabase
+    // Map new 10-section model to lessons table columns
+    const lessonRecord = {
+      teacher_id: teacherId,
+      class_id: lessonData.classId || null,
+      
+      // Section 1: Header
+      title: lessonData.header.title,
+      subject: lessonData.header.subject,
+      grade_level: lessonData.header.gradeLevel,
+      lesson_date: lessonData.header.date || new Date().toISOString().split('T')[0],
+      
+      // Section 2: Standards (stored as array, relationships in lesson_standards table)
+      standards: lessonData.standards || [],
+      
+      // Section 3: Objectives
+      objectives: lessonData.objectives || '',
+      
+      // Section 4: CFS (Success Criteria + Culturally Responsive)
+      criteria_for_success: lessonData.cfs?.successCriteria || '',
+      cultural_notes: lessonData.cfs?.culturalNotes || '',
+      
+      // Section 5: Lesson Steps (6 substeps)
+      warm_up: lessonData.lessonSteps?.warmUp || '',
+      direct_instruction: lessonData.lessonSteps?.directInstruction || '',
+      guided_practice: lessonData.lessonSteps?.guidedPractice || '',
+      independent_practice: lessonData.lessonSteps?.independentPractice || '',
+      closure: lessonData.lessonSteps?.closure || '',
+      extension: lessonData.lessonSteps?.extension || '',
+      
+      // Section 6: Exit Ticket
+      exit_ticket: lessonData.exitTicket || '',
+      
+      // Section 7: Homework
+      homework_assignment: lessonData.homework?.assignment || '',
+      homework_due_date: lessonData.homework?.dueDate || null,
+      homework_max_points: lessonData.homework?.maxPoints ? parseInt(lessonData.homework.maxPoints) : null,
+      
+      // Section 8: Accommodations (text field; specific accommodations in lesson_accommodations table)
+      accommodations_notes: lessonData.accommodations || '',
+      
+      // Section 9: Attachments (file references in lesson_attachments table)
+      // (handled separately below)
+      
+      // Section 10: Optional Add-Ons
+      enrichment_activities: lessonData.optionalAddOns?.enrichment || '',
+      supplemental_links: lessonData.optionalAddOns?.supplementalLinks || '',
+      teacher_reflections: lessonData.optionalAddOns?.reflections || '',
+      
+      // Metadata
+      status: 'draft',
+      ai_calls_count: 0,
+      ai_tokens_used: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    
+    // Create lesson
+    const { data: lesson, error: lessonError } = await supabase
       .from('lessons')
-      .insert({
-        teacher_id: teacherId,
-        class_id: lessonData.classId,
-        title: lessonData.title,
-        subject: lessonData.subject,
-        grade_level: lessonData.gradeLevel,
-        lesson_date: lessonData.date || new Date().toISOString().split('T')[0],
-        duration_minutes: lessonData.durationMinutes || 45,
-        standards: lessonData.standards || [],
-        objectives: lessonData.objectives || '',
-        criteria_for_success: lessonData.criteriaForSuccess || '',
-        warm_up: lessonData.steps?.warmUp || '',
-        direct_instruction: lessonData.steps?.directInstruction || '',
-        guided_practice: lessonData.steps?.guidedPractice || '',
-        independent_practice: lessonData.steps?.independentPractice || '',
-        differentiation: lessonData.steps?.differentiation || '',
-        checks_for_understanding: lessonData.steps?.checksForUnderstanding || '',
-        exit_ticket: lessonData.steps?.exitTicket || '',
-        homework: lessonData.homework?.text || '',
-        status: 'draft',
-        ai_calls_count: 0,
-        ai_tokens_used: 0
-      })
+      .insert([lessonRecord])
       .select()
       .single()
     
-    if (error) throw error
+    if (lessonError) throw lessonError
     
-    // Handle standards if provided
+    // Handle standards (many-to-many)
     if (lessonData.standards && lessonData.standards.length > 0) {
       const standardsToInsert = lessonData.standards.map(standard => ({
         lesson_id: lesson.id,
-        standard_id: typeof standard === 'string' ? standard : standard.standard_id,
-        standard_source: typeof standard === 'string' ? 'TEKS' : standard.standard_source || 'TEKS',
-        standard_label: typeof standard === 'string' ? standard : standard.standard_label || standard.description
+        standard_id: typeof standard === 'string' ? standard : standard.standard_id || standard,
+        standard_source: 'TEKS', // Default; can be inferred from standard_id format
+        standard_label: typeof standard === 'string' ? standard : standard.standard_label || standard.description || standard
       }))
       
-      const { error: standardsError } = await supabase
+      const { error: stdError } = await supabase
         .from('lesson_standards')
         .insert(standardsToInsert)
       
-      if (standardsError) console.error('Standards insertion error:', standardsError)
+      if (stdError) {
+        console.error('Standards insertion error:', stdError)
+        // Don't fail the entire request if standards fail
+      }
     }
     
-    // Handle accommodations if provided
-    if (lessonData.accommodations?.students && lessonData.accommodations.students.length > 0) {
-      const accommodationsToInsert = lessonData.accommodations.students.map(student => ({
+    // Handle attachments (many-to-many)
+    if (lessonData.attachments && lessonData.attachments.length > 0) {
+      const attachmentsToInsert = lessonData.attachments.map((file, idx) => ({
         lesson_id: lesson.id,
-        student_id: student.id, // You'll need to map student names to IDs
-        accommodation_type: student.accommodationType,
-        specific_needs: Array.isArray(student.specificNeeds) 
-          ? student.specificNeeds.join(', ') 
-          : student.specificNeeds || '',
-        instructional_adjustments: student.suggestedAdjustments || '',
-        is_override: true // These are lesson-specific overrides
+        file_name: file.name || `attachment_${idx}`,
+        file_type: file.type || 'unknown',
+        file_url: file.url || file.path || '',
+        uploaded_at: new Date().toISOString()
       }))
       
-      const { error: accommodationsError } = await supabase
-        .from('lesson_accommodations')
-        .insert(accommodationsToInsert)
+      const { error: attError } = await supabase
+        .from('lesson_attachments')
+        .insert(attachmentsToInsert)
       
-      if (accommodationsError) console.error('Accommodations insertion error:', accommodationsError)
+      if (attError) {
+        console.error('Attachments insertion error:', attError)
+      }
     }
     
     return res.status(201).json({
       lesson,
-      message: 'Lesson created successfully'
+      message: 'Lesson plan created successfully'
     })
     
   } catch (error) {
-    return handleApiError(res, error, 'Failed to create lesson')
+    return handleApiError(res, error, 'Failed to create lesson plan', 400)
   }
 }
 
-// ── Update Lesson ───────────────────────────────────────────────────
+// ── Update Lesson ──────────────────────────────────────────────────────
 async function handleUpdateLesson(req, res, teacherId) {
   try {
     const { lessonId } = req.query
-    const updateData = req.body
+    const lessonData = req.body
     
     if (!lessonId) {
       return res.status(400).json({ error: 'Lesson ID required' })
     }
     
-    // First verify ownership
+    // Verify ownership
     const { data: existingLesson, error: fetchError } = await supabase
       .from('lessons')
       .select('id, teacher_id')
@@ -311,37 +263,106 @@ async function handleUpdateLesson(req, res, teacherId) {
       return res.status(403).json({ error: 'Access denied' })
     }
     
-    // Update lesson
-    const updateFields = {}
-    
-    // Map frontend fields to database columns
-    if (updateData.title !== undefined) updateFields.title = updateData.title
-    if (updateData.subject !== undefined) updateFields.subject = updateData.subject
-    if (updateData.gradeLevel !== undefined) updateFields.grade_level = updateData.gradeLevel
-    if (updateData.date !== undefined) updateFields.lesson_date = updateData.date
-    if (updateData.durationMinutes !== undefined) updateFields.duration_minutes = updateData.durationMinutes
-    if (updateData.standards !== undefined) updateFields.standards = updateData.standards
-    if (updateData.objectives !== undefined) updateFields.objectives = updateData.objectives
-    if (updateData.criteriaForSuccess !== undefined) updateFields.criteria_for_success = updateData.criteriaForSuccess
-    
-    // Handle steps object
-    if (updateData.steps) {
-      if (updateData.steps.warmUp !== undefined) updateFields.warm_up = updateData.steps.warmUp
-      if (updateData.steps.directInstruction !== undefined) updateFields.direct_instruction = updateData.steps.directInstruction
-      if (updateData.steps.guidedPractice !== undefined) updateFields.guided_practice = updateData.steps.guidedPractice
-      if (updateData.steps.independentPractice !== undefined) updateFields.independent_practice = updateData.steps.independentPractice
-      if (updateData.steps.differentiation !== undefined) updateFields.differentiation = updateData.steps.differentiation
-      if (updateData.steps.checksForUnderstanding !== undefined) updateFields.checks_for_understanding = updateData.steps.checksForUnderstanding
-      if (updateData.steps.exitTicket !== undefined) updateFields.exit_ticket = updateData.steps.exitTicket
+    // Build update object
+    const updateRecord = {
+      updated_at: new Date().toISOString()
     }
     
-    if (updateData.homework?.text !== undefined) updateFields.homework = updateData.homework.text
-    if (updateData.status !== undefined) updateFields.status = updateData.status
-    if (updateData.published_at !== undefined) updateFields.published_at = updateData.status === 'published' ? new Date().toISOString() : null
+    // Section 1: Header
+    if (lessonData.header) {
+      if (lessonData.header.title !== undefined) updateRecord.title = lessonData.header.title
+      if (lessonData.header.subject !== undefined) updateRecord.subject = lessonData.header.subject
+      if (lessonData.header.gradeLevel !== undefined) updateRecord.grade_level = lessonData.header.gradeLevel
+      if (lessonData.header.date !== undefined) updateRecord.lesson_date = lessonData.header.date
+    }
     
-    const { data: updatedLesson, error: updateError } = await supabase
+    // Section 2: Standards
+    if (lessonData.standards !== undefined) {
+      updateRecord.standards = lessonData.standards
+      
+      // Update lesson_standards table
+      await supabase.from('lesson_standards').delete().eq('lesson_id', lessonId)
+      
+      if (lessonData.standards.length > 0) {
+        const standardsToInsert = lessonData.standards.map(standard => ({
+          lesson_id: lessonId,
+          standard_id: typeof standard === 'string' ? standard : standard.standard_id || standard,
+          standard_source: 'TEKS',
+          standard_label: typeof standard === 'string' ? standard : standard.standard_label || standard
+        }))
+        
+        await supabase.from('lesson_standards').insert(standardsToInsert)
+      }
+    }
+    
+    // Section 3: Objectives
+    if (lessonData.objectives !== undefined) updateRecord.objectives = lessonData.objectives
+    
+    // Section 4: CFS
+    if (lessonData.cfs) {
+      if (lessonData.cfs.successCriteria !== undefined) updateRecord.criteria_for_success = lessonData.cfs.successCriteria
+      if (lessonData.cfs.culturalNotes !== undefined) updateRecord.cultural_notes = lessonData.cfs.culturalNotes
+    }
+    
+    // Section 5: Lesson Steps
+    if (lessonData.lessonSteps) {
+      if (lessonData.lessonSteps.warmUp !== undefined) updateRecord.warm_up = lessonData.lessonSteps.warmUp
+      if (lessonData.lessonSteps.directInstruction !== undefined) updateRecord.direct_instruction = lessonData.lessonSteps.directInstruction
+      if (lessonData.lessonSteps.guidedPractice !== undefined) updateRecord.guided_practice = lessonData.lessonSteps.guidedPractice
+      if (lessonData.lessonSteps.independentPractice !== undefined) updateRecord.independent_practice = lessonData.lessonSteps.independentPractice
+      if (lessonData.lessonSteps.closure !== undefined) updateRecord.closure = lessonData.lessonSteps.closure
+      if (lessonData.lessonSteps.extension !== undefined) updateRecord.extension = lessonData.lessonSteps.extension
+    }
+    
+    // Section 6: Exit Ticket
+    if (lessonData.exitTicket !== undefined) updateRecord.exit_ticket = lessonData.exitTicket
+    
+    // Section 7: Homework
+    if (lessonData.homework) {
+      if (lessonData.homework.assignment !== undefined) updateRecord.homework_assignment = lessonData.homework.assignment
+      if (lessonData.homework.dueDate !== undefined) updateRecord.homework_due_date = lessonData.homework.dueDate
+      if (lessonData.homework.maxPoints !== undefined) updateRecord.homework_max_points = lessonData.homework.maxPoints ? parseInt(lessonData.homework.maxPoints) : null
+    }
+    
+    // Section 8: Accommodations
+    if (lessonData.accommodations !== undefined) updateRecord.accommodations_notes = lessonData.accommodations
+    
+    // Section 9: Attachments
+    if (lessonData.attachments !== undefined) {
+      await supabase.from('lesson_attachments').delete().eq('lesson_id', lessonId)
+      
+      if (lessonData.attachments.length > 0) {
+        const attachmentsToInsert = lessonData.attachments.map((file, idx) => ({
+          lesson_id: lessonId,
+          file_name: file.name || `attachment_${idx}`,
+          file_type: file.type || 'unknown',
+          file_url: file.url || file.path || '',
+          uploaded_at: new Date().toISOString()
+        }))
+        
+        await supabase.from('lesson_attachments').insert(attachmentsToInsert)
+      }
+    }
+    
+    // Section 10: Optional Add-Ons
+    if (lessonData.optionalAddOns) {
+      if (lessonData.optionalAddOns.enrichment !== undefined) updateRecord.enrichment_activities = lessonData.optionalAddOns.enrichment
+      if (lessonData.optionalAddOns.supplementalLinks !== undefined) updateRecord.supplemental_links = lessonData.optionalAddOns.supplementalLinks
+      if (lessonData.optionalAddOns.reflections !== undefined) updateRecord.teacher_reflections = lessonData.optionalAddOns.reflections
+    }
+    
+    // Update status/publish
+    if (lessonData.status !== undefined) {
+      updateRecord.status = lessonData.status
+      if (lessonData.status === 'published') {
+        updateRecord.published_at = new Date().toISOString()
+      }
+    }
+    
+    // Perform update
+    const { data: updated, error: updateError } = await supabase
       .from('lessons')
-      .update(updateFields)
+      .update(updateRecord)
       .eq('id', lessonId)
       .select()
       .single()
@@ -349,16 +370,16 @@ async function handleUpdateLesson(req, res, teacherId) {
     if (updateError) throw updateError
     
     return res.status(200).json({
-      lesson: updatedLesson,
-      message: 'Lesson updated successfully'
+      lesson: updated,
+      message: 'Lesson plan updated successfully'
     })
     
   } catch (error) {
-    return handleApiError(res, error, 'Failed to update lesson')
+    return handleApiError(res, error, 'Failed to update lesson plan', 400)
   }
 }
 
-// ── Delete Lesson ───────────────────────────────────────────────────
+// ── Delete Lesson (soft delete/archive) ────────────────────────────────
 async function handleDeleteLesson(req, res, teacherId) {
   try {
     const { lessonId } = req.query
@@ -382,35 +403,22 @@ async function handleDeleteLesson(req, res, teacherId) {
       return res.status(403).json({ error: 'Access denied' })
     }
     
-    // Soft delete by archiving
-    const { data, error } = await supabase
+    // Soft delete (archive)
+    const { error: deleteError } = await supabase
       .from('lessons')
-      .update({ 
+      .update({
         status: 'archived',
         archived_at: new Date().toISOString()
       })
       .eq('id', lessonId)
     
-    if (error) throw error
+    if (deleteError) throw deleteError
     
     return res.status(200).json({
-      message: 'Lesson archived successfully'
+      message: 'Lesson plan archived successfully'
     })
     
   } catch (error) {
-    return handleApiError(res, error, 'Failed to archive lesson')
+    return handleApiError(res, error, 'Failed to archive lesson plan', 400)
   }
-}
-
-// ── Helper Functions ───────────────────────────────────────────────────────
-function getSourceDescription(source) {
-  const descriptions = {
-    'TEKS': 'Texas Essential Knowledge and Skills',
-    'LSS': 'Louisiana Student Standards',
-    'COMMON': 'Common Core/National Standards',
-    'State': 'State Standards',
-    'District': 'District Standards',
-    'Custom': 'Custom Standards'
-  }
-  return descriptions[source] || source
 }
