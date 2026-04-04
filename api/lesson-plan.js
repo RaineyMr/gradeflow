@@ -1,12 +1,13 @@
-// api/lessons.js
-// ─── GradeFlow Lessons CRUD API ─────────────────────────────────────────────
-// Handles CRUD operations for lesson plans with enhanced features
+// api/lesson-plan.js
+// ─── GradeFlow Lesson Plan Combined API ─────────────────────────────────────
+// Combines lessons, standards, and accommodations into single function
+// Reduces Vercel function count from 14 to 12 (Hobby limit)
 
 import { supabase } from '../lib/supabase'
 
 // ── Helper Functions ───────────────────────────────────────────────────────
 function handleApiError(res, error, message, statusCode = 500) {
-  console.error('Lessons API Error:', error)
+  console.error('Lesson Plan API Error:', error)
   return res.status(statusCode).json({ 
     error: message || 'Internal server error',
     details: error.message 
@@ -44,30 +45,114 @@ export default async function handler(req, res) {
     // For now, extract teacher ID from auth header (replace with proper JWT parsing)
     const teacherId = authHeader.replace('Bearer ', '') // Simplified - use proper JWT validation
     
-    switch (method) {
+    // Route based on action parameter
+    const { action } = req.query
+    
+    switch (action) {
       
-      case 'GET':
-        await handleGetLessons(req, res, teacherId)
+      case 'lessons':
+        await handleLessons(req, res, teacherId)
         break
         
-      case 'POST':
-        await handleCreateLesson(req, res, teacherId)
-        break
-        
-      case 'PUT':
-        await handleUpdateLesson(req, res, teacherId)
-        break
-        
-      case 'DELETE':
-        await handleDeleteLesson(req, res, teacherId)
+      case 'standards':
+        await handleStandards(req, res)
         break
         
       default:
-        return res.status(405).json({ error: 'Method not allowed' })
+        // Default to lessons for backward compatibility
+        await handleLessons(req, res, teacherId)
     }
     
   } catch (error) {
     return handleApiError(res, error)
+  }
+}
+
+// ── Standards Handler ─────────────────────────────────────────────────────
+async function handleStandards(req, res) {
+  try {
+    const {
+      query = '',
+      source = '',
+      gradeLevel = '',
+      subject = '',
+      limit = 20,
+      offset = 0
+    } = req.query
+    
+    // Build search query
+    let dbQuery = supabase
+      .from('standards_catalog')
+      .select('*')
+    
+    // Apply filters
+    if (source) {
+      dbQuery = dbQuery.eq('standard_source', source.toUpperCase())
+    }
+    
+    if (gradeLevel) {
+      // Handle array of grade levels
+      const grades = Array.isArray(gradeLevel) ? gradeLevel : [gradeLevel]
+      dbQuery = dbQuery.contains('grade_levels', grades)
+    }
+    
+    if (subject) {
+      dbQuery = dbQuery.eq('subject', subject)
+    }
+    
+    // Text search across multiple fields
+    if (query && query.trim() !== '') {
+      const searchTerm = query.trim().toLowerCase()
+      
+      dbQuery = dbQuery.or([
+        `standard_id.ilike.%${searchTerm}%`,  // Code search
+        `standard_label.ilike.%${searchTerm}%`, // Description search
+        `keywords.cs.{${searchTerm}}` // Keywords array search
+      ])
+    }
+    
+    // Execute query with pagination
+    const { data: standards, error } = await dbQuery
+      .order('standard_source, { ascending: true })
+      .order('grade_levels', { ascending: true })
+      .order('subject', { ascending: true })
+      .order('standard_id', { ascending: true })
+      .range(parseInt(offset), parseInt(limit))
+    
+    if (error) throw error
+    
+    // Group results by source for better frontend handling
+    const groupedStandards = standards.reduce((acc, standard) => {
+      const source = standard.standard_source
+      if (!acc[source]) {
+        acc[source] = {
+          source,
+          description: getSourceDescription(source),
+          standards: []
+        }
+      }
+      acc[source].standards.push(standard)
+      return acc
+    }, {})
+    
+    return res.status(200).json({
+      standards: Object.values(groupedStandards),
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: standards.length === parseInt(limit),
+        total: standards.length
+      },
+      filters: {
+        query,
+        source,
+        gradeLevel,
+        subject
+      }
+    })
+    
+  } catch (error) {
+    return handleApiError(res, error, 'Failed to search standards')
   }
 }
 
@@ -315,4 +400,17 @@ async function handleDeleteLesson(req, res, teacherId) {
   } catch (error) {
     return handleApiError(res, error, 'Failed to archive lesson')
   }
+}
+
+// ── Helper Functions ───────────────────────────────────────────────────────
+function getSourceDescription(source) {
+  const descriptions = {
+    'TEKS': 'Texas Essential Knowledge and Skills',
+    'LSS': 'Louisiana Student Standards',
+    'COMMON': 'Common Core/National Standards',
+    'State': 'State Standards',
+    'District': 'District Standards',
+    'Custom': 'Custom Standards'
+  }
+  return descriptions[source] || source
 }

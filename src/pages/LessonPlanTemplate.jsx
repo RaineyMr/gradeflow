@@ -230,6 +230,12 @@ function StandardsSection({ standards, onStandardsChange, lessonData }) {
             topic={lessonData.title}
             maxSelections={5}
             showRecommendations={true}
+            schoolName={currentUser?.schoolName}
+            onStandardsChange={(standards) => {
+              // Convert to array format expected by API
+              const standardsArray = Array.isArray(standards) ? standards : []
+              onStandardsChange(standardsArray)
+            }}
           />
         </div>
       )}
@@ -739,9 +745,35 @@ export default function LessonPlanTemplate({ currentUser }) {
     }
   }
 
-  function handleSave() {
+  async function handleSave() {
     console.log('Saving lesson plan:', lessonData)
-    // Save functionality here
+    
+    try {
+      // Call the combined API endpoint
+      const response = await fetch('/api/lesson-plan?action=lessons', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser?.id || 'demo'}`
+        },
+        body: JSON.stringify(lessonData)
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        console.error('Save failed:', error)
+        alert(`Failed to save: ${error.error || 'Unknown error'}`)
+        return
+      }
+      
+      const result = await response.json()
+      console.log('Lesson saved successfully:', result)
+      alert('Lesson plan saved successfully!')
+      
+    } catch (error) {
+      console.error('Save error:', error)
+      alert('Failed to save lesson plan')
+    }
   }
 
   return (
