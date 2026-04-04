@@ -873,7 +873,6 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
           {wrap('sketch', <SketchAnnotateWidget navigate={navigateToPage} />)}
           {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
           {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
-          {wrap('gradebook', <EmptyGradebookWidget navigate={navigateToPage} />)}
 
           {/* Add Widgets Bar */}
           <AddWidgetsBar onOpen={() => setShowModal(true)} />
