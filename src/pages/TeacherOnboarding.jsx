@@ -260,7 +260,7 @@ export default function TeacherOnboarding() {
                   value={searchQuery}
                   onChange={e => handleInputChange(e.target.value)}
                   onFocus={() => setIsOpen(true)}
-                  placeholder="e.g. Kennedy High School, Bellaire High School..."
+                  placeholder="e.g. St. Augustine, John F. Kennedy high school..."
                   style={{
                     width: '100%',
                     padding: '12px 16px',
