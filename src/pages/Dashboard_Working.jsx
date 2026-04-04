@@ -965,8 +965,16 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
         {/* Messages */}
         {wrap('messages', <EmptyMessagesWidget navigate={navigateToPage} />)}
         
+        {/* Test Widget */}
+        <div style={{ background:'red', color:'white', padding:'20px', marginBottom:'16px', borderRadius:'12px', textAlign:'center' }}>
+          <h3>TEST: Gradebook should appear here</h3>
+          <p>If you can see this, rendering works</p>
+        </div>
+        
         {/* Gradebook */}
-        {wrap('gradebook', <EmptyGradebookWidget navigate={navigateToPage} />)}
+        <div key="gradebook" style={{ position:'relative', marginTop:16 }}>
+          <EmptyGradebookWidget navigate={navigateToPage} />
+        </div>
         
         {/* Reports */}
         {wrap('reports', <EmptyReportsWidget navigate={navigateToPage} />)}
