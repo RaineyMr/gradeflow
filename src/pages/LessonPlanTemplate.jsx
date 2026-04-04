@@ -105,7 +105,7 @@ function LessonHeader({ lessonData, onChange, currentUser }) {
             type="text"
             value={lessonData.subject || ''}
             onChange={(e) => onChange('subject', e.target.value)}
-            placeholder="e.g., Mathematics, ELA, Science..."
+            placeholder="e.g., Mathematics, Science, English..."
             style={{
               width: '100%',
               padding: '10px 12px',
@@ -129,11 +129,9 @@ function LessonHeader({ lessonData, onChange, currentUser }) {
           }}>
             Grade Level *
           </label>
-          <input
-            type="text"
+          <select
             value={lessonData.gradeLevel || ''}
             onChange={(e) => onChange('gradeLevel', e.target.value)}
-            placeholder="e.g., 9th Grade, Algebra II..."
             style={{
               width: '100%',
               padding: '10px 12px',
@@ -144,7 +142,22 @@ function LessonHeader({ lessonData, onChange, currentUser }) {
               color: C.text,
               outline: 'none'
             }}
-          />
+          >
+            <option value="">Select Grade Level</option>
+            <option value="Kindergarten">Kindergarten</option>
+            <option value="1st Grade">1st Grade</option>
+            <option value="2nd Grade">2nd Grade</option>
+            <option value="3rd Grade">3rd Grade</option>
+            <option value="4th Grade">4th Grade</option>
+            <option value="5th Grade">5th Grade</option>
+            <option value="6th Grade">6th Grade</option>
+            <option value="7th Grade">7th Grade</option>
+            <option value="8th Grade">8th Grade</option>
+            <option value="9th Grade">9th Grade</option>
+            <option value="10th Grade">10th Grade</option>
+            <option value="11th Grade">11th Grade</option>
+            <option value="12th Grade">12th Grade</option>
+          </select>
         </div>
       </div>
     </div>
@@ -152,7 +165,7 @@ function LessonHeader({ lessonData, onChange, currentUser }) {
 }
 
 // ─── Standards Component ───────────────────────────────────────────────────────
-function StandardsSection({ standards, onStandardsChange, lessonData }) {
+function StandardsSection({ standards, onStandardsChange, lessonData, currentUser }) {
   const [showStandards, setShowStandards] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   
@@ -225,6 +238,7 @@ function StandardsSection({ standards, onStandardsChange, lessonData }) {
             showRecommendations={true}
             schoolName={currentUser?.schoolName}
             onStandardsChange={(standards) => {
+              // Convert to array format expected by API
               const standardsArray = Array.isArray(standards) ? standards : []
               onStandardsChange(standardsArray)
             }}
@@ -287,7 +301,7 @@ function StandardsSection({ standards, onStandardsChange, lessonData }) {
   )
 }
 
-// ─── Objectives Component ───────────────────────────────────────────────────────
+// ─── Objectives Section ─────────────────────────────────────────────────────
 function ObjectivesSection({ objectives, onChange }) {
   return (
     <div style={{ 
@@ -297,66 +311,45 @@ function ObjectivesSection({ objectives, onChange }) {
       padding: 24, 
       marginBottom: 24 
     }}>
-      <div style={{ 
-        fontSize: 18, 
-        fontWeight: 700, 
-        color: C.text, 
-        marginBottom: 20 
-      }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
         Objectives
       </div>
       
-      <label style={{ 
-        display: 'block', 
-        fontSize: 12, 
-        fontWeight: 600, 
-        color: C.muted, 
-        marginBottom: 8 
-      }}>
-        Learning Objectives
-      </label>
-      
-      <textarea
-        value={objectives || ''}
-        onChange={(e) => onChange('objectives', e.target.value)}
-        placeholder="What will students be able to do by the end of this lesson?"
-        style={{
-          width: '100%',
-          padding: '12px',
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          fontSize: 14,
-          minHeight: 120,
-          background: C.inner,
-          color: C.text,
-          outline: 'none',
-          fontFamily: 'Inter, Arial, sans-serif',
-          resize: 'vertical'
-        }}
-      />
-      
-      <button
-        onClick={() => console.log('Generate objectives with AI')}
-        style={{
-          marginTop: 12,
-          background: C.blue,
-          color: 'white',
-          border: 'none',
-          borderRadius: 6,
-          padding: '8px 16px',
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}
-      >
-        ✨ AI Generate
-      </button>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ 
+          display: 'block', 
+          fontSize: 12, 
+          fontWeight: 600, 
+          color: C.muted, 
+          marginBottom: 6 
+        }}>
+          Learning Objectives *
+        </label>
+        <textarea
+          value={objectives || ''}
+          onChange={(e) => onChange('objectives', e.target.value)}
+          placeholder="What will students be able to do by the end of this lesson?"
+          rows={4}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            fontSize: 14,
+            background: C.inner,
+            color: C.text,
+            outline: 'none',
+            resize: 'vertical',
+            lineHeight: 1.5
+          }}
+        />
+      </div>
     </div>
   )
 }
 
-// ─── Criteria for Success Component ─────────────────────────────────────────────
-function SuccessCriteriaSection({ criteria, onChange }) {
+// ─── Success Criteria Section ────────────────────────────────────────────
+function SuccessCriteriaSection({ successCriteria, onChange }) {
   return (
     <div style={{ 
       background: C.card, 
@@ -365,60 +358,39 @@ function SuccessCriteriaSection({ criteria, onChange }) {
       padding: 24, 
       marginBottom: 24 
     }}>
-      <div style={{ 
-        fontSize: 18, 
-        fontWeight: 700, 
-        color: C.text, 
-        marginBottom: 20 
-      }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
         Criteria for Success
       </div>
       
-      <label style={{ 
-        display: 'block', 
-        fontSize: 12, 
-        fontWeight: 600, 
-        color: C.muted, 
-        marginBottom: 8 
-      }}>
-        Success Criteria / Rubric
-      </label>
-      
-      <textarea
-        value={criteria || ''}
-        onChange={(e) => onChange('successCriteria', e.target.value)}
-        placeholder="How will you measure whether students have met the objectives?"
-        style={{
-          width: '100%',
-          padding: '12px',
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          fontSize: 14,
-          minHeight: 120,
-          background: C.inner,
-          color: C.text,
-          outline: 'none',
-          fontFamily: 'Inter, Arial, sans-serif',
-          resize: 'vertical'
-        }}
-      />
-      
-      <button
-        onClick={() => console.log('Generate criteria with AI')}
-        style={{
-          marginTop: 12,
-          background: C.blue,
-          color: 'white',
-          border: 'none',
-          borderRadius: 6,
-          padding: '8px 16px',
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}
-      >
-        ✨ AI Generate
-      </button>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ 
+          display: 'block', 
+          fontSize: 12, 
+          fontWeight: 600, 
+          color: C.muted, 
+          marginBottom: 6 
+        }}>
+          Success Criteria *
+        </label>
+        <textarea
+          value={successCriteria || ''}
+          onChange={(e) => onChange('successCriteria', e.target.value)}
+          placeholder="How will you and students know they've met the objectives?"
+          rows={3}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            fontSize: 14,
+            background: C.inner,
+            color: C.text,
+            outline: 'none',
+            resize: 'vertical',
+            lineHeight: 1.5
+          }}
+        />
+      </div>
     </div>
   )
 }
@@ -430,7 +402,9 @@ function LessonStepsSection({ steps, onChange }) {
     { key: 'directInstruction', title: 'Direct Instruction', placeholder: 'Teacher-led instruction, modeling, explanations...' },
     { key: 'guidedPractice', title: 'Guided Practice', placeholder: 'Work through examples together, think-pair-share...' },
     { key: 'independentPractice', title: 'Independent Practice', placeholder: 'Individual work, worksheets, application tasks...' },
-    { key: 'extensions', title: 'Extensions / Differentiation', placeholder: 'Support for struggling students, extensions for advanced learners, accommodations for diverse learners...' }
+    { key: 'differentiation', title: 'Differentiation', placeholder: 'Support for struggling students, extensions for advanced learners...' },
+    { key: 'checksForUnderstanding', title: 'Checks for Understanding', placeholder: 'Formative assessments, questioning strategies, thumbs up/down...' },
+    { key: 'exitTicket', title: 'Exit Ticket', placeholder: 'Quick check for understanding, 3-5 questions...' }
   ]
 
   return (
@@ -441,69 +415,82 @@ function LessonStepsSection({ steps, onChange }) {
       padding: 24, 
       marginBottom: 24 
     }}>
-      <div style={{ 
-        fontSize: 18, 
-        fontWeight: 700, 
-        color: C.text, 
-        marginBottom: 20 
-      }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
         Lesson Steps
       </div>
-
+      
       {stepSections.map((section, index) => (
         <div key={section.key} style={{ marginBottom: 24 }}>
-          <label style={{ 
-            display: 'block', 
-            fontSize: 13, 
-            fontWeight: 700, 
-            color: C.text, 
-            marginBottom: 8 
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: 12 
           }}>
-            {section.title}
-          </label>
-
+            <div style={{ fontSize: 16, fontWeight: 600, color: C.text }}>
+              {index + 1}. {section.title}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => {
+                  // AI Fill Section functionality
+                  console.log(`AI fill ${section.key}`)
+                }}
+                style={{
+                  background: `${C.teal}15`,
+                  color: C.teal,
+                  border: `1px solid ${C.teal}30`,
+                  borderRadius: 6,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                🤖 AI Fill Section
+              </button>
+              <button
+                style={{
+                  background: `${C.blue}15`,
+                  color: C.blue,
+                  border: `1px solid ${C.blue}30`,
+                  borderRadius: 6,
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                📎 Attach
+              </button>
+            </div>
+          </div>
+          
           <textarea
             value={steps?.[section.key] || ''}
             onChange={(e) => onChange(`steps.${section.key}`, e.target.value)}
             placeholder={section.placeholder}
+            rows={3}
             style={{
               width: '100%',
               padding: '12px',
               border: `1px solid ${C.border}`,
               borderRadius: 8,
               fontSize: 14,
-              minHeight: 100,
               background: C.inner,
               color: C.text,
               outline: 'none',
-              fontFamily: 'Inter, Arial, sans-serif',
-              resize: 'vertical'
+              resize: 'vertical',
+              lineHeight: 1.5
             }}
           />
-
-          <button
-            onClick={() => console.log(`Generate ${section.key} with AI`)}
-            style={{
-              marginTop: 8,
-              background: C.blue,
-              color: 'white',
-              border: 'none',
-              borderRadius: 6,
-              padding: '6px 12px',
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            ✨ AI Assist
-          </button>
         </div>
       ))}
     </div>
   )
 }
 
-// ─── Exit Ticket Component (NEW) ────────────────────────────────────────────────
+// ─── Exit Ticket Section ───────────────────────────────────────────────────
 function ExitTicketSection({ exitTicket, onChange }) {
   return (
     <div style={{ 
@@ -513,65 +500,44 @@ function ExitTicketSection({ exitTicket, onChange }) {
       padding: 24, 
       marginBottom: 24 
     }}>
-      <div style={{ 
-        fontSize: 18, 
-        fontWeight: 700, 
-        color: C.text, 
-        marginBottom: 20 
-      }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
         Exit Ticket
       </div>
       
-      <label style={{ 
-        display: 'block', 
-        fontSize: 12, 
-        fontWeight: 600, 
-        color: C.muted, 
-        marginBottom: 8 
-      }}>
-        Student Exit Ticket / Check for Understanding
-      </label>
-      
-      <textarea
-        value={exitTicket || ''}
-        onChange={(e) => onChange('exitTicket', e.target.value)}
-        placeholder="What will students do to demonstrate understanding before leaving class?"
-        style={{
-          width: '100%',
-          padding: '12px',
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          fontSize: 14,
-          minHeight: 100,
-          background: C.inner,
-          color: C.text,
-          outline: 'none',
-          fontFamily: 'Inter, Arial, sans-serif',
-          resize: 'vertical'
-        }}
-      />
-      
-      <button
-        onClick={() => console.log('Generate exit ticket with AI')}
-        style={{
-          marginTop: 12,
-          background: C.blue,
-          color: 'white',
-          border: 'none',
-          borderRadius: 6,
-          padding: '8px 16px',
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: 'pointer'
-        }}
-      >
-        ✨ AI Generate
-      </button>
+      <div style={{ marginBottom: 16 }}>
+        <label style={{ 
+          display: 'block', 
+          fontSize: 12, 
+          fontWeight: 600, 
+          color: C.muted, 
+          marginBottom: 6 
+        }}>
+          Exit Ticket Questions
+        </label>
+        <textarea
+          value={exitTicket || ''}
+          onChange={(e) => onChange('exitTicket', e.target.value)}
+          placeholder="Quick assessment questions to check understanding (3-5 questions)..."
+          rows={3}
+          style={{
+            width: '100%',
+            padding: '12px',
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            fontSize: 14,
+            background: C.inner,
+            color: C.text,
+            outline: 'none',
+            resize: 'vertical',
+            lineHeight: 1.5
+          }}
+        />
+      </div>
     </div>
   )
 }
 
-// ─── Homework Component ─────────────────────────────────────────────────────────
+// ─── Homework Section ───────────────────────────────────────────────────────
 function HomeworkSection({ homework, onChange }) {
   return (
     <div style={{ 
@@ -581,46 +547,39 @@ function HomeworkSection({ homework, onChange }) {
       padding: 24, 
       marginBottom: 24 
     }}>
-      <div style={{ 
-        fontSize: 18, 
-        fontWeight: 700, 
-        color: C.text, 
-        marginBottom: 20 
-      }}>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>
         Homework
       </div>
       
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ 
-          display: 'block', 
-          fontSize: 12, 
-          fontWeight: 600, 
-          color: C.muted, 
-          marginBottom: 8 
-        }}>
-          Homework Assignment
-        </label>
-        <textarea
-          value={homework?.assignment || ''}
-          onChange={(e) => onChange('homework.assignment', e.target.value)}
-          placeholder="What homework will students complete?"
-          style={{
-            width: '100%',
-            padding: '12px',
-            border: `1px solid ${C.border}`,
-            borderRadius: 8,
-            fontSize: 14,
-            minHeight: 80,
-            background: C.inner,
-            color: C.text,
-            outline: 'none',
-            fontFamily: 'Inter, Arial, sans-serif',
-            resize: 'vertical'
-          }}
-        />
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div>
+          <label style={{ 
+            display: 'block', 
+            fontSize: 12, 
+            fontWeight: 600, 
+            color: C.muted, 
+            marginBottom: 6 
+          }}>
+            Assignment
+          </label>
+          <input
+            type="text"
+            value={homework?.assignment || ''}
+            onChange={(e) => onChange('homework.assignment', e.target.value)}
+            placeholder="Homework assignment details..."
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              fontSize: 14,
+              background: C.inner,
+              color: C.text,
+              outline: 'none'
+            }}
+          />
+        </div>
+        
         <div>
           <label style={{ 
             display: 'block', 
@@ -647,149 +606,40 @@ function HomeworkSection({ homework, onChange }) {
             }}
           />
         </div>
-
-        <div>
-          <label style={{ 
-            display: 'block', 
-            fontSize: 12, 
-            fontWeight: 600, 
-            color: C.muted, 
-            marginBottom: 6 
-          }}>
-            Max Points
-          </label>
-          <input
-            type="number"
-            value={homework?.maxPoints || ''}
-            onChange={(e) => onChange('homework.maxPoints', e.target.value)}
-            placeholder="100"
-            style={{
-              width: '100%',
-              padding: '10px 12px',
-              border: `1px solid ${C.border}`,
-              borderRadius: 8,
-              fontSize: 14,
-              background: C.inner,
-              color: C.text,
-              outline: 'none'
-            }}
-          />
-        </div>
+      </div>
+      
+      <div>
+        <label style={{ 
+          display: 'block', 
+          fontSize: 12, 
+          fontWeight: 600, 
+          color: C.muted, 
+          marginBottom: 6 
+        }}>
+          Maximum Points
+        </label>
+        <input
+          type="number"
+          value={homework?.maxPoints || ''}
+          onChange={(e) => onChange('homework.maxPoints', e.target.value)}
+          placeholder="100"
+          style={{
+            width: '100%',
+            padding: '10px 12px',
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            fontSize: 14,
+            background: C.inner,
+            color: C.text,
+            outline: 'none'
+          }}
+        />
       </div>
     </div>
   )
 }
 
-// ─── Optional Add-Ons Component (NEW) ───────────────────────────────────────────
-function OptionalAddOnsSection({ addOns, onChange }) {
-  const addOnsConfig = [
-    { key: 'materialsUsed', label: 'Materials Used', placeholder: 'List materials, resources, and equipment needed' },
-    { key: 'vocabulary', label: 'Vocabulary', placeholder: 'Key terms and definitions students should know' },
-    { key: 'elpsEllSupports', label: 'ELPS / ELL Supports', placeholder: 'Language strategies and supports for English language learners' },
-    { key: 'technologyUsed', label: 'Technology Used', placeholder: 'Tech tools, apps, devices, and platforms' },
-    { key: 'assessmentPlan', label: 'Assessment Plan', placeholder: 'Formative and summative assessment strategies' },
-    { key: 'anticipatorySet', label: 'Anticipatory Set', placeholder: 'Hook or engagement strategy to start the lesson' },
-    { key: 'reflection', label: 'Reflection', placeholder: 'Teacher reflection on lesson effectiveness and student learning' }
-  ]
-
-  return (
-    <div style={{ 
-      background: C.card, 
-      border: `1px solid ${C.border}`, 
-      borderRadius: 12, 
-      padding: 24, 
-      marginBottom: 24 
-    }}>
-      <div style={{ 
-        fontSize: 18, 
-        fontWeight: 700, 
-        color: C.text, 
-        marginBottom: 8 
-      }}>
-        Optional Add-Ons
-      </div>
-      <p style={{ 
-        fontSize: 12, 
-        color: C.muted, 
-        marginBottom: 20, 
-        margin: '0 0 20px 0' 
-      }}>
-        Schools can customize which sections appear. Toggle sections on/off as needed.
-      </p>
-
-      {addOnsConfig.map((addon) => (
-        <div key={addon.key} style={{ marginBottom: 20, paddingBottom: 20, borderBottom: `1px solid ${C.border}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
-            <input
-              type="checkbox"
-              checked={addOns?.[addon.key]?.enabled || false}
-              onChange={(e) => onChange(`optionalAddOns.${addon.key}.enabled`, e.target.checked)}
-              style={{
-                width: 18,
-                height: 18,
-                cursor: 'pointer'
-              }}
-              id={`addon-${addon.key}`}
-            />
-            <label 
-              htmlFor={`addon-${addon.key}`}
-              style={{
-                fontSize: 14,
-                fontWeight: 600,
-                color: C.text,
-                cursor: 'pointer',
-                margin: 0
-              }}
-            >
-              {addon.label}
-            </label>
-          </div>
-
-          {addOns?.[addon.key]?.enabled && (
-            <>
-              <textarea
-                value={addOns[addon.key]?.content || ''}
-                onChange={(e) => onChange(`optionalAddOns.${addon.key}.content`, e.target.value)}
-                placeholder={addon.placeholder}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 8,
-                  fontSize: 14,
-                  minHeight: 80,
-                  background: C.inner,
-                  color: C.text,
-                  outline: 'none',
-                  fontFamily: 'Inter, Arial, sans-serif',
-                  resize: 'vertical',
-                  marginBottom: 8
-                }}
-              />
-              <button
-                onClick={() => console.log(`Generate ${addon.key} with AI`)}
-                style={{
-                  background: C.blue,
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: 6,
-                  padding: '6px 12px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
-              >
-                ✨ AI Assist
-              </button>
-            </>
-          )}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Attachments Component ─────────────────────────────────────────────────────
+// ─── Attachments Section ───────────────────────────────────────────────────
 function AttachmentsSection({ attachments, onChange }) {
   return (
     <div style={{ 
@@ -889,9 +739,10 @@ export default function LessonPlanTemplate({ currentUser }) {
       directInstruction: '',
       guidedPractice: '',
       independentPractice: '',
-      extensions: ''
+      differentiation: '',
+      checksForUnderstanding: '',
+      exitTicket: ''
     },
-    exitTicket: '',
     homework: {
       assignment: '',
       dueDate: '',
@@ -901,18 +752,10 @@ export default function LessonPlanTemplate({ currentUser }) {
       isOpen: false,
       students: []
     },
-    attachments: [],
-    optionalAddOns: {
-      materialsUsed: { enabled: true, content: '' },
-      vocabulary: { enabled: true, content: '' },
-      elpsEllSupports: { enabled: true, content: '' },
-      technologyUsed: { enabled: true, content: '' },
-      assessmentPlan: { enabled: true, content: '' },
-      anticipatorySet: { enabled: true, content: '' },
-      reflection: { enabled: true, content: '' }
-    }
+    attachments: []
   })
 
+  // Auto-populate grade level from user profile
   useEffect(() => {
     if (currentUser?.gradeLevel && !lessonData.gradeLevel) {
       setLessonData(prev => ({ ...prev, gradeLevel: currentUser.gradeLevel }))
@@ -942,7 +785,7 @@ export default function LessonPlanTemplate({ currentUser }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser?.id || 'demo'}`
+          'Authorization': `Bearer ${await currentUser.session.access_token}`
         },
         body: JSON.stringify(lessonData)
       })
@@ -1049,6 +892,7 @@ export default function LessonPlanTemplate({ currentUser }) {
           standards={lessonData.standards}
           onStandardsChange={(standards) => handleChange('standards', standards)}
           lessonData={lessonData}
+          currentUser={currentUser}
         />
         
         <ObjectivesSection 
@@ -1057,7 +901,7 @@ export default function LessonPlanTemplate({ currentUser }) {
         />
         
         <SuccessCriteriaSection 
-          criteria={lessonData.successCriteria}
+          successCriteria={lessonData.successCriteria}
           onChange={handleChange}
         />
         
@@ -1077,25 +921,18 @@ export default function LessonPlanTemplate({ currentUser }) {
         />
         
         <AccommodationsSection 
-          lessonTopic={lessonData.title}
-          lessonSubject={lessonData.subject}
-          lessonGrade={lessonData.gradeLevel}
-          accommodations={lessonData.accommodations?.students || []}
-          onAccommodationsChange={(students) => handleChange('accommodations.students', students)}
+          accommodations={lessonData.accommodations}
+          onChange={handleChange}
         />
         
         <AttachmentsSection 
           attachments={lessonData.attachments}
           onChange={handleChange}
         />
-        
-        <OptionalAddOnsSection 
-          addOns={lessonData.optionalAddOns}
-          onChange={handleChange}
-        />
       </div>
 
-      <BottomNav active="lessonPlan" onSelect={() => {}} isSubPage={false} role="teacher" />
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   )
 }
