@@ -32,6 +32,7 @@ import Widgets from '@pages/Widgets'
 import ClassFeed from '@pages/ClassFeed'
 import Integrations from '@pages/Integrations'
 import Camera          from '@pages/Camera'
+import ClassCreation   from '@pages/ClassCreation'
 import Tutorials       from '@pages/Tutorials'
 import ProfileSettings from '@components/ProfileSettings'
 import SupportStaffGroupScreen from '@pages/SupportStaffGroupScreen'
@@ -339,6 +340,10 @@ export default function App() {
             <Route path="/teacher/feed"         element={<Page Component={ClassFeed}      backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
             <Route path="/teacher/widgets"      element={<Page Component={Widgets}        backTo="/teacher" />} />
             <Route path="/teacher/integrations" element={<Page Component={Integrations}   backTo="/teacher" />} />
+            
+            {/* Class Management Routes */}
+            <Route path="/teacher/classes/create" element={<ClassCreation />} />
+            <Route path="/teacher/classes/upload" element={<div style={{padding: 20, color: '#fff'}}>Upload Classes - Coming Soon</div>} />
 
           </Route>
 

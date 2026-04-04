@@ -2456,6 +2456,10 @@ setDemoSupportStaffData: async () => {
     }
   }),
 
+  addClass: (newClass) => set(state => ({
+    classes: [...state.classes, newClass]
+  })),
+
   // ── Computed ────────────────────────────────────────────────────────────────
   getStudentsForClass: (classId) =>
     get().students.filter(s => s.classId === classId),
