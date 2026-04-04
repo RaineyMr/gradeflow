@@ -88,7 +88,177 @@ function TrendBadge({ trend }) {
   return <span style={{ fontSize:11, color, fontWeight:700 }}>{icon}</span>
 }
 
-// ─── Daily Overview Widget ─────────────────────────────────────────────────────
+// ─── Empty State Widgets ────────────────────────────────────────────────────────
+
+// Empty Messages Widget
+function EmptyMessagesWidget({ navigate, onRemove }) {
+  const t = useT()
+  
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#0d0820 0%,#060810 100%)', border:`1px solid ${C.purple}25` }} onRemove={onRemove}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>💬 {t('nav_messages')}</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Parent communication</div>
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
+          style={{ background:`${C.purple}18`, color:C.purple, border:`1px solid ${C.purple}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          Open →
+        </button>
+      </div>
+
+      <div style={{ textAlign:'center', padding:'32px 16px' }}>
+        <div style={{ fontSize:32, marginBottom:12, opacity:0.6 }}>💬</div>
+        <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:8 }}>
+          No messages yet
+        </div>
+        <div style={{ fontSize:12, color:C.muted, lineHeight:1.5, marginBottom:16 }}>
+          Start communicating with parents once you have classes set up
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('parentMessages') }}
+          style={{ background:C.purple, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+          Set Up Messaging
+        </button>
+      </div>
+    </Widget>
+  )
+}
+
+// Empty Classes Widget
+function EmptyClassesWidget({ navigate, onRemove }) {
+  const t = useT()
+  
+  return (
+    <Widget onClick={()=>navigate('classes')} onRemove={onRemove}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div style={{ fontSize:13, fontWeight:800, color:C.text }}>
+          📚 {t('my_classes')}
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('classes') }}
+          style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          + Add
+        </button>
+      </div>
+
+      <div style={{ textAlign:'center', padding:'32px 16px' }}>
+        <div style={{ fontSize:32, marginBottom:12, opacity:0.6 }}>📚</div>
+        <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:8 }}>
+          No classes yet
+        </div>
+        <div style={{ fontSize:12, color:C.muted, lineHeight:1.5, marginBottom:16 }}>
+          Add your first class to get started with GradeFlow
+        </div>
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+          <button onClick={e=>{ e.stopPropagation(); navigate('classes/create') }}
+            style={{ background:C.blue, color:'#fff', border:'none', borderRadius:8, padding:'8px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+            ✏️ Create
+          </button>
+          <button onClick={e=>{ e.stopPropagation(); navigate('classes/upload') }}
+            style={{ background:C.green, color:'#fff', border:'none', borderRadius:8, padding:'8px 12px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+            📤 Upload
+          </button>
+        </div>
+      </div>
+    </Widget>
+  )
+}
+
+// Empty Reports Widget
+function EmptyReportsWidget({ navigate, onRemove }) {
+  const t = useT()
+  
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#0a1628 0%,#060810 100%)', border:'1px solid #1a2a40' }} onRemove={onRemove}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📊 {t('nav_reports')}</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Analytics & insights</div>
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('reports') }}
+          style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          Open →
+        </button>
+      </div>
+
+      <div style={{ textAlign:'center', padding:'32px 16px' }}>
+        <div style={{ fontSize:32, marginBottom:12, opacity:0.6 }}>📊</div>
+        <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:8 }}>
+          No data available
+        </div>
+        <div style={{ fontSize:12, color:C.muted, lineHeight:1.5, marginBottom:16 }}>
+          Start teaching to see student performance reports
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('classes') }}
+          style={{ background:C.blue, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+          Add Classes First
+        </button>
+      </div>
+    </Widget>
+  )
+}
+
+// Empty Grading Widget
+function EmptyGradingWidget({ navigate, onRemove }) {
+  return (
+    <Widget onClick={()=>navigate('camera')} onRemove={onRemove}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+          <span 
+            onClick={e=>{ e.stopPropagation(); navigate('camera'); }}
+            style={{ cursor:'pointer', fontSize:13, fontWeight:800, color:C.text, padding:0, display:'inline-block' }}>
+            📷
+          </span>
+          <span style={{ fontSize:13, fontWeight:800, color:C.text }}>Grading</span>
+        </div>
+        <span style={{ fontSize:10, color:C.muted, fontWeight:700 }}>Not connected</span>
+      </div>
+      
+      <div style={{ fontSize:11, color:C.muted, marginBottom:10 }}>
+        Set up grading to scan and grade papers instantly
+      </div>
+      
+      <div style={{ textAlign:'center', padding:'20px 0' }}>
+        <div style={{ fontSize:24, marginBottom:8, opacity:0.6 }}>📷</div>
+        <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>
+          Connect PowerSchool or use camera scanning
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('settings') }}
+          style={{ background:C.teal, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+          Set Up Grading
+        </button>
+      </div>
+    </Widget>
+  )
+}
+
+// Empty Lesson Plan Widget
+function EmptyLessonPlanWidget({ navigate, onRemove }) {
+  return (
+    <Widget style={{ background:'linear-gradient(135deg,#071a30 0%,#060810 100%)', border:`1px solid ${C.teal}25` }} onRemove={onRemove}>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+        <div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📋 Lesson Plan Builder</div>
+          <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>AI · TEKS · Standards · Curriculum</div>
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
+          style={{ background:`${C.teal}18`, color:C.teal, border:`1px solid ${C.teal}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+          Open →
+        </button>
+      </div>
+
+      <div style={{ textAlign:'center', padding:'20px 0' }}>
+        <div style={{ fontSize:24, marginBottom:8, opacity:0.6 }}>📋</div>
+        <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>
+          Create AI-powered lesson plans with TEKS standards
+        </div>
+        <button onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
+          style={{ background:C.teal, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+          Create First Lesson
+        </button>
+      </div>
+    </Widget>
+  )
+}
 function DailyOverviewWidget({ navigate, onRemove }) {
   const { classes, messages, getNeedsAttention } = useStore()
   const pending = messages.filter(m=>m.status==='pending')
@@ -661,10 +831,11 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
           </div>
 
           {/* Available Widgets for teachers with no classes */}
-          {wrap('messages', <MessagesWidget navigate={navigateToPage} />)}
-          {wrap('reports', <ReportsWidget navigate={navigateToPage} />)}
-          {wrap('grading', <GradingWidget navigate={navigateToPage} />)}
-          {wrap('lessonPlan', <LessonPlanWidget navigate={navigateToPage} />)}
+          {wrap('classes', <EmptyClassesWidget navigate={navigateToPage} />)}
+          {wrap('messages', <EmptyMessagesWidget navigate={navigateToPage} />)}
+          {wrap('reports', <EmptyReportsWidget navigate={navigateToPage} />)}
+          {wrap('grading', <EmptyGradingWidget navigate={navigateToPage} />)}
+          {wrap('lessonPlan', <EmptyLessonPlanWidget navigate={navigateToPage} />)}
           {wrap('sketch', <SketchAnnotateWidget navigate={navigateToPage} />)}
           {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
           {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
@@ -705,16 +876,18 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
             {/* Quick Actions */}
             <QuickActions navigate={navigateToPage} />
             
-            {/* Classes Overview */}
-            {wrap('classes', <ClassesOverview currentUser={currentUser} navigate={navigateToPage} />)}
+            {/* Classes Overview - Use empty state if no classes */}
+            {classes.length === 0 ? (
+              wrap('classes', <EmptyClassesWidget navigate={navigateToPage} />)
+            ) : (
+              wrap('classes', <ClassesOverview currentUser={currentUser} navigate={navigateToPage} />)
+            )}
             
-            {/* Advanced Widgets */}
-            {wrap('lessons', <TodaysLessonsWidget navigate={navigateToPage} />)}
-            {wrap('attention', <NeedsAttentionWidget atRisk={getNeedsAttention()} navigate={navigateToPage} />)}
-            {wrap('messages', <MessagesWidget navigate={navigateToPage} />)}
-            {wrap('reports', <ReportsWidget navigate={navigateToPage} />)}
-            {wrap('grading', <GradingWidget navigate={navigateToPage} />)}
-            {wrap('lessonPlan', <LessonPlanWidget navigate={navigateToPage} />)}
+            {/* Empty State Widgets */}
+            {wrap('messages', <EmptyMessagesWidget navigate={navigateToPage} />)}
+            {wrap('reports', <EmptyReportsWidget navigate={navigateToPage} />)}
+            {wrap('grading', <EmptyGradingWidget navigate={navigateToPage} />)}
+            {wrap('lessonPlan', <EmptyLessonPlanWidget navigate={navigateToPage} />)}
             {wrap('sketch', <SketchAnnotateWidget navigate={navigateToPage} />)}
             {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
             {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
