@@ -273,11 +273,11 @@ function LessonView({ lesson, onBack, onEdit }) {
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{lesson.title}</h1>
       <p style={{ color:C.muted, fontSize:12, margin:'0 0 20px' }}>{lesson.duration}{lesson.pages ? ` · ${lesson.pages}` : ''}</p>
 
-      <SectionWithAI title="Objective" items={[lesson.objective]} />
-      {lesson.warmup?.length > 0     && <SectionWithAI title="Warm-Up"    items={lesson.warmup} />}
-      {lesson.activities?.length > 0 && <SectionWithAI title="Activities" items={lesson.activities} />}
-      {lesson.materials?.length > 0  && <SectionWithAI title="Materials"   items={lesson.materials} />}
-      {lesson.homework               && <SectionWithAI title="Homework"   items={[lesson.homework]} />}
+      <Section title="Objective" items={[lesson.objective]} />
+      {lesson.warmup?.length > 0     && <Section title="Warm-Up"    items={lesson.warmup} />}
+      {lesson.activities?.length > 0 && <Section title="Activities" items={lesson.activities} />}
+      {lesson.materials?.length > 0  && <Section title="Materials"  items={lesson.materials} />}
+      {lesson.homework               && <Section title="Homework"   items={[lesson.homework]} />}
 
       {/* Accommodations section — always shown in lesson view */}
       <AccommodationsSection
@@ -610,7 +610,7 @@ function AIAssistButton({ mode, sectionName, onGenerate, loading }) {
 }
 
 // ─── Section Wrapper with AI Assist ───────────────────────────────────────
-function SectionWithAI({ title, children, onAIRefine, onAIGenerate, isGenerating }) {
+function Section({ title, children, onAIRefine, onAIGenerate, isGenerating }) {
   return (
     <div style={{
       background: C.card,
@@ -660,7 +660,7 @@ function SectionWithAI({ title, children, onAIRefine, onAIGenerate, isGenerating
 // ─── 1. LESSON HEADER ──────────────────────────────────────────────────────
 function LessonHeaderSection({ data, onChange }) {
   return (
-    <SectionWithAI title="Lesson Header">
+    <Section title="Lesson Header">
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
@@ -751,7 +751,7 @@ function LessonHeaderSection({ data, onChange }) {
           </select>
         </div>
       </div>
-    </SectionWithAI>
+    </Section>
   )
 }
 
@@ -840,7 +840,7 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
           </div>
         </div>
       )}
-    </SectionWithAI>
+    </Section>
   )
 }
 
@@ -884,7 +884,7 @@ function ObjectivesSection({ data, onChange, onAIGenerate }) {
           lineHeight: 1.5,
         }}
       />
-    </SectionWithAI>
+    </Section>
   )
 }
 
@@ -954,7 +954,7 @@ function CFSSection({ data, onChange, onAIGenerate }) {
           }}
         />
       </div>
-    </SectionWithAI>
+    </Section>
   )
 }
 
@@ -1014,7 +1014,7 @@ function LessonStepsSection({ data, onChange, onAIGenerate }) {
           )}
         </div>
       ))}
-    </SectionWithAI>
+    </Section>
   )
 }
 
@@ -1057,7 +1057,7 @@ Question 3: Draw and label the parts of a plant cell involved in photosynthesis.
           lineHeight: 1.5,
         }}
       />
-    </SectionWithAI>
+    </Section>
   )
 }
 
@@ -1144,7 +1144,7 @@ function HomeworkSection({ data, onChange, onAIGenerate }) {
           />
         </div>
       </div>
-    </SectionWithAI>
+    </Section>
   )
 }
 
