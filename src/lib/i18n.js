@@ -32,7 +32,7 @@ const TRANSLATIONS = {
   nav_settings:          { en: 'Settings',           es: 'Ajustes'             },
 
   // ── Dashboard — teacher ────────────────────────────────────────────────────
-  daily_overview:        { en: 'DAILY OVERVIEW',     es: 'RESUMEN DEL DÍA'     },
+  daily_overview:        { en: 'Daily Overview',     es: 'Resumen del Día'     },
   todays_lessons:        { en: "TODAY'S LESSONS",    es: 'LECCIONES DE HOY'    },
   my_classes:            { en: 'My Classes',         es: 'Mis Clases'          },
   needs_attention:       { en: 'Needs Attention',    es: 'Necesita Atención'   },
@@ -168,7 +168,7 @@ const TRANSLATIONS = {
   logout:                { en: 'Sign Out',           es: 'Cerrar Sesión'       },
 
   // ── Student dashboard ─────────────────────────────────────────────────────
-  daily_overview_student:{ en: 'DAILY OVERVIEW',     es: 'RESUMEN DEL DÍA'     },
+  daily_overview_student:{ en: 'Daily Overview',     es: 'Resumen del Día'     },
   todays_lessons_label:  { en: "TODAY'S LESSONS 📖", es: 'LECCIONES DE HOY 📖' },
   my_classes_label:      { en: 'My Classes',         es: 'Mis Clases'          },
   alerts_label:          { en: 'Alerts',             es: 'Alertas'             },
