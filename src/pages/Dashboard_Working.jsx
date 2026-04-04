@@ -911,6 +911,39 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
           />
         )}
 
+        {/* Test Gradebook Widget at TOP */}
+        <div style={{ background:'red', color:'white', padding:'20px', marginBottom:'16px', borderRadius:'12px', textAlign:'center' }}>
+          <h3>TEST: Gradebook Widget Should Be Here</h3>
+          <p>If you can see this, basic rendering works</p>
+        </div>
+        
+        <Widget style={{ background:'linear-gradient(135deg,#0a1628 0%,#060810 100%)', border:'1px solid #1a2a40', marginBottom:16 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📓 Gradebook</div>
+              <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Grade management</div>
+            </div>
+            <button onClick={e=>{ e.stopPropagation(); navigate('gradebook') }}
+              style={{ background:`${C.blue}18`, color:C.blue, border:`1px solid ${C.blue}30`, borderRadius:9, padding:'5px 10px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+              Open →
+            </button>
+          </div>
+
+          <div style={{ textAlign:'center', padding:'32px 16px' }}>
+            <div style={{ fontSize:32, marginBottom:12, opacity:0.6 }}>📓</div>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, marginBottom:8 }}>
+              No grades yet
+            </div>
+            <div style={{ fontSize:12, color:C.muted, lineHeight:1.5, marginBottom:16 }}>
+              Add classes and start grading to see student progress
+            </div>
+            <button onClick={e=>{ e.stopPropagation(); navigate('classes') }}
+              style={{ background:C.blue, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+              Add Classes First
+            </button>
+          </div>
+        </Widget>
+
         {/* Daily Overview */}
         {wrap('overview', <DailyOverviewWidget navigate={navigateToPage} onRemove={() => toggleWidget('overview')} />)}
         
