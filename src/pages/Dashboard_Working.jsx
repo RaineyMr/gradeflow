@@ -720,7 +720,9 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
   // Widget management state
   const [showModal, setShowModal] = useState(false)
   const [hidden, setHidden] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('gf_hidden_widgets') || '[]') } catch { return [] }
+    // Temporarily reset to empty array to show all widgets
+    return []
+    // try { return JSON.parse(localStorage.getItem('gf_hidden_widgets') || '[]') } catch { return [] }
   })
 
   function toggleWidget(id) {
