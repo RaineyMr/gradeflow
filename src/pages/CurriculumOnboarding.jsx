@@ -322,6 +322,29 @@ function StepGettingStarted({ onNext, onSkip }) {
   const { currentUser } = useStore()
   const navigate = useNavigate()
   
+  function handleAction(action) {
+    // Navigate to the specific action, then continue onboarding
+    switch(action) {
+      case 'classes':
+        navigate('/teacher/classes/create')
+        break
+      case 'upload':
+        navigate('/teacher/classes/upload')
+        break
+      case 'camera':
+        navigate('/teacher/camera')
+        break
+      case 'gradebook':
+        navigate('/teacher/gradebook')
+        break
+      case 'lessons':
+        navigate('/teacher/lessons')
+        break
+      default:
+        onNext()
+    }
+  }
+  
   return (
     <div style={{ maxWidth: 600, margin: '0 auto' }}>
       <div style={{ textAlign: 'center', marginBottom: 32 }}>
@@ -330,15 +353,26 @@ function StepGettingStarted({ onNext, onSkip }) {
           Getting Started with GradeFlow
         </h2>
         <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.8)', margin: '0 0 32px', lineHeight: 1.5 }}>
-          Welcome! Let's get your classroom set up. Here's what we recommend:
+          Welcome! Let's get your classroom set up. Choose an action to get started:
         </p>
       </div>
       
       <div style={{ display: 'grid', gap: 16, marginBottom: 32 }}>
-        <div style={{ 
-          background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
-          display: 'flex', alignItems: 'center', gap: 16
-        }}>
+        <button onClick={() => handleAction('classes')}
+          style={{ 
+            background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
+            display: 'flex', alignItems: 'center', gap: 16, width: '100%',
+            border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+            transition: 'all 0.15s', textAlign: 'left'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.15)'
+            e.currentTarget.style.transform = 'translateY(-2px)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+            e.currentTarget.style.transform = 'translateY(0px)'
+          }}>
           <div style={{ 
             width: 48, height: 48, borderRadius: '50%', 
             background: 'rgba(255,255,255,0.2)', 
@@ -355,12 +389,26 @@ function StepGettingStarted({ onNext, onSkip }) {
               Create periods or import your class roster using CSV, Excel, PDF files, or camera scanning
             </div>
           </div>
-        </div>
+          <div style={{ fontSize: 20, color: 'rgba(255,255,255,0.5)' }}>
+            →
+          </div>
+        </button>
         
-        <div style={{ 
-          background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
-          display: 'flex', alignItems: 'center', gap: 16
-        }}>
+        <button onClick={() => handleAction('gradebook')}
+          style={{ 
+            background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
+            display: 'flex', alignItems: 'center', gap: 16, width: '100%',
+            border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+            transition: 'all 0.15s', textAlign: 'left'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.15)'
+            e.currentTarget.style.transform = 'translateY(-2px)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+            e.currentTarget.style.transform = 'translateY(0px)'
+          }}>
           <div style={{ 
             width: 48, height: 48, borderRadius: '50%', 
             background: 'rgba(255,255,255,0.2)', 
@@ -377,12 +425,26 @@ function StepGettingStarted({ onNext, onSkip }) {
               Create assignments and grading categories that align with your teaching style
             </div>
           </div>
-        </div>
+          <div style={{ fontSize: 20, color: 'rgba(255,255,255,0.5)' }}>
+            →
+          </div>
+        </button>
         
-        <div style={{ 
-          background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
-          display: 'flex', alignItems: 'center', gap: 16
-        }}>
+        <button onClick={() => handleAction('lessons')}
+          style={{ 
+            background: 'rgba(255,255,255,0.1)', borderRadius: 16, padding: '20px',
+            display: 'flex', alignItems: 'center', gap: 16, width: '100%',
+            border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer',
+            transition: 'all 0.15s', textAlign: 'left'
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.15)'
+            e.currentTarget.style.transform = 'translateY(-2px)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(255,255,255,0.1)'
+            e.currentTarget.style.transform = 'translateY(0px)'
+          }}>
           <div style={{ 
             width: 48, height: 48, borderRadius: '50%', 
             background: 'rgba(255,255,255,0.2)', 
@@ -399,7 +461,10 @@ function StepGettingStarted({ onNext, onSkip }) {
               Use AI to generate TEKS-aligned lesson plans tailored to your students' needs
             </div>
           </div>
-        </div>
+          <div style={{ fontSize: 20, color: 'rgba(255,255,255,0.5)' }}>
+            →
+          </div>
+        </button>
       </div>
       
       <div style={{ 
@@ -424,7 +489,7 @@ function StepGettingStarted({ onNext, onSkip }) {
             border: 'none', borderRadius: 12, 
             padding: '14px 32px', fontSize: 14, fontWeight: 700, cursor: 'pointer' 
           }}>
-          Get Started →
+          Continue to Dashboard →
         </button>
       </div>
     </div>
