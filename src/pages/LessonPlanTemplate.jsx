@@ -714,7 +714,14 @@ export default function LessonPlanTemplate({ currentUser }) {
     standards: [],
     objectives: '',
     successCriteria: '',
-    steps: {},
+    steps: {
+      warmUp: '',
+      directInstruction: '',
+      guidedPractice: '',
+      independentPractice: '',
+      differentiation: '',        // ← NEW: Added missing section
+      checksForUnderstanding: ''  // ← NEW: Added missing section
+    },
     homework: {},
     accommodations: {
       isOpen: false,
