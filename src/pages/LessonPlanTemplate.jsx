@@ -426,11 +426,12 @@ function SuccessCriteriaSection({ criteria, onChange }) {
 // ─── Lesson Steps Component ─────────────────────────────────────────────────────
 function LessonStepsSection({ steps, onChange }) {
   const stepSections = [
-    { key: 'warmUp', title: '1. Warm-Up / Do Now', placeholder: 'What activity will engage students at the start?' },
-    { key: 'directInstruction', title: '2. Direct Instruction', placeholder: 'What content will you teach?' },
-    { key: 'guidedPractice', title: '3. Guided Practice', placeholder: 'How will students practice with your support?' },
-    { key: 'independentPractice', title: '4. Independent Practice', placeholder: 'What will students do independently?' },
-    { key: 'extensions', title: '5. Extensions for Advanced Learners', placeholder: 'What challenges for students who finish early?' }
+    { key: 'warmUp', title: 'Warm-Up / Do Now', placeholder: 'Bell ringer activity, quick review, or engagement hook...' },
+    { key: 'directInstruction', title: 'Direct Instruction', placeholder: 'Teacher-led instruction, modeling, explanations...' },
+    { key: 'guidedPractice', title: 'Guided Practice', placeholder: 'Work through examples together, think-pair-share...' },
+    { key: 'independentPractice', title: 'Independent Practice', placeholder: 'Individual work, worksheets, application tasks...' },
+    { key: 'differentiation', title: 'Differentiation', placeholder: 'Support for struggling students, extensions for advanced learners...' },
+    { key: 'checksForUnderstanding', title: 'Checks for Understanding', placeholder: 'Formative assessments, questioning strategies, thumbs up/down...' }
   ]
 
   return (
@@ -889,6 +890,8 @@ export default function LessonPlanTemplate({ currentUser }) {
       directInstruction: '',
       guidedPractice: '',
       independentPractice: '',
+      differentiation: '',
+      checksForUnderstanding: '',
       extensions: ''
     },
     exitTicket: '',
