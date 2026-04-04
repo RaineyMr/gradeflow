@@ -251,10 +251,16 @@ function EmptyLessonPlanWidget({ navigate, onRemove }) {
         <div style={{ fontSize:12, color:C.muted, marginBottom:12 }}>
           Create AI-powered lesson plans with TEKS standards
         </div>
-        <button onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
-          style={{ background:C.teal, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
-          Create First Lesson
-        </button>
+        <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+          <button onClick={e=>{ e.stopPropagation(); navigate('lessonPlan') }}
+            style={{ background:C.teal, color:'#fff', border:'none', borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+            Create First Lesson
+          </button>
+          <button onClick={e=>{ e.stopPropagation(); navigate('lesson-plan-template') }}
+            style={{ background:`${C.teal}18`, color:C.teal, border:`1px solid ${C.teal}30`, borderRadius:8, padding:'8px 16px', fontSize:12, fontWeight:700, cursor:'pointer' }}>
+            Use Template
+          </button>
+        </div>
       </div>
     </Widget>
   )

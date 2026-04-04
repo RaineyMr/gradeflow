@@ -20,6 +20,7 @@ import AdminDashboard from '@pages/AdminDashboard'
 import Dashboard from '@pages/Dashboard'
 import Gradebook from '@pages/Gradebook'
 import LessonPlan from '@pages/LessonPlan'
+import LessonPlanTemplate from '@pages/LessonPlanTemplate'
 import ParentDashboard from '@pages/ParentDashboard'
 import ParentMessages from '@pages/ParentMessages'
 import Reports from '@pages/Reports'
@@ -333,6 +334,7 @@ export default function App() {
             <Route path="/teacher"              element={<TeacherHome />} />
             <Route path="/teacher/gradebook"    element={<Page Component={Gradebook}      backTo="/teacher" />} />
             <Route path="/teacher/lessons"      element={<Page Component={LessonPlan}     backTo="/teacher" />} />
+            <Route path="/teacher/lesson-plan-template" element={<Page Component={LessonPlanTemplate} backTo="/teacher" />} />
             <Route path="/teacher/reports"      element={<Page Component={Reports}        backTo="/teacher" />} />
             <Route path="/teacher/messages"     element={<Page Component={ParentMessages} backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
             <Route path="/teacher/testing"      element={<Page Component={TestingSuite}   backTo="/teacher" />} />
