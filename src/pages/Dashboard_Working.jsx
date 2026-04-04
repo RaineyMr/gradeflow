@@ -268,7 +268,7 @@ function EmptyGradebookWidget({ navigate, onRemove }) {
     <Widget style={{ background:'linear-gradient(135deg,#0a1628 0%,#060810 100%)', border:'1px solid #1a2a40' }} onRemove={onRemove}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
         <div>
-          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📓 {t('nav_gradebook')}</div>
+          <div style={{ fontSize:13, fontWeight:800, color:C.text }}>📓 Gradebook</div>
           <div style={{ fontSize:10, color:C.muted, marginTop:2 }}>Grade management</div>
         </div>
         <button onClick={e=>{ e.stopPropagation(); navigate('gradebook') }}
