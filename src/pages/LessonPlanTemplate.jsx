@@ -268,7 +268,7 @@ function StandardsSection({ standards, onStandardsChange, lessonData }) {
                   gap: 6
                 }}
               >
-                {standard.code || standard}
+                {standard.code ? `${standard.code}${standard.description ? ' - ' + standard.description : ''}` : standard}
                 <button
                   onClick={() => {
                     const newStandards = standards.filter((_, i) => i !== index)
