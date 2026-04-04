@@ -237,7 +237,7 @@ export default function ClassCreation() {
                   cursor: 'pointer'
                 }}
               >
-                Skip
+                Skip Setup
               </button>
               
               <button
