@@ -3786,3 +3786,6 @@ setDemoSupportStaffData: async () => {
   },
 
 })) // closes store
+
+// Export demo schools for use in other modules
+export { DEMO_SCHOOLS }
