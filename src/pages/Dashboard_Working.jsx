@@ -709,12 +709,13 @@ export default function WorkingDashboard({ currentUser, onCameraClick }) {
             {wrap('testing', <TestingSuiteWidget navigate={navigateToPage} />)}
             {wrap('scan', <ScanGradeSheetWidget navigate={navigateToPage} />)}
             {wrap('gradebook', <GradebookWidget navigate={navigateToPage} />)}
+            
+            {/* Add Widgets Bar at bottom */}
+            <AddWidgetsBar onOpen={() => setShowModal(true)} />
           </div>
           
-          {/* Sidebar */}
+          {/* Sidebar - Empty as requested */}
           <div>
-            {/* Add Widgets Bar in Sidebar */}
-            <AddWidgetsBar onOpen={() => setShowModal(true)} />
           </div>
         </div>
 

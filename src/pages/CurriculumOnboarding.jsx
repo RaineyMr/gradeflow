@@ -572,8 +572,8 @@ export default function CurriculumOnboarding() {
       // Go to previous step
       setStep(step - 1)
     } else {
-      // Go back to teacher onboarding
-      navigate('/teacher/onboarding')
+      // Go back to teacher dashboard
+      navigate('/teacher/curriculum-onboarding#/teacher/')
     }
   }
 
