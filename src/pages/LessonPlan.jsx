@@ -305,7 +305,12 @@ function AIPlanGenerator({ onBack }) {
 
   // Auto-populate form based on teacher profile
   useEffect(() => {
+    console.log('Gradeflow LessonPlan - currentUser:', currentUser)
     if (currentUser) {
+      console.log('Gradeflow LessonPlan - setting form with:', {
+        subject: currentUser.subjects?.[0] || '',
+        grade: currentUser.gradeLevel || ''
+      })
       setForm(prev => ({
         ...prev,
         state: prev.state || getTeacherState(),
