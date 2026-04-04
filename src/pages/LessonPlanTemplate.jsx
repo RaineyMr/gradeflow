@@ -402,9 +402,8 @@ function LessonStepsSection({ steps, onChange }) {
     { key: 'directInstruction', title: 'Direct Instruction', placeholder: 'Teacher-led instruction, modeling, explanations...' },
     { key: 'guidedPractice', title: 'Guided Practice', placeholder: 'Work through examples together, think-pair-share...' },
     { key: 'independentPractice', title: 'Independent Practice', placeholder: 'Individual work, worksheets, application tasks...' },
-    { key: 'differentiation', title: 'Differentiation', placeholder: 'Support for struggling students, extensions for advanced learners...' },
-    { key: 'checksForUnderstanding', title: 'Checks for Understanding', placeholder: 'Formative assessments, questioning strategies, thumbs up/down...' },
-    { key: 'exitTicket', title: 'Exit Ticket', placeholder: 'Quick check for understanding, 3-5 questions...' }
+    { key: 'closure', title: 'Closure', placeholder: 'Wrap-up activity, review, or assessment...' },
+    { key: 'extension', title: 'Extension', placeholder: 'Additional challenges or enrichment activities...' }
   ]
 
   return (
@@ -727,38 +726,45 @@ function AttachmentsSection({ attachments, onChange }) {
 // ─── Main Lesson Plan Template Component ───────────────────────────────────────────
 export default function LessonPlanTemplate({ currentUser }) {
   const [lessonData, setLessonData] = useState({
-    title: '',
-    date: '',
-    subject: '',
-    gradeLevel: '',
+    header: {
+      title: '',
+      date: '',
+      subject: '',
+      gradeLevel: ''
+    },
     standards: [],
     objectives: '',
-    successCriteria: '',
-    steps: {
+    cfs: {
+      successCriteria: '',
+      culturalNotes: ''
+    },
+    lessonSteps: {
       warmUp: '',
       directInstruction: '',
       guidedPractice: '',
       independentPractice: '',
-      differentiation: '',
-      checksForUnderstanding: '',
-      exitTicket: ''
+      closure: '',
+      extension: ''
     },
+    exitTicket: '',
     homework: {
       assignment: '',
       dueDate: '',
       maxPoints: ''
     },
-    accommodations: {
-      isOpen: false,
-      students: []
-    },
-    attachments: []
+    accommodations: '',
+    attachments: [],
+    optionalAddOns: {
+      enrichment: '',
+      supplementalLinks: '',
+      reflections: ''
+    }
   })
 
   // Auto-populate grade level from user profile
   useEffect(() => {
-    if (currentUser?.gradeLevel && !lessonData.gradeLevel) {
-      setLessonData(prev => ({ ...prev, gradeLevel: currentUser.gradeLevel }))
+    if (currentUser?.gradeLevel && !lessonData.header.gradeLevel) {
+      setLessonData(prev => ({ ...prev, header: { ...prev.header, gradeLevel: currentUser.gradeLevel } }))
     }
   }, [currentUser])
 
@@ -883,8 +889,8 @@ export default function LessonPlanTemplate({ currentUser }) {
       {/* Main Content */}
       <div style={{ padding: '20px', maxWidth: 1200, margin: '0 auto' }}>
         <LessonHeader 
-          lessonData={lessonData} 
-          onChange={handleChange} 
+          lessonData={lessonData.header} 
+          onChange={(field, value) => handleChange(`header.${field}`, value)} 
           currentUser={currentUser} 
         />
         
@@ -901,12 +907,12 @@ export default function LessonPlanTemplate({ currentUser }) {
         />
         
         <SuccessCriteriaSection 
-          successCriteria={lessonData.successCriteria}
-          onChange={handleChange}
+          successCriteria={lessonData.cfs.successCriteria}
+          onChange={(value) => handleChange('cfs.successCriteria', value)}
         />
         
         <LessonStepsSection 
-          steps={lessonData.steps}
+          steps={lessonData.lessonSteps}
           onChange={handleChange}
         />
         
