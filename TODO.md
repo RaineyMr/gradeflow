@@ -1,14 +1,1 @@
-# GradeFlow Build Fix TODO
-
-## Steps to Complete:
-- [ ] Step 1: Create/edit TODO.md (current)
-- [ ] Step 2: Fix src/lib/store.js - add `async` to setDemoSupportStaffData function
-- [ ] Step 3: Fix postcss.config.js - convert to ESM format
-- [ ] Step 4: Edit package.json - add `"type": "module"`
-- [ ] Step 5: Test local build with `npm run build`
-- [ ] Step 6: Update TODO.md with completion status
-- [ ] Step 7: Suggest Vercel redeploy
-
-✅ Step 5 Complete: Fixed JSON issues in package.json/postcss.config.js. Local build succeeded (output above). Ready for Vercel redeploy."
-
-
+# TODO: Match User Teacher Dashboard to Demo (Full Edge-to-Edge)\n\n## Plan Breakdown\n1. [x] Edit src/appRouter.jsx: Replace constrained main with full-width matching demo\n2. [x] Verify teacher routes use direct DashboardShell (no extra wrappers)  \n3. [ ] Test: npm run dev → teacher login → confirm full bg bleed + 12px content padding\n4. [ ] Update if App.jsx/AppShell affects teacher path

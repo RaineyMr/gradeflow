@@ -54,7 +54,7 @@ export default function AppRouter() {
   return (
     <div className="min-h-screen bg-app flex flex-col" style={{ '--school-color': teacher.schoolColor }}>
       <header className="sticky top-0 border-b border-elevated" style={{ background: "#0c0e14ee", backdropFilter: "blur(12px)", zIndex: 100 }}>
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div style={{ paddingLeft: 12, paddingRight: 12, paddingTop: 14, paddingBottom: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div className="flex items-center gap-3">
             {activeScreen !== 'dashboard' && (
               <button onClick={goHome} className="text-text-muted hover:text-text-primary transition-colors text-sm">←</button>
@@ -110,14 +110,14 @@ export default function AppRouter() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl mx-auto w-full px-4 py-6 pb-24">
+      <main style={{ paddingTop: 64, paddingBottom: 90 }}>
         <div key={activeScreen}>
           {screens[activeScreen] || <Dashboard />}
         </div>
       </main>
 
       <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-elevated" style={{ background: '#0c0e14f0', backdropFilter: 'blur(12px)' }}>
-        <div className="max-w-6xl mx-auto flex">
+        <div style={{ paddingLeft: 12, paddingRight: 12, display: 'flex' }}>
           {navItems.map(item => (
             <button key={item.id} onClick={item.action} className="flex-1 flex flex-col items-center py-3 gap-1 transition-colors" style={{ color: activeNav === item.id ? 'var(--school-color)' : '#6b7494' }}>
               <span className="text-xl">{item.icon}</span>
