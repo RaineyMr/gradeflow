@@ -804,10 +804,12 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
 
       {showPicker && (
         <StandardsSelector
+          subject={data.subject}
+          grade={data.gradeLevel}
+          selectedStandards={data.standards || []}
           topic={data.title}
-          maxSelections={5}
-          showRecommendations
-          onStandardsChange={(standards) => {
+          schoolName="GradeFlow"
+          onChange={(standards) => {
             onChange('standards', standards)
             setShowPicker(false)
           }}
