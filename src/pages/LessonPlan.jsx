@@ -764,7 +764,7 @@ function LessonHeaderSection({ data, onChange }) {
 }
 
 // ─── 2. STANDARDS ──────────────────────────────────────────────────────────
-function StandardsSection({ data, onChange, onAIGenerate }) {
+function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
   const [showPicker, setShowPicker] = React.useState(false)
   const [generating, setGenerating] = React.useState(false)
 
@@ -804,10 +804,10 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
 
       {showPicker && (
         <StandardsSelector
-          subject={data.subject}
-          grade={data.gradeLevel}
+          subject={headerData?.subject}
+          grade={headerData?.gradeLevel}
           selectedStandards={data.standards || []}
-          topic={data.title}
+          topic={headerData?.title}
           schoolName="GradeFlow"
           onChange={(standards) => {
             onChange('standards', standards)
@@ -838,7 +838,7 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
                   gap: 6,
                 }}
               >
-                {std}
+                {typeof std === 'string' ? std : std.code}
                 <button
                   onClick={() => onChange('standards', data.standards.filter((_, idx) => idx !== i))}
                   style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
@@ -1580,7 +1580,7 @@ function BuildFromScratch({ onBack }) {
       {/* Content */}
       <div style={{ padding: '20px', maxWidth: 1000, margin: '0 auto' }}>
         <LessonHeaderSection data={lessonData.header} onChange={handleSectionChange} />
-        <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
         <ObjectivesSection data={lessonData.objectives} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
         <CFSSection data={lessonData.cfs} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
         <LessonStepsSection data={lessonData.lessonSteps} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
