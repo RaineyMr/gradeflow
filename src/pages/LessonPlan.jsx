@@ -1,656 +1,427 @@
-import React, { useRef, useState, useEffect } from 'react'
-import { useStore } from '../lib/store'
-import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
-import StandardsSelector from '../components/standards/StandardsSelector'
+// api/lesson-plan.js
+// ─── GradeFlow Lesson Plan API (v2) ──────────────────────────────────────────
+// Handles the 10-section lesson plan model with CFS, proper lesson steps,
+// optional add-ons, and per-section AI assist tracking.
 
-const C = {
-  bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8',
-  muted:'#6b7494', border:'#2a2f42', green:'#22c97a', blue:'#3b7ef4',
-  amber:'#f5a623', purple:'#9b6ef5', teal:'#0fb8a0', red:'#f04a4a',
+import { supabase } from '../lib/supabase'
+
+// ── Helper Functions ───────────────────────────────────────────────────────
+function handleApiError(res, error, message, statusCode = 500) {
+  console.error('Lesson Plan API Error:', error)
+  return res.status(statusCode).json({ 
+    error: message || 'Internal server error',
+    details: error.message 
+  })
 }
 
-const ACCOM_TYPES = ['IEP', '504', 'ELL', 'Gifted', 'Other']
-
-const ACCOM_TYPE_COLORS = {
-  IEP:    C.purple,
-  '504':  C.blue,
-  ELL:    C.teal,
-  Gifted: C.green,
-  Other:  C.amber,
-}
-
-function safeParseJSON(text) {
-  try { return JSON.parse(text.replace(/```json|```/g, '').trim()) } catch {}
-  try { const m = text.match(/\{[\s\S]*\}/); if (m) return JSON.parse(m[0]) } catch {}
-  return null
-}
-
-function LoadingSpinner({ label = 'Loading...' }) {
-  return (
-    <div style={{ textAlign:'center', padding:'32px 0' }}>
-      <div style={{ width:36, height:36, border:`3px solid var(--school-color)`, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 12px' }} />
-      <p style={{ color:C.muted, fontSize:13 }}>{label}</p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
-}
-
-function Section({ title, items }) {
-  return (
-    <div style={{ marginBottom:16 }}>
-      <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:8 }}>{title}</div>
-      {items.map((item, i) => (
-        <div key={i} style={{ background:C.inner, borderRadius:10, padding:'10px 12px', marginBottom:6, fontSize:13, color:C.text, lineHeight:1.5 }}>
-          {item}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// ─── Accommodations Section ───────────────────────────────────────────────────
-// Collapsible. Shows all students with accommodations.
-// Every field is editable. Teacher can add students manually.
-// lessonAdjustments are AI-generated per lesson.
-function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGrade = '' }) {
-  const { studentAccommodations, updateAccommodation, addAccommodation, removeAccommodation, setLessonAdjustments } = useStore()
-  const [open,         setOpen]         = useState(false)
-  const [newName,      setNewName]      = useState('')
-  const [generating,   setGenerating]   = useState(false)
-  const [editingNeeds, setEditingNeeds] = useState({}) // { studentName: string (comma-sep draft) }
-
-  const students = Object.values(studentAccommodations)
-
-  async function handleGenerateAdjustments() {
-    if (students.length === 0) return
-    setGenerating(true)
-    try {
-      const result = await generateLessonAccommodations({
-        topic:    lessonTopic,
-        subject:  lessonSubject,
-        grade:    lessonGrade,
-        students: students.map(s => ({
-          name:              s.name,
-          accommodationType: s.accommodationType,
-          specificNeeds:     s.specificNeeds,
-        })),
-      })
-      if (result?.adjustments?.length > 0) {
-        setLessonAdjustments(result.adjustments)
-      }
-    } catch (err) {
-      console.error('Failed to generate adjustments:', err)
-    }
-    setGenerating(false)
-  }
-
-  function handleAddStudent() {
-    const name = newName.trim()
-    if (!name) return
-    addAccommodation(name)
-    setNewName('')
-    setOpen(true)
-  }
-
-  function handleNeedsSave(studentName) {
-    const draft = editingNeeds[studentName]
-    if (draft === undefined) return
-    const needs = draft.split(',').map(s => s.trim()).filter(Boolean)
-    updateAccommodation(studentName, { specificNeeds: needs })
-    setEditingNeeds(prev => { const n = {...prev}; delete n[studentName]; return n })
-  }
-
-  const count = students.length
-
-  return (
-    <div style={{ marginBottom:16 }}>
-      {/* Collapsible header */}
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', marginBottom: open ? 8 : 0 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:16 }}>♿</span>
-          <span style={{ fontSize:13, fontWeight:700, color:C.text }}>Accommodations</span>
-          {count > 0 && (
-            <span style={{ background:`${C.purple}22`, color:C.purple, borderRadius:999, padding:'2px 8px', fontSize:10, fontWeight:700 }}>
-              {count} student{count !== 1 ? 's' : ''}
-            </span>
-          )}
-        </div>
-        <span style={{ color:C.muted, fontSize:13, fontWeight:700 }}>{open ? '▲ Hide' : '▼ Show'}</span>
-      </button>
-
-      {open && (
-        <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:12, padding:'14px' }}>
-
-          {count === 0 && (
-            <div style={{ textAlign:'center', padding:'16px 0', color:C.muted, fontSize:12 }}>
-              No accommodations recorded yet. Add students below or upload a roster to auto-extract.
-            </div>
-          )}
-
-          {/* Student rows */}
-          {students.map(s => {
-            const typeColor = ACCOM_TYPE_COLORS[s.accommodationType] || C.amber
-            const needsDraft = editingNeeds[s.name]
-            const isEditingNeeds = needsDraft !== undefined
-
-            return (
-              <div key={s.name} style={{ background:C.inner, border:`1px solid ${typeColor}25`, borderRadius:12, padding:'12px 14px', marginBottom:10 }}>
-
-                {/* Student name + type badge + remove */}
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-                  <div style={{ fontSize:13, fontWeight:700, color:C.text, flex:1 }}>{s.name}</div>
-
-                  {/* Type selector */}
-                  <div style={{ display:'flex', gap:4 }}>
-                    {ACCOM_TYPES.map(type => (
-                      <button key={type} onClick={() => updateAccommodation(s.name, { accommodationType: type })}
-                        style={{ padding:'2px 8px', borderRadius:999, border:'none', cursor:'pointer', fontSize:9, fontWeight:700,
-                          background: s.accommodationType === type ? `${ACCOM_TYPE_COLORS[type]}30` : C.raised,
-                          color:      s.accommodationType === type ? ACCOM_TYPE_COLORS[type] : C.muted,
-                          outline:    s.accommodationType === type ? `1px solid ${ACCOM_TYPE_COLORS[type]}` : 'none' }}>
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-
-                  <button onClick={() => removeAccommodation(s.name)}
-                    style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:16, padding:'0 2px', lineHeight:1 }}>×</button>
-                </div>
-
-                {/* Specific needs — tap chips to edit as comma-separated */}
-                <div style={{ marginBottom: s.lessonAdjustments?.length > 0 ? 10 : 0 }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>Specific Needs</div>
-                  {isEditingNeeds ? (
-                    <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-                      <input
-                        value={needsDraft}
-                        onChange={e => setEditingNeeds(prev => ({ ...prev, [s.name]: e.target.value }))}
-                        onBlur={() => handleNeedsSave(s.name)}
-                        onKeyDown={e => e.key === 'Enter' && handleNeedsSave(s.name)}
-                        placeholder="Extended time, Preferential seating..."
-                        autoFocus
-                        style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', color:C.text, fontSize:12, outline:'none' }}
-                      />
-                      <button onClick={() => handleNeedsSave(s.name)}
-                        style={{ background:`${C.green}20`, color:C.green, border:'none', borderRadius:8, padding:'6px 10px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
-                        Save
-                      </button>
-                    </div>
-                  ) : (
-                    <div
-                      onClick={() => setEditingNeeds(prev => ({ ...prev, [s.name]: (s.specificNeeds || []).join(', ') }))}
-                      style={{ cursor:'text', minHeight:28, display:'flex', flexWrap:'wrap', gap:5, alignItems:'center' }}>
-                      {(s.specificNeeds || []).length > 0
-                        ? s.specificNeeds.map((need, i) => (
-                            <span key={i} style={{ background:`${typeColor}18`, color:typeColor, borderRadius:999, padding:'3px 9px', fontSize:10, fontWeight:600 }}>
-                              {need}
-                            </span>
-                          ))
-                        : <span style={{ fontSize:11, color:C.muted, fontStyle:'italic' }}>Tap to add needs...</span>
-                      }
-                      <span style={{ fontSize:10, color:C.muted, marginLeft:4 }}>✏</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Lesson-specific adjustments (AI-generated) */}
-                {s.lessonAdjustments?.length > 0 && (
-                  <div>
-                    <div style={{ fontSize:10, fontWeight:700, color:C.teal, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6, marginTop:10 }}>
-                      ✨ Adjustments for This Lesson
-                    </div>
-                    {s.lessonAdjustments.map((adj, i) => (
-                      <div key={i} style={{ background:`${C.teal}10`, border:`1px solid ${C.teal}20`, borderRadius:8, padding:'7px 10px', marginBottom:5, fontSize:12, color:C.text, lineHeight:1.5 }}>
-                        {adj}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Notes */}
-                {s.notes && (
-                  <div style={{ marginTop:8, fontSize:11, color:C.muted, fontStyle:'italic' }}>{s.notes}</div>
-                )}
-              </div>
-            )
-          })}
-
-          {/* Add student manually */}
-          <div style={{ display:'flex', gap:8, marginBottom: count > 0 ? 12 : 4 }}>
-            <input
-              value={newName}
-              onChange={e => setNewName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAddStudent()}
-              placeholder="Add student by name..."
-              style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, padding:'8px 12px', color:C.text, fontSize:12, outline:'none' }}
-            />
-            <button onClick={handleAddStudent} disabled={!newName.trim()}
-              style={{ background:newName.trim()?`${C.blue}22`:'transparent', color:newName.trim()?C.blue:C.muted, border:`1px solid ${newName.trim()?C.blue:C.border}`, borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:newName.trim()?'pointer':'not-allowed' }}>
-              + Add
-            </button>
-          </div>
-
-          {/* Generate lesson adjustments button */}
-          {count > 0 && lessonTopic && (
-            <button onClick={handleGenerateAdjustments} disabled={generating}
-              style={{ width:'100%', background:generating?C.inner:`${C.purple}20`, color:generating?C.muted:C.purple, border:`1px solid ${generating?C.border:`${C.purple}40`}`, borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, cursor:generating?'not-allowed':'pointer' }}>
-              {generating ? '⟳ Generating adjustments...' : `✨ Generate lesson adjustments for ${count} student${count !== 1 ? 's' : ''}`}
-            </button>
-          )}
-
-          {count > 0 && !lessonTopic && (
-            <div style={{ fontSize:11, color:C.muted, textAlign:'center', padding:'4px 0' }}>
-              Generate a lesson plan first to get AI adjustments for each student.
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─── Lesson View ──────────────────────────────────────────────────────────────
-function LessonView({ lesson, onBack, onEdit }) {
-  const STATUS_COLOR = { done: C.green, tbd: C.amber, pending: C.teal }
-  const STATUS_LABEL = { done: 'Done', tbd: 'TBD', pending: 'Pending' }
-  const sc = STATUS_COLOR[lesson.status] || C.teal
-
-  return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:20 }}>
-        <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>← Back</button>
-        <button onClick={onEdit} style={{ background:'var(--school-color)', border:'none', borderRadius:10, padding:'8px 16px', color:'#fff', cursor:'pointer', fontSize:13, fontWeight:700 }}>Edit</button>
-      </div>
-
-      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
-        <span style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em' }}>{lesson.dayLabel}</span>
-        <span style={{ fontSize:11, color:C.muted }}>·</span>
-        <span style={{ fontSize:11, color:C.muted }}>{lesson.date}</span>
-        <span style={{ marginLeft:'auto', background:`${sc}22`, color:sc, borderRadius:6, padding:'2px 8px', fontSize:11, fontWeight:700 }}>{STATUS_LABEL[lesson.status]}</span>
-      </div>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{lesson.title}</h1>
-      <p style={{ color:C.muted, fontSize:12, margin:'0 0 20px' }}>{lesson.duration}{lesson.pages ? ` · ${lesson.pages}` : ''}</p>
-
-      <Section title="Objective" items={[lesson.objective]} />
-      {lesson.warmup?.length > 0     && <Section title="Warm-Up"    items={lesson.warmup} />}
-      {lesson.activities?.length > 0 && <Section title="Activities" items={lesson.activities} />}
-      {lesson.materials?.length > 0  && <Section title="Materials"  items={lesson.materials} />}
-      {lesson.homework               && <Section title="Homework"   items={[lesson.homework]} />}
-
-      {/* Accommodations section — always shown in lesson view */}
-      <AccommodationsSection
-        lessonTopic={lesson.title}
-        lessonSubject={lesson.subject || ''}
-        lessonGrade={lesson.grade || ''}
-      />
-    </div>
-  )
-}
-
-// ─── AI Generator ────────────────────────────────────────────────────────────
-function AIPlanGenerator({ onBack }) {
-  const { currentUser, selectedStandards, clearSelectedStandards } = useStore()
-  const [form, setForm] = useState({ state:'', subject:'', grade:'', textbook:'', topic:'', standard:'' })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [showStandards, setShowStandards] = useState(false)
-  const [plan, setPlan] = useState(null)
-  const [lessonAdjustments, setLessonAdjustments] = useState(null)
-  const [generatingAdjust, setGeneratingAdjust] = useState(false)
-  const activeClass = useStore(s => s.classes.find(c => c.id === s.activeClassId))
-  const students = useStore(s => s.students)
-  const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
-
-  // Auto-populate form based on teacher profile
-  useEffect(() => {
-    console.log('Gradeflow LessonPlan - currentUser:', currentUser)
-    if (currentUser) {
-      console.log('Gradeflow LessonPlan - setting form with:', {
-        subject: currentUser.subjects?.[0] || '',
-        grade: currentUser.gradeLevel || ''
-      })
-      setForm(prev => ({
-        ...prev,
-        state: prev.state || getTeacherState(),
-        subject: prev.subject || currentUser.subjects?.[0] || '',
-        grade: prev.grade || currentUser.gradeLevel || ''
-      }))
-    }
-  }, [currentUser])
-
-  // Get teacher's state based on school
-  function getTeacherState() {
-    if (!currentUser?.school) return ''
-    const districtId = currentUser.school.district_id
-    if (districtId === 'houston-isd' || districtId === 'kipp-texas' || districtId === 'yes-prep-tx') return 'Texas'
-    if (districtId === 'kipp-la' || districtId === 'renew-nola' || districtId === 'collegiate-nola') return 'Louisiana'
-    return ''
-  }
-
-  // Clear standards when topic changes significantly
-  useEffect(() => {
-    if (form.topic && showStandards) {
-      // Clear previous standards when topic changes to get fresh recommendations
-      clearSelectedStandards()
-    }
-  }, [form.topic])
-
-  function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
-
-  async function handleGenerate() {
-    if (!form.topic.trim()) { setError('Topic is required'); return }
-    setLoading(true); setError(''); setPlan(null); setLessonAdjustments(null)
-
-    try {
-      // Build standards context for AI
-      const standardsText = selectedStandards.length > 0 ? 
-        selectedStandards.map(s => `${s.code}: ${s.description}`).join('\n') : 
-        ''
-
-      // Use the proper lesson plan generation function
-      const result = await generateLessonPlan({
-        subject: form.subject,
-        grade: form.grade,
-        topic: form.topic,
-        duration: 50,
-        standards: standardsText
-      })
-
-      if (!result || !result.title || !Array.isArray(result.objectives)) {
-        throw new Error('Invalid response format')
-      }
-
-      setPlan(result)
-
-      // Generate accommodations if needed
-      if (accommodationStudents.length > 0) {
-        setGeneratingAdjust(true)
-        try {
-          const accommodations = extractAccommodations(accommodationStudents)
-          const adjPrompt = `Create specific lesson adjustments for this lesson plan: ${JSON.stringify(result)}. 
-Student accommodations: ${JSON.stringify(accommodations)}
-Subject: ${form.subject}, Grade: ${form.grade}, Topic: ${form.topic}
-${standardsText ? `Standards: ${standardsText}` : ''}
-
-Return JSON: {"adjustments": ["specific adjustments for each accommodation type"]}`
-          
-          const adjResult = safeParseJSON(await callAI(adjPrompt, 'You are an expert special education consultant. Generate practical, specific instructional adjustments for individual students based on their accommodation needs and the current lesson.', 1500))
-          if (adjResult?.adjustments) {
-            setLessonAdjustments(adjResult.adjustments)
-          }
-        } catch (adjErr) {
-          console.error('Adjustment generation failed:', adjErr)
-        }
-        setGeneratingAdjust(false)
-      }
-
-    } catch (err) {
-      setError(err.message || 'Generation failed. Please try again.')
-    }
-    setLoading(false)
-  }
-
-  if (loading) return <LoadingSpinner label="Generating your lesson plan..." />
-
-  if (plan) return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
-      <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{form.subject} · {form.grade} · {form.topic}</p>
-
-      {/* Show selected standards */}
-      {selectedStandards.length > 0 && (
-        <div style={{ background: `${C.teal}12`, border: `1px solid ${C.teal}30`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-            Aligned Standards ({selectedStandards.length})
-          </div>
-          {selectedStandards.map(standard => (
-            <div key={standard.code} style={{ fontSize: 12, color: C.text, marginBottom: 4 }}>
-              <span style={{ fontWeight: 700, color: C.teal }}>{standard.code}:</span> {standard.description}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {plan.objectives?.length > 0  && <Section title="Objectives"  items={plan.objectives} />}
-      {plan.materials?.length > 0   && <Section title="Materials"   items={plan.materials} />}
-      {plan.steps?.length > 0       && <Section title="Steps"       items={plan.steps} />}
-      {plan.assessment?.length > 0  && <Section title="Assessment"  items={plan.assessment} />}
-      {plan.homework?.length > 0    && <Section title="Homework"    items={plan.homework} />}
-      {plan.notes && (
-        <div style={{ background:C.inner, borderRadius:12, padding:'12px 14px', fontSize:13, color:C.muted, marginBottom:16 }}>{plan.notes}</div>
-      )}
-
-      {/* Accommodations section */}
-      {generatingAdjust && (
-        <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
-          ✨ Generating lesson adjustments for {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''}...
-        </div>
-      )}
-      <AccommodationsSection
-        lessonTopic={form.topic}
-        lessonSubject={form.subject}
-        lessonGrade={form.grade}
-      />
-    </div>
-  )
-
-  return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>✨ AI Lesson Plan Generator</h1>
-
-      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:16 }}>
-        {/* Auto-populated fields - read-only */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-          <div>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>State/Region</label>
-            <div style={{ 
-              background: C.bg, 
-              border:`1px solid ${C.border}`, 
-              borderRadius:12, 
-              padding:'11px 14px', 
-              color:C.text, 
-              fontSize:13 
-            }}>
-              {form.state || 'Not detected'}
-            </div>
-          </div>
-          <div>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Subject</label>
-            <div style={{ 
-              background: C.bg, 
-              border:`1px solid ${C.border}`, 
-              borderRadius:12, 
-              padding:'11px 14px', 
-              color:C.text, 
-              fontSize:13 
-            }}>
-              {form.subject || 'Not set in profile'}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Grade Level</label>
-          <div style={{ 
-            background: C.bg, 
-            border:`1px solid ${C.border}`, 
-            borderRadius:12, 
-            padding:'11px 14px', 
-            color:C.text, 
-            fontSize:13 
-          }}>
-            {form.grade || 'Not set in profile'}
-          </div>
-        </div>
-
-        {/* Editable fields */}
-        <div style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>
-            Topic * <span style={{ color: C.green, fontSize: 9, fontWeight: 400 }}>(Enter topic first, then select standards)</span>
-          </label>
-          <input
-            value={form.topic} 
-            onChange={e => {
-              set('topic', e.target.value)
-              setShowStandards(false) // Hide standards when topic changes
-            }}
-            placeholder="Fractions, Photosynthesis, Civil War..."
-            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
-          />
-        </div>
-
-        <div style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Textbook (optional)</label>
-          <input
-            value={form.textbook}
-            onChange={e => set('textbook', e.target.value)}
-            placeholder="Publisher or title..."
-            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
-          />
-        </div>
-
-        {/* Standards Selection */}
-        <div style={{ marginBottom:12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted }}>
-              Standards / TEKS {!form.topic && <span style={{ color: C.amber }}>(Enter topic first)</span>}
-            </label>
-            <button
-              onClick={() => setShowStandards(!showStandards)}
-              disabled={!form.topic}
-              style={{
-                background: !form.topic ? C.inner : (showStandards ? `${C.teal}18` : C.inner),
-                border: `1px solid ${!form.topic ? C.border : (showStandards ? C.teal : C.border)}`,
-                borderRadius: 8,
-                padding: '4px 8px',
-                color: !form.topic ? C.muted : (showStandards ? C.teal : C.muted),
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: !form.topic ? 'not-allowed' : 'pointer',
-                opacity: !form.topic ? 0.6 : 1
-              }}
-            >
-              {showStandards ? 'Hide' : 'Select'} Standards
-            </button>
-          </div>
-          
-          {selectedStandards.length > 0 && (
-            <div style={{ 
-              background: `${C.teal}12`, 
-              border: `1px solid ${C.teal}30`, 
-              borderRadius: 8, 
-              padding: '8px 10px', 
-              marginBottom: 8,
-              fontSize: 12
-            }}>
-              {selectedStandards.length} standard{selectedStandards.length !== 1 ? 's' : ''} selected
-            </div>
-          )}
-
-          {showStandards && form.topic && (
-            <StandardsSelector 
-              topic={form.topic}
-              maxSelections={3}
-              showRecommendations={true}
-              schoolName={currentUser?.schoolName}
-            />
-          )}
-        </div>
-
-        {accommodationStudents.length > 0 && (
-          <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
-            ✨ {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations — adjustments will be auto-generated after the lesson plan.
-          </div>
-        )}
-
-        {error && <p style={{ color:C.red, fontSize:12, marginBottom:12 }}>{error}</p>}
-
-        <button onClick={handleGenerate}
-          style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
-          ✨ Generate Lesson Plan
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// ─── Build from Scratch ───────────────────────────────────────────────────────
-// ─── AI Assist Button Component ────────────────────────────────────────────
-function AIAssistButton({ mode, sectionName, onGenerate, loading }) {
-  const label = mode === 'refine' ? '✨ Refine' : '✨ Generate'
-  const title = mode === 'refine' 
-    ? `Refine ${sectionName} using AI` 
-    : `Generate ${sectionName} from scratch`
+function validateLessonData(data) {
+  const required = ['header']
+  const missing = required.filter(field => !data[field])
   
-  return (
-    <button
-      onClick={() => onGenerate(mode)}
-      disabled={loading}
-      title={title}
-      style={{
-        background: loading ? C.muted : C.purple,
-        color: 'white',
-        border: 'none',
-        borderRadius: 6,
-        padding: '6px 12px',
-        fontSize: 11,
-        fontWeight: 600,
-        cursor: loading ? 'not-allowed' : 'pointer',
-        opacity: loading ? 0.6 : 1,
-        transition: 'all 0.2s',
-      }}
-    >
-      {loading ? '⏳ Generating...' : label}
-    </button>
-  )
+  if (missing.length > 0) {
+    throw new Error(`Missing required fields: ${missing.join(', ')}`)
+  }
+
+  const headerRequired = ['title', 'subject', 'gradeLevel']
+  const headerMissing = headerRequired.filter(f => !data.header[f] || data.header[f].toString().trim() === '')
+  
+  if (headerMissing.length > 0) {
+    throw new Error(`Missing required header fields: ${headerMissing.join(', ')}`)
+  }
+  
+  return true
 }
 
-// ─── Section Wrapper with AI Assist ───────────────────────────────────────
-function Section({ title, children, onAIRefine, onAIGenerate, isGenerating }) {
-  return (
-    <div style={{
-      background: C.card,
-      border: `1px solid ${C.border}`,
-      borderRadius: 12,
-      padding: 20,
-      marginBottom: 20,
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-      }}>
-        <h2 style={{
-          fontSize: 16,
-          fontWeight: 700,
-          color: C.text,
-          margin: 0,
-        }}>
-          {title}
-        </h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {onAIGenerate && (
-            <AIAssistButton
-              mode="generate"
-              sectionName={title}
-              onGenerate={() => onAIGenerate('generate')}
-              loading={isGenerating}
-            />
-          )}
-          {onAIRefine && (
-            <AIAssistButton
-              mode="refine"
-              sectionName={title}
-              onGenerate={() => onAIRefine('refine')}
-              loading={isGenerating}
-            />
-          )}
-        </div>
+// ── Extract Teacher ID from Auth Header ────────────────────────────────
+function extractTeacherId(authHeader) {
+  if (!authHeader) return null
+  
+  // For now, simplified extraction. In production, use proper JWT parsing
+  // Format: "Bearer <token>"
+  const token = authHeader.replace('Bearer ', '')
+  // TODO: Parse JWT and extract user ID
+  return token
+}
+
+// ── Main Handler ───────────────────────────────────────────────────────
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+
+  if (req.method === 'OPTIONS') return res.status(200).end()
+
+  try {
+    const authHeader = req.headers.authorization
+    if (!authHeader) {
+      return res.status(401).json({ error: 'Authorization required' })
+    }
+    
+    const teacherId = extractTeacherId(authHeader)
+    const { method } = req
+    
+    switch (method) {
+      case 'GET':
+        return handleGetLessons(req, res, teacherId)
+      case 'POST':
+        return handleCreateLesson(req, res, teacherId)
+      case 'PUT':
+        return handleUpdateLesson(req, res, teacherId)
+      case 'DELETE':
+        return handleDeleteLesson(req, res, teacherId)
+      default:
+        return res.status(405).json({ error: 'Method not allowed' })
+    }
+    
+  } catch (error) {
+    return handleApiError(res, error)
+  }
+}
+
+// ── Get Lessons ────────────────────────────────────────────────────────
+async function handleGetLessons(req, res, teacherId) {
+  try {
+    const { classId, limit = 20, offset = 0 } = req.query
+    
+    let query = supabase
+      .from('lessons')
+      .select(`
+        *,
+        lesson_standards(standard_id, standard_label),
+        lesson_attachments(id, file_name, file_url),
+        lesson_accommodations(id, student_id, accommodation_type, specific_needs, instructional_adjustments)
+      `)
+      .eq('teacher_id', teacherId)
+    
+    if (classId) {
+      query = query.eq('class_id', classId)
+    }
+    
+    const { data: lessons, error } = await query
+      .order('lesson_date', { ascending: false })
+      .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1)
+    
+    if (error) throw error
+    
+    return res.status(200).json({
+      lessons: lessons || [],
+      pagination: {
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: lessons && lessons.length === parseInt(limit)
+      }
+    })
+    
+  } catch (error) {
+    return handleApiError(res, error, 'Failed to fetch lessons')
+  }
+}
+
+// ── Create Lesson ──────────────────────────────────────────────────────
+async function handleCreateLesson(req, res, teacherId) {
+  try {
+    const lessonData = req.body
+    
+    // Validate
+    validateLessonData(lessonData)
+    
+    // Map new 10-section model to lessons table columns
+    const lessonRecord = {
+      teacher_id: teacherId,
+      class_id: lessonData.classId || null,
+      
+      // Section 1: Header
+      title: lessonData.header.title,
+      subject: lessonData.header.subject,
+      grade_level: lessonData.header.gradeLevel,
+      lesson_date: lessonData.header.date || new Date().toISOString().split('T')[0],
+      
+      // Section 2: Standards (stored as array, relationships in lesson_standards table)
+      standards: lessonData.standards || [],
+      
+      // Section 3: Objectives
+      objectives: lessonData.objectives || '',
+      
+      // Section 4: CFS (Success Criteria + Culturally Responsive)
+      criteria_for_success: lessonData.cfs?.successCriteria || '',
+      cultural_notes: lessonData.cfs?.culturalNotes || '',
+      
+      // Section 5: Lesson Steps (6 substeps)
+      warm_up: lessonData.lessonSteps?.warmUp || '',
+      direct_instruction: lessonData.lessonSteps?.directInstruction || '',
+      guided_practice: lessonData.lessonSteps?.guidedPractice || '',
+      independent_practice: lessonData.lessonSteps?.independentPractice || '',
+      closure: lessonData.lessonSteps?.closure || '',
+      extension: lessonData.lessonSteps?.extension || '',
+      
+      // Section 6: Exit Ticket
+      exit_ticket: lessonData.exitTicket || '',
+      
+      // Section 7: Homework
+      homework_assignment: lessonData.homework?.assignment || '',
+      homework_due_date: lessonData.homework?.dueDate || null,
+      homework_max_points: lessonData.homework?.maxPoints ? parseInt(lessonData.homework.maxPoints) : null,
+      
+      // Section 8: Accommodations (text field; specific accommodations in lesson_accommodations table)
+      accommodations_notes: lessonData.accommodations || '',
+      
+      // Section 9: Attachments (file references in lesson_attachments table)
+      // (handled separately below)
+      
+      // Section 10: Optional Add-Ons
+      enrichment_activities: lessonData.optionalAddOns?.enrichment || '',
+      supplemental_links: lessonData.optionalAddOns?.supplementalLinks || '',
+      teacher_reflections: lessonData.optionalAddOns?.reflections || '',
+      
+      // Metadata
+      status: 'draft',
+      ai_calls_count: 0,
+      ai_tokens_used: 0,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+    
+    // Create lesson
+    const { data: lesson, error: lessonError } = await supabase
+      .from('lessons')
+      .insert([lessonRecord])
+      .select()
+      .single()
+    
+    if (lessonError) throw lessonError
+    
+    // Handle standards (many-to-many)
+    if (lessonData.standards && lessonData.standards.length > 0) {
+      const standardsToInsert = lessonData.standards.map(standard => ({
+        lesson_id: lesson.id,
+        standard_id: typeof standard === 'string' ? standard : standard.standard_id || standard,
+        standard_source: 'TEKS', // Default; can be inferred from standard_id format
+        standard_label: typeof standard === 'string' ? standard : standard.standard_label || standard.description || standard
+      }))
+      
+      const { error: stdError } = await supabase
+        .from('lesson_standards')
+        .insert(standardsToInsert)
+      
+      if (stdError) {
+        console.error('Standards insertion error:', stdError)
+        // Don't fail the entire request if standards fail
+      }
+    }
+    
+    // Handle attachments (many-to-many)
+    if (lessonData.attachments && lessonData.attachments.length > 0) {
+      const attachmentsToInsert = lessonData.attachments.map((file, idx) => ({
+        lesson_id: lesson.id,
+        file_name: file.name || `attachment_${idx}`,
+        file_type: file.type || 'unknown',
+        file_url: file.url || file.path || '',
+        uploaded_at: new Date().toISOString()
+      }))
+      
+      const { error: attError } = await supabase
+        .from('lesson_attachments')
+        .insert(attachmentsToInsert)
+      
+      if (attError) {
+        console.error('Attachments insertion error:', attError)
+      }
+    }
+    
+    return res.status(201).json({
+      lesson,
+      message: 'Lesson plan created successfully'
+    })
+    
+  } catch (error) {
+    return handleApiError(res, error, 'Failed to create lesson plan', 400)
+  }
+}
+
+// ── Update Lesson ──────────────────────────────────────────────────────
+async function handleUpdateLesson(req, res, teacherId) {
+  try {
+    const { lessonId } = req.query
+    const lessonData = req.body
+    
+    if (!lessonId) {
+      return res.status(400).json({ error: 'Lesson ID required' })
+    }
+    
+    // Verify ownership
+    const { data: existingLesson, error: fetchError } = await supabase
+      .from('lessons')
+      .select('id, teacher_id')
+      .eq('id', lessonId)
+      .single()
+    
+    if (fetchError) throw fetchError
+    if (!existingLesson) {
+      return res.status(404).json({ error: 'Lesson not found' })
+    }
+    if (existingLesson.teacher_id !== teacherId) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+    
+    // Build update object
+    const updateRecord = {
+      updated_at: new Date().toISOString()
+    }
+    
+    // Section 1: Header
+    if (lessonData.header) {
+      if (lessonData.header.title !== undefined) updateRecord.title = lessonData.header.title
+      if (lessonData.header.subject !== undefined) updateRecord.subject = lessonData.header.subject
+      if (lessonData.header.gradeLevel !== undefined) updateRecord.grade_level = lessonData.header.gradeLevel
+      if (lessonData.header.date !== undefined) updateRecord.lesson_date = lessonData.header.date
+    }
+    
+    // Section 2: Standards
+    if (lessonData.standards !== undefined) {
+      updateRecord.standards = lessonData.standards
+      
+      // Update lesson_standards table
+      await supabase.from('lesson_standards').delete().eq('lesson_id', lessonId)
+      
+      if (lessonData.standards.length > 0) {
+        const standardsToInsert = lessonData.standards.map(standard => ({
+          lesson_id: lessonId,
+          standard_id: typeof standard === 'string' ? standard : standard.standard_id || standard,
+          standard_source: 'TEKS',
+          standard_label: typeof standard === 'string' ? standard : standard.standard_label || standard
+        }))
+        
+        await supabase.from('lesson_standards').insert(standardsToInsert)
+      }
+    }
+    
+    // Section 3: Objectives
+    if (lessonData.objectives !== undefined) updateRecord.objectives = lessonData.objectives
+    
+    // Section 4: CFS
+    if (lessonData.cfs) {
+      if (lessonData.cfs.successCriteria !== undefined) updateRecord.criteria_for_success = lessonData.cfs.successCriteria
+      if (lessonData.cfs.culturalNotes !== undefined) updateRecord.cultural_notes = lessonData.cfs.culturalNotes
+    }
+    
+    // Section 5: Lesson Steps
+    if (lessonData.lessonSteps) {
+      if (lessonData.lessonSteps.warmUp !== undefined) updateRecord.warm_up = lessonData.lessonSteps.warmUp
+      if (lessonData.lessonSteps.directInstruction !== undefined) updateRecord.direct_instruction = lessonData.lessonSteps.directInstruction
+      if (lessonData.lessonSteps.guidedPractice !== undefined) updateRecord.guided_practice = lessonData.lessonSteps.guidedPractice
+      if (lessonData.lessonSteps.independentPractice !== undefined) updateRecord.independent_practice = lessonData.lessonSteps.independentPractice
+      if (lessonData.lessonSteps.closure !== undefined) updateRecord.closure = lessonData.lessonSteps.closure
+      if (lessonData.lessonSteps.extension !== undefined) updateRecord.extension = lessonData.lessonSteps.extension
+    }
+    
+    // Section 6: Exit Ticket
+    if (lessonData.exitTicket !== undefined) updateRecord.exit_ticket = lessonData.exitTicket
+    
+    // Section 7: Homework
+    if (lessonData.homework) {
+      if (lessonData.homework.assignment !== undefined) updateRecord.homework_assignment = lessonData.homework.assignment
+      if (lessonData.homework.dueDate !== undefined) updateRecord.homework_due_date = lessonData.homework.dueDate
+      if (lessonData.homework.maxPoints !== undefined) updateRecord.homework_max_points = lessonData.homework.maxPoints ? parseInt(lessonData.homework.maxPoints) : null
+    }
+    
+    // Section 8: Accommodations
+    if (lessonData.accommodations !== undefined) updateRecord.accommodations_notes = lessonData.accommodations
+    
+    // Section 9: Attachments
+    if (lessonData.attachments !== undefined) {
+      await supabase.from('lesson_attachments').delete().eq('lesson_id', lessonId)
+      
+      if (lessonData.attachments.length > 0) {
+        const attachmentsToInsert = lessonData.attachments.map((file, idx) => ({
+          lesson_id: lessonId,
+          file_name: file.name || `attachment_${idx}`,
+          file_type: file.type || 'unknown',
+          file_url: file.url || file.path || '',
+          uploaded_at: new Date().toISOString()
+        }))
+        
+        await supabase.from('lesson_attachments').insert(attachmentsToInsert)
+      }
+    }
+    
+    // Section 10: Optional Add-Ons
+    if (lessonData.optionalAddOns) {
+      if (lessonData.optionalAddOns.enrichment !== undefined) updateRecord.enrichment_activities = lessonData.optionalAddOns.enrichment
+      if (lessonData.optionalAddOns.supplementalLinks !== undefined) updateRecord.supplemental_links = lessonData.optionalAddOns.supplementalLinks
+      if (lessonData.optionalAddOns.reflections !== undefined) updateRecord.teacher_reflections = lessonData.optionalAddOns.reflections
+    }
+    
+    // Update status/publish
+    if (lessonData.status !== undefined) {
+      updateRecord.status = lessonData.status
+      if (lessonData.status === 'published') {
+        updateRecord.published_at = new Date().toISOString()
+      }
+    }
+    
+    // Perform update
+    const { data: updated, error: updateError } = await supabase
+      .from('lessons')
+      .update(updateRecord)
+      .eq('id', lessonId)
+      .select()
+      .single()
+    
+    if (updateError) throw updateError
+    
+    return res.status(200).json({
+      lesson: updated,
+      message: 'Lesson plan updated successfully'
+    })
+    
+  } catch (error) {
+    return handleApiError(res, error, 'Failed to update lesson plan', 400)
+  }
+}
+
+// ── Delete Lesson (soft delete/archive) ────────────────────────────────
+async function handleDeleteLesson(req, res, teacherId) {
+  try {
+    const { lessonId } = req.query
+    
+    if (!lessonId) {
+      return res.status(400).json({ error: 'Lesson ID required' })
+    }
+    
+    // Verify ownership
+    const { data: existingLesson, error: fetchError } = await supabase
+      .from('lessons')
+      .select('id, teacher_id')
+      .eq('id', lessonId)
+      .single()
+    
+    if (fetchError) throw fetchError
+    if (!existingLesson) {
+      return res.status(404).json({ error: 'Lesson not found' })
+    }
+    if (existingLesson.teacher_id !== teacherId) {
+      return res.status(403).json({ error: 'Access denied' })
+    }
+    
+    // Soft delete (archive)
+    const { error: deleteError } = await supabase
+      .from('lessons')
+      .update({
+        status: 'archived',
+        archived_at: new Date().toISOString()
+      })
+      .eq('id', lessonId)
+    
+    if (deleteError) throw deleteError
+    
+    return res.status(200).json({
+      message: 'Lesson plan archived successfully'
+    })
+    
+  } catch (error) {
+    return handleApiError(res, error, 'Failed to archive lesson plan', 400)
+  }
+}
       </div>
       {children}
     </div>
