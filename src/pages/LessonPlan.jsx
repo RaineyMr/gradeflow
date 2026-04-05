@@ -1440,6 +1440,7 @@ function OptionalAddOnsSection({ data, onChange }) {
 
 // ─── BuildFromScratch Component ────────────────────────────────────────────
 function BuildFromScratch({ onBack }) {
+  const { currentUser } = useStore()
   const [lessonData, setLessonData] = React.useState({
     header: { title: '', date: '', subject: '', gradeLevel: '' },
     standards: [],
@@ -1461,6 +1462,26 @@ function BuildFromScratch({ onBack }) {
   })
 
   const [saving, setSaving] = React.useState(false)
+
+  // Auto-populate lesson header with teacher's subject and grade level
+  useEffect(() => {
+    if (currentUser && !lessonData.header.subject && !lessonData.header.gradeLevel) {
+      const gradeMatch = currentUser.gradeLevel?.match(/(\d+)/);
+      const gradeNum = gradeMatch ? gradeMatch[1] : '';
+      const subject = Array.isArray(currentUser.subjects) 
+        ? currentUser.subjects[0] 
+        : currentUser.subjects || '';
+
+      setLessonData(prev => ({
+        ...prev,
+        header: {
+          ...prev.header,
+          subject: subject,
+          gradeLevel: gradeNum || prev.header.gradeLevel,
+        }
+      }))
+    }
+  }, [currentUser, lessonData.header.subject, lessonData.header.gradeLevel])
 
   function handleSectionChange(section, value) {
     setLessonData(prev => ({
