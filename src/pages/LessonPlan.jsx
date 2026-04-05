@@ -579,6 +579,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 }
 
 // ─── Build from Scratch ───────────────────────────────────────────────────────
+
 // ─── AI Assist Button Component ────────────────────────────────────────────
 function AIAssistButton({ mode, sectionName, onGenerate, loading }) {
   const label = mode === 'refine' ? '✨ Refine' : '✨ Generate'
@@ -610,7 +611,7 @@ function AIAssistButton({ mode, sectionName, onGenerate, loading }) {
 }
 
 // ─── Section Wrapper with AI Assist ───────────────────────────────────────
-function Section({ title, children, onAIRefine, onAIGenerate, isGenerating }) {
+function SectionWithAI({ title, children, onAIRefine, onAIGenerate, isGenerating }) {
   return (
     <div style={{
       background: C.card,
@@ -660,7 +661,7 @@ function Section({ title, children, onAIRefine, onAIGenerate, isGenerating }) {
 // ─── 1. LESSON HEADER ──────────────────────────────────────────────────────
 function LessonHeaderSection({ data, onChange }) {
   return (
-    <Section title="Lesson Header">
+    <SectionWithAI title="Lesson Header">
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
         <div>
           <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
@@ -751,7 +752,7 @@ function LessonHeaderSection({ data, onChange }) {
           </select>
         </div>
       </div>
-    </Section>
+    </SectionWithAI>
   )
 }
 
@@ -840,7 +841,7 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
           </div>
         </div>
       )}
-    </Section>
+    </SectionWithAI>
   )
 }
 
@@ -884,7 +885,7 @@ function ObjectivesSection({ data, onChange, onAIGenerate }) {
           lineHeight: 1.5,
         }}
       />
-    </Section>
+    </SectionWithAI>
   )
 }
 
@@ -954,7 +955,7 @@ function CFSSection({ data, onChange, onAIGenerate }) {
           }}
         />
       </div>
-    </Section>
+    </SectionWithAI>
   )
 }
 
@@ -1014,7 +1015,7 @@ function LessonStepsSection({ data, onChange, onAIGenerate }) {
           )}
         </div>
       ))}
-    </Section>
+    </SectionWithAI>
   )
 }
 
@@ -1057,7 +1058,7 @@ Question 3: Draw and label the parts of a plant cell involved in photosynthesis.
           lineHeight: 1.5,
         }}
       />
-    </Section>
+    </SectionWithAI>
   )
 }
 
@@ -1144,7 +1145,7 @@ function HomeworkSection({ data, onChange, onAIGenerate }) {
           />
         </div>
       </div>
-    </Section>
+    </SectionWithAI>
   )
 }
 
@@ -1562,6 +1563,7 @@ function BuildFromScratch({ onBack }) {
     </div>
   )
 }
+
 function UploadDoc({ onBack }) {
   const { setAccommodations } = useStore()
   const fileRef = useRef()
