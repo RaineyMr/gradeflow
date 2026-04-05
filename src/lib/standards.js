@@ -113,6 +113,21 @@ const TEKS_DATA = {
   ],
 
   // Science Standards
+  'Science-Kindergarten': [
+    { code: 'K.1.A', description: 'Demonstrate safe practices during classroom and field investigations.', cluster: 'Scientific Investigation' },
+    { code: 'K.4.A', description: 'Collect information using tools and nonstandard measurement.', cluster: 'Scientific Investigation' },
+    { code: 'K.9.A', description: 'Differentiate between living and nonliving things.', cluster: 'Organisms and Environments' },
+  ],
+  'Science-1st Grade': [
+    { code: '1.1.A', description: 'Demonstrate safe practices during investigations.', cluster: 'Scientific Investigation' },
+    { code: '1.4.A', description: 'Collect and record data using tools.', cluster: 'Scientific Investigation' },
+    { code: '1.9.A', description: 'Classify objects by observable properties.', cluster: 'Matter and Energy' },
+  ],
+  'Science-2nd Grade': [
+    { code: '2.1.A', description: 'Demonstrate safe practices during investigations.', cluster: 'Scientific Investigation' },
+    { code: '2.4.A', description: 'Measure and compare physical properties of matter.', cluster: 'Matter and Energy' },
+    { code: '2.9.A', description: 'Identify basic needs of living organisms.', cluster: 'Organisms and Environments' },
+  ],
   'Science-3rd Grade': [
     { code: '3.1.A', description: 'Demonstrate safe practices during classroom and field investigations.', cluster: 'Scientific Investigation' },
     { code: '3.5.A', description: 'Measure and test physical properties of matter.', cluster: 'Matter and Energy' },
@@ -186,7 +201,37 @@ export function getStandardsSystem(schoolName) {
 
 export function getStandardsForGradeSubject(subject, grade, schoolName) {
   const standardsSystem = getStandardsSystem(schoolName)
-  const key = `${subject}-${grade}`
+  
+  // Map subject names to standard format
+  const subjectMapping = {
+    'Mathematics': 'Math',
+    'Math': 'Math',
+    'English Language Arts': 'ELA',
+    'ELA': 'ELA',
+    'English': 'ELA',
+    'Science': 'Science'
+  }
+  
+  // Map grade levels to the expected format
+  const gradeMapping = {
+    'K': 'Kindergarten',
+    '1': '1st Grade',
+    '2': '2nd Grade', 
+    '3': '3rd Grade',
+    '4': '4th Grade',
+    '5': '5th Grade',
+    '6': '6th Grade',
+    '7': '7th Grade',
+    '8': '8th Grade',
+    '9': '9th Grade',
+    '10': '10th Grade',
+    '11': '11th Grade',
+    '12': '12th Grade'
+  }
+  
+  const mappedSubject = subjectMapping[subject] || subject
+  const mappedGrade = gradeMapping[grade] || grade
+  const key = `${mappedSubject}-${mappedGrade}`
   
   switch (standardsSystem) {
     case 'TEKS':
