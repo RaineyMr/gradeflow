@@ -273,11 +273,11 @@ function LessonView({ lesson, onBack, onEdit }) {
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{lesson.title}</h1>
       <p style={{ color:C.muted, fontSize:12, margin:'0 0 20px' }}>{lesson.duration}{lesson.pages ? ` · ${lesson.pages}` : ''}</p>
 
-      <Section title="Objective" items={[lesson.objective]} />
-      {lesson.warmup?.length > 0     && <Section title="Warm-Up"    items={lesson.warmup} />}
-      {lesson.activities?.length > 0 && <Section title="Activities" items={lesson.activities} />}
-      {lesson.materials?.length > 0  && <Section title="Materials"  items={lesson.materials} />}
-      {lesson.homework               && <Section title="Homework"   items={[lesson.homework]} />}
+      <SectionWithAI title="Objective" items={[lesson.objective]} />
+      {lesson.warmup?.length > 0     && <SectionWithAI title="Warm-Up"    items={lesson.warmup} />}
+      {lesson.activities?.length > 0 && <SectionWithAI title="Activities" items={lesson.activities} />}
+      {lesson.materials?.length > 0  && <SectionWithAI title="Materials"  items={lesson.materials} />}
+      {lesson.homework               && <SectionWithAI title="Homework"   items={[lesson.homework]} />}
 
       {/* Accommodations section — always shown in lesson view */}
       <AccommodationsSection
@@ -414,11 +414,11 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
         </div>
       )}
 
-      {plan.objectives?.length > 0  && <Section title="Objectives"  items={plan.objectives} />}
-      {plan.materials?.length > 0   && <Section title="Materials"   items={plan.materials} />}
-      {plan.steps?.length > 0       && <Section title="Steps"       items={plan.steps} />}
-      {plan.assessment?.length > 0  && <Section title="Assessment"  items={plan.assessment} />}
-      {plan.homework?.length > 0    && <Section title="Homework"    items={plan.homework} />}
+      {plan.objectives?.length > 0  && <SectionWithAI title="Objectives" items={plan.objectives} />}
+      {plan.materials?.length > 0   && <SectionWithAI title="Materials"   items={plan.materials} />}
+      {plan.steps?.length > 0       && <SectionWithAI title="Steps"       items={plan.steps} />}
+      {plan.assessment?.length > 0  && <SectionWithAI title="Assessment"  items={plan.assessment} />}
+      {plan.homework?.length > 0    && <SectionWithAI title="Homework"    items={plan.homework} />}
       {plan.notes && (
         <div style={{ background:C.inner, borderRadius:12, padding:'12px 14px', fontSize:13, color:C.muted, marginBottom:16 }}>{plan.notes}</div>
       )}
@@ -768,7 +768,7 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
   }
 
   return (
-    <Section
+    <SectionWithAI
       title="2. Standards"
       onAIGenerate={handleAIGenerate}
       isGenerating={generating}
@@ -856,7 +856,7 @@ function ObjectivesSection({ data, onChange, onAIGenerate }) {
   }
 
   return (
-    <Section
+    <SectionWithAI
       title="3. Learning Objectives"
       onAIGenerate={handleAIGenerate}
       onAIRefine={handleAIGenerate}
@@ -900,7 +900,7 @@ function CFSSection({ data, onChange, onAIGenerate }) {
   }
 
   return (
-    <Section
+    <SectionWithAI
       title="4. Success Criteria & Culturally Responsive Teaching"
       onAIGenerate={handleAIGenerate}
       onAIRefine={handleAIGenerate}
@@ -979,7 +979,7 @@ function LessonStepsSection({ data, onChange, onAIGenerate }) {
   ]
 
   return (
-    <Section
+    <SectionWithAI
       title="5. Lesson Steps"
       onAIGenerate={handleAIGenerate}
       onAIRefine={handleAIGenerate}
@@ -1030,7 +1030,7 @@ function ExitTicketSection({ data, onChange, onAIGenerate }) {
   }
 
   return (
-    <Section
+    <SectionWithAI
       title="6. Exit Ticket"
       onAIGenerate={handleAIGenerate}
       onAIRefine={handleAIGenerate}
@@ -1073,7 +1073,7 @@ function HomeworkSection({ data, onChange, onAIGenerate }) {
   }
 
   return (
-    <Section
+    <SectionWithAI
       title="7. Homework & Practice"
       onAIGenerate={handleAIGenerate}
       onAIRefine={handleAIGenerate}
