@@ -173,14 +173,50 @@ const TEKS_DATA = {
 
 // Common Core standards as fallback
 const COMMON_CORE_DATA = {
+  'Math-Kindergarten': [
+    { code: 'K.CC.A.1', description: 'Count to 100 by ones and by tens.', cluster: 'Counting and Cardinality' },
+    { code: 'K.CC.B.4', description: 'Understand the relationship between numbers and quantities.', cluster: 'Counting and Cardinality' },
+    { code: 'K.OA.A.1', description: 'Represent addition and subtraction with objects.', cluster: 'Operations and Algebraic Thinking' },
+  ],
+  'Math-1st Grade': [
+    { code: '1.OA.A.1', description: 'Use addition and subtraction within 20 to solve word problems.', cluster: 'Operations and Algebraic Thinking' },
+    { code: '1.NBT.B.2', description: 'Understand that the two digits of a two-digit number represent amounts.', cluster: 'Number and Operations in Base Ten' },
+  ],
+  'Math-2nd Grade': [
+    { code: '2.OA.A.1', description: 'Use addition and subtraction within 100 to solve word problems.', cluster: 'Operations and Algebraic Thinking' },
+    { code: '2.NBT.A.1', description: 'Understand that the three digits of a three-digit number represent amounts.', cluster: 'Number and Operations in Base Ten' },
+  ],
   'Math-3rd Grade': [
     { code: '3.OA.A.1', description: 'Interpret products of whole numbers as total number of objects.', cluster: 'Operations and Algebraic Thinking' },
     { code: '3.NBT.A.2', description: 'Fluently add and subtract within 1000 using place value strategies.', cluster: 'Number and Operations in Base Ten' },
     { code: '3.NF.A.1', description: 'Understand a fraction as quantity formed by parts of a whole.', cluster: 'Number and Operations—Fractions' },
   ],
+  'Math-4th Grade': [
+    { code: '4.OA.A.1', description: 'Interpret a multiplication equation as a comparison.', cluster: 'Operations and Algebraic Thinking' },
+    { code: '4.NBT.B.5', description: 'Multiply multi-digit whole numbers using place value strategies.', cluster: 'Number and Operations in Base Ten' },
+    { code: '4.NF.A.1', description: 'Explain why a fraction a/b is equivalent to fraction (n×a)/(n×b).', cluster: 'Number and Operations—Fractions' },
+  ],
+  'Math-5th Grade': [
+    { code: '5.OA.A.1', description: 'Use parentheses, brackets, or braces in numerical expressions.', cluster: 'Operations and Algebraic Thinking' },
+    { code: '5.NBT.A.1', description: 'Recognize that in a multi-digit number, a digit represents 10 times as much.', cluster: 'Number and Operations in Base Ten' },
+    { code: '5.NBT.B.5', description: 'Fluently multiply multi-digit whole numbers using the standard algorithm.', cluster: 'Number and Operations in Base Ten' },
+    { code: '5.NBT.B.7', description: 'Add, subtract, multiply, and divide decimals to hundredths.', cluster: 'Number and Operations in Base Ten' },
+    { code: '5.NF.A.1', description: 'Add and subtract fractions with unlike denominators.', cluster: 'Number and Operations—Fractions' },
+    { code: '5.NF.B.4', description: 'Apply and extend previous understandings of multiplication to multiply fractions.', cluster: 'Number and Operations—Fractions' },
+    { code: '5.MD.A.1', description: 'Convert among different-sized standard measurement units.', cluster: 'Measurement and Data' },
+    { code: '5.G.A.1', description: 'Use a pair of perpendicular number lines to define a coordinate system.', cluster: 'Geometry' },
+  ],
   'ELA-3rd Grade': [
     { code: 'RL.3.1', description: 'Ask and answer questions to demonstrate understanding of text.', cluster: 'Reading Literature' },
     { code: 'RI.3.2', description: 'Determine the main idea and recount key details of a text.', cluster: 'Reading Informational Text' },
+  ],
+  'ELA-4th Grade': [
+    { code: 'RL.4.1', description: 'Refer to details and examples in a text when explaining what it says.', cluster: 'Reading Literature' },
+    { code: 'RI.4.2', description: 'Determine the main idea of a text and explain how it is supported by key details.', cluster: 'Reading Informational Text' },
+  ],
+  'ELA-5th Grade': [
+    { code: 'RL.5.1', description: 'Quote accurately from a text when explaining what the text says.', cluster: 'Reading Literature' },
+    { code: 'RI.5.2', description: 'Determine two or more main ideas of a text and explain how they are supported.', cluster: 'Reading Informational Text' },
   ],
 }
 
@@ -201,6 +237,9 @@ export function getStandardsSystem(schoolName) {
 
 export function getStandardsForGradeSubject(subject, grade, schoolName) {
   const standardsSystem = getStandardsSystem(schoolName)
+  
+  // Debug logging
+  console.log('Standards Debug:', { subject, grade, schoolName, standardsSystem })
   
   // Map subject names to standard format
   const subjectMapping = {
@@ -233,13 +272,21 @@ export function getStandardsForGradeSubject(subject, grade, schoolName) {
   const mappedGrade = gradeMapping[grade] || grade
   const key = `${mappedSubject}-${mappedGrade}`
   
+  console.log('Mapped values:', { mappedSubject, mappedGrade, key })
+  
   switch (standardsSystem) {
     case 'TEKS':
-      return TEKS_DATA[key] || []
+      const result = TEKS_DATA[key] || []
+      console.log('TEKS result:', result)
+      return result
     case 'LSS':
-      return LOUISIANA_DATA[key] || []
+      const lssResult = LOUISIANA_DATA[key] || []
+      console.log('LSS result:', lssResult)
+      return lssResult
     default:
-      return COMMON_CORE_DATA[key] || []
+      const ccResult = COMMON_CORE_DATA[key] || []
+      console.log('Common Core result:', ccResult)
+      return ccResult
   }
 }
 

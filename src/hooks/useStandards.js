@@ -11,6 +11,7 @@ export function useStandards({ subject, grade, searchQuery, topic, schoolName } 
   
   useEffect(() => {
     if (!subject || !grade) {
+      console.log('useStandards: Missing subject or grade', { subject, grade })
       setStandards([])
       return
     }
@@ -19,7 +20,9 @@ export function useStandards({ subject, grade, searchQuery, topic, schoolName } 
     setError(null)
     
     try {
+      console.log('useStandards: Calling getStandardsForGradeSubject', { subject, grade, schoolName })
       const standardsData = getStandardsForGradeSubject(subject, grade, schoolName)
+      console.log('useStandards: Received standards data', standardsData)
       setStandards(standardsData)
     } catch (err) {
       setError(err.message || 'Failed to load standards')
