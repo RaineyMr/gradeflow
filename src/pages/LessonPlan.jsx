@@ -25,6 +25,13 @@ function safeParseJSON(text) {
   return null
 }
 
+export const formatLabel = (str) => {
+  return str
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
 function LoadingSpinner({ label = 'Loading...' }) {
   return (
     <div style={{ textAlign:'center', padding:'32px 0' }}>
