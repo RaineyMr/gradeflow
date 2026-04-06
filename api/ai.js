@@ -75,6 +75,49 @@ Return ONLY valid JSON:
       }
     }
 
+    // ── NEW: Scan a graded paper and extract student name + score ──────────
+    // Camera.jsx uses this to read what the teacher already wrote on the paper.
+    // NOT grading the work itself, just extracting the visible score and student name.
+    case 'scanScore': {
+      const { imageBase64, mediaType = 'image/jpeg' } = body
+      return {
+        ...base, max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: imageBase64 } },
+            {
+              type: 'text',
+              text: `You are reading a graded paper or assignment. Extract the STUDENT NAME and the score/grade information that the TEACHER wrote on the paper (not grading it yourself, just reading what's already there).
+
+Look for student name at the top, in a header, on a name line, or in a form field.
+
+Look for score/points: points earned (82, 82/100, 17/20), percentages (85%), letter grades (A, B+), rubric scores, or notes like "-8 missed" or "Good work!".
+
+Return ONLY valid JSON with no markdown:
+{
+  "studentName": "John Smith",
+  "earnedPoints": 82,
+  "totalPoints": 100,
+  "documentType": "quiz",
+  "assignmentTitle": "Ch 4 Quiz",
+  "confidence": "high",
+  "rawText": "What the teacher wrote on the paper"
+}
+
+Guidelines:
+- studentName: extract the full student name exactly as written on the paper. If no name is visible, return null
+- confidence: "high" if both the student name AND score are clear and unambiguous; "low" if handwriting is unclear, partially visible, or missing fields
+- earnedPoints/totalPoints: numbers only, no "/" or "%" symbols. If you see "82/100", return earnedPoints: 82, totalPoints: 100
+- If you cannot find a score, return null for earnedPoints and totalPoints (but still return the other fields)
+- documentType: guess based on context or visible labels (test, quiz, homework, participation, worksheet)
+- assignmentTitle: if visible on the paper, otherwise null`,
+            },
+          ],
+        }],
+      }
+    }
+
     case 'extractRoster': {
       const { imageBase64, mediaType = 'image/jpeg' } = body
       return {
@@ -315,3 +358,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Internal server error' })
   }
 }
+

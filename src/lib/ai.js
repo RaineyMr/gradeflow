@@ -62,9 +62,24 @@ export async function gradeWork(imageBase64, mediaType, assignmentName, answerKe
   return extractJSON(data)
 }
 
+/**
+ * Scan a graded paper and extract the student name + teacher-written score.
+ * Used by Camera.jsx to read what the teacher already wrote on the paper.
+ * 
+ * Returns:
+ * {
+ *   studentName: string | null,
+ *   earnedPoints: number | null,
+ *   totalPoints: number | null,
+ *   documentType: 'test' | 'quiz' | 'homework' | 'participation' | 'worksheet',
+ *   assignmentTitle: string | null,
+ *   confidence: 'high' | 'low',
+ *   rawText: string (what the teacher wrote)
+ * }
+ */
 export async function scanGradedDocument(imageBase64, mediaType) {
-  // Backwards compatible alias used by Camera.jsx
-  return gradeWork(imageBase64, mediaType)
+  const data = await callProxy('scanScore', { imageBase64, mediaType })
+  return extractJSON(data)
 }
 
 export async function extractRoster(imageBase64, mediaType) {
@@ -135,3 +150,4 @@ export async function generateLessonAccommodations({ topic, subject, grade, stud
   const data = await callProxy('lessonAccommodations', { topic, subject, grade, students })
   return extractJSON(data)
 }
+

@@ -3,29 +3,35 @@ import { useStore } from '../lib/store'
 import { scanGradedDocument } from '../lib/ai'
 
 export default function Camera({ onBack }) {
-  const { classes, activeClass, addAssignment } = useStore()
+  const { classes, activeClass, students, addGrade } = useStore()
   const [mode, setMode] = useState('menu')
   const [assignType, setAssignType] = useState('quiz')
   const [capturedImage, setCapturedImage] = useState(null)
-  const [assignName, setAssignName] = useState('')
-  const [selectedClass, setSelectedClass] = useState(activeClass?.id || classes[0]?.id)
   const [cameraError, setCameraError] = useState(null)
   const [cameraReady, setCameraReady] = useState(false)
   const [scanResult, setScanResult] = useState(null)
   const [scanError, setScanError] = useState(null)
-  const [manualScore, setManualScore] = useState('')
-  const [manualTotal, setManualTotal] = useState('100')
+  const [selectedClass, setSelectedClass] = useState(activeClass?.id || classes[0]?.id)
+
+  // Review form state (editable after scan)
+  const [formData, setFormData] = useState({
+    studentName: '',
+    assignmentName: '',
+    earnedPoints: '',
+    totalPoints: '100',
+  })
+  const [isProcessing, setIsProcessing] = useState(false)
 
   const streamRef = useRef(null)
-  const videoRef  = useRef(null)
+  const videoRef = useRef(null)
   const canvasRef = useRef(null)
-  const fileRef   = useRef(null)
+  const fileRef = useRef(null)
 
   const typeConfig = [
-    { id: 'test',          label: 'Test',  weight: 40, color: '#f04a4a' },
-    { id: 'quiz',          label: 'Quiz',  weight: 30, color: '#f5a623' },
+    { id: 'test', label: 'Test', weight: 40, color: '#f04a4a' },
+    { id: 'quiz', label: 'Quiz', weight: 30, color: '#f5a623' },
     { id: 'participation', label: 'Part.', weight: 10, color: '#9b6ef5' },
-    { id: 'homework',      label: 'Other', weight: 20, color: '#22c97a' },
+    { id: 'homework', label: 'Other', weight: 20, color: '#22c97a' },
   ]
 
   function stopStream() {
@@ -75,12 +81,10 @@ export default function Camera({ onBack }) {
   }, [attachStream])
 
   async function openCamera() {
-    console.log('openCamera called')
     setCameraError(null)
     setCameraReady(false)
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      console.error('getUserMedia not supported')
       setCameraError(
         location.protocol === 'http:' && location.hostname !== 'localhost'
           ? 'Camera requires HTTPS. Use Vercel URL.'
@@ -89,7 +93,6 @@ export default function Camera({ onBack }) {
       return
     }
 
-    console.log('Requesting camera access...')
     const attempts = [
       { video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } },
       { video: { facingMode: 'environment' } },
@@ -100,16 +103,12 @@ export default function Camera({ onBack }) {
     let stream = null
     let lastErr = null
     for (const c of attempts) {
-      try { 
-        console.log('Trying camera config:', c)
+      try {
         stream = await navigator.mediaDevices.getUserMedia(c)
-        console.log('Camera access granted')
-        break 
-      }
-      catch (err) { 
-        console.error('Camera error:', err)
+        break
+      } catch (err) {
         lastErr = err
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break 
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break
       }
     }
 
@@ -167,13 +166,21 @@ export default function Camera({ onBack }) {
     try {
       const result = await scanGradedDocument(base64, mime)
       setScanResult(result)
-      if (result.assignmentTitle) setAssignName(result.assignmentTitle)
+      
+      // Populate form with extracted data
+      setFormData({
+        studentName: result.studentName || '',
+        assignmentName: result.assignmentTitle || '',
+        earnedPoints: result.earnedPoints != null ? String(result.earnedPoints) : '',
+        totalPoints: result.totalPoints != null ? String(result.totalPoints) : '100',
+      })
+      
+      // Update assignment type if detected
       if (result.documentType) {
-        const map = { quiz: 'quiz', test: 'test', homework: 'homework', worksheet: 'homework' }
+        const map = { quiz: 'quiz', test: 'test', homework: 'homework', worksheet: 'homework', participation: 'participation' }
         setAssignType(map[result.documentType] || 'quiz')
       }
-      if (result.earnedPoints != null) setManualScore(String(result.earnedPoints))
-      if (result.totalPoints != null)  setManualTotal(String(result.totalPoints))
+      
       setMode('review')
     } catch (err) {
       setScanError(err.message || 'Scan failed')
@@ -181,129 +188,97 @@ export default function Camera({ onBack }) {
     }
   }
 
-  function resetAll() {
-    setMode('menu')
-    setCapturedImage(null)
-    setScanResult(null)
-    setScanError(null)
-    setAssignName('')
-    setManualScore('')
-    setManualTotal('100')
+  function calculateGrade() {
+    const score = parseFloat(formData.earnedPoints)
+    const total = parseFloat(formData.totalPoints)
+    if (isNaN(score) || isNaN(total) || total === 0) return { pct: null, letter: null, color: '#6b7494' }
+    const pct = Math.round((score / total) * 100)
+    const letter = pct >= 90 ? 'A' : pct >= 80 ? 'B' : pct >= 70 ? 'C' : pct >= 60 ? 'D' : 'F'
+    const color = pct >= 90 ? '#22c97a' : pct >= 80 ? '#f5a623' : pct >= 70 ? '#3b7ef4' : '#f04a4a'
+    return { pct, letter, color }
   }
 
-  function calcPercentage() {
-    const score = parseFloat(manualScore)
-    const total = parseFloat(manualTotal)
-    if (isNaN(score) || isNaN(total) || total <= 0) return null
-    return Math.round((score / total) * 100)
-  }
+  async function acceptAndPost() {
+    const { pct } = calculateGrade()
+    if (pct == null) return
+    if (!formData.studentName.trim()) {
+      setScanError('Student name is required')
+      return
+    }
+    if (!formData.assignmentName.trim()) {
+      setScanError('Assignment name is required')
+      return
+    }
 
-  function letterFromPct(pct) {
-    if (pct == null) return ''
-    if (pct >= 90) return 'A'
-    if (pct >= 80) return 'B'
-    if (pct >= 70) return 'C'
-    if (pct >= 60) return 'D'
-    return 'F'
-  }
-
-  async function postToGradebook() {
-    const pct = calcPercentage()
-    if (pct == null || !assignName.trim()) return
-
+    setIsProcessing(true)
     try {
-      addAssignment({
+      // Add grade to store (which syncs to Supabase)
+      await addGrade({
+        studentName: formData.studentName.trim(),
+        assignmentName: formData.assignmentName.trim(),
+        assignmentType: assignType,
+        earnedPoints: parseFloat(formData.earnedPoints),
+        totalPoints: parseFloat(formData.totalPoints),
         classId: selectedClass,
-        name: assignName.trim(),
-        type: assignType,
-        earnedPoints: parseFloat(manualScore),
-        totalPoints: parseFloat(manualTotal),
         percentage: pct,
+        date: new Date().toISOString(),
       })
-      resetAll()
-      // Show success feedback
-      alert(`Posted to gradebook: ${assignName} - ${pct}%`)
+
+      // Reset and return to menu
+      setFormData({ studentName: '', assignmentName: '', earnedPoints: '', totalPoints: '100' })
+      setScanResult(null)
+      setCapturedImage(null)
+      setMode('menu')
     } catch (err) {
-      setScanError(err.message || 'Failed to post')
+      setScanError('Failed to post grade: ' + err.message)
+    } finally {
+      setIsProcessing(false)
     }
   }
 
-  // Processing spinner
-  if (mode === 'processing') {
-    return (
-      <div style={{ padding: '40px 20px', textAlign: 'center' }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔄</div>
-        <p style={{ color: '#c8cce0', fontSize: 14, marginBottom: 8 }}>AI is scanning your document...</p>
-        <p style={{ color: '#6b7494', fontSize: 12 }}>Reading grading format, extracting points</p>
-      </div>
-    )
+  function handleFormChange(field, value) {
+    setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  // Camera mode
-  if (mode === 'camera') {
+  function goBackToMenu() {
+    setMode('menu')
+    setScanResult(null)
+    setCapturedImage(null)
+    setScanError(null)
+    setFormData({ studentName: '', assignmentName: '', earnedPoints: '', totalPoints: '100' })
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // REVIEW MODE: Show extracted data, allow edits, accept/post to gradebook
+  // ─────────────────────────────────────────────────────────────────────────
+  if (mode === 'review') {
+    const sr = scanResult
+    const { pct, letter, color } = calculateGrade()
+    const isValid = pct != null && formData.studentName.trim() && formData.assignmentName.trim()
+
     return (
       <div style={{ padding: '0 16px 20px' }}>
-        <button onClick={resetAll} style={{ background: 'none', border: 'none', color: '#0fb8a0', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 16, padding: 0 }}>
+        <button onClick={goBackToMenu}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: '#3b7ef4', 
+            cursor: 'pointer', 
+            fontSize: 14, 
+            fontWeight: 700, 
+            marginBottom: 16,
+            padding: 0
+          }}>
           ← Back
         </button>
-        <video ref={videoCallbackRef} 
-          style={{ width: '100%', borderRadius: 12, marginBottom: 16, backgroundColor: '#000', display: 'block' }}
-          autoPlay={true}
-          playsInline={true}
-          muted={true}
-        />
-        {!cameraReady && (
-          <div style={{ marginBottom: 16 }}>
-            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, marginBottom: 12 }}>Starting camera...</p>
-          </div>
+
+        {/* Captured Image */}
+        {capturedImage && (
+          <img src={capturedImage} alt="Captured"
+            style={{ width: '100%', borderRadius: 12, marginBottom: 16, maxHeight: 300, objectFit: 'cover' }} />
         )}
-        {cameraReady && (
-          <div style={{ position: 'relative', marginBottom: 16 }}>
-            <div style={{ position: 'relative', width: '100%', aspectRatio: '16/9', border: '2px solid #0fb8a0', borderRadius: 12, backgroundColor: 'transparent' }}>
-              <div style={{ position: 'absolute', top: 8, left: 8, width: 16, height: 16, border: '2px solid white', borderRight: 'none', borderBottom: 'none' }} />
-              <div style={{ position: 'absolute', top: 8, right: 8, width: 16, height: 16, border: '2px solid white', borderLeft: 'none', borderBottom: 'none' }} />
-              <div style={{ position: 'absolute', bottom: 8, left: 8, width: 16, height: 16, border: '2px solid white', borderRight: 'none', borderTop: 'none' }} />
-              <div style={{ position: 'absolute', bottom: 8, right: 8, width: 16, height: 16, border: '2px solid white', borderLeft: 'none', borderTop: 'none' }} />
-            </div>
-          </div>
-        )}
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
-        <p style={{ textAlign: 'center', color: '#6b7494', fontSize: 12, marginBottom: 12 }}>Fill the frame with the graded paper</p>
-        <button
-          onClick={capturePhoto}
-          disabled={!cameraReady}
-          style={{
-            width: '100%',
-            padding: '16px',
-            borderRadius: 12,
-            fontWeight: 700,
-            fontSize: 14,
-            color: '#fff',
-            border: 'none',
-            cursor: cameraReady ? 'pointer' : 'not-allowed',
-            background: cameraReady ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2436',
-            opacity: cameraReady ? 1 : 0.5,
-          }}>
-          {cameraReady ? 'Capture and Scan' : 'Starting camera...'}
-        </button>
-      </div>
-    )
-  }
 
-  // Review mode
-  if (mode === 'review') {
-    const pct = calcPercentage()
-    const letter = letterFromPct(pct)
-    const sr = scanResult
-    const scoreColor = pct >= 90 ? '#22c97a' : pct >= 70 ? '#f5a623' : '#f04a4a'
-
-    return (
-      <div style={{ padding: '0 16px 20px' }}>
-        <button onClick={resetAll} style={{ background: 'none', border: 'none', color: '#0fb8a0', fontSize: 14, fontWeight: 700, cursor: 'pointer', marginBottom: 12, padding: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-          ← Scan Again
-        </button>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: '#eef0f8', marginBottom: 16 }}>Review and Post</h1>
-
+        {/* AI Extraction Summary */}
         {sr && !scanError && (
           <div style={{ background: '#0d1520', border: '1px solid #3b7ef430', borderRadius: 12, padding: 16, marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -318,119 +293,242 @@ export default function Camera({ onBack }) {
                 {sr.confidence === 'high' ? 'High confidence' : 'Low confidence - verify'}
               </span>
             </div>
-            <p style={{ fontSize: 13, color: '#eef0f8' }}>{sr.rawText}</p>
+            <p style={{ fontSize: 13, color: '#eef0f8', margin: 0 }}>
+              {sr.rawText}
+            </p>
           </div>
         )}
 
         {scanError && (
           <div style={{ background: '#1c1012', border: '1px solid #f04a4a30', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-            <p style={{ fontWeight: 700, marginBottom: 4, color: '#f04a4a' }}>Scan error</p>
-            <p style={{ fontSize: 12, color: '#f04a4a', opacity: 0.85, marginBottom: 8 }}>{scanError}</p>
-            <p style={{ fontSize: 11, color: '#6b7494' }}>Enter score manually below.</p>
+            <p style={{ fontWeight: 700, marginBottom: 4, color: '#f04a4a', margin: 0 }}>Extraction error</p>
+            <p style={{ fontSize: 12, color: '#f04a4a', opacity: 0.85, margin: '4px 0' }}>{scanError}</p>
           </div>
         )}
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Assignment name</label>
-          <input value={assignName} onChange={e => setAssignName(e.target.value)}
-            placeholder="e.g. Ch.4 Quiz"
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 13, color: '#eef0f8', background: '#1e2231', border: '1px solid #2a2f42', boxSizing: 'border-box' }} />
-        </div>
+        {/* EDITABLE FORM */}
+        <div style={{ background: '#161923', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: '#eef0f8', marginBottom: 16, margin: '0 0 16px 0' }}>Review & Edit</h2>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Points earned</label>
-            <input value={manualScore} onChange={e => setManualScore(e.target.value)}
-              placeholder="e.g. 82" type="number"
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 13, color: '#eef0f8', background: '#1e2231', border: '1px solid #2a2f42', boxSizing: 'border-box' }} />
+          {/* Student Name */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Student name</label>
+            <input 
+              type="text"
+              value={formData.studentName} 
+              onChange={e => handleFormChange('studentName', e.target.value)}
+              placeholder="e.g. John Smith"
+              style={{ 
+                width: '100%', 
+                padding: '10px 12px', 
+                borderRadius: 8, 
+                fontSize: 13, 
+                color: '#eef0f8', 
+                background: '#1e2231', 
+                border: '1px solid ' + (formData.studentName.trim() ? '#3b7ef4' : '#2a2f42'),
+                boxSizing: 'border-box',
+              }} 
+            />
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Total points</label>
-            <input value={manualTotal} onChange={e => setManualTotal(e.target.value)}
-              placeholder="e.g. 100" type="number"
-              style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 13, color: '#eef0f8', background: '#1e2231', border: '1px solid #2a2f42', boxSizing: 'border-box' }} />
+
+          {/* Assignment Name */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Assignment name</label>
+            <input 
+              type="text"
+              value={formData.assignmentName} 
+              onChange={e => handleFormChange('assignmentName', e.target.value)}
+              placeholder="e.g. Ch.4 Quiz"
+              style={{ 
+                width: '100%', 
+                padding: '10px 12px', 
+                borderRadius: 8, 
+                fontSize: 13, 
+                color: '#eef0f8', 
+                background: '#1e2231', 
+                border: '1px solid ' + (formData.assignmentName.trim() ? '#3b7ef4' : '#2a2f42'),
+                boxSizing: 'border-box',
+              }} 
+            />
           </div>
-        </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Assignment type</label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {typeConfig.map(t => (
-              <button key={t.id} onClick={() => setAssignType(t.id)}
-                style={{
-                  flex: 1,
-                  padding: '10px 8px',
-                  borderRadius: 8,
-                  fontSize: 11,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  background: assignType === t.id ? t.color + '30' : '#1e2231',
-                  color: assignType === t.id ? t.color : '#6b7494',
-                  border: '1px solid ' + (assignType === t.id ? t.color + '60' : 'transparent')
-                }}>
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Class</label>
-          <select value={selectedClass} onChange={e => setSelectedClass(e.target.value)}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 12, fontSize: 13, color: '#eef0f8', background: '#1e2231', border: '1px solid #2a2f42', boxSizing: 'border-box' }}>
-            {classes.map(c => (
-              <option key={c.id} value={c.id}>{c.period} - {c.subject}</option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ background: '#0d1520', border: '1px solid ' + (pct != null ? scoreColor + '40' : '#2a2f42'), borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#6b7494', marginBottom: 8 }}>Calculated Grade</p>
-          {pct != null ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 32, fontWeight: 800, color: scoreColor }}>{pct}%</span>
-              <span style={{ fontWeight: 700, fontSize: 16, color: '#6b7494' }}>{letter}</span>
+          {/* Points Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Points earned</label>
+              <input 
+                type="number"
+                value={formData.earnedPoints} 
+                onChange={e => handleFormChange('earnedPoints', e.target.value)}
+                placeholder="82"
+                style={{ 
+                  width: '100%', 
+                  padding: '10px 12px', 
+                  borderRadius: 8, 
+                  fontSize: 13, 
+                  color: '#eef0f8', 
+                  background: '#1e2231', 
+                  border: '1px solid #2a2f42',
+                  boxSizing: 'border-box',
+                }} 
+              />
             </div>
-          ) : (
-            <p style={{ color: '#6b7494', fontSize: 12 }}>Enter points above to calculate</p>
-          )}
+            <div>
+              <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Total points</label>
+              <input 
+                type="number"
+                value={formData.totalPoints} 
+                onChange={e => handleFormChange('totalPoints', e.target.value)}
+                placeholder="100"
+                style={{ 
+                  width: '100%', 
+                  padding: '10px 12px', 
+                  borderRadius: 8, 
+                  fontSize: 13, 
+                  color: '#eef0f8', 
+                  background: '#1e2231', 
+                  border: '1px solid #2a2f42',
+                  boxSizing: 'border-box',
+                }} 
+              />
+            </div>
+          </div>
+
+          {/* Assignment Type */}
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Type</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
+              {typeConfig.map(t => (
+                <button key={t.id} onClick={() => setAssignType(t.id)}
+                  style={{
+                    padding: '8px 6px',
+                    borderRadius: 6,
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: assignType === t.id ? t.color + '30' : '#1e2231',
+                    color: assignType === t.id ? t.color : '#6b7494',
+                    border: '1px solid ' + (assignType === t.id ? t.color + '60' : 'transparent'),
+                    transition: 'all 0.15s'
+                  }}>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Calculated Grade Display */}
+          <div style={{ background: '#0d1520', border: '1px solid ' + (pct != null ? color + '40' : '#2a2f42'), borderRadius: 8, padding: 12 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#6b7494', marginBottom: 8, margin: '0 0 8px 0' }}>Calculated grade</p>
+            {pct != null ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 28, fontWeight: 800, color }}>{pct}%</span>
+                <span style={{ fontWeight: 700, fontSize: 14, color: '#6b7494' }}>{letter}</span>
+              </div>
+            ) : (
+              <p style={{ color: '#6b7494', fontSize: 12, margin: 0 }}>Enter points to calculate</p>
+            )}
+          </div>
         </div>
 
-        <button onClick={postToGradebook} disabled={pct == null || !assignName.trim()}
+        {/* ACTION BUTTONS */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <button onClick={goBackToMenu} disabled={isProcessing}
+            style={{
+              padding: '12px 16px',
+              borderRadius: 8,
+              fontWeight: 700,
+              fontSize: 14,
+              color: '#6b7494',
+              border: '1px solid #2a2f42',
+              background: '#1e2231',
+              cursor: 'pointer',
+              opacity: isProcessing ? 0.5 : 1,
+            }}>
+            Cancel
+          </button>
+          <button onClick={acceptAndPost} disabled={!isValid || isProcessing}
+            style={{
+              padding: '12px 16px',
+              borderRadius: 8,
+              fontWeight: 700,
+              fontSize: 14,
+              color: '#fff',
+              border: 'none',
+              background: isValid ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231',
+              cursor: isValid ? 'pointer' : 'not-allowed',
+              opacity: isValid ? 1 : 0.4,
+            }}>
+            {isProcessing ? 'Posting...' : `Post ${pct ? pct + '% (' + letter + ')' : '—'}`}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // CAMERA MODE
+  // ─────────────────────────────────────────────────────────────────────────
+  if (mode === 'camera') {
+    return (
+      <div style={{ padding: '0 16px 20px' }}>
+        <button onClick={() => { setMode('menu'); stopStream() }}
+          style={{ 
+            background: 'none', 
+            border: 'none', 
+            color: '#3b7ef4', 
+            cursor: 'pointer', 
+            fontSize: 14, 
+            fontWeight: 700, 
+            marginBottom: 16,
+            padding: 0
+          }}>
+          ← Back
+        </button>
+
+        <video ref={videoCallbackRef}
+          style={{ width: '100%', borderRadius: 12, marginBottom: 16, background: '#000' }}
+          autoPlay playsInline muted />
+
+        <button onClick={capturePhoto} disabled={!cameraReady}
           style={{
             width: '100%',
-            padding: '12px 16px',
+            padding: '16px',
             borderRadius: 12,
+            fontSize: 16,
             fontWeight: 700,
-            fontSize: 14,
             color: '#fff',
+            background: cameraReady ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231',
             border: 'none',
-            cursor: pct != null && assignName.trim() ? 'pointer' : 'not-allowed',
-            background: pct != null ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231',
-            opacity: pct != null && assignName.trim() ? 1 : 0.4,
+            cursor: cameraReady ? 'pointer' : 'not-allowed',
+            opacity: cameraReady ? 1 : 0.4,
           }}>
-          {pct != null ? `Post ${pct}% (${letter}) to Gradebook` : 'Enter score above'}
+          📸 Capture
         </button>
       </div>
     )
   }
 
-  // Menu mode (default)
+  // ─────────────────────────────────────────────────────────────────────────
+  // MENU MODE (default)
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div style={{ padding: '0 16px 20px' }}>
       <h1 style={{ fontSize: 22, fontWeight: 800, color: '#eef0f8', marginBottom: 4 }}>Scan and Grade</h1>
-      <p style={{ color: '#6b7494', fontSize: 12, marginBottom: 20 }}>AI reads any scoring format: 82/100, -8 missed, 17/20, letter grades, percentages</p>
+      <p style={{ color: '#6b7494', fontSize: 12, marginBottom: 20 }}>
+        AI reads graded papers: student name, score (82/100, -8 missed, 17/20, letter grades, %)
+      </p>
 
       {cameraError && (
         <div style={{ background: '#1c1012', border: '1px solid #f04a4a30', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-          <p style={{ fontWeight: 700, marginBottom: 4, color: '#f04a4a' }}>Camera unavailable</p>
-          <p style={{ fontSize: 12, color: '#f04a4a', opacity: 0.85 }}>{cameraError}</p>
+          <p style={{ fontWeight: 700, marginBottom: 4, color: '#f04a4a', margin: '0 0 4px 0' }}>Camera unavailable</p>
+          <p style={{ fontSize: 12, color: '#f04a4a', opacity: 0.85, margin: 0 }}>{cameraError}</p>
         </div>
       )}
 
       <div style={{ display: 'grid', gap: 12, marginBottom: 16 }}>
         <button onClick={openCamera}
-          style={{ 
+          style={{
             padding: '32px 16px',
             borderRadius: 12,
             display: 'flex',
@@ -446,7 +544,7 @@ export default function Camera({ onBack }) {
           onMouseLeave={e => e.target.style.transform = 'scale(1)'}>
           <span style={{ fontSize: 40 }}>📷</span>
           <p style={{ fontWeight: 800, fontSize: 16, color: '#eef0f8', margin: 0 }}>Use Camera</p>
-          <p style={{ color: '#6b7494', fontSize: 12, textAlign: 'center', margin: 0 }}>Point at the graded paper - AI reads the score</p>
+          <p style={{ color: '#6b7494', fontSize: 12, textAlign: 'center', margin: 0 }}>Point at a graded paper</p>
         </button>
 
         <button onClick={() => fileRef.current?.click()}
@@ -466,15 +564,15 @@ export default function Camera({ onBack }) {
           onMouseLeave={e => e.target.style.transform = 'scale(1)'}>
           <span style={{ fontSize: 32 }}>📁</span>
           <p style={{ fontWeight: 700, fontSize: 14, color: '#eef0f8', margin: 0 }}>Upload Photo or File</p>
-          <p style={{ color: '#6b7494', fontSize: 12, textAlign: 'center', margin: 0 }}>Photo from camera roll - PDF - Any image</p>
+          <p style={{ color: '#6b7494', fontSize: 12, textAlign: 'center', margin: 0 }}>From camera roll, gallery, or desktop</p>
         </button>
       </div>
 
       <div style={{ background: '#161923', borderRadius: 12, padding: 12, marginBottom: 16 }}>
-        <p style={{ fontSize: 10, fontWeight: 700, color: '#6b7494', textAlign: 'center', marginBottom: 8, margin: 0 }}>Scoring formats AI understands</p>
+        <p style={{ fontSize: 10, fontWeight: 700, color: '#6b7494', textAlign: 'center', marginBottom: 8, margin: '0 0 8px 0' }}>AI handles all scoring formats</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
-          {['82 / 100', '-8 missed', '17 / 20', '94%', 'Letter A-F', 'Rubric score', 'Raw points'].map(f => (
-            <span key={f} style={{ background: '#1e2231', color: '#6b7494', fontSize: 10, padding: '4px 10px', borderRadius: 8 }}>{f}</span>
+          {['82/100', '-8 missed', '17/20', '94%', 'A-F', 'Rubric', 'Raw'].map(f => (
+            <span key={f} style={{ background: '#1e2231', color: '#6b7494', fontSize: 10, padding: '4px 10px', borderRadius: 6 }}>{f}</span>
           ))}
         </div>
       </div>
