@@ -3,7 +3,7 @@ import { useStore } from '../lib/store'
 import { scanGradedDocument } from '../lib/ai'
 
 export default function Camera({ onBack }) {
-  const { classes, activeClass, students, addGrade } = useStore()
+  const { classes, activeClass, addGrade } = useStore()
   const [mode, setMode] = useState('menu')
   const [assignType, setAssignType] = useState('quiz')
   const [capturedImage, setCapturedImage] = useState(null)
@@ -13,6 +13,7 @@ export default function Camera({ onBack }) {
   const [scanError, setScanError] = useState(null)
   const [selectedClass, setSelectedClass] = useState(activeClass?.id || classes[0]?.id)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [canvasReady, setCanvasReady] = useState(false)
 
   // Review form state (editable after scan)
   const [formData, setFormData] = useState({
@@ -34,6 +35,15 @@ export default function Camera({ onBack }) {
     { id: 'homework', label: 'Other', weight: 20, color: '#22c97a' },
   ]
 
+  // Initialize canvas ref on mount
+  useEffect(() => {
+    console.log('Camera component mounted, setting up canvas')
+    if (canvasRef.current) {
+      setCanvasReady(true)
+      console.log('Canvas ref is ready')
+    }
+  }, [])
+
   function stopStream() {
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop())
@@ -45,14 +55,17 @@ export default function Camera({ onBack }) {
   useEffect(() => () => stopStream(), [])
 
   const attachStream = useCallback((stream) => {
+    console.log('Attaching stream to video element')
     const video = videoRef.current
-    if (!video) return
+    if (!video) {
+      console.error('Video ref not available')
+      return
+    }
     
     video.srcObject = stream
     
-    // Use the onloadedmetadata event to reliably detect when video is ready
     const handleMetadata = () => {
-      console.log('Video metadata loaded, attempting to play')
+      console.log('Video metadata loaded, video dimensions:', video.videoWidth, video.videoHeight)
       const playPromise = video.play()
       
       if (playPromise !== undefined) {
@@ -62,8 +75,7 @@ export default function Camera({ onBack }) {
             setCameraReady(true)
           })
           .catch(err => {
-            console.error('Video play failed:', err)
-            // Try with muted as fallback
+            console.error('Video play failed, trying with muted:', err)
             video.muted = true
             video.play()
               .then(() => {
@@ -82,30 +94,38 @@ export default function Camera({ onBack }) {
     
     video.addEventListener('loadedmetadata', handleMetadata, { once: true })
     
-    // Fallback in case metadata event doesn't fire
     const timeoutId = setTimeout(() => {
       if (!cameraReady) {
-        console.log('Timeout waiting for metadata, forcing play attempt')
+        console.warn('Timeout waiting for metadata, forcing play')
         const playPromise = video.play()
         if (playPromise !== undefined) {
           playPromise
-            .then(() => setCameraReady(true))
+            .then(() => {
+              console.log('Timeout: video playing')
+              setCameraReady(true)
+            })
             .catch(() => {
               video.muted = true
-              video.play().then(() => setCameraReady(true)).catch(() => {
-                setCameraError('Camera stream timeout')
-                stopStream()
-                setMode('menu')
-              })
+              video.play()
+                .then(() => {
+                  console.log('Timeout: video playing with muted')
+                  setCameraReady(true)
+                })
+                .catch(() => {
+                  setCameraError('Camera stream timeout')
+                  stopStream()
+                  setMode('menu')
+                })
             })
         }
       }
     }, 3000)
     
     return () => clearTimeout(timeoutId)
-  }, [])
+  }, [cameraReady])
 
   const videoCallbackRef = useCallback((node) => {
+    console.log('Video callback ref set')
     videoRef.current = node
     if (node && streamRef.current) {
       attachStream(streamRef.current)
@@ -118,11 +138,11 @@ export default function Camera({ onBack }) {
     setCameraReady(false)
 
     if (!navigator.mediaDevices?.getUserMedia) {
-      setCameraError(
-        location.protocol === 'http:' && location.hostname !== 'localhost'
-          ? 'Camera requires HTTPS. Use Vercel URL.'
-          : 'Browser does not support camera. Try Chrome or Safari, or upload instead.'
-      )
+      const error = location.protocol === 'http:' && location.hostname !== 'localhost'
+        ? 'Camera requires HTTPS. Use Vercel URL.'
+        : 'Browser does not support camera. Try Chrome or Safari, or upload instead.'
+      console.error('getUserMedia not supported:', error)
+      setCameraError(error)
       return
     }
 
@@ -143,7 +163,7 @@ export default function Camera({ onBack }) {
         console.log('Camera access granted')
         break
       } catch (err) {
-        console.error('Camera error:', err)
+        console.error('Camera config failed:', err.name, err.message)
         lastErr = err
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
           break
@@ -153,13 +173,13 @@ export default function Camera({ onBack }) {
 
     if (!stream) {
       const n = lastErr?.name
-      setCameraError(
-        n === 'NotAllowedError' || n === 'PermissionDeniedError'
-          ? 'Camera permission denied. Tap the lock icon in your address bar, allow camera, then retry.'
-          : n === 'NotFoundError' ? 'No camera found. Use Upload instead.'
-          : n === 'NotReadableError' ? 'Camera in use by another app. Close it and retry.'
-          : 'Camera error (' + (n || 'unknown') + '). Use Upload instead.'
-      )
+      const errorMsg = n === 'NotAllowedError' || n === 'PermissionDeniedError'
+        ? 'Camera permission denied. Tap the lock icon in your address bar, allow camera, then retry.'
+        : n === 'NotFoundError' ? 'No camera found. Use Upload instead.'
+        : n === 'NotReadableError' ? 'Camera in use by another app. Close it and retry.'
+        : 'Camera error (' + (n || 'unknown') + '). Use Upload instead.'
+      console.error('No camera stream available:', errorMsg)
+      setCameraError(errorMsg)
       return
     }
 
@@ -168,54 +188,68 @@ export default function Camera({ onBack }) {
   }
 
   function capturePhoto() {
-    console.log('Capture button clicked')
+    console.log('=== CAPTURE BUTTON CLICKED ===')
+    
     const video = videoRef.current
     const canvas = canvasRef.current
     
+    console.log('Video ref:', !!video)
+    console.log('Canvas ref:', !!canvas)
+    console.log('Canvas ready state:', canvasReady)
+    
     if (!video) {
-      console.error('Video ref not found')
-      setCameraError('Video element not ready')
+      console.error('Video ref missing')
+      setCameraError('Video element not initialized')
       return
     }
     if (!canvas) {
-      console.error('Canvas ref not found')
-      setCameraError('Canvas element not ready')
+      console.error('Canvas ref missing')
+      setCameraError('Canvas element not initialized')
       return
     }
     
-    console.log('Video dimensions:', video.videoWidth, video.videoHeight)
+    const vw = video.videoWidth
+    const vh = video.videoHeight
+    console.log('Video dimensions:', vw, 'x', vh)
+    console.log('Camera ready state:', cameraReady)
     
-    if (video.videoWidth === 0 || video.videoHeight === 0) {
-      console.error('Video stream not ready yet')
+    if (vw === 0 || vh === 0) {
+      console.error('Video not ready: dimensions are 0')
       setCameraError('Video stream not ready. Wait a moment and try again.')
       return
     }
 
     try {
-      const w = video.videoWidth
-      const h = video.videoHeight
-      canvas.width = w
-      canvas.height = h
+      console.log('Setting canvas dimensions to:', vw, 'x', vh)
+      canvas.width = vw
+      canvas.height = vh
       
       const ctx = canvas.getContext('2d')
+      console.log('Canvas context obtained:', !!ctx)
+      
       if (!ctx) {
-        setCameraError('Could not get canvas context')
+        setCameraError('Could not initialize canvas')
         return
       }
       
-      ctx.drawImage(video, 0, 0, w, h)
+      console.log('Drawing image to canvas...')
+      ctx.drawImage(video, 0, 0, vw, vh)
       
-      // Use higher quality JPEG
+      console.log('Converting canvas to data URL...')
       const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
-      if (!dataUrl || dataUrl === 'data:,') {
-        setCameraError('Failed to capture image')
+      console.log('Data URL created, length:', dataUrl.length)
+      
+      if (!dataUrl || dataUrl === 'data:,' || dataUrl.length < 100) {
+        console.error('Invalid data URL:', dataUrl.substring(0, 50))
+        setCameraError('Failed to capture image from camera')
         return
       }
       
       const base64 = dataUrl.split(',')[1]
-      console.log('Captured image, base64 length:', base64.length)
+      console.log('Base64 extracted, length:', base64.length)
       
       stopStream()
+      console.log('Stream stopped, processing image...')
       processImage(dataUrl, base64, 'image/jpeg')
     } catch (err) {
       console.error('Capture error:', err)
@@ -245,7 +279,7 @@ export default function Camera({ onBack }) {
   }
 
   function processImage(dataUrl, base64, mime) {
-    console.log('Processing image...')
+    console.log('Processing image, mime type:', mime)
     setCapturedImage(dataUrl)
     setScanResult(null)
     setScanError(null)
@@ -257,11 +291,10 @@ export default function Camera({ onBack }) {
     try {
       console.log('Calling scanGradedDocument...')
       const result = await scanGradedDocument(base64, mime)
-      console.log('AI result:', result)
+      console.log('AI result received:', result)
       
       setScanResult(result)
       
-      // Populate form with extracted data
       setFormData({
         studentName: result.studentName || '',
         assignmentName: result.assignmentTitle || '',
@@ -269,7 +302,6 @@ export default function Camera({ onBack }) {
         totalPoints: result.totalPoints != null ? String(result.totalPoints) : '100',
       })
       
-      // Update assignment type if detected
       if (result.documentType) {
         const map = { quiz: 'quiz', test: 'test', homework: 'homework', worksheet: 'homework', participation: 'participation' }
         setAssignType(map[result.documentType] || 'quiz')
@@ -307,8 +339,7 @@ export default function Camera({ onBack }) {
 
     setIsProcessing(true)
     try {
-      console.log('Posting grade...')
-      // Add grade to store (which syncs to Supabase)
+      console.log('Posting grade to gradebook...')
       await addGrade({
         studentName: formData.studentName.trim(),
         assignmentName: formData.assignmentName.trim(),
@@ -321,7 +352,6 @@ export default function Camera({ onBack }) {
       })
 
       console.log('Grade posted successfully')
-      // Reset and return to menu
       setFormData({ studentName: '', assignmentName: '', earnedPoints: '', totalPoints: '100' })
       setScanResult(null)
       setCapturedImage(null)
@@ -347,7 +377,7 @@ export default function Camera({ onBack }) {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // REVIEW MODE: Show extracted data, allow edits, accept/post to gradebook
+  // REVIEW MODE
   // ─────────────────────────────────────────────────────────────────────────
   if (mode === 'review') {
     const sr = scanResult
@@ -370,13 +400,11 @@ export default function Camera({ onBack }) {
           ← Back
         </button>
 
-        {/* Captured Image */}
         {capturedImage && (
           <img src={capturedImage} alt="Captured"
             style={{ width: '100%', borderRadius: 12, marginBottom: 16, maxHeight: 300, objectFit: 'cover' }} />
         )}
 
-        {/* AI Extraction Summary */}
         {sr && !scanError && (
           <div style={{ background: '#0d1520', border: '1px solid #3b7ef430', borderRadius: 12, padding: 16, marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -404,11 +432,9 @@ export default function Camera({ onBack }) {
           </div>
         )}
 
-        {/* EDITABLE FORM */}
         <div style={{ background: '#161923', borderRadius: 12, padding: 16, marginBottom: 16 }}>
           <h2 style={{ fontSize: 16, fontWeight: 800, color: '#eef0f8', marginBottom: 16, margin: '0 0 16px 0' }}>Review & Edit</h2>
 
-          {/* Student Name */}
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Student name</label>
             <input 
@@ -429,7 +455,6 @@ export default function Camera({ onBack }) {
             />
           </div>
 
-          {/* Assignment Name */}
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Assignment name</label>
             <input 
@@ -450,7 +475,6 @@ export default function Camera({ onBack }) {
             />
           </div>
 
-          {/* Points Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
             <div>
               <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Points earned</label>
@@ -492,7 +516,6 @@ export default function Camera({ onBack }) {
             </div>
           </div>
 
-          {/* Assignment Type */}
           <div style={{ marginBottom: 14 }}>
             <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#6b7494', marginBottom: 6 }}>Type</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8 }}>
@@ -515,7 +538,6 @@ export default function Camera({ onBack }) {
             </div>
           </div>
 
-          {/* Calculated Grade Display */}
           <div style={{ background: '#0d1520', border: '1px solid ' + (pct != null ? color + '40' : '#2a2f42'), borderRadius: 8, padding: 12 }}>
             <p style={{ fontSize: 10, fontWeight: 700, color: '#6b7494', marginBottom: 8, margin: '0 0 8px 0' }}>Calculated grade</p>
             {pct != null ? (
@@ -529,7 +551,6 @@ export default function Camera({ onBack }) {
           </div>
         </div>
 
-        {/* ACTION BUTTONS */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <button onClick={goBackToMenu} disabled={isProcessing}
             style={{
@@ -584,19 +605,27 @@ export default function Camera({ onBack }) {
           ← Back
         </button>
 
-        <video 
-          ref={videoCallbackRef}
-          style={{ width: '100%', borderRadius: 12, marginBottom: 16, background: '#000', maxHeight: '60vh', objectFit: 'cover' }}
-          autoPlay 
-          playsInline 
-          muted 
-        />
+        <div style={{ background: '#000', borderRadius: 12, marginBottom: 16, overflow: 'hidden', aspectRatio: '4/3' }}>
+          <video 
+            ref={videoCallbackRef}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            autoPlay 
+            playsInline 
+            muted 
+          />
+        </div>
 
         {cameraError && (
           <div style={{ background: '#1c1012', border: '1px solid #f04a4a30', borderRadius: 12, padding: 12, marginBottom: 16 }}>
             <p style={{ fontWeight: 700, color: '#f04a4a', fontSize: 12, margin: 0 }}>{cameraError}</p>
           </div>
         )}
+
+        <div style={{ marginBottom: 12 }}>
+          <p style={{ fontSize: 11, color: '#6b7494', margin: '0 0 8px 0' }}>
+            Camera: {cameraReady ? '✓ Ready' : '○ Loading...'}
+          </p>
+        </div>
 
         <button onClick={capturePhoto} disabled={!cameraReady}
           style={{
@@ -609,7 +638,7 @@ export default function Camera({ onBack }) {
             background: cameraReady ? 'linear-gradient(135deg, var(--school-color), #5c9ef8)' : '#1e2231',
             border: 'none',
             cursor: cameraReady ? 'pointer' : 'not-allowed',
-            opacity: cameraReady ? 1 : 0.4,
+            opacity: cameraReady ? 1 : 0.5,
           }}>
           📸 Capture
         </button>

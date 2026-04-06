@@ -148,10 +148,11 @@ export default function AppShell() {
 
   function handleCameraClick() {
     setMenuOpen(false)
-    navigateToPage('camera')
+    // Navigate to camera page using the same pattern as other pages
+    goTo('/teacher/camera')
   }
 
-  // ── Dropdown sections ─────────────────────────────────────────────────────
+  // ── Dropdown sections ─────────────────────────────────────────────────
 
   const dropdownSections = [
     {
@@ -260,7 +261,7 @@ export default function AppShell() {
             {isEs ? '🇺🇸 EN' : '🇲🇽 ES'}
           </button>
 
-          {/* Camera button — NOW FIXED */}
+          {/* Camera button — FIXED */}
           <button
             onClick={handleCameraClick}
             title="Open Camera"
