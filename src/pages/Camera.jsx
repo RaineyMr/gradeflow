@@ -12,6 +12,7 @@ export default function Camera({ onBack }) {
   const [scanResult, setScanResult] = useState(null)
   const [scanError, setScanError] = useState(null)
   const [selectedClass, setSelectedClass] = useState(activeClass?.id || classes[0]?.id)
+  const [isProcessing, setIsProcessing] = useState(false)
 
   // Review form state (editable after scan)
   const [formData, setFormData] = useState({
@@ -20,7 +21,6 @@ export default function Camera({ onBack }) {
     earnedPoints: '',
     totalPoints: '100',
   })
-  const [isProcessing, setIsProcessing] = useState(false)
 
   const streamRef = useRef(null)
   const videoRef = useRef(null)
@@ -47,40 +47,73 @@ export default function Camera({ onBack }) {
   const attachStream = useCallback((stream) => {
     const video = videoRef.current
     if (!video) return
+    
     video.srcObject = stream
-    if (typeof video.load === 'function') video.load()
-
-    const tryPlay = () => {
-      const p = video.play()
-      if (p !== undefined) {
-        p.then(() => setCameraReady(true)).catch(() => {
-          video.muted = true
-          video.play()
-            .then(() => setCameraReady(true))
-            .catch(err => {
-              setCameraError('Could not start camera: ' + err.message)
-              stopStream()
-              setMode('menu')
-            })
-        })
-      } else {
-        video.addEventListener('canplay', () => setCameraReady(true), { once: true })
+    
+    // Use the onloadedmetadata event to reliably detect when video is ready
+    const handleMetadata = () => {
+      console.log('Video metadata loaded, attempting to play')
+      const playPromise = video.play()
+      
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            console.log('Video playing successfully')
+            setCameraReady(true)
+          })
+          .catch(err => {
+            console.error('Video play failed:', err)
+            // Try with muted as fallback
+            video.muted = true
+            video.play()
+              .then(() => {
+                console.log('Video playing with muted')
+                setCameraReady(true)
+              })
+              .catch(err2 => {
+                console.error('Video play failed even with muted:', err2)
+                setCameraError('Could not start camera playback: ' + err2.message)
+                stopStream()
+                setMode('menu')
+              })
+          })
       }
     }
-
-    if (video.isConnected) {
-      tryPlay()
-    } else {
-      requestAnimationFrame(() => { if (videoRef.current) tryPlay() })
-    }
+    
+    video.addEventListener('loadedmetadata', handleMetadata, { once: true })
+    
+    // Fallback in case metadata event doesn't fire
+    const timeoutId = setTimeout(() => {
+      if (!cameraReady) {
+        console.log('Timeout waiting for metadata, forcing play attempt')
+        const playPromise = video.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => setCameraReady(true))
+            .catch(() => {
+              video.muted = true
+              video.play().then(() => setCameraReady(true)).catch(() => {
+                setCameraError('Camera stream timeout')
+                stopStream()
+                setMode('menu')
+              })
+            })
+        }
+      }
+    }, 3000)
+    
+    return () => clearTimeout(timeoutId)
   }, [])
 
   const videoCallbackRef = useCallback((node) => {
     videoRef.current = node
-    if (node && streamRef.current) attachStream(streamRef.current)
+    if (node && streamRef.current) {
+      attachStream(streamRef.current)
+    }
   }, [attachStream])
 
   async function openCamera() {
+    console.log('Opening camera...')
     setCameraError(null)
     setCameraReady(false)
 
@@ -102,13 +135,19 @@ export default function Camera({ onBack }) {
 
     let stream = null
     let lastErr = null
+    
     for (const c of attempts) {
       try {
+        console.log('Trying camera config:', JSON.stringify(c))
         stream = await navigator.mediaDevices.getUserMedia(c)
+        console.log('Camera access granted')
         break
       } catch (err) {
+        console.error('Camera error:', err)
         lastErr = err
-        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') break
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          break
+        }
       }
     }
 
@@ -129,32 +168,84 @@ export default function Camera({ onBack }) {
   }
 
   function capturePhoto() {
+    console.log('Capture button clicked')
     const video = videoRef.current
     const canvas = canvasRef.current
-    if (!video || !canvas) return
-    const w = video.videoWidth || 1280
-    const h = video.videoHeight || 720
-    canvas.width = w
-    canvas.height = h
-    canvas.getContext('2d').drawImage(video, 0, 0, w, h)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
-    stopStream()
-    processImage(dataUrl, dataUrl.split(',')[1], 'image/jpeg')
+    
+    if (!video) {
+      console.error('Video ref not found')
+      setCameraError('Video element not ready')
+      return
+    }
+    if (!canvas) {
+      console.error('Canvas ref not found')
+      setCameraError('Canvas element not ready')
+      return
+    }
+    
+    console.log('Video dimensions:', video.videoWidth, video.videoHeight)
+    
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+      console.error('Video stream not ready yet')
+      setCameraError('Video stream not ready. Wait a moment and try again.')
+      return
+    }
+
+    try {
+      const w = video.videoWidth
+      const h = video.videoHeight
+      canvas.width = w
+      canvas.height = h
+      
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        setCameraError('Could not get canvas context')
+        return
+      }
+      
+      ctx.drawImage(video, 0, 0, w, h)
+      
+      // Use higher quality JPEG
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.95)
+      if (!dataUrl || dataUrl === 'data:,') {
+        setCameraError('Failed to capture image')
+        return
+      }
+      
+      const base64 = dataUrl.split(',')[1]
+      console.log('Captured image, base64 length:', base64.length)
+      
+      stopStream()
+      processImage(dataUrl, base64, 'image/jpeg')
+    } catch (err) {
+      console.error('Capture error:', err)
+      setCameraError('Failed to capture: ' + err.message)
+    }
   }
 
   function handleFileSelect(e) {
     const file = e.target.files[0]
     if (!file) return
+    
+    console.log('File selected:', file.name, file.size)
     e.target.value = ''
+    
     const reader = new FileReader()
     reader.onload = ev => {
       const dataUrl = ev.target.result
-      processImage(dataUrl, dataUrl.split(',')[1], file.type || 'image/jpeg')
+      const base64 = dataUrl.split(',')[1]
+      console.log('File read, base64 length:', base64.length)
+      processImage(dataUrl, base64, file.type || 'image/jpeg')
+    }
+    reader.onerror = err => {
+      console.error('File read error:', err)
+      setScanError('Failed to read file')
     }
     reader.readAsDataURL(file)
   }
 
   function processImage(dataUrl, base64, mime) {
+    console.log('Processing image...')
     setCapturedImage(dataUrl)
     setScanResult(null)
     setScanError(null)
@@ -164,7 +255,10 @@ export default function Camera({ onBack }) {
 
   async function runAI(base64, mime) {
     try {
+      console.log('Calling scanGradedDocument...')
       const result = await scanGradedDocument(base64, mime)
+      console.log('AI result:', result)
+      
       setScanResult(result)
       
       // Populate form with extracted data
@@ -183,6 +277,7 @@ export default function Camera({ onBack }) {
       
       setMode('review')
     } catch (err) {
+      console.error('AI error:', err)
       setScanError(err.message || 'Scan failed')
       setMode('review')
     }
@@ -212,6 +307,7 @@ export default function Camera({ onBack }) {
 
     setIsProcessing(true)
     try {
+      console.log('Posting grade...')
       // Add grade to store (which syncs to Supabase)
       await addGrade({
         studentName: formData.studentName.trim(),
@@ -224,12 +320,14 @@ export default function Camera({ onBack }) {
         date: new Date().toISOString(),
       })
 
+      console.log('Grade posted successfully')
       // Reset and return to menu
       setFormData({ studentName: '', assignmentName: '', earnedPoints: '', totalPoints: '100' })
       setScanResult(null)
       setCapturedImage(null)
       setMode('menu')
     } catch (err) {
+      console.error('Post error:', err)
       setScanError('Failed to post grade: ' + err.message)
     } finally {
       setIsProcessing(false)
@@ -486,9 +584,19 @@ export default function Camera({ onBack }) {
           ← Back
         </button>
 
-        <video ref={videoCallbackRef}
-          style={{ width: '100%', borderRadius: 12, marginBottom: 16, background: '#000' }}
-          autoPlay playsInline muted />
+        <video 
+          ref={videoCallbackRef}
+          style={{ width: '100%', borderRadius: 12, marginBottom: 16, background: '#000', maxHeight: '60vh', objectFit: 'cover' }}
+          autoPlay 
+          playsInline 
+          muted 
+        />
+
+        {cameraError && (
+          <div style={{ background: '#1c1012', border: '1px solid #f04a4a30', borderRadius: 12, padding: 12, marginBottom: 16 }}>
+            <p style={{ fontWeight: 700, color: '#f04a4a', fontSize: 12, margin: 0 }}>{cameraError}</p>
+          </div>
+        )}
 
         <button onClick={capturePhoto} disabled={!cameraReady}
           style={{
@@ -544,7 +652,7 @@ export default function Camera({ onBack }) {
           onMouseLeave={e => e.target.style.transform = 'scale(1)'}>
           <span style={{ fontSize: 40 }}>📷</span>
           <p style={{ fontWeight: 800, fontSize: 16, color: '#eef0f8', margin: 0 }}>Use Camera</p>
-          <p style={{ color: '#6b7494', fontSize: 12, textAlign: 'center', margin: 0 }}>Point at a graded paper</p>
+          <p style={{ color: '#6b7494', fontSize: 12, textAlign: 'center', margin: 0 }}>Point at the graded paper</p>
         </button>
 
         <button onClick={() => fileRef.current?.click()}
