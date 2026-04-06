@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { useStore } from '@lib/store'
 import { useT } from '@lib/i18n'
 import { useHashRouter } from '@hooks/useHashRouter'
@@ -44,6 +44,7 @@ const PAGES_BY_ROLE = {
 }
 
 export default function AppShell() {
+  const navigate = useNavigate()
   const { navigateToPage, navigateToHome } = useHashRouter()
   const t = useT()
   const { currentUser, setCurrentUser, setLang, isHydrated } = useStore()
@@ -148,8 +149,9 @@ export default function AppShell() {
 
   function handleCameraClick() {
     setMenuOpen(false)
-    // Navigate to camera page using the same pattern as other pages
-    goTo('/teacher/camera')
+    // Navigate using React Router (slug-based routing)
+    console.log('Camera button clicked, navigating to /teacher/camera')
+    navigate('/teacher/camera')
   }
 
   // ── Dropdown sections ─────────────────────────────────────────────────
