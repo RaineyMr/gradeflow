@@ -728,6 +728,7 @@ function LessonHeaderSection({ data, onChange }) {
 
 // ─── 2. STANDARDS ──────────────────────────────────────────────────────────
 function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
+  const { currentUser } = useStore()
   const [showPicker, setShowPicker] = React.useState(false)
   const [generating, setGenerating] = React.useState(false)
 
@@ -771,7 +772,7 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
           grade={headerData?.gradeLevel}
           selectedStandards={data.standards || []}
           topic={headerData?.title}
-          schoolName="GradeFlow"
+          schoolName={currentUser?.schoolName}
           onChange={(standards) => {
             onChange('standards', standards)
             setShowPicker(false)
