@@ -469,6 +469,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
                 fontWeight: 600,
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.6 : 1,
+                transition: 'all 0.2s',
               }}
             >
               {loading ? 'Generating...' : 'Generate'}
@@ -477,17 +478,26 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Search TEKS / Common Core Standards</label>
+            <button
+              onClick={() => setShowStandards(!showStandards)}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: `1px solid ${C.blue}`,
+                background: C.inner,
+                color: C.blue,
+                borderRadius: 8,
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              {showStandards ? 'Hide Picker' : 'Browse Standards'}
+            </button>
           </div>
 
-          <StandardsSelector
-            topic={form.textbook || `${subject} lesson`}
-            maxSelections={3}
-            showRecommendations={true}
-            schoolName={currentUser?.schoolName}
-          />
-
           {selectedStandards.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {selectedStandards.map((std, i) => (
                 <span
                   key={i}
@@ -504,6 +514,17 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
                   {typeof std === 'string' ? std : std.code}
                 </span>
               ))}
+            </div>
+          )}
+
+          {showStandards && (
+            <div style={{ marginTop: 12 }}>
+              <StandardsSelector
+                topic={form.textbook || `${subject} lesson`}
+                maxSelections={3}
+                showRecommendations={true}
+                schoolName={currentUser?.schoolName}
+              />
             </div>
           )}
         </div>

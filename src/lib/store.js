@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { supabase } from './supabase'
-import { pageToHash } from './hashRouter'
 import { demoSupportNotes } from './demoSupportNotes'
 import {
   generateFollowUpReminders,
@@ -2212,7 +2211,18 @@ setDemoSupportStaffData: async () => {
         setTimeout(() => reject(new Error('Database connection timeout')), 3000)
       })
 
-      // Check if current user is a demo account BEFORE making any Supabase calls
+      // Load schools data from Supabase with timeout
+      const schoolsPromise = supabase
+        .from('schools')
+        .select('*')
+
+      const { data: schoolsData, error: schoolsError } = await Promise.race([schoolsPromise, timeoutPromise])
+
+      if (schoolsError) {
+        console.error('Error loading schools:', schoolsError);
+      }
+
+      // Check if current user is a demo account
       const currentUser = get().currentUser
       const isDemoAccount = currentUser?.email?.includes('@demo') || 
                            currentUser?.id?.startsWith('demo-') ||
@@ -2222,8 +2232,9 @@ setDemoSupportStaffData: async () => {
                            currentUser?.email?.includes('@bellaire.org') ||
                            currentUser?.email?.includes('@lamarhs.org')
 
-      // For demo accounts, skip ALL Supabase calls and load demo data immediately
+      // Only load demo data for actual demo accounts
       if (isDemoAccount) {
+        // Demo mode - load demo data based on current language
         const lang = get().lang
         const data = lang === 'es' 
           ? {
@@ -2235,7 +2246,7 @@ setDemoSupportStaffData: async () => {
               feed:        DEMO_FEED_ES,
               lessons:     DEMO_LESSONS_ES,
               reminders:   DEMO_REMINDERS_ES,
-              schools:     DEMO_SCHOLES, // Use demo schools
+              schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
             }
           : {
               classes:     DEMO_CLASSES,
@@ -2246,7 +2257,7 @@ setDemoSupportStaffData: async () => {
               feed:        DEMO_FEED,
               lessons:     DEMO_LESSONS,
               reminders:   DEMO_REMINDERS,
-              schools:     DEMO_SCHOLES, // Use demo schools
+              schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
             }
         
         set(state => ({
@@ -2254,44 +2265,26 @@ setDemoSupportStaffData: async () => {
           ...data,
           dbLoaded: true,
           isHydrated: true,
-          dbError: null
+          dbError: schoolsError ? schoolsError.message : null
         }))
-        return // Exit early for demo accounts
+      } else {
+        // Real teacher - load empty data (they'll set up their own classes)
+        set(state => ({
+          ...state,
+          classes: [], // Empty for real teachers
+          students: [],
+          assignments: [],
+          grades: [],
+          messages: [],
+          feed: [],
+          lessons: [],
+          reminders: [],
+          schools: schoolsData || DEMO_SCHOOLS, // Still load schools for validation
+          dbLoaded: true,
+          isHydrated: true,
+          dbError: schoolsError ? schoolsError.message : null
+        }))
       }
-
-      // Only for non-demo accounts: make Supabase calls
-      let schoolsData = []
-      let schoolsError = null
-      
-      // Load schools data from Supabase with timeout
-      const schoolsPromise = supabase
-        .from('schools')
-        .select('*')
-
-      const result = await Promise.race([schoolsPromise, timeoutPromise])
-      schoolsData = result.data
-      schoolsError = result.error
-
-      if (schoolsError) {
-        console.error('Error loading schools:', schoolsError);
-      }
-
-      // For real teacher accounts - load empty data (they'll set up their own classes)
-      set(state => ({
-        ...state,
-        classes: [], // Empty for real teachers
-        students: [],
-        assignments: [],
-        grades: [],
-        messages: [],
-        feed: [],
-        lessons: [],
-        reminders: [],
-        schools: schoolsData || DEMO_SCHOOLS, // Still load schools for validation
-        dbLoaded: true,
-        isHydrated: true,
-        dbError: schoolsError ? schoolsError.message : null
-      }))
     } catch (error) {
       console.error('Error in loadFromDB:', error);
       set(state => ({
