@@ -299,7 +299,7 @@ function LessonView({ lesson, onBack, onEdit }) {
 
 // ─── AI Generator ────────────────────────────────────────────────────────────
 function AIPlanGenerator({ onBack }) {
-  const { currentUser, selectedStandards } = useStore()
+  const { currentUser, selectedStandards, setSelectedStandards } = useStore()
   const [form, setForm] = useState({ textbook:'' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -529,6 +529,10 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
                 maxSelections={3}
                 showRecommendations={true}
                 schoolName={currentUser?.schoolName}
+                onStandardsChange={(standards) => {
+                  setSelectedStandards(standards)
+                  setShowStandards(false)
+                }}
               />
             </div>
           )}
