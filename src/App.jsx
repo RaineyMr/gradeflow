@@ -150,16 +150,28 @@ function LoginRoute() {
    * Handle login: mark as not needing onboarding, navigate to dashboard or onboarding
    */
   function handleLogin(account) {
-    if (!account?.role || !account?.id) return
+    console.log('=== DEBUG: handleLogin called ===')
+    console.log('DEBUG: account:', account)
+    console.log('DEBUG: account.role:', account?.role)
+    console.log('DEBUG: account.id:', account?.id)
+    console.log('DEBUG: account.email:', account?.email)
+    
+    if (!account?.role || !account?.id) {
+      console.log('DEBUG: No role or ID, returning')
+      return
+    }
 
     // Determine if this is a demo account
     const isDemoAccount = account.isDemoAccount === true ||
       account.email?.includes('@demo') ||
       account.id?.startsWith('demo-') ||
+      // Known demo account domains
       account.email?.includes('@kippneworleans.org') ||
       account.email?.includes('@houstonisd.org') ||
       account.email?.includes('@bellaire.org') ||
       account.email?.includes('@lamarhs.org')
+
+    console.log('DEBUG: isDemoAccount:', isDemoAccount)
 
     // Set account with onboarding cleared
     const finalAccount = {
@@ -168,6 +180,8 @@ function LoginRoute() {
       needsOnboarding: false,
       isNewAccount: false,
     }
+
+    console.log('DEBUG: finalAccount:', finalAccount)
 
     setCurrentUser(finalAccount)
     setLang(finalAccount.lang ?? 'en')
@@ -183,11 +197,13 @@ function LoginRoute() {
 
     // Load real teacher data from Supabase
     if (finalAccount.role === 'teacher' && !isDemoAccount) {
+      console.log('DEBUG: Loading teacher data for real account')
       loadTeacherData()
     }
 
     // Navigate to role-specific dashboard
     const homePath = finalAccount.role === 'admin' ? '/admin' : `/${finalAccount.role}`
+    console.log('DEBUG: Navigating to:', homePath)
     navigate(homePath, { replace: true })
   }
 
