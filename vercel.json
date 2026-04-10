@@ -1,1 +1,1 @@
-{"timestamp":"2025-04-10","crons":[{"path":"/api/sync-gradebook","schedule":"0 0 * * *"}]}
+{"crons":[{"path":"/api/sync-gradebook","schedule":"0 0 * * *"}]}
