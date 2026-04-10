@@ -13,7 +13,7 @@ const C = {
   teal:'#0fb8a0', purple:'#9b6ef5',
 }
 
-export default function SupportStaffGroups({ onBack }) {
+export default function SupportStaffGroups() {
   const [showAI, setShowAI] = useState(false)
   const navigate = useNavigate()
   const {
@@ -140,9 +140,9 @@ export default function SupportStaffGroups({ onBack }) {
         padding:'16px 20px', display:'flex', alignItems:'center', gap:16 
       }}>
         <button 
-          onClick={onBack}
-          style={{ 
-            background:C.inner, border:'none', borderRadius:8, 
+          onClick={() => navigate(-1)}
+          style={{
+            background:C.inner, border:'none', borderRadius:8,
             width:36, height:36, color:C.soft, fontSize:18, cursor:'pointer',
             display:'flex', alignItems:'center', justifyContent:'center'
           }}

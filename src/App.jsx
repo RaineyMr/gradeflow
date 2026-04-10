@@ -49,16 +49,6 @@ import CaseConference from '@pages/CaseConference'
 import Crawler from '@pages/Crawler'
 import AppRouter from './appRouter'
 
-// Helpers
-
-/**
- * Wraps a page component and injects onBack handler
- */
-function Page({ Component, backTo, extraProps = {} }) {
-  const navigate = useNavigate()
-  return <Component {...extraProps} onBack={() => navigate(backTo ?? -1)} />
-}
-
 /**
  * Extract role dashboards from store, pass currentUser as prop
  */
@@ -363,25 +353,25 @@ export default function App() {
             {/* Student */}
             <Route element={<ProtectedRoute allowedRoles={['student']} />}>
               <Route path="/student" element={<StudentHome />} />
-              <Route path="/student/widgets" element={<Page Component={Widgets} backTo="/student" />} />
-              <Route path="/student/messages" element={<Page Component={ParentMessages} backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
-              <Route path="/student/feed" element={<Page Component={ClassFeed} backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
+              <Route path="/student/widgets" element={<Widgets />} />
+              <Route path="/student/messages" element={<ParentMessages viewerRole="student" />} />
+              <Route path="/student/feed" element={<ClassFeed viewerRole="student" />} />
             </Route>
 
             {/* Parent */}
             <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
               <Route path="/parent" element={<ParentHome />} />
-              <Route path="/parent/widgets" element={<Page Component={Widgets} backTo="/parent" />} />
-              <Route path="/parent/messages" element={<Page Component={ParentMessages} backTo="/parent" extraProps={{ viewerRole: 'parent' }} />} />
+              <Route path="/parent/widgets" element={<Widgets />} />
+              <Route path="/parent/messages" element={<ParentMessages viewerRole="parent" />} />
             </Route>
 
             {/* Admin */}
             <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
               <Route path="/admin" element={<AdminHome />} />
-              <Route path="/admin/widgets" element={<Page Component={Widgets} backTo="/admin" />} />
-              <Route path="/admin/messages" element={<Page Component={ParentMessages} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
-              <Route path="/admin/feed" element={<Page Component={ClassFeed} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
-              <Route path="/admin/reports" element={<Page Component={Reports} backTo="/admin" />} />
+              <Route path="/admin/widgets" element={<Widgets />} />
+              <Route path="/admin/messages" element={<ParentMessages viewerRole="admin" />} />
+              <Route path="/admin/feed" element={<ClassFeed viewerRole="admin" />} />
+              <Route path="/admin/reports" element={<Reports />} />
             </Route>
 
             {/* Support Staff */}
@@ -392,17 +382,17 @@ export default function App() {
                 <Route path="/supportStaff/insights" element={<SupportStaffInsights />} />
                 <Route path="/supportStaff/collaboration" element={<SupportCollaborationFeed />} />
                 <Route path="/supportStaff/reports" element={<SupportReports />} />
-                <Route path="/supportStaff/groups" element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
-                <Route path="/support/groups" element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
-                <Route path="/supportStaff/trends" element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
-                <Route path="/supportStaff/messages" element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
+                <Route path="/supportStaff/groups" element={<SupportStaffGroups />} />
+                <Route path="/support/groups" element={<SupportStaffGroups />} />
+                <Route path="/supportStaff/trends" element={<StudentTrends />} />
+                <Route path="/supportStaff/messages" element={<ParentMessages viewerRole="supportStaff" />} />
                 <Route path="/support/messages" element={<SupportStaffMessaging />} />
                 <Route path="/support/student/:studentId" element={<SupportStaffStudentProfile />} />
                 <Route path="/support/case/:studentId" element={<CaseConference />} />
-                <Route path="/support/logs" element={<Page Component={SupportStaffNotes} backTo="/supportStaff" />} />
-                <Route path="/support/caseload" element={<Page Component={SupportStaffCaseload} backTo="/supportStaff" />} />
-                <Route path="/supportStaff/notes" element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="notes" />} />
-                <Route path="/supportStaff/studentProfile" element={<Page Component={StudentProfile} backTo="/supportStaff" extraProps={{ readOnly: true }} />} />
+                <Route path="/support/logs" element={<SupportStaffNotes />} />
+                <Route path="/support/caseload" element={<SupportStaffCaseload />} />
+                <Route path="/supportStaff/notes" element={<SupportStaffDashboard subPage="notes" />} />
+                <Route path="/supportStaff/studentProfile" element={<StudentProfile readOnly={true} />} />
               </Route>
             </Route>
 

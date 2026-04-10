@@ -19,7 +19,7 @@ const RISK_LEVELS = {
   low: { label: 'Low Risk', color: C.green, icon: '✅' },
 }
 
-export default function SupportStaffCaseload({ onBack }) {
+export default function SupportStaffCaseload() {
   const [showAI, setShowAI] = useState(false)
   const navigate = useNavigate()
   const {
@@ -168,11 +168,11 @@ export default function SupportStaffCaseload({ onBack }) {
         padding:'16px 20px', display:'flex', alignItems:'center', gap:16 
       }}>
         <button 
-          onClick={onBack}
-          style={{ 
-            background:C.inner, border:'none', borderRadius:8, 
+          onClick={() => navigate(-1)}
+          style={{
+            background:C.inner, border:'none', borderRadius:8,
             width:36, height:36, color:C.soft, fontSize:18, cursor:'pointer',
-            display:'flex', alignItems:'center', justifyContent:'center' 
+            display:'flex', alignItems:'center', justifyContent:'center'
           }}
         >
           ←

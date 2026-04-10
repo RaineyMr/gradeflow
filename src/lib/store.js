@@ -991,6 +991,7 @@ teacher: {
   lessonPlans: [],
   feed:        DEMO_FEED,
   reminders:   DEMO_REMINDERS,
+  calendarLessons: [],
 
   // ── Support Staff Groups (REPLACES Teams) ──────────────────────────────────
   supportStaffGroups: [],
@@ -3822,6 +3823,76 @@ setDemoSupportStaffData: async () => {
     } catch (error) {
       console.error('Error getting case conference history:', error)
       return []
+    }
+  },
+
+  // Lesson Calendar actions
+  fetchCalendarLessons: async (teacherId) => {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('teacher_id', teacherId)
+        .order('lesson_date', { ascending: true })
+      
+      if (error) throw error
+      
+      set({ calendarLessons: data || [] })
+      return data || []
+    } catch (error) {
+      console.error('Error fetching calendar lessons:', error)
+      return []
+    }
+  },
+
+  assignLessonToDate: async (lessonData) => {
+    try {
+      const { currentUser } = get()
+      const lessonWithTeacher = {
+        ...lessonData,
+        teacher_id: currentUser.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      const { data, error } = await supabase
+        .from('lessons')
+        .upsert(lessonWithTeacher)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Update local state
+      set(state => ({
+        calendarLessons: [...state.calendarLessons.filter(l => l.id !== data.id), data]
+      }))
+
+      return data
+    } catch (error) {
+      console.error('Error assigning lesson to date:', error)
+      return null
+    }
+  },
+
+  deleteLessonFromDate: async (lessonId) => {
+    try {
+      const { error } = await supabase
+        .from('lessons')
+        .delete()
+        .eq('id', lessonId)
+
+      if (error) throw error
+
+      // Update local state
+      set(state => ({
+        calendarLessons: state.calendarLessons.filter(l => l.id !== lessonId)
+      }))
+
+      return true
+    } catch (error) {
+      console.error('Error deleting lesson:', error)
+      return false
     }
   },
 
