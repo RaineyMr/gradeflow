@@ -20,7 +20,7 @@ const C = {
 }
 
 // ── Day cell with lessons for that date ────────────────────────────────────
-function DayCell({ date, lessons, isToday, onSelectDay, onAddLesson }) {
+function DayCell({ date, lessons, isToday, onSelectDay, onAddLesson, navigate }) {
   const dateObj = new Date(date)
   const dayNum = dateObj.getDate()
   const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
@@ -85,7 +85,8 @@ function DayCell({ date, lessons, isToday, onSelectDay, onAddLesson }) {
       <button
         onClick={e => {
           e.stopPropagation()
-          onAddLesson(date)
+          const dateStr = typeof date === 'string' ? date : date
+          navigate(`/teacher/lessons?date=${dateStr}&mode=build`)
         }}
         style={{
           position: 'absolute',
@@ -732,6 +733,7 @@ export default function LessonCalendar() {
               isToday={date.toISOString().split('T')[0] === todayKey}
               onSelectDay={handleSelectDay}
               onAddLesson={handleAddLesson}
+              navigate={navigate}
             />
           ) : (
             <div key={`empty-${idx}`} />
