@@ -266,6 +266,7 @@ export default function App() {
       }
     }
 
+    // Always hydrate (marks store as ready)
     setTimeout(() => {
       loadFromDB()
     }, 100)
