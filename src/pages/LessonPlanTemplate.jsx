@@ -1003,4 +1003,3 @@ export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
     </div>
   )
 }
-
