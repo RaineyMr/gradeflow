@@ -8,7 +8,7 @@ const C = {
   amber:'#f5a623', purple:'#9b6ef5', teal:'#0fb8a0', red:'#f04a4a',
 }
 
-function StandardsSelector({ subject, grade, selectedStandards, onChange, topic, schoolName }) {
+function StandardsSelector({ subject, grade, selectedStandards = [], onChange, topic, schoolName }) {
   const [searchQuery, setSearchQuery] = useState('')
   const [showRecommended, setShowRecommended] = useState(!!topic)
   const { standards, recommendedStandards, standardsByCluster, loading, hasData, hasRecommendations } = useStandards({ 
@@ -21,13 +21,13 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
 
   // Auto-select recommended standards when topic changes
   useEffect(() => {
-    if (hasRecommendations && recommendedStandards.length > 0 && topic) {
+    if (hasRecommendations && recommendedStandards?.length > 0 && topic) {
       // Auto-select the top recommended standard if none are selected
-      if (selectedStandards.length === 0) {
+      if (!selectedStandards || selectedStandards.length === 0) {
         onChange([recommendedStandards[0]])
       }
     }
-  }, [recommendedStandards, topic, selectedStandards.length, onChange])
+  }, [recommendedStandards, topic, selectedStandards?.length, onChange])
 
   const standardsSystem = getStandardsSystem(schoolName)
   const systemInfo = {
@@ -37,16 +37,16 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
   }[standardsSystem] || { name: 'Standards', color: C.blue, state: '' }
 
   const handleStandardToggle = (standard) => {
-    const isSelected = selectedStandards.some(s => s.code === standard.code)
+    const isSelected = selectedStandards?.some(s => s.code === standard.code) || false
     if (isSelected) {
-      onChange(selectedStandards.filter(s => s.code !== standard.code))
+      onChange(selectedStandards?.filter(s => s.code !== standard.code) || [])
     } else {
-      onChange([...selectedStandards, standard])
+      onChange([...(selectedStandards || []), standard])
     }
   }
 
   const renderStandard = (standard, isRecommended = false) => {
-    const isSelected = selectedStandards.some(s => s.code === standard.code)
+    const isSelected = selectedStandards?.some(s => s.code === standard.code) || false
     
     return (
       <div
@@ -163,7 +163,7 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
               {systemInfo.state}
             </span>
           )}
-          {selectedStandards.length > 0 && (
+          {(selectedStandards?.length > 0) && (
             <span style={{
               background: `${C.green}20`,
               color: C.green,
@@ -288,7 +288,7 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
       )}
 
       {/* Selected standards summary */}
-      {selectedStandards.length > 0 && (
+      {selectedStandards?.length > 0 && (
         <div style={{ 
           marginTop: 12, 
           padding: '10px', 
@@ -299,7 +299,7 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
           color: C.green
         }}>
           <div style={{ fontWeight: 700, marginBottom: 4 }}>
-            ✅ Selected Standards ({selectedStandards.length})
+            Selected Standards ({selectedStandards.length})
           </div>
           <div style={{ fontSize: 10, lineHeight: 1.4 }}>
             {selectedStandards.map(s => s.code).join(', ')}
