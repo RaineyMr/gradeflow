@@ -1473,12 +1473,17 @@ function BuildFromScratch({ onBack }) {
         ? currentUser.subjects[0] 
         : currentUser.subjects || '';
 
+      // Get selectedDate from URL query params (set by Lesson Calendar)
+      const params = new URLSearchParams(window.location.search)
+      const selectedDate = params.get('date') // e.g., "2025-04-15"
+
       setLessonData(prev => ({
         ...prev,
         header: {
           ...prev.header,
           subject: subject,
           gradeLevel: gradeNum || prev.header.gradeLevel,
+          date: selectedDate || prev.header.date, // ← Pre-fill with calendar date
         }
       }))
     }
