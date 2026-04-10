@@ -479,7 +479,12 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Search TEKS / Common Core Standards</label>
             <button
-              onClick={() => setShowStandards(!showStandards)}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowStandards(!showStandards);
+              }}
               style={{
                 width: '100%',
                 padding: '10px 12px',
