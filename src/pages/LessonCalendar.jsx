@@ -129,7 +129,8 @@ function LessonOptionsModal({ date, onClose, navigate }) {
         inset: 0,
         background: 'rgba(6, 8, 16, 0.8)',
         display: 'flex',
-        alignItems: 'flex-end',
+        alignItems: 'center',
+        justifyContent: 'center',
         zIndex: 1000,
       }}
       onClick={onClose}
@@ -137,11 +138,11 @@ function LessonOptionsModal({ date, onClose, navigate }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%',
-          maxWidth: 600,
+          width: '90%',
+          maxWidth: 500,
           background: C.card,
-          borderRadius: '20px 20px 0 0',
-          padding: '24px',
+          borderRadius: '20px',
+          padding: '32px',
           borderTop: `1px solid ${C.border}`,
         }}
       >
