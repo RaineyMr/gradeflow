@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from './supabase'
+import { pageToHash } from './hashRouter'
 import { demoSupportNotes } from './demoSupportNotes'
 import {
   generateFollowUpReminders,
@@ -2211,18 +2212,7 @@ setDemoSupportStaffData: async () => {
         setTimeout(() => reject(new Error('Database connection timeout')), 3000)
       })
 
-      // Load schools data from Supabase with timeout
-      const schoolsPromise = supabase
-        .from('schools')
-        .select('*')
-
-      const { data: schoolsData, error: schoolsError } = await Promise.race([schoolsPromise, timeoutPromise])
-
-      if (schoolsError) {
-        console.error('Error loading schools:', schoolsError);
-      }
-
-      // Check if current user is a demo account
+      // Check if current user is a demo account BEFORE making Supabase calls
       const currentUser = get().currentUser
       const isDemoAccount = currentUser?.email?.includes('@demo') || 
                            currentUser?.id?.startsWith('demo-') ||
@@ -2231,6 +2221,25 @@ setDemoSupportStaffData: async () => {
                            currentUser?.email?.includes('@houstonisd.org') ||
                            currentUser?.email?.includes('@bellaire.org') ||
                            currentUser?.email?.includes('@lamarhs.org')
+
+      // Only make Supabase calls for non-demo accounts
+      let schoolsData = []
+      let schoolsError = null
+      
+      if (!isDemoAccount) {
+        // Load schools data from Supabase with timeout
+        const schoolsPromise = supabase
+          .from('schools')
+          .select('*')
+
+        const result = await Promise.race([schoolsPromise, timeoutPromise])
+        schoolsData = result.data
+        schoolsError = result.error
+
+        if (schoolsError) {
+          console.error('Error loading schools:', schoolsError);
+        }
+      }
 
       // Only load demo data for actual demo accounts
       if (isDemoAccount) {
