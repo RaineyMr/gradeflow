@@ -2206,10 +2206,17 @@ setDemoSupportStaffData: async () => {
   // ── Load all data from Supabase ─────────────────────────────────────────────
   loadFromDB: async () => {
     try {
-      // Load schools data from Supabase
-      const { data: schoolsData, error: schoolsError } = await supabase
+      // Add timeout to prevent hanging on mobile
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Database connection timeout')), 3000)
+      })
+
+      // Load schools data from Supabase with timeout
+      const schoolsPromise = supabase
         .from('schools')
-        .select('*');
+        .select('*')
+
+      const { data: schoolsData, error: schoolsError } = await Promise.race([schoolsPromise, timeoutPromise])
 
       if (schoolsError) {
         console.error('Error loading schools:', schoolsError);

@@ -300,6 +300,17 @@ export default function App() {
         }
       }
     }, 100)
+
+    // Add timeout fallback to prevent infinite loading on mobile
+    const timeoutId = setTimeout(() => {
+      const { isHydrated: currentHydrated } = useStore.getState()
+      if (!currentHydrated) {
+        console.warn('App hydration timeout - forcing hydration to prevent infinite loading')
+        useStore.setState({ isHydrated: true })
+      }
+    }, 5000) // 5 second timeout
+
+    return () => clearTimeout(timeoutId)
   }, [setCurrentUser, setLang, loadFromDB, loadTeacherData])
 
   if (!isHydrated) {
