@@ -248,15 +248,13 @@ export default function App() {
   // Hydrate auth state on mount
   useEffect(() => {
     const raw = localStorage.getItem('gradeflow_user')
-    console.log('=== DEBUG: App hydration starting ===')
-    
+    let userToSet = null
+
     if (raw) {
       try {
         const user = JSON.parse(raw)
-        console.log('DEBUG: Parsed user from localStorage:', user)
-        
         if (user?.role && user?.id) {
-          console.log('DEBUG: Setting currentUser:', user)
+          userToSet = user
           setCurrentUser(user)
           setLang(user.lang ?? 'en')
           document.documentElement.lang = user.lang ?? 'en'
@@ -266,21 +264,10 @@ export default function App() {
             document.documentElement.style.setProperty('--school-color', primary)
             document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
           }
-
-          // Load demo or real data
-          if (user.isDemoAccount) {
-            console.log('DEBUG: Loading demo data for demo account')
-            loadFromDB()
-          } else if (user.role === 'teacher') {
-            console.log('DEBUG: Loading teacher data for real account')
-            loadTeacherData()
-          }
         } else {
-          console.log('DEBUG: Invalid user, removing from localStorage')
           localStorage.removeItem('gradeflow_user')
         }
-      } catch (error) {
-        console.error('DEBUG: Error parsing user:', error)
+      } catch {
         localStorage.removeItem('gradeflow_user')
       }
     } else {
@@ -291,10 +278,27 @@ export default function App() {
       }
     }
 
-    // Always hydrate (marks store as ready)
+    // Load demo or real data AFTER user is set
+    // Use userToSet directly instead of get().currentUser to avoid race condition
     setTimeout(() => {
-      console.log('DEBUG: Calling loadFromDB to hydrate store')
-      loadFromDB()
+      if (userToSet) {
+        const isDemoAccount = userToSet.email?.includes('@demo') || 
+                               userToSet.id?.startsWith('demo-') ||
+                               userToSet.email?.includes('@kippneworleans.org') ||
+                               userToSet.email?.includes('@houstonisd.org') ||
+                               userToSet.email?.includes('@bellaire.org') ||
+                               userToSet.email?.includes('@lamarhs.org')
+        
+        if (isDemoAccount) {
+          loadFromDB() // Will load demo data
+        } else if (userToSet.role === 'teacher') {
+          loadTeacherData() // Will load teacher data
+        }
+        // If NOT demo, leave data empty (they'll build their classes)
+        else {
+          loadFromDB() // Just hydrate store without loading data
+        }
+      }
     }, 100)
   }, [setCurrentUser, setLang, loadFromDB, loadTeacherData])
 
