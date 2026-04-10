@@ -299,7 +299,7 @@ function LessonView({ lesson, onBack, onEdit }) {
 
 // ─── AI Generator ────────────────────────────────────────────────────────────
 function AIPlanGenerator({ onBack }) {
-  const { currentUser, selectedStandards, clearSelectedStandards } = useStore()
+  const { currentUser, selectedStandards } = useStore()
   const [form, setForm] = useState({ textbook:'' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -309,7 +309,6 @@ function AIPlanGenerator({ onBack }) {
   const students = useStore(s => s.students)
   const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
 
-  // Auto-populate subject and grade from teacher profile
   const subject = currentUser?.subjects?.[0] || 'Math'
   const grade = currentUser?.gradeLevel || '5'
 
@@ -347,10 +346,10 @@ Subject: ${subject}, Grade: ${grade}
 ${standardsText ? `Standards: ${standardsText}` : ''}
 
 Return JSON: {"adjustments": ["specific adjustments for each accommodation type"]}`
-          
+
           const adjResult = safeParseJSON(await callAI(adjPrompt, 'You are an expert special education consultant. Generate practical, specific instructional adjustments for individual students based on their accommodation needs and the current lesson.', 1500))
           if (adjResult?.adjustments) {
-            // setLessonAdjustments(adjResult.adjustments)
+            // Handle adjustments
           }
         } catch (adjErr) {
           console.error('Adjustment generation failed:', adjErr)
@@ -408,130 +407,139 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
   )
 
   return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:100 }}>
       <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>AI Lesson Plan Generator</h1>
 
-      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:16 }}>
-        {/* Auto-populated read-only fields */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-          <div>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Subject</label>
-            <div style={{ 
-              background: C.bg, 
-              border:`1px solid ${C.border}`, 
-              borderRadius:12, 
-              padding:'11px 14px', 
-              color:C.text, 
-              fontSize:13 
-            }}>
-              {subject}
+      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+        {/* 1. LESSON HEADER */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Lesson Header</h2>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Subject *</label>
+              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px', fontSize: 14, color: C.text }}>
+                {subject}
+              </div>
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Grade Level *</label>
+              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px', fontSize: 14, color: C.text }}>
+                {grade}
+              </div>
             </div>
           </div>
+
           <div>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Grade Level</label>
-            <div style={{ 
-              background: C.bg, 
-              border:`1px solid ${C.border}`, 
-              borderRadius:12, 
-              padding:'11px 14px', 
-              color:C.text, 
-              fontSize:13 
-            }}>
-              {grade}
-            </div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Textbook (optional)</label>
+            <input
+              type="text"
+              value={form.textbook}
+              onChange={(e) => setForm(f => ({ ...f, textbook: e.target.value }))}
+              placeholder="Publisher or title..."
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                fontSize: 14,
+                background: C.inner,
+                color: C.text,
+                outline: 'none',
+              }}
+            />
           </div>
         </div>
 
-        {/* Textbook (editable) */}
-        <div style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Textbook (optional)</label>
-          <input
-            value={form.textbook}
-            onChange={e => setForm(f => ({ ...f, textbook: e.target.value }))}
-            placeholder="Publisher or title..."
-            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
-          />
-        </div>
+        {/* 2. STANDARDS */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>2. Standards</h2>
+            <button
+              onClick={handleGenerate}
+              disabled={loading}
+              style={{
+                background: loading ? C.muted : C.purple,
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                opacity: loading ? 0.6 : 1,
+                transition: 'all 0.2s',
+              }}
+            >
+              {loading ? 'Generating...' : 'Generate'}
+            </button>
+          </div>
 
-        {/* STANDARDS SECTION + GENERATE BUTTON */}
-        <div style={{ marginBottom:12, background: C.inner, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted }}>
-              Standards / TEKS (optional)
-            </label>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Search TEKS / Common Core Standards</label>
             <button
               onClick={() => setShowStandards(!showStandards)}
               style={{
-                background: showStandards ? `${C.teal}18` : C.inner,
-                border: `1px solid ${showStandards ? C.teal : C.border}`,
+                width: '100%',
+                padding: '10px 12px',
+                border: `1px solid ${C.blue}`,
+                background: C.inner,
+                color: C.blue,
                 borderRadius: 8,
-                padding: '4px 8px',
-                color: showStandards ? C.teal : C.muted,
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 600,
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
-              {showStandards ? 'Hide' : 'Select'} Standards
+              {showStandards ? 'Hide Picker' : 'Browse Standards'}
             </button>
           </div>
-          
+
           {selectedStandards.length > 0 && (
-            <div style={{ 
-              background: `${C.teal}12`, 
-              border: `1px solid ${C.teal}30`, 
-              borderRadius: 8, 
-              padding: '8px 10px', 
-              marginBottom: 8,
-              fontSize: 12
-            }}>
-              {selectedStandards.length} standard{selectedStandards.length !== 1 ? 's' : ''} selected
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {selectedStandards.map((std, i) => (
+                <span
+                  key={i}
+                  style={{
+                    background: `${C.blue}20`,
+                    color: C.blue,
+                    border: `1px solid ${C.blue}40`,
+                    borderRadius: 6,
+                    padding: '4px 10px',
+                    fontSize: 12,
+                    fontWeight: 600,
+                  }}
+                >
+                  {typeof std === 'string' ? std : std.code}
+                </span>
+              ))}
             </div>
           )}
 
           {showStandards && (
-            <StandardsSelector 
-              topic={form.textbook || `${subject} lesson`}
-              maxSelections={3}
-              showRecommendations={true}
-              schoolName={currentUser?.schoolName}
-            />
+            <div style={{ marginTop: 12 }}>
+              <StandardsSelector
+                topic={form.textbook || `${subject} lesson`}
+                maxSelections={3}
+                showRecommendations={true}
+                schoolName={currentUser?.schoolName}
+              />
+            </div>
           )}
-
-          {/* GENERATE BUTTON (inside Standards section) */}
-          <button 
-            onClick={handleGenerate}
-            disabled={loading}
-            style={{ 
-              width:'100%', 
-              background: loading ? C.muted : 'var(--school-color)', 
-              color:'#fff', 
-              border:'none', 
-              borderRadius:999, 
-              padding:'12px', 
-              fontSize:14, 
-              fontWeight:800, 
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-              marginTop: 12
-            }}>
-            {loading ? ' Generating...' : ' Generate Lesson Plan'}
-          </button>
         </div>
 
+        {error && <p style={{ color: C.red, fontSize: 12 }}>{error}</p>}
+
         {accommodationStudents.length > 0 && (
-          <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
+          <div style={{ background: `${C.purple}12`, border: `1px solid ${C.purple}30`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: C.purple }}>
             {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations adjustments will be auto-generated after the lesson plan.
           </div>
         )}
-
-        {error && <p style={{ color:C.red, fontSize:12 }}>{error}</p>}
       </div>
     </div>
   )
 }
-
 // ─── Build from Scratch ───────────────────────────────────────────────────────
 
 // ─── AI Assist Button Component ────────────────────────────────────────────
