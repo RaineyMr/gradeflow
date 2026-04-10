@@ -404,7 +404,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 
   if (plan) return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
+      <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
       <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{form.subject} · {form.grade} · {form.topic}</p>
 
@@ -434,7 +434,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
       {/* Accommodations section */}
       {generatingAdjust && (
         <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
-          ✨ Generating lesson adjustments for {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''}...
+          Generating lesson adjustments for {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''}...
         </div>
       )}
       <AccommodationsSection
@@ -447,25 +447,12 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>✨ AI Lesson Plan Generator</h1>
+      <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
+      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>AI Lesson Plan Generator</h1>
 
       <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:16 }}>
         {/* Auto-populated fields - read-only */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-          <div>
-            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>State/Region</label>
-            <div style={{ 
-              background: C.bg, 
-              border:`1px solid ${C.border}`, 
-              borderRadius:12, 
-              padding:'11px 14px', 
-              color:C.text, 
-              fontSize:13 
-            }}>
-              {form.state || 'Not detected'}
-            </div>
-          </div>
           <div>
             <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Subject</label>
             <div style={{ 
@@ -479,19 +466,18 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
               {form.subject || 'Not set in profile'}
             </div>
           </div>
-        </div>
-
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Grade Level</label>
-          <div style={{ 
-            background: C.bg, 
-            border:`1px solid ${C.border}`, 
-            borderRadius:12, 
-            padding:'11px 14px', 
-            color:C.text, 
-            fontSize:13 
-          }}>
-            {form.grade || 'Not set in profile'}
+          <div>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Grade Level</label>
+            <div style={{ 
+              background: C.bg, 
+              border:`1px solid ${C.border}`, 
+              borderRadius:12, 
+              padding:'11px 14px', 
+              color:C.text, 
+              fontSize:13 
+            }}>
+              {form.grade || 'Not set in profile'}
+            </div>
           </div>
         </div>
 
@@ -521,8 +507,10 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
           />
         </div>
 
-        {/* Standards Selection */}
-        <div style={{ marginBottom:12 }}>
+        {/* 
+// STANDARDS SECTION + GENERATE BUTTON (moved here)
+// */}
+        <div style={{ marginBottom:12, background: C.inner, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted }}>
               Standards / TEKS {!form.topic && <span style={{ color: C.amber }}>(Enter topic first)</span>}
@@ -569,18 +557,33 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
           )}
         </div>
 
+        {/*  GENERATE BUTTON (moved to Standards section) */}
+        <button 
+          onClick={handleGenerate}
+          disabled={loading || !form.topic.trim()}
+          style={{ 
+            width:'100%', 
+            background: loading || !form.topic.trim() ? C.muted : 'var(--school-color)', 
+            color:'#fff', 
+            border:'none', 
+            borderRadius:999, 
+            padding:'12px', 
+            fontSize:14, 
+            fontWeight:800, 
+            cursor: loading || !form.topic.trim() ? 'not-allowed' : 'pointer',
+            opacity: loading || !form.topic.trim() ? 0.6 : 1,
+            marginTop: 12
+          }}>
+          {loading ? ' Generating...' : ' Generate Lesson Plan'}
+        </button>
+
         {accommodationStudents.length > 0 && (
           <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
-            ✨ {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations — adjustments will be auto-generated after the lesson plan.
+            {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations adjustments will be auto-generated after the lesson plan.
           </div>
         )}
 
         {error && <p style={{ color:C.red, fontSize:12, marginBottom:12 }}>{error}</p>}
-
-        <button onClick={handleGenerate}
-          style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
-          ✨ Generate Lesson Plan
-        </button>
       </div>
     </div>
   )
