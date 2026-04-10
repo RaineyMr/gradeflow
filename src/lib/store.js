@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from './supabase'
 import { demoSupportNotes } from './demoSupportNotes'
-import { pageToHash } from './hashRouter'
 import {
   generateFollowUpReminders,
   generateRiskTriggeredTasks,
@@ -9,7 +8,7 @@ import {
   generateCaseloadAlerts,
   generateGroupMaintenanceSuggestions,
   generateMeetingPrepPacket,
-  generateWeeklySummary
+  generateWeeklySummary,
 } from './automationEngine'
 
 // ─── Fallback Demo Data (used if Supabase is unreachable) ─────────────────────
