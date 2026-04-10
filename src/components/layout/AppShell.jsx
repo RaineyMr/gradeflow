@@ -191,9 +191,90 @@ export default function AppShell() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#060810', color: '#eef0f8', overflowX: 'hidden' }}>
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-header {
+            height: 56px !important;
+            padding: 0 12px !important;
+          }
+          .mobile-logo {
+            font-size: 11px !important;
+            padding: 1px 4px !important;
+          }
+          .mobile-school-name {
+            font-size: 11px !important;
+          }
+          .mobile-user-info {
+            font-size: 9px !important;
+          }
+          .mobile-right-section {
+            gap: 6px !important;
+          }
+          .mobile-left-section {
+            gap: 8px !important;
+          }
+          .mobile-lang-toggle {
+            padding: 3px 6px !important;
+            font-size: 9px !important;
+          }
+          .mobile-camera-btn {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 14px !important;
+          }
+          .mobile-hamburger {
+            width: 32px !important;
+            height: 32px !important;
+          }
+          .mobile-hamburger-line {
+            width: 14px !important;
+            height: 1.5px !important;
+          }
+          .mobile-dropdown {
+            width: 200px !important;
+          }
+          .mobile-dropdown-user-info {
+            padding: 10px 12px !important;
+          }
+          .mobile-dropdown-user-name {
+            font-size: 11px !important;
+          }
+          .mobile-dropdown-school {
+            font-size: 9px !important;
+          }
+          .mobile-lang-badge {
+            padding: 1px 6px !important;
+          }
+          .mobile-lang-flag {
+            font-size: 9px !important;
+          }
+          .mobile-lang-text {
+            font-size: 8px !important;
+          }
+          .mobile-section-header {
+            padding: 6px 12px 3px !important;
+            font-size: 8px !important;
+          }
+          .mobile-menu-item {
+            padding: 8px 12px !important;
+            gap: 8px !important;
+            font-size: 11px !important;
+          }
+          .mobile-main-content {
+            padding-top: 56px !important;
+          }
+          .mobile-sync-btn {
+            padding: 2px 6px !important;
+            font-size: 10px !important;
+          }
+          .mobile-sync-gap {
+            gap: 4px !important;
+          }
+        }
+      `}</style>
 
       {/* ── Sticky header ────────────────────────────────────────────────── */}
-      <header style={{
+      <header className="mobile-header" style={{
         position:       'fixed',
         top:            0,
         left:           0,
@@ -211,12 +292,12 @@ export default function AppShell() {
       }}>
 
         {/* Left: GradeFlow home + school name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="mobile-left-section" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
             onClick={homeClick}
             title="Go to home dashboard"
             type="button"
-            style={{
+            className="mobile-logo" style={{
               fontSize: 13,
               fontWeight: 900,
               color: '#eef0f8',
@@ -232,23 +313,23 @@ export default function AppShell() {
           </button>
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontWeight: 800, fontSize: 13, color: '#eef0f8', lineHeight: 1.2 }}>
+            <span className="mobile-school-name" style={{ fontWeight: 800, fontSize: 13, color: '#eef0f8', lineHeight: 1.2 }}>
               {currentUser.schoolName}
             </span>
-            <span style={{ fontSize: 10, color: theme.muted ?? '#6b7494' }}>
+            <span className="mobile-user-info" style={{ fontSize: 10, color: theme.muted ?? '#6b7494' }}>
               {currentUser.userName} · {roleLabel}
             </span>
           </div>
         </div>
 
         {/* Right: lang toggle + camera + hamburger */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="mobile-right-section" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
           {/* Language pill */}
           <button
             onClick={handleToggleLang}
             title={isEs ? 'Switch to English' : 'Cambiar a Español'}
-            style={{
+            className="mobile-lang-toggle" style={{
               padding:      '5px 10px',
               borderRadius: 999,
               background:   isEs ? 'rgba(249,115,22,0.18)' : 'rgba(37,99,235,0.18)',
@@ -268,7 +349,7 @@ export default function AppShell() {
             onClick={handleCameraClick}
             title="Open Camera"
             type="button"
-            style={{
+            className="mobile-camera-btn" style={{
               width:        38,
               height:       38,
               borderRadius: '50%',
@@ -296,7 +377,7 @@ export default function AppShell() {
             <button
               onClick={() => setMenuOpen(o => !o)}
               aria-label="Open menu"
-              style={{
+              className="mobile-hamburger" style={{
                 width:        38,
                 height:       38,
                 borderRadius: 10,
@@ -311,7 +392,7 @@ export default function AppShell() {
               }}
             >
               {[0, 1, 2].map(i => (
-                <span key={i} style={{
+                <span key={i} className="mobile-hamburger-line" style={{
                   display:      'block',
                   width:        16,
                   height:       2,
@@ -330,7 +411,7 @@ export default function AppShell() {
                   onClick={() => setMenuOpen(false)}
                 />
 
-                <div style={{
+                <div className="mobile-dropdown" style={{
                   position:   'absolute',
                   top:        44,
                   right:      0,
@@ -351,13 +432,13 @@ export default function AppShell() {
                     borderBottom: '1px solid #1e2231',
                     background:   theme.soft ?? '#1e2231',
                   }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#eef0f8' }}>
+                    <div className="mobile-dropdown-user-name" style={{ fontSize: 13, fontWeight: 800, color: '#eef0f8' }}>
                       {currentUser.userName}
                     </div>
-                    <div style={{ fontSize: 11, color: theme.muted ?? '#6b7494' }}>
+                    <div className="mobile-dropdown-school" style={{ fontSize: 11, color: theme.muted ?? '#6b7494' }}>
                       {currentUser.schoolName} · {roleLabel}
                     </div>
-                    <div style={{
+                    <div className="mobile-lang-badge" style={{
                       marginTop:   6,
                       display:     'inline-flex',
                       alignItems:  'center',
@@ -366,7 +447,7 @@ export default function AppShell() {
                       borderRadius:999,
                       padding:     '2px 8px',
                     }}>
-                      <span style={{ fontSize: 11 }}>{isEs ? '🇲🇽' : '🇺🇸'}</span>
+                      <span className="mobile-lang-flag" style={{ fontSize: 11 }}>{isEs ? '🇲🇽' : '🇺🇸'}</span>
                       <span style={{
                         fontSize:   10,
                         fontWeight: 700,
@@ -381,7 +462,7 @@ export default function AppShell() {
                   {dropdownSections.map((section, si) => (
                     <div key={si}>
                       {section.label && (
-                        <div style={{
+                        <div className="mobile-section-header" style={{
                           padding:       '8px 16px 4px',
                           fontSize:      9,
                           fontWeight:    700,
@@ -397,7 +478,7 @@ export default function AppShell() {
                         <button
                           key={ii}
                           onClick={item.action}
-                          style={{
+                          className="mobile-menu-item" style={{
                             width:      '100%',
                             textAlign:  'left',
                             padding:    '10px 16px',
@@ -433,7 +514,7 @@ export default function AppShell() {
       </header>
 
       {/* ── Page content ─────────────────────────────────────────────────── */}
-      <main style={{ paddingTop: 64 }}>
+      <main className="mobile-main-content" style={{ paddingTop: 64 }}>
         <Outlet />
       </main>
     </div>
