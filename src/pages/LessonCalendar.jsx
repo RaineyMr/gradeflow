@@ -178,7 +178,10 @@ function LessonOptionsModal({ date, onClose, navigate }) {
             <button
               key={item.id}
               onClick={() => {
-                navigate(`/teacher/lessons?date=${dateStr}&mode=${item.id}`)
+                onClose()
+                setTimeout(() => {
+                  navigate(`/teacher/lessons?date=${dateStr}&mode=${item.id}`)
+                }, 100)
               }}
               style={{
                 width: '100%',

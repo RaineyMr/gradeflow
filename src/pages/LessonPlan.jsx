@@ -1743,8 +1743,20 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   const { goBack, getTodayLesson } = useStore()
   const handleBack  = onBack || goBack
   const todayLesson = classId ? getTodayLesson(classId) : null
-  const startMode   = initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu')
+  
+  // Read mode from URL query params (set by Lesson Calendar)
+  const params = new URLSearchParams(window.location.search)
+  const urlMode = params.get('mode') // e.g., "ai", "build", "upload"
+  
+  const startMode   = urlMode || (initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu'))
   const [mode, setMode] = useState(startMode)
+
+  // Watch for URL mode changes and update state
+  useEffect(() => {
+    if (urlMode && urlMode !== mode) {
+      setMode(urlMode)
+    }
+  }, [urlMode, mode])
 
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
   if (mode === 'ai')     return <AIPlanGenerator   onBack={() => setMode('menu')} />
