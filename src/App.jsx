@@ -252,24 +252,29 @@ export default function App() {
       try {
         const user = JSON.parse(raw)
         if (user?.role && user?.id) {
-          setCurrentUser(user)
-          setLang(user.lang ?? 'en')
-          document.documentElement.lang = user.lang ?? 'en'
+          setCurrentUser(user)  // Set user immediately
+          try {
+            setLang(user.lang ?? 'en')
+            document.documentElement.lang = user.lang ?? 'en'
 
-          const { primary, secondary } = user.theme ?? {}
-          if (primary) {
-            document.documentElement.style.setProperty('--school-color', primary)
-            document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
-          }
+            const { primary, secondary } = user.theme ?? {}
+            if (primary) {
+              document.documentElement.style.setProperty('--school-color', primary)
+              document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
+            }
 
-          // Load demo or real data
-          if (user.isDemoAccount) {
-            loadFromDB()
-          } else if (user.role === 'teacher') {
-            loadTeacherData()
+            // Load demo or real data
+            if (user.isDemoAccount) {
+              loadFromDB()
+            } else if (user.role === 'teacher') {
+              loadTeacherData()
+            }
+          } catch {
+            // Ignore theme errors
           }
         } else {
-          localStorage.removeItem('gradeflow_user')
+          // No valid user, hydrate store without data
+          setTimeout(() => loadFromDB(), 100)
         }
       } catch {
         localStorage.removeItem('gradeflow_user')
