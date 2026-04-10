@@ -590,26 +590,24 @@ function BuildFromScratch({ onBack }) {
         {/* STANDARDS */}
         {activeSection === 'standards' && (
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>Standards</h2>
-              <button onClick={() => setShowPicker(!showPicker)} style={{ background: C.blue, border: 'none', borderRadius: 6, padding: '6px 12px', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
-                {showPicker ? 'Hide' : 'Select'} Standards
-              </button>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Standards</h2>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
+                Search TEKS / Common Core Standards
+              </label>
             </div>
 
-            {showPicker && (
-              <StandardsSelector
-                subject={data.subject}
-                grade={data.gradeLevel}
-                selectedStandards={data.standards || []}
-                topic={data.title}
-                schoolName="GradeFlow"
-                onChange={(standards) => {
-                  onChange('standards', standards)
-                  setShowPicker(false)
-                }}
-              />
-            )}
+            <StandardsSelector
+              subject={data.subject}
+              grade={data.gradeLevel}
+              selectedStandards={data.standards || []}
+              topic={data.title}
+              schoolName="GradeFlow"
+              onChange={(standards) => {
+                onChange('standards', standards)
+              }}
+            />
 
             {data.standards && data.standards.length > 0 && (
               <div style={{ marginTop: 12 }}>
