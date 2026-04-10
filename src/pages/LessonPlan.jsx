@@ -1736,8 +1736,9 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
             <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>{item.label}</div>
             <div style={{ fontSize:11, color:C.muted }}>{item.desc}</div>
           </div>
-          <span style={{ marginLeft:'auto', color:C.muted, fontSize:18 }}>›</span>
+          <span style={{ marginLeft:'auto', color:C.muted, fontSize:18 }}>{'>'}</span>
         </button>
       ))}
     </div>
   )
+}
