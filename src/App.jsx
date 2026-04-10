@@ -84,7 +84,7 @@ function TeacherHome() {
                         currentUser?.email?.includes('@lamarhs.org')
   // Real accounts have timestamp-based IDs from registration
   const isRealAccount = currentUser?.id?.startsWith('new-')
-  const DashboardComponent = isRealAccount ? WorkingDashboard : Dashboard
+  const DashboardComponent = isDemoAccount ? Dashboard : WorkingDashboard
   
   return <DashboardComponent currentUser={currentUser} /> 
 }
