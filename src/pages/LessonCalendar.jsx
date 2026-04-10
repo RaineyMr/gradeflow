@@ -85,7 +85,8 @@ function DayCell({ date, lessons, isToday, onSelectDay, onAddLesson }) {
       <button
         onClick={e => {
           e.stopPropagation()
-          onAddLesson(date)
+          const dateStr = typeof date === 'string' ? date : date
+          navigate(`/teacher/lessons?date=${dateStr}&mode=build`)
         }}
         style={{
           position: 'absolute',
