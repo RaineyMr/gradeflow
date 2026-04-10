@@ -1,407 +1,439 @@
-import React, { useEffect } from 'react'
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Outlet } from 'react-router-dom'
 import { useStore } from '@lib/store'
+import { useT } from '@lib/i18n'
 import { useHashRouter } from '@hooks/useHashRouter'
-import { initializeRouter, pageToHash } from '@lib/hashRouter'
-import { SchoolThemeProvider } from '@components/SchoolThemeProvider_Enhanced'
+import { GradebookSyncButton } from '@components/GradebookSyncButton.jsx'
 
-// ── Layout & guards ───────────────────────────────────────────────────────────
-import AppShell      from '@components/layout/AppShell'
-import MobileLayout  from '@layouts/MobileLayout'
-import SupportStaffLayoutWrapper from '@components/layout/SupportStaffLayoutWrapper'
-import ProtectedRoute from './router/ProtectedRoute'
-
-// ── Pages ─────────────────────────────────────────────────────────────────────
-import Login from '@pages/Login'
-import TeacherOnboarding from '@pages/TeacherOnboarding'
-import CurriculumOnboarding from '@pages/CurriculumOnboarding'
-import WorkingDashboard from '@pages/Dashboard_Working'
-import AdminDashboard from '@pages/AdminDashboard'
-import Dashboard from '@pages/Dashboard'
-import Gradebook from '@pages/Gradebook'
-import LessonPlan from '@pages/LessonPlan'
-import LessonPlanTemplate from '@pages/LessonPlanTemplate'
-import ParentDashboard from '@pages/ParentDashboard'
-import ParentMessages from '@pages/ParentMessages'
-import Reports from '@pages/Reports'
-import StudentDashboard from '@pages/StudentDashboard'
-import StudentProfile from '@pages/StudentProfile'
-import StudentTrends from '@pages/StudentTrends'
-import SupportStaffDashboard from '@pages/SupportStaffDashboard'
-import TestingSuite from '@pages/TestingSuite'
-import Widgets from '@pages/Widgets'
-import ClassFeed from '@pages/ClassFeed'
-import Integrations from '@pages/Integrations'
-import Camera          from '@pages/Camera'
-import ClassCreation   from '@pages/ClassCreation'
-import Tutorials       from '@pages/Tutorials'
-import ProfileSettings from '@components/ProfileSettings'
-import SupportStaffGroupScreen from '@pages/SupportStaffGroupScreen'
-import SupportStaffMessaging from '@components/support/SupportStaffMessaging'
-import SupportStaffStudentProfile from '@components/support/SupportStaffStudentProfile'
-import SupportStaffHomeFeed from '@components/support/SupportStaffHomeFeed'
-import SupportStaffGroups from '@components/support/SupportStaffGroups'
-import SupportStaffNotes from '@components/support/SupportStaffNotes'
-import SupportStaffCaseload from '@components/support/SupportStaffCaseload'
-import SupportStaffAI from '@pages/SupportStaffAI'
-import SupportStaffInsights from '@pages/SupportStaffInsights'
-import SupportCollaborationFeed from '@pages/SupportCollaborationFeed'
-import SupportReports from '@pages/SupportReports'
-import CaseConference from '@pages/CaseConference'
-import Crawler from '@pages/Crawler'
-import AppRouter from './appRouter'
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * Wraps a page component and injects:
- *   onBack    →  navigate(backTo)   (falls back to browser history -1)
- *   + any extraProps you pass in
- *
- * Keeps all page components free from direct router imports.
- */
-function Page({ Component, backTo, extraProps = {} }) {
-  const navigate = useNavigate()
-  return <Component {...extraProps} onBack={() => navigate(backTo ?? -1)} />
+const ROLE_LABELS = {
+  teacher: 'Teacher',
+  student: 'Student',
+  parent:  'Parent',
+  admin:   'Admin',
 }
 
-/**
- * Tiny wrappers that pull currentUser from the store and pass it
- * to role dashboards that still expect it as a prop.
- */
-function TeacherHome()  { 
-  const currentUser = useStore(s => s.currentUser)
-  const navigate = useNavigate()
-  
-  console.log('TeacherHome - currentUser:', currentUser)
-  console.log('TeacherHome - needsOnboarding:', currentUser?.needsOnboarding)
-  console.log('TeacherHome - isNewAccount:', currentUser?.isNewAccount)
-  
-  // Check if new teacher needs onboarding
-  if (currentUser?.needsOnboarding && currentUser?.isNewAccount) {
-    console.log('Redirecting to onboarding')
-    // Use React Router navigate instead of window.location.hash
-    navigate('/teacher/onboarding', { replace: true })
-    return null
-  }
-  
-  console.log('Rendering dashboard')
-  console.log('Teacher account info:', {
-    email: currentUser?.email,
-    id: currentUser?.id,
-    isRealAccount: currentUser?.id?.startsWith('new-'),
-    isDemoAccount: currentUser?.email?.includes('@demo') || 
-                   currentUser?.id?.startsWith('demo-') ||
-                   currentUser?.email?.includes('@kippneworleans.org') ||
-                   currentUser?.email?.includes('@houstonisd.org') ||
-                   currentUser?.email?.includes('@bellaire.org') ||
-                   currentUser?.email?.includes('@lamarhs.org')
-  })
-  
-  // Use working dashboard for real users, demo dashboard for demo accounts
-  // Demo accounts: predefined demo emails OR demo- prefix IDs
-  // Real accounts: newly created accounts with timestamp IDs
-  const isDemoAccount = currentUser?.email?.includes('@demo') || 
-                        currentUser?.id?.startsWith('demo-') ||
-                        // Known demo account domains
-                        currentUser?.email?.includes('@kippneworleans.org') ||
-                        currentUser?.email?.includes('@houstonisd.org') ||
-                        currentUser?.email?.includes('@bellaire.org') ||
-                        currentUser?.email?.includes('@lamarhs.org')
-  // Real accounts have timestamp-based IDs from registration
-  const isRealAccount = currentUser?.id?.startsWith('new-')
-  const DashboardComponent = isRealAccount ? WorkingDashboard : Dashboard
-  
-  console.log('Dashboard component selected:', isRealAccount ? 'WorkingDashboard' : 'Dashboard')
-  
-  return <DashboardComponent currentUser={currentUser} /> 
-}
-function StudentHome()  { const u = useStore(s => s.currentUser); return <StudentDashboard currentUser={u} /> }
-function ParentHome()   { const u = useStore(s => s.currentUser); return <ParentDashboard  currentUser={u} /> }
-function AdminHome()    { const u = useStore(s => s.currentUser); return <AdminDashboard   currentUser={u} /> }
-function SupportStaffHome() { const u = useStore(s => s.currentUser); return <SupportStaffDashboard currentUser={u} /> }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Public routes
-// ─────────────────────────────────────────────────────────────────────────────
-
-/** / → dashboard if authed, login if not */
-function RootRedirect() {
-  // Always open landing/login first, regardless of persisted session.
-  // Authenticated users can still be redirected via /login route behavior.
-  return <Navigate to="/login" replace />
+// Pages available per role in the hamburger dropdown
+const PAGES_BY_ROLE = {
+  teacher: [
+    { icon: '📚', label: 'Gradebook',     path: '/teacher/gradebook'    },
+    { icon: '📋', label: 'Lesson Plans',  path: '/teacher/lessons'      },
+    { icon: '💬', label: 'Messages',      path: '/teacher/messages'     },
+    { icon: '📊', label: 'Reports',       path: '/teacher/reports'      },
+    { icon: '🧪', label: 'Testing Suite', path: '/teacher/testing'      },
+    { icon: '📢', label: 'Class Feed',    path: '/teacher/feed'         },
+    { icon: '🔗', label: 'Integrations',  path: '/teacher/integrations' },
+  ],
+  student: [
+    { icon: '💬', label: 'Messages',  path: '/student/messages' },
+    { icon: '📢', label: 'Class Feed', path: '/student/feed'    },
+  ],
+  parent: [
+    { icon: '💬', label: 'Messages', path: '/parent/messages' },
+  ],
+  admin: [
+    { icon: '📊', label: 'Reports',    path: '/admin/reports'   },
+    { icon: '💬', label: 'Messages',   path: '/admin/messages'  },
+    { icon: '📢', label: 'Class Feed', path: '/admin/feed'      },
+  ],
+  supportStaff: [
+    { icon: '👥', label: 'Groups', path: '/supportStaff/groups' },
+    { icon: '📊', label: 'Trends', path: '/supportStaff/trends' },
+    { icon: '💬', label: 'Messages', path: '/supportStaff/messages' },
+    { icon: '📝', label: 'Notes', path: '/supportStaff/notes' },
+  ],
 }
 
-/** /login → always show Login page */
-function LoginRoute() {
-  const navigate  = useNavigate()
-  const { navigateToPage } = useHashRouter()
-  const { isHydrated } = useStore(s => ({ isHydrated: s.isHydrated }))
-  const { setCurrentUser, setLang } = useStore()
+export default function AppShell() {
+  const { navigateToPage, navigateToHome } = useHashRouter()
+  const t = useT()
+  const { currentUser, setCurrentUser, setLang, isHydrated } = useStore()
 
-  if (!isHydrated) {
-    return (
-      <div style={{
-        minHeight: '100vh',
-        background: '#060810',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#eef0f8',
-        fontFamily: 'Inter, Arial, sans-serif',
-      }}>
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
-          <div style={{ fontSize: 18, marginBottom: 32 }}>Loading GradeFlow...</div>
-          <div style={{ width: 40, height: 40, border: '3px solid #1e2231', borderTop: '3px solid #f97316', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
-          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        </div>
-      </div>
-    )
-  }
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
 
-  // Invalid persisted user → clear
+  // Close dropdown on outside click
   useEffect(() => {
-    const raw = localStorage.getItem('gradeflow_user')
-    if (raw) {
-      try {
-        const user = JSON.parse(raw)
-        if (!user?.role) {
-          localStorage.removeItem('gradeflow_user')
-          setCurrentUser(null)
-        }
-      } catch {
-        localStorage.removeItem('gradeflow_user')
-        setCurrentUser(null)
+    function onClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false)
       }
     }
-  }, [setCurrentUser])
-
-  function handleLogin(account) {
-    if (!account?.role) return
-    setCurrentUser(account)
-    setLang(account.lang ?? 'en')
-    localStorage.setItem('gradeflow_user', JSON.stringify(account))
-    document.documentElement.lang = account.lang ?? 'en'
-    
-    // Reset browser history and navigate to role-specific dashboard
-    useStore.getState().resetToHome()
-    
-    // Check if new account needs onboarding
-    if (account.isNewAccount && account.needsOnboarding && account.role === 'teacher') {
-      // Navigate to onboarding for new teachers
-      navigate('/teacher/onboarding')
-    } else {
-      // Navigate to the correct role-specific home path
-      const homePath = account.role === 'admin' ? '/admin' : `/${account.role}`
-      navigate(homePath)
-    }
-  }
-
-  return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={null} />
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// App — route tree
-// ─────────────────────────────────────────────────────────────────────────────
-
-function Loading() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #060810 0%, #0a0f1e 100%)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      color: '#eef0f8',
-      fontFamily: 'Inter, Arial, sans-serif',
-    }}>
-      <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
-      <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 12 }}>GradeFlow</div>
-      <div style={{ fontSize: 14, color: '#6b7494', marginBottom: 32 }}>Loading your dashboard...</div>
-      <div style={{
-        width: 40,
-        height: 40,
-        border: '3px solid rgba(249,115,22,0.2)',
-        borderTop: '3px solid #f97316',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-      }} />
-      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-    </div>
-  )
-}
-
-export default function App() {
-  const { loadFromDB, setCurrentUser, setLang, isHydrated, page, currentUser } = useStore()
-
-  // Rehydrate auth session + apply school CSS vars on first load
-  useEffect(() => {
-    const raw = localStorage.getItem('gradeflow_user')
-    console.log('App useEffect - loading user from localStorage:', raw)
-    if (raw) {
-      try {
-        const user = JSON.parse(raw)
-        console.log('App useEffect - parsed user:', user)
-        setCurrentUser(user)
-        setLang(user.lang ?? 'en')
-        document.documentElement.lang = user.lang ?? 'en'
-
-        const { primary, secondary } = user.theme ?? {}
-        if (primary) {
-          document.documentElement.style.setProperty('--school-color',     primary)
-          document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
-        }
-      } catch {
-        localStorage.removeItem('gradeflow_user')
-        console.log('Cleared invalid localStorage user')
-      }
-    } else {
-      // No saved user, but check for saved language preference
-      const savedLang = localStorage.getItem('gradeflow_lang')
-      if (savedLang) {
-        setLang(savedLang)
-        document.documentElement.lang = savedLang
-      }
-    }
-    
-    // Load database after user state is set
-    setTimeout(() => {
-      loadFromDB()
-    }, 100)
-  }, [setCurrentUser, setLang])
-
-  // Initialize hash router on app mount
-  useEffect(() => {
-    const cleanup = initializeRouter(useStore)
-    return cleanup
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
 
-  // Sync page state changes back to hash (only if authenticated)
-  useEffect(() => {
-    if (!currentUser) return // Don't sync hash if not authenticated
-    
-    const role = currentUser?.role || null
-    const hash = pageToHash(page, role)
+  // Derive theme; fall back to GradeFlow orange/blue if no school theme
+  const theme = useMemo(() => currentUser?.theme ?? {
+    primary:   '#f97316',
+    secondary: '#2563EB',
+    border:    '#1e2231',
+    muted:     '#6b7494',
+    soft:      'rgba(249,115,22,0.14)',
+  }, [currentUser])
 
-    if (window.location.hash !== hash) {
-      window.history.replaceState({ page, role }, '', hash)
+  if (!currentUser) {
+    if (isHydrated) {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          background: '#060810',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#eef0f8',
+          fontFamily: 'Inter, Arial, sans-serif',
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
+            <div style={{ fontSize: 18, marginBottom: 16 }}>Session expired</div>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                background: 'linear-gradient(135deg, #f97316, #2563EB)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 999,
+                padding: '12px 24px',
+                fontSize: 14,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              Reload to login
+            </button>
+          </div>
+        </div>
+      )
     }
-  }, [page, currentUser])
-
-  if (!isHydrated) {
-    return <Loading />
+    return null
   }
 
+  const isEs       = (currentUser.lang || 'en') === 'es'
+  const roleLabel  = ROLE_LABELS[currentUser.role] ?? 'User'
+  const rolePages  = PAGES_BY_ROLE[currentUser.role] ?? []
+  const roleHomePath = currentUser.role === 'admin' ? '/admin' : `/${currentUser.role}`
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  function handleLogout() {
+    localStorage.removeItem('gradeflow_user')
+    setCurrentUser(null)
+    setMenuOpen(false)
+    navigateToPage('login')
+  }
+
+  function handleToggleLang() {
+    const newLang = isEs ? 'en' : 'es'
+    const updated = { ...currentUser, lang: newLang }
+    setCurrentUser(updated)
+    setLang(newLang)
+    localStorage.setItem('gradeflow_user', JSON.stringify(updated))
+    document.documentElement.lang = newLang
+  }
+
+  function goTo(path) {
+    // Extract page from path for hash router
+    const segments = path.split('/').filter(Boolean)
+    const page = segments[segments.length - 1] || 'home'
+    const role = segments[0] || currentUser?.role
+    
+    navigateToPage(page, role)
+    setMenuOpen(false)
+  }
+
+  function homeClick() {
+    setMenuOpen(false)
+    navigateToHome()
+  }
+
+  function handleCameraClick() {
+    setMenuOpen(false)
+    // Navigate to camera page using the same pattern as other pages
+    goTo('/teacher/camera')
+  }
+
+  // ── Dropdown sections ─────────────────────────────────────────────────
+
+  const dropdownSections = [
+    {
+      label: t('account_section'),
+      items: [
+        { icon: '👤', label: t('profile_settings'),                          action: () => goTo('/profile') },
+        { icon: '🔄', label: t('switch_account'),                            action: handleLogout },
+        { icon: isEs ? '🇺🇸' : '🇲🇽',
+          label: isEs ? 'Switch to English' : 'Cambiar a Español',
+          action: handleToggleLang },
+      ],
+    },
+    {
+      label: t('app_section'),
+      items: [
+        { icon: '🎥', label: t('tutorials_menu'), action: () => goTo('/tutorials') },
+        { icon: '🧩', label: 'Widgets', action: () => goTo(`/${currentUser.role}/widgets`) },
+        { icon: '🏠', label: t('dashboard_menu'), action: () => goTo(`/${currentUser.role}`) },
+      ],
+    },
+    {
+      label: t('pages_section'),
+      items: rolePages.map(({ icon, label, path }) => ({
+        icon, label, action: () => goTo(path),
+      })),
+    },
+    {
+      label: '',
+      items: [{ icon: '🚪', label: t('sign_out'), action: handleLogout, danger: true }],
+    },
+  ]
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
   return (
-    <SchoolThemeProvider>
-      <Routes>
+    <div style={{ minHeight: '100vh', background: '#060810', color: '#eef0f8', overflowX: 'hidden' }}>
 
-      {/* ── Public ─────────────────────────────────────────────────────── */}
-      <Route path="/"      element={<RootRedirect />} />
-      <Route path="/login" element={<LoginRoute />} />
+      {/* ── Sticky header ────────────────────────────────────────────────── */}
+      <header style={{
+        position:       'fixed',
+        top:            0,
+        left:           0,
+        right:          0,
+        zIndex:         1000,
+        height:         64,
+        background:     'rgba(6,8,16,0.96)',
+        borderBottom:   `1px solid ${theme.border ?? '#1e2231'}`,
+        backdropFilter: 'blur(12px)',
+        display:        'flex',
+        alignItems:     'center',
+        justifyContent: 'space-between',
+        padding:        '0 16px',
+        fontFamily:     'Inter, Arial, sans-serif',
+      }}>
 
-      {/* ── Onboarding Routes (outside AppShell, but protected) ───────────── */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
-          <Route path="/teacher/onboarding" element={<TeacherOnboarding />} />
-          <Route path="/teacher/curriculum-onboarding" element={<CurriculumOnboarding />} />
-        </Route>
-      </Route>
+        {/* Left: GradeFlow home + school name */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={homeClick}
+            title="Go to home dashboard"
+            type="button"
+            style={{
+              fontSize: 13,
+              fontWeight: 900,
+              color: '#eef0f8',
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              padding: '2px 6px',
+              borderRadius: 8,
+              textAlign: 'left',
+            }}
+          >
+            ⚡ GradeFlow
+          </button>
 
-      {/* ── Protected (requires auth) ───────────────────────────────────
-           All protected routes share the AppShell layout (sticky header).
-           Role-scoped subtrees add a second ProtectedRoute layer that
-           redirects to the user's own dashboard if the role doesn't match.
-      ──────────────────────────────────────────────────────────────── */}
-      <Route element={<ProtectedRoute />}>
-        {/* ── Main App Routes (with AppShell) ─────────────────────────── */}
-        <Route element={<AppShell />}>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontWeight: 800, fontSize: 13, color: '#eef0f8', lineHeight: 1.2 }}>
+              {currentUser.schoolName}
+            </span>
+            <span style={{ fontSize: 10, color: theme.muted ?? '#6b7494' }}>
+              {currentUser.userName} · {roleLabel}
+            </span>
+          </div>
+        </div>
 
-          {/* Shared across all roles */}
-          <Route path="/tutorials" element={<Tutorials />} />
-          <Route path="/profile"   element={<ProfileSettings />} />
-          <Route path="/camera"    element={<Page Component={Camera} backTo={-1} />} />
+        {/* Right: lang toggle + camera + hamburger */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
 
-          {/* ── Debug Tools ─────────────────────────────────────────────── */}
-          <Route path="/debug/crawler" element={<Crawler />} />
+          {/* Language pill */}
+          <button
+            onClick={handleToggleLang}
+            title={isEs ? 'Switch to English' : 'Cambiar a Español'}
+            style={{
+              padding:      '5px 10px',
+              borderRadius: 999,
+              background:   isEs ? 'rgba(249,115,22,0.18)' : 'rgba(37,99,235,0.18)',
+              color:        isEs ? theme.primary : '#2563EB',
+              border:       `1px solid ${isEs ? (theme.primary + '50') : '#2563EB50'}`,
+              fontSize:     11,
+              fontWeight:   800,
+              cursor:       'pointer',
+              letterSpacing:'0.03em',
+            }}
+          >
+            {isEs ? '🇺🇸 EN' : '🇲🇽 ES'}
+          </button>
 
-          {/* ── Teacher ─────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
-            <Route path="/teacher"              element={<TeacherHome />} />
-            <Route path="/teacher/lessons"      element={<Page Component={LessonPlan}     backTo="/teacher" />} />
-            <Route path="/teacher/gradebook"    element={<Page Component={Gradebook}      backTo="/teacher" />} />
-            <Route path="/teacher/lesson-plan-template" element={<Page Component={LessonPlanTemplate} backTo="/teacher" />} />
-            <Route path="/teacher/reports"      element={<Page Component={Reports}        backTo="/teacher" />} />
-            <Route path="/teacher/messages"     element={<Page Component={ParentMessages} backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
-            <Route path="/teacher/testing"      element={<Page Component={TestingSuite}   backTo="/teacher" />} />
-            <Route path="/teacher/app"          element={<AppRouter />} />
-            <Route path="/teacher/feed"         element={<Page Component={ClassFeed}      backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
-            <Route path="/teacher/widgets"      element={<Page Component={Widgets}        backTo="/teacher" />} />
-            <Route path="/teacher/integrations" element={<Page Component={Integrations}   backTo="/teacher" />} />
-            
-            {/* Class Management Routes */}
-            <Route path="/teacher/classes/create" element={<ClassCreation />} />
-            <Route path="/teacher/classes/upload" element={<div style={{padding: 20, color: '#fff'}}>Upload Classes - Coming Soon</div>} />
+          {/* Camera button — FIXED */}
+          <button
+            onClick={handleCameraClick}
+            title="Open Camera"
+            type="button"
+            style={{
+              width:        38,
+              height:       38,
+              borderRadius: '50%',
+              background:   theme.soft ?? 'rgba(249,115,22,0.14)',
+              border:       'none',
+              cursor:       'pointer',
+              display:      'flex',
+              alignItems:   'center',
+              justifyContent:'center',
+              fontSize:     18,
+              transition:   'background 0.15s',
+              zIndex:       10,
+              position:     'relative',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = theme.primary + '30' }}
+            onMouseLeave={e => { e.currentTarget.style.background = theme.soft ?? 'rgba(249,115,22,0.14)' }}
+          >
+            📷
+          </button>
 
-          </Route>
+          {currentUser.role === 'teacher' && <GradebookSyncButton />}
 
-          {/* ── Student ─────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-            <Route path="/student"            element={<StudentHome />} />
-            <Route path="/student/widgets"    element={<Page Component={Widgets}       backTo="/student" />} />
-            <Route path="/student/messages"   element={<Page Component={ParentMessages} backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
-            <Route path="/student/feed"       element={<Page Component={ClassFeed}      backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
-          </Route>
+          {/* Hamburger menu */}
+          <div ref={menuRef} style={{ position: 'relative', zIndex: 1 }}>
+            <button
+              onClick={() => setMenuOpen(o => !o)}
+              aria-label="Open menu"
+              style={{
+                width:        38,
+                height:       38,
+                borderRadius: 10,
+                background:   menuOpen ? (theme.soft ?? 'rgba(249,115,22,0.14)') : '#1e2231',
+                border:       'none',
+                cursor:       'pointer',
+                display:      'flex',
+                flexDirection:'column',
+                alignItems:   'center',
+                justifyContent:'center',
+                gap:          4,
+              }}
+            >
+              {[0, 1, 2].map(i => (
+                <span key={i} style={{
+                  display:      'block',
+                  width:        16,
+                  height:       2,
+                  background:   menuOpen ? theme.primary : '#eef0f8',
+                  borderRadius: 2,
+                }} />
+              ))}
+            </button>
 
-          {/* ── Parent ──────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
-            <Route path="/parent"            element={<ParentHome />} />
-            <Route path="/parent/widgets"    element={<Page Component={Widgets}       backTo="/parent" />} />
-            <Route path="/parent/messages"   element={<Page Component={ParentMessages} backTo="/parent" extraProps={{ viewerRole: 'parent' }} />} />
-          </Route>
+            {/* Dropdown */}
+            {menuOpen && (
+              <>
+                {/* Click-away backdrop */}
+                <div
+                  style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+                  onClick={() => setMenuOpen(false)}
+                />
 
-          {/* ── Admin ───────────────────────────────────────────────── */ }
-          <Route element={<ProtectedRoute allowedRoles={['admin']} />} >
-            <Route path="/admin"            element={<AdminHome />} />
-            <Route path="/admin/widgets"    element={<Page Component={Widgets}       backTo="/admin" />} />
-            <Route path="/admin/messages"   element={<Page Component={ParentMessages} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
-            <Route path="/admin/feed"       element={<Page Component={ClassFeed}      backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
-            <Route path="/admin/reports"    element={<Page Component={Reports}        backTo="/admin" />} />
-          </Route>
+                <div style={{
+                  position:   'absolute',
+                  top:        44,
+                  right:      0,
+                  width:      224,
+                  background: '#161923',
+                  border:     `1px solid ${theme.border ?? '#1e2231'}`,
+                  borderRadius: 16,
+                  boxShadow:  '0 16px 40px rgba(0,0,0,0.5)',
+                  zIndex:     999,
+                  maxHeight:  '62vh',
+                  overflow:   'auto',
+                  WebkitOverflowScrolling: 'touch',
+                }}>
 
-          {/* ── Support Staff ───────────────────────────────────────────────────── */ }
-          <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />} >
-            <Route element={<SupportStaffLayoutWrapper />}>
-              <Route path="/supportStaff"           element={<SupportStaffHome />} />
-              <Route path="/supportStaff/ai"        element={<SupportStaffAI />} />
-              <Route path="/supportStaff/insights"   element={<SupportStaffInsights />} />
-              <Route path="/supportStaff/collaboration" element={<SupportCollaborationFeed />} />
-              <Route path="/supportStaff/reports"    element={<SupportReports />} />
-              <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
-              <Route path="/support/groups"         element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
-              <Route path="/supportStaff/trends"    element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
-              <Route path="/supportStaff/messages"  element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
-              <Route path="/support/messages"       element={<SupportStaffMessaging />} />
-              <Route path="/support/student/:studentId" element={<SupportStaffStudentProfile />} />
-              <Route path="/support/case/:studentId" element={<CaseConference />} />
-              <Route path="/support/logs"           element={<Page Component={SupportStaffNotes} backTo="/supportStaff" />} />
-              <Route path="/support/caseload"       element={<Page Component={SupportStaffCaseload} backTo="/supportStaff" />} />
-              <Route path="/supportStaff/notes"     element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="notes" />} />
-              <Route path="/supportStaff/studentProfile" element={<Page Component={StudentProfile} backTo="/supportStaff" extraProps={{ readOnly: true }} />} />
-            </Route>
-          </Route>
+                  {/* User info */}
+                  <div style={{
+                    padding:      '14px 16px',
+                    borderBottom: '1px solid #1e2231',
+                    background:   theme.soft ?? '#1e2231',
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#eef0f8' }}>
+                      {currentUser.userName}
+                    </div>
+                    <div style={{ fontSize: 11, color: theme.muted ?? '#6b7494' }}>
+                      {currentUser.schoolName} · {roleLabel}
+                    </div>
+                    <div style={{
+                      marginTop:   6,
+                      display:     'inline-flex',
+                      alignItems:  'center',
+                      gap:         4,
+                      background:  isEs ? 'rgba(249,115,22,0.12)' : 'rgba(37,99,235,0.12)',
+                      borderRadius:999,
+                      padding:     '2px 8px',
+                    }}>
+                      <span style={{ fontSize: 11 }}>{isEs ? '🇲🇽' : '🇺🇸'}</span>
+                      <span style={{
+                        fontSize:   10,
+                        fontWeight: 700,
+                        color:      isEs ? theme.primary : '#2563EB',
+                      }}>
+                        {isEs ? 'Español activo' : 'English active'}
+                      </span>
+                    </div>
+                  </div>
 
-        </Route>
-      </Route>
+                  {/* Menu sections */}
+                  {dropdownSections.map((section, si) => (
+                    <div key={si}>
+                      {section.label && (
+                        <div style={{
+                          padding:       '8px 16px 4px',
+                          fontSize:      9,
+                          fontWeight:    700,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          color:         '#3d4460',
+                        }}>
+                          {section.label}
+                        </div>
+                      )}
 
-      {/* ── 404 ────────────────────────────────────────────────────────── */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+                      {section.items.map((item, ii) => (
+                        <button
+                          key={ii}
+                          onClick={item.action}
+                          style={{
+                            width:      '100%',
+                            textAlign:  'left',
+                            padding:    '10px 16px',
+                            background: 'transparent',
+                            border:     'none',
+                            cursor:     'pointer',
+                            display:    'flex',
+                            alignItems: 'center',
+                            gap:        10,
+                            fontSize:   13,
+                            color:      item.danger ? '#f04a4a' : '#eef0f8',
+                            fontFamily: 'Inter, Arial, sans-serif',
+                            transition: 'background 0.1s',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = '#1e2231' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                        >
+                          <span>{item.icon}</span>
+                          <span>{item.label}</span>
+                        </button>
+                      ))}
 
-    </Routes>
-    </SchoolThemeProvider>
+                      {si < dropdownSections.length - 1 && (
+                        <div style={{ height: 1, background: '#1e2231', margin: '4px 0' }} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Page content ─────────────────────────────────────────────────── */}
+      <main style={{ paddingTop: 64 }}>
+        <Outlet />
+      </main>
+    </div>
   )
 }
