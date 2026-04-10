@@ -1020,4 +1020,3 @@ export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
       <BottomNav />
     </div>
   )
-}
