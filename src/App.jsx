@@ -186,7 +186,9 @@ function LoginRoute() {
       loadTeacherData()
     }
 
-    navigate('/' + finalAccount.role, { replace: true })
+    // Navigate to role-specific dashboard
+    const homePath = finalAccount.role === 'admin' ? '/admin' : `/${finalAccount.role}`
+    navigate(homePath, { replace: true })
   }
 
   return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={null} />
