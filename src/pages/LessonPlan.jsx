@@ -300,68 +300,33 @@ function LessonView({ lesson, onBack, onEdit }) {
 // ─── AI Generator ────────────────────────────────────────────────────────────
 function AIPlanGenerator({ onBack }) {
   const { currentUser, selectedStandards, clearSelectedStandards } = useStore()
-  const [form, setForm] = useState({ state:'', subject:'', grade:'', textbook:'', topic:'', standard:'' })
+  const [form, setForm] = useState({ textbook:'' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showStandards, setShowStandards] = useState(false)
   const [plan, setPlan] = useState(null)
-  const [lessonAdjustments, setLessonAdjustments] = useState(null)
   const [generatingAdjust, setGeneratingAdjust] = useState(false)
-  const activeClass = useStore(s => s.classes.find(c => c.id === s.activeClassId))
   const students = useStore(s => s.students)
   const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
 
-  // Auto-populate form based on teacher profile
-  useEffect(() => {
-    console.log('Gradeflow LessonPlan - currentUser:', currentUser)
-    if (currentUser) {
-      console.log('Gradeflow LessonPlan - setting form with:', {
-        subject: currentUser.subjects?.[0] || '',
-        grade: currentUser.gradeLevel || ''
-      })
-      setForm(prev => ({
-        ...prev,
-        state: prev.state || getTeacherState(),
-        subject: prev.subject || currentUser.subjects?.[0] || '',
-        grade: prev.grade || currentUser.gradeLevel || ''
-      }))
-    }
-  }, [currentUser])
-
-  // Get teacher's state based on school
-  function getTeacherState() {
-    if (!currentUser?.school) return ''
-    const districtId = currentUser.school.district_id
-    if (districtId === 'houston-isd' || districtId === 'kipp-texas' || districtId === 'yes-prep-tx') return 'Texas'
-    if (districtId === 'kipp-la' || districtId === 'renew-nola' || districtId === 'collegiate-nola') return 'Louisiana'
-    return ''
-  }
-
-  // Clear standards when topic changes significantly
-  useEffect(() => {
-    if (form.topic && showStandards) {
-      // Clear previous standards when topic changes to get fresh recommendations
-      clearSelectedStandards()
-    }
-  }, [form.topic])
-
-  function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
+  // Auto-populate subject and grade from teacher profile
+  const subject = currentUser?.subjects?.[0] || 'Math'
+  const grade = currentUser?.gradeLevel || '5'
 
   async function handleGenerate() {
-    if (!form.topic.trim()) { setError('Topic is required'); return }
-    setLoading(true); setError(''); setPlan(null); setLessonAdjustments(null)
+    setLoading(true)
+    setError('')
+    setPlan(null)
 
     try {
-      // Build standards context for AI
       const standardsText = selectedStandards.length > 0 ? 
         selectedStandards.map(s => `${s.code}: ${s.description}`).join('\n') : 
         ''
 
-      // Use the proper lesson plan generation function
       const result = await generateLessonPlan({
-        subject: form.subject,
-        grade: form.grade,
-        topic: form.topic,
+        subject: subject,
+        grade: grade,
+        topic: form.textbook || `${subject} lesson`,
         duration: 50,
         standards: standardsText
       })
@@ -372,21 +337,20 @@ function AIPlanGenerator({ onBack }) {
 
       setPlan(result)
 
-      // Generate accommodations if needed
       if (accommodationStudents.length > 0) {
         setGeneratingAdjust(true)
         try {
           const accommodations = extractAccommodations(accommodationStudents)
           const adjPrompt = `Create specific lesson adjustments for this lesson plan: ${JSON.stringify(result)}. 
 Student accommodations: ${JSON.stringify(accommodations)}
-Subject: ${form.subject}, Grade: ${form.grade}, Topic: ${form.topic}
+Subject: ${subject}, Grade: ${grade}
 ${standardsText ? `Standards: ${standardsText}` : ''}
 
 Return JSON: {"adjustments": ["specific adjustments for each accommodation type"]}`
           
           const adjResult = safeParseJSON(await callAI(adjPrompt, 'You are an expert special education consultant. Generate practical, specific instructional adjustments for individual students based on their accommodation needs and the current lesson.', 1500))
           if (adjResult?.adjustments) {
-            setLessonAdjustments(adjResult.adjustments)
+            // setLessonAdjustments(adjResult.adjustments)
           }
         } catch (adjErr) {
           console.error('Adjustment generation failed:', adjErr)
@@ -406,9 +370,8 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
       <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
-      <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{form.subject} · {form.grade} · {form.topic}</p>
+      <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{subject} · {grade}</p>
 
-      {/* Show selected standards */}
       {selectedStandards.length > 0 && (
         <div style={{ background: `${C.teal}12`, border: `1px solid ${C.teal}30`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
@@ -431,16 +394,15 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
         <div style={{ background:C.inner, borderRadius:12, padding:'12px 14px', fontSize:13, color:C.muted, marginBottom:16 }}>{plan.notes}</div>
       )}
 
-      {/* Accommodations section */}
       {generatingAdjust && (
         <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
-          Generating lesson adjustments for {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''}...
+          Generating lesson adjustments...
         </div>
       )}
       <AccommodationsSection
-        lessonTopic={form.topic}
-        lessonSubject={form.subject}
-        lessonGrade={form.grade}
+        lessonTopic={form.textbook || `${subject} lesson`}
+        lessonSubject={subject}
+        lessonGrade={grade}
       />
     </div>
   )
@@ -451,7 +413,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>AI Lesson Plan Generator</h1>
 
       <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:16 }}>
-        {/* Auto-populated fields - read-only */}
+        {/* Auto-populated read-only fields */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Subject</label>
@@ -463,7 +425,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
               color:C.text, 
               fontSize:13 
             }}>
-              {form.subject || 'Not set in profile'}
+              {subject}
             </div>
           </div>
           <div>
@@ -476,58 +438,39 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
               color:C.text, 
               fontSize:13 
             }}>
-              {form.grade || 'Not set in profile'}
+              {grade}
             </div>
           </div>
         </div>
 
-        {/* Editable fields */}
-        <div style={{ marginBottom:12 }}>
-          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>
-            Topic * <span style={{ color: C.green, fontSize: 9, fontWeight: 400 }}>(Enter topic first, then select standards)</span>
-          </label>
-          <input
-            value={form.topic} 
-            onChange={e => {
-              set('topic', e.target.value)
-              setShowStandards(false) // Hide standards when topic changes
-            }}
-            placeholder="Fractions, Photosynthesis, Civil War..."
-            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
-          />
-        </div>
-
+        {/* Textbook (editable) */}
         <div style={{ marginBottom:12 }}>
           <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Textbook (optional)</label>
           <input
             value={form.textbook}
-            onChange={e => set('textbook', e.target.value)}
+            onChange={e => setForm(f => ({ ...f, textbook: e.target.value }))}
             placeholder="Publisher or title..."
             style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
           />
         </div>
 
-        {/* 
-// STANDARDS SECTION + GENERATE BUTTON (moved here)
-// */}
+        {/* STANDARDS SECTION + GENERATE BUTTON */}
         <div style={{ marginBottom:12, background: C.inner, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted }}>
-              Standards / TEKS {!form.topic && <span style={{ color: C.amber }}>(Enter topic first)</span>}
+              Standards / TEKS (optional)
             </label>
             <button
               onClick={() => setShowStandards(!showStandards)}
-              disabled={!form.topic}
               style={{
-                background: !form.topic ? C.inner : (showStandards ? `${C.teal}18` : C.inner),
-                border: `1px solid ${!form.topic ? C.border : (showStandards ? C.teal : C.border)}`,
+                background: showStandards ? `${C.teal}18` : C.inner,
+                border: `1px solid ${showStandards ? C.teal : C.border}`,
                 borderRadius: 8,
                 padding: '4px 8px',
-                color: !form.topic ? C.muted : (showStandards ? C.teal : C.muted),
+                color: showStandards ? C.teal : C.muted,
                 fontSize: 11,
                 fontWeight: 600,
-                cursor: !form.topic ? 'not-allowed' : 'pointer',
-                opacity: !form.topic ? 0.6 : 1
+                cursor: 'pointer'
               }}
             >
               {showStandards ? 'Hide' : 'Select'} Standards
@@ -547,35 +490,35 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
             </div>
           )}
 
-          {showStandards && form.topic && (
+          {showStandards && (
             <StandardsSelector 
-              topic={form.topic}
+              topic={form.textbook || `${subject} lesson`}
               maxSelections={3}
               showRecommendations={true}
               schoolName={currentUser?.schoolName}
             />
           )}
-        </div>
 
-        {/*  GENERATE BUTTON (moved to Standards section) */}
-        <button 
-          onClick={handleGenerate}
-          disabled={loading || !form.topic.trim()}
-          style={{ 
-            width:'100%', 
-            background: loading || !form.topic.trim() ? C.muted : 'var(--school-color)', 
-            color:'#fff', 
-            border:'none', 
-            borderRadius:999, 
-            padding:'12px', 
-            fontSize:14, 
-            fontWeight:800, 
-            cursor: loading || !form.topic.trim() ? 'not-allowed' : 'pointer',
-            opacity: loading || !form.topic.trim() ? 0.6 : 1,
-            marginTop: 12
-          }}>
-          {loading ? ' Generating...' : ' Generate Lesson Plan'}
-        </button>
+          {/* GENERATE BUTTON (inside Standards section) */}
+          <button 
+            onClick={handleGenerate}
+            disabled={loading}
+            style={{ 
+              width:'100%', 
+              background: loading ? C.muted : 'var(--school-color)', 
+              color:'#fff', 
+              border:'none', 
+              borderRadius:999, 
+              padding:'12px', 
+              fontSize:14, 
+              fontWeight:800, 
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1,
+              marginTop: 12
+            }}>
+            {loading ? ' Generating...' : ' Generate Lesson Plan'}
+          </button>
+        </div>
 
         {accommodationStudents.length > 0 && (
           <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
@@ -583,7 +526,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
           </div>
         )}
 
-        {error && <p style={{ color:C.red, fontSize:12, marginBottom:12 }}>{error}</p>}
+        {error && <p style={{ color:C.red, fontSize:12 }}>{error}</p>}
       </div>
     </div>
   )
