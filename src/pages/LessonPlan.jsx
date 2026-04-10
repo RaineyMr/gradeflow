@@ -1798,4 +1798,3 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
       ))}
     </div>
   )
-}
