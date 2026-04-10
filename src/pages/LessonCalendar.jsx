@@ -47,7 +47,6 @@ function DayCell({ date, lessons, isToday, onSelectDay, onAddLesson }) {
         e.currentTarget.style.background = isToday ? C.raised : C.card
       }}
     >
-      {/* Date header */}
       <div style={{ marginBottom: 8 }}>
         <div style={{ fontSize: 11, color: C.muted, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
           {dayName}
@@ -57,9 +56,8 @@ function DayCell({ date, lessons, isToday, onSelectDay, onAddLesson }) {
         </div>
       </div>
 
-      {/* Lessons for this day */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-        {lessons.slice(0, 2).map(lesson => (
+        {(lessons || []).slice(0, 2).map(lesson => (
           <div
             key={lesson.id}
             style={{
@@ -77,14 +75,13 @@ function DayCell({ date, lessons, isToday, onSelectDay, onAddLesson }) {
             {lesson.title}
           </div>
         ))}
-        {lessons.length > 2 && (
+        {(lessons || []).length > 2 && (
           <div style={{ fontSize: 9, color: C.muted, paddingLeft: 6 }}>
             +{lessons.length - 2} more
           </div>
         )}
       </div>
 
-      {/* Add button */}
       <button
         onClick={e => {
           e.stopPropagation()
@@ -132,21 +129,18 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
   const [homework, setHomework] = useState(lesson?.homework || '')
   const [status, setStatus] = useState(lesson?.status || 'pending')
 
-  // Filter units by selected curriculum and subject
   const filteredUnits = useMemo(() => {
     if (!curriculumId) return []
-    return curriculumUnits.filter(u => u.curriculum_id === curriculumId && u.subject === subject)
+    return (curriculumUnits || []).filter(u => u.curriculum_id === curriculumId && u.subject === subject)
   }, [curriculumId, subject, curriculumUnits])
 
-  // Filter standards by selected unit
   const filteredStandards = useMemo(() => {
     if (!unitId) return []
-    return curriculumStandards.filter(s => s.curriculum_unit_id === unitId)
+    return (curriculumStandards || []).filter(s => s.curriculum_unit_id === unitId)
   }, [unitId, curriculumStandards])
 
-  // Auto-populate from selected standard
   const selectedStandard = useMemo(() => {
-    return curriculumStandards.find(s => s.id === standardId)
+    return (curriculumStandards || []).find(s => s.id === standardId)
   }, [standardId, curriculumStandards])
 
   useEffect(() => {
@@ -226,7 +220,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
           borderTop: `1px solid ${C.border}`,
         }}
       >
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: 0 }}>
             {lesson ? 'Edit Lesson' : 'New Lesson'}
@@ -245,16 +238,13 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
           </button>
         </div>
 
-        {/* Date display */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ fontSize: 12, color: C.muted }}>
             {new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
           </div>
         </div>
 
-        {/* Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {/* Subject */}
           <div>
             <label style={labelStyle}>Subject</label>
             <select
@@ -276,7 +266,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             </select>
           </div>
 
-          {/* Curriculum Source */}
           {curriculumSources.length > 0 && (
             <div>
               <label style={labelStyle}>Curriculum</label>
@@ -290,7 +279,7 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
                 style={{ ...inputStyle, cursor: 'pointer' }}
               >
                 <option value="">Select curriculum...</option>
-                {curriculumSources
+                {(curriculumSources || [])
                   .filter(c => !c.subjects || c.subjects.includes(subject))
                   .map(c => (
                     <option key={c.id} value={c.id}>
@@ -301,7 +290,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             </div>
           )}
 
-          {/* Unit */}
           {curriculumId && filteredUnits.length > 0 && (
             <div>
               <label style={labelStyle}>Unit</label>
@@ -323,7 +311,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             </div>
           )}
 
-          {/* Standard/Lesson */}
           {unitId && filteredStandards.length > 0 && (
             <div>
               <label style={labelStyle}>Standard / Lesson</label>
@@ -347,7 +334,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             </div>
           )}
 
-          {/* Title */}
           <div>
             <label style={labelStyle}>Lesson Title</label>
             <input
@@ -359,7 +345,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             />
           </div>
 
-          {/* Objective */}
           <div>
             <label style={labelStyle}>Learning Objective</label>
             <textarea
@@ -371,7 +356,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             />
           </div>
 
-          {/* Activities */}
           <div>
             <label style={labelStyle}>Activities (one per line)</label>
             <textarea
@@ -383,7 +367,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             />
           </div>
 
-          {/* Materials */}
           <div>
             <label style={labelStyle}>Materials (one per line)</label>
             <textarea
@@ -395,7 +378,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             />
           </div>
 
-          {/* Homework */}
           <div>
             <label style={labelStyle}>Homework</label>
             <textarea
@@ -407,7 +389,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             />
           </div>
 
-          {/* Status */}
           <div>
             <label style={labelStyle}>Status</label>
             <select
@@ -420,7 +401,6 @@ function LessonModal({ lesson, date, onClose, onSave, curriculumSources = [], cu
             </select>
           </div>
 
-          {/* Buttons */}
           <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
             <button
               onClick={onClose}
@@ -489,14 +469,13 @@ function DayDetail({ date, lessons, onClose, onAddLesson }) {
           border: `1px solid ${C.border}`,
         }}
       >
-        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: '0 0 8px' }}>
               {new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </h2>
             <div style={{ fontSize: 12, color: C.muted }}>
-              {lessons.length} {lessons.length === 1 ? 'lesson' : 'lessons'}
+              {(lessons || []).length} {(lessons || []).length === 1 ? 'lesson' : 'lessons'}
             </div>
           </div>
           <button
@@ -513,10 +492,9 @@ function DayDetail({ date, lessons, onClose, onAddLesson }) {
           </button>
         </div>
 
-        {/* Lessons list */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
-          {lessons.length > 0 ? (
-            lessons.map(lesson => (
+          {(lessons || []).length > 0 ? (
+            (lessons || []).map(lesson => (
               <div
                 key={lesson.id}
                 style={{
@@ -540,9 +518,9 @@ function DayDetail({ date, lessons, onClose, onAddLesson }) {
                       ✓ Done
                     </span>
                   )}
-                  {lesson.activities?.length > 0 && (
+                  {(lesson.activities || []).length > 0 && (
                     <span style={{ fontSize: 10, background: 'rgba(59, 126, 244, 0.2)', color: C.blue, padding: '2px 6px', borderRadius: 4, fontWeight: 600 }}>
-                      {lesson.activities.length} activities
+                      {(lesson.activities || []).length} activities
                     </span>
                   )}
                 </div>
@@ -556,7 +534,6 @@ function DayDetail({ date, lessons, onClose, onAddLesson }) {
           )}
         </div>
 
-        {/* Add button */}
         <button
           onClick={() => onAddLesson(date)}
           style={{
@@ -581,7 +558,7 @@ function DayDetail({ date, lessons, onClose, onAddLesson }) {
 // ── Main Component ─────────────────────────────────────────────────────
 export default function LessonCalendar() {
   const navigate = useNavigate()
-  const { calendarLessons, assignLessonToDate, currentUser, fetchCalendarLessons } = useStore()
+  const { calendarLessons = [], assignLessonToDate, currentUser } = useStore()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState(null)
   const [showAddModal, setShowAddModal] = useState(false)
@@ -590,7 +567,7 @@ export default function LessonCalendar() {
   const [curriculumStandards, setCurriculumStandards] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Load curriculum data and lessons on mount
+  // Load curriculum data on mount
   useEffect(() => {
     async function loadData() {
       try {
@@ -603,24 +580,20 @@ export default function LessonCalendar() {
         const { data: standards } = await supabase.from('curriculum_standards').select('*')
         setCurriculumStandards(standards || [])
 
-        if (currentUser?.id) {
-          await fetchCalendarLessons(currentUser.id)
-        }
-
         setLoading(false)
       } catch (error) {
-        console.error('Error loading lesson calendar data:', error)
+        console.error('Error loading curriculum data:', error)
         setLoading(false)
       }
     }
 
     loadData()
-  }, [currentUser?.id, fetchCalendarLessons])
+  }, [])
 
   // Group lessons by date
   const lessonsByDate = useMemo(() => {
     const grouped = {}
-    calendarLessons.forEach(lesson => {
+    ;(calendarLessons || []).forEach(lesson => {
       const dateKey = lesson.lesson_date || lesson.date
       if (!grouped[dateKey]) grouped[dateKey] = []
       grouped[dateKey].push(lesson)
@@ -631,9 +604,8 @@ export default function LessonCalendar() {
   // Get calendar days for current month
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
-  const firstDay = new Date(year, month, 1)
   const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const startingDayOfWeek = firstDay.getDay()
+  const startingDayOfWeek = new Date(year, month, 1).getDay()
 
   const calendarDays = []
   for (let i = 0; i < startingDayOfWeek; i++) {
@@ -656,27 +628,13 @@ export default function LessonCalendar() {
   }
 
   function handleAddLesson(date) {
-    const dateStr = date.toISOString ? date.toISOString().split('T')[0] : date
+    const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0]
     setSelectedDay(null)
     setShowAddModal(dateStr)
   }
 
   function handleSaveLesson(lesson) {
-    const dateStr = lesson.date
-    assignLessonToDate({
-      id: lesson.id,
-      date: dateStr,
-      title: lesson.title,
-      subject: lesson.subject,
-      objective: lesson.objective,
-      activities: lesson.activities,
-      materials: lesson.materials,
-      homework: lesson.homework,
-      status: lesson.status,
-      curriculum_id: lesson.curriculum_id,
-      curriculum_unit_id: lesson.curriculum_unit_id,
-      curriculum_standard_id: lesson.curriculum_standard_id,
-    })
+    assignLessonToDate(lesson)
   }
 
   const today = new Date()
@@ -693,7 +651,6 @@ export default function LessonCalendar() {
 
   return (
     <div style={{ padding: '16px', paddingBottom: 100 }}>
-      {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
           <button
@@ -717,7 +674,6 @@ export default function LessonCalendar() {
         </p>
       </div>
 
-      {/* Month/Navigation */}
       <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <button
           onClick={goToPreviousMonth}
@@ -758,7 +714,6 @@ export default function LessonCalendar() {
         </button>
       </div>
 
-      {/* Day of week headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 12 }}>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <div key={day} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -767,7 +722,6 @@ export default function LessonCalendar() {
         ))}
       </div>
 
-      {/* Calendar grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 32 }}>
         {calendarDays.map((date, idx) =>
           date ? (
@@ -785,7 +739,6 @@ export default function LessonCalendar() {
         )}
       </div>
 
-      {/* Day detail modal */}
       {selectedDay && (
         <DayDetail
           date={selectedDay}
@@ -795,7 +748,6 @@ export default function LessonCalendar() {
         />
       )}
 
-      {/* Lesson edit modal */}
       {showAddModal && (
         <LessonModal
           lesson={null}
