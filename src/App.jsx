@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, Navigate, useNavigate } from 'react-router-dom'
 import { useStore } from '@lib/store'
 import { useT } from '@lib/i18n'
-import { useHashRouter } from '@hooks/useHashRouter'
 import { GradebookSyncButton } from '@components/GradebookSyncButton.jsx'
 
 const ROLE_LABELS = {
@@ -44,7 +43,7 @@ const PAGES_BY_ROLE = {
 }
 
 export default function AppShell() {
-  const { navigateToPage, navigateToHome } = useHashRouter()
+  const navigate = useNavigate()
   const t = useT()
   const { currentUser, setCurrentUser, setLang, isHydrated } = useStore()
 
@@ -113,13 +112,13 @@ export default function AppShell() {
   const rolePages  = PAGES_BY_ROLE[currentUser.role] ?? []
   const roleHomePath = currentUser.role === 'admin' ? '/admin' : `/${currentUser.role}`
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
+  // ── Handlers ──────────────────────────────────────────────────────+
+  
   function handleLogout() {
     localStorage.removeItem('gradeflow_user')
     setCurrentUser(null)
     setMenuOpen(false)
-    navigateToPage('login')
+    navigate('/login')
   }
 
   function handleToggleLang() {
@@ -132,24 +131,18 @@ export default function AppShell() {
   }
 
   function goTo(path) {
-    // Extract page from path for hash router
-    const segments = path.split('/').filter(Boolean)
-    const page = segments[segments.length - 1] || 'home'
-    const role = segments[0] || currentUser?.role
-    
-    navigateToPage(page, role)
+    navigate(path)
     setMenuOpen(false)
   }
 
   function homeClick() {
     setMenuOpen(false)
-    navigateToHome()
+    navigate(roleHomePath)
   }
 
   function handleCameraClick() {
     setMenuOpen(false)
-    // Navigate to camera page using the same pattern as other pages
-    goTo('/teacher/camera')
+    navigate('/teacher/camera')
   }
 
   // ── Dropdown sections ─────────────────────────────────────────────────
