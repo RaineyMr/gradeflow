@@ -248,35 +248,39 @@ export default function App() {
   // Hydrate auth state on mount
   useEffect(() => {
     const raw = localStorage.getItem('gradeflow_user')
+    console.log('=== DEBUG: App hydration starting ===')
+    
     if (raw) {
       try {
         const user = JSON.parse(raw)
+        console.log('DEBUG: Parsed user from localStorage:', user)
+        
         if (user?.role && user?.id) {
-          setCurrentUser(user)  // Set user immediately
-          try {
-            setLang(user.lang ?? 'en')
-            document.documentElement.lang = user.lang ?? 'en'
+          console.log('DEBUG: Setting currentUser:', user)
+          setCurrentUser(user)
+          setLang(user.lang ?? 'en')
+          document.documentElement.lang = user.lang ?? 'en'
 
-            const { primary, secondary } = user.theme ?? {}
-            if (primary) {
-              document.documentElement.style.setProperty('--school-color', primary)
-              document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
-            }
+          const { primary, secondary } = user.theme ?? {}
+          if (primary) {
+            document.documentElement.style.setProperty('--school-color', primary)
+            document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
+          }
 
-            // Load demo or real data
-            if (user.isDemoAccount) {
-              loadFromDB()
-            } else if (user.role === 'teacher') {
-              loadTeacherData()
-            }
-          } catch {
-            // Ignore theme errors
+          // Load demo or real data
+          if (user.isDemoAccount) {
+            console.log('DEBUG: Loading demo data for demo account')
+            loadFromDB()
+          } else if (user.role === 'teacher') {
+            console.log('DEBUG: Loading teacher data for real account')
+            loadTeacherData()
           }
         } else {
-          // No valid user, hydrate store without data
-          setTimeout(() => loadFromDB(), 100)
+          console.log('DEBUG: Invalid user, removing from localStorage')
+          localStorage.removeItem('gradeflow_user')
         }
-      } catch {
+      } catch (error) {
+        console.error('DEBUG: Error parsing user:', error)
         localStorage.removeItem('gradeflow_user')
       }
     } else {
@@ -289,6 +293,7 @@ export default function App() {
 
     // Always hydrate (marks store as ready)
     setTimeout(() => {
+      console.log('DEBUG: Calling loadFromDB to hydrate store')
       loadFromDB()
     }, 100)
   }, [setCurrentUser, setLang, loadFromDB, loadTeacherData])
