@@ -1,1 +1,1 @@
-{"crons":[{"path":"/api/sync-gradebook","schedule":"0 0 * * *"}]}
+{"rewrites":[{"source":"/(.*)","destination":"/index.html","has":[{"type":"header","key":"accept","value":"text/html"}]}],"crons":[{"path":"/api/sync-gradebook","schedule":"0 0 * * *"}]}
