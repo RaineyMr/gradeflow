@@ -17,7 +17,6 @@ import AdminDashboard from '@pages/AdminDashboard'
 import Dashboard from '@pages/Dashboard'
 import Gradebook from '@pages/Gradebook'
 import LessonPlan from '@pages/LessonPlan'
-import LessonCalendar from '@pages/LessonCalendar'
 import LessonPlanTemplate from '@pages/LessonPlanTemplate'
 import ParentDashboard from '@pages/ParentDashboard'
 import ParentMessages from '@pages/ParentMessages'
@@ -337,7 +336,6 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
               <Route path="/teacher" element={<TeacherHome />} />
               <Route path="/teacher/lessons" element={<LessonPlan />} />
-              <Route path="/teacher/lessons/calendar" element={<LessonCalendar />} />
               <Route path="/teacher/gradebook" element={<Gradebook />} />
               <Route path="/teacher/lesson-plan-template" element={<LessonPlanTemplate />} />
               <Route path="/teacher/reports" element={<Reports />} />
