@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
 import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
 import StandardsSelector from '../components/standards/StandardsSelector'
@@ -1733,6 +1734,7 @@ function UploadDoc({ onBack }) {
 
 // ─── Main Menu ────────────────────────────────────────────────────────────────
 export default function LessonPlan({ initialMode, classId, onBack }) {
+  const navigate = useNavigate()
   const { goBack, getTodayLesson } = useStore()
   const handleBack  = onBack || goBack
   const todayLesson = classId ? getTodayLesson(classId) : null
@@ -1751,11 +1753,18 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
       <p style={{ color:C.muted, fontSize:13, margin:'0 0 24px' }}>Create · Upload · AI-generate</p>
 
       {[
-        { id:'ai',     icon:'✨', label:'AI Generate',       desc:'Fill in subject, grade, topic → full lesson plan',  color:C.purple },
-        { id:'build',  icon:'📝', label:'Build from Scratch', desc:'Write your own lesson plan with guided sections',   color:C.blue   },
-        { id:'upload', icon:'📤', label:'Upload Document',   desc:'PDF · Word · CSV · Image — AI scans for accommodations', color:C.teal },
+        { id:'ai',       icon:'✨', label:'AI Generate',       desc:'Fill in subject, grade, topic → full lesson plan',  color:C.purple },
+        { id:'build',    icon:'📝', label:'Build from Scratch', desc:'Write your own lesson plan with guided sections',   color:C.blue   },
+        { id:'upload',   icon:'📤', label:'Upload Document',   desc:'PDF · Word · CSV · Image — AI scans for accommodations', color:C.teal },
+        { id:'calendar', icon:'📅', label:'Lesson Calendar',   desc:'Plan lessons by date with curriculum integration',   color:C.green },
       ].map(item => (
-        <button key={item.id} onClick={() => setMode(item.id)}
+        <button key={item.id} onClick={() => {
+          if (item.id === 'calendar') {
+            navigate('/teacher/lessons/calendar')
+          } else {
+            setMode(item.id)
+          }
+        }}
           style={{ width:'100%', background:C.card, border:`1px solid ${item.color}22`, borderRadius:16, padding:16, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14, marginBottom:12 }}
           onMouseEnter={e => e.currentTarget.style.borderColor=item.color}
           onMouseLeave={e => e.currentTarget.style.borderColor=`${item.color}22`}>

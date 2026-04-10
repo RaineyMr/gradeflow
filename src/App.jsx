@@ -18,6 +18,7 @@ import Dashboard from '@pages/Dashboard'
 import Gradebook from '@pages/Gradebook'
 import LessonPlan from '@pages/LessonPlan'
 import LessonPlanTemplate from '@pages/LessonPlanTemplate'
+import LessonCalendar from '@pages/LessonCalendar'
 import ParentDashboard from '@pages/ParentDashboard'
 import ParentMessages from '@pages/ParentMessages'
 import Reports from '@pages/Reports'
@@ -48,6 +49,16 @@ import SupportReports from '@pages/SupportReports'
 import CaseConference from '@pages/CaseConference'
 import Crawler from '@pages/Crawler'
 import AppRouter from './appRouter'
+
+// Helpers
+
+/**
+ * Wraps a page component and injects onBack handler
+ */
+function Page({ Component, backTo, extraProps = {} }) {
+  const navigate = useNavigate()
+  return <Component {...extraProps} onBack={() => navigate(backTo ?? -1)} />
+}
 
 /**
  * Extract role dashboards from store, pass currentUser as prop
@@ -174,58 +185,40 @@ function LoginRoute() {
     console.log('DEBUG: finalAccount:', finalAccount)
 
     setCurrentUser(finalAccount)
-    setLang(finalAccount.lang ?? 'en')
-    localStorage.setItem('gradeflow_user', JSON.stringify(finalAccount))
-    document.documentElement.lang = finalAccount.lang ?? 'en'
-
-    // Apply school branding if available
-    const { primary, secondary } = finalAccount.theme ?? {}
-    if (primary) {
-      document.documentElement.style.setProperty('--school-color', primary)
-      document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
-    }
-
-    // Load real teacher data from Supabase
-    if (finalAccount.role === 'teacher' && !isDemoAccount) {
-      console.log('DEBUG: Loading teacher data for real account')
-      loadTeacherData()
-    }
-
-    // Navigate to role-specific dashboard
-    const homePath = finalAccount.role === 'admin' ? '/admin' : `/${finalAccount.role}`
-    console.log('DEBUG: Navigating to:', homePath)
-    navigate(homePath, { replace: true })
+    setLang(account.lang ?? 'en')
+    navigate(`/${account.role}`, { replace: true })
   }
 
-  return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={null} />
+  return <Login onLogin={handleLogin} />
 }
 
-// Loading component
-
+/**
+ * Loading component (hydration wait)
+ */
 function Loading() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #060810 0%, #0a0f1e 100%)',
+      background: '#060810',
       display: 'flex',
-      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
       color: '#eef0f8',
       fontFamily: 'Inter, Arial, sans-serif',
     }}>
-      <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
-      <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 12 }}>GradeFlow</div>
-      <div style={{ fontSize: 14, color: '#6b7494', marginBottom: 32 }}>Loading your dashboard...</div>
-      <div style={{
-        width: 40,
-        height: 40,
-        border: '3px solid rgba(249,115,22,0.2)',
-        borderTop: '3px solid #f97316',
-        borderRadius: '50%',
-        animation: 'spin 1s linear infinite',
-      }} />
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 48, marginBottom: 24 }}>⚡</div>
+        <div style={{ fontSize: 18, marginBottom: 32 }}>Loading GradeFlow...</div>
+        <div style={{
+          width: 40,
+          height: 40,
+          border: '3px solid #1e2231',
+          borderTop: '3px solid #f97316',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite',
+        }} />
       <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+    </div>
     </div>
   )
 }
@@ -336,6 +329,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
               <Route path="/teacher" element={<TeacherHome />} />
               <Route path="/teacher/lessons" element={<LessonPlan />} />
+              <Route path="/teacher/lessons/calendar" element={<LessonCalendar />} />
               <Route path="/teacher/gradebook" element={<Gradebook />} />
               <Route path="/teacher/lesson-plan-template" element={<LessonPlanTemplate />} />
               <Route path="/teacher/reports" element={<Reports />} />
@@ -353,25 +347,25 @@ export default function App() {
             {/* Student */}
             <Route element={<ProtectedRoute allowedRoles={['student']} />}>
               <Route path="/student" element={<StudentHome />} />
-              <Route path="/student/widgets" element={<Widgets />} />
-              <Route path="/student/messages" element={<ParentMessages viewerRole="student" />} />
-              <Route path="/student/feed" element={<ClassFeed viewerRole="student" />} />
+              <Route path="/student/widgets" element={<Page Component={Widgets} backTo="/student" />} />
+              <Route path="/student/messages" element={<Page Component={ParentMessages} backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
+              <Route path="/student/feed" element={<Page Component={ClassFeed} backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
             </Route>
 
             {/* Parent */}
             <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
               <Route path="/parent" element={<ParentHome />} />
-              <Route path="/parent/widgets" element={<Widgets />} />
-              <Route path="/parent/messages" element={<ParentMessages viewerRole="parent" />} />
+              <Route path="/parent/widgets" element={<Page Component={Widgets} backTo="/parent" />} />
+              <Route path="/parent/messages" element={<Page Component={ParentMessages} backTo="/parent" extraProps={{ viewerRole: 'parent' }} />} />
             </Route>
 
             {/* Admin */}
             <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
               <Route path="/admin" element={<AdminHome />} />
-              <Route path="/admin/widgets" element={<Widgets />} />
-              <Route path="/admin/messages" element={<ParentMessages viewerRole="admin" />} />
-              <Route path="/admin/feed" element={<ClassFeed viewerRole="admin" />} />
-              <Route path="/admin/reports" element={<Reports />} />
+              <Route path="/admin/widgets" element={<Page Component={Widgets} backTo="/admin" />} />
+              <Route path="/admin/messages" element={<Page Component={ParentMessages} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
+              <Route path="/admin/feed" element={<Page Component={ClassFeed} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
+              <Route path="/admin/reports" element={<Page Component={Reports} backTo="/admin" />} />
             </Route>
 
             {/* Support Staff */}
@@ -382,17 +376,17 @@ export default function App() {
                 <Route path="/supportStaff/insights" element={<SupportStaffInsights />} />
                 <Route path="/supportStaff/collaboration" element={<SupportCollaborationFeed />} />
                 <Route path="/supportStaff/reports" element={<SupportReports />} />
-                <Route path="/supportStaff/groups" element={<SupportStaffGroups />} />
-                <Route path="/support/groups" element={<SupportStaffGroups />} />
-                <Route path="/supportStaff/trends" element={<StudentTrends />} />
-                <Route path="/supportStaff/messages" element={<ParentMessages viewerRole="supportStaff" />} />
+                <Route path="/supportStaff/groups" element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
+                <Route path="/support/groups" element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
+                <Route path="/supportStaff/trends" element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
+                <Route path="/supportStaff/messages" element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
                 <Route path="/support/messages" element={<SupportStaffMessaging />} />
                 <Route path="/support/student/:studentId" element={<SupportStaffStudentProfile />} />
                 <Route path="/support/case/:studentId" element={<CaseConference />} />
-                <Route path="/support/logs" element={<SupportStaffNotes />} />
-                <Route path="/support/caseload" element={<SupportStaffCaseload />} />
-                <Route path="/supportStaff/notes" element={<SupportStaffDashboard subPage="notes" />} />
-                <Route path="/supportStaff/studentProfile" element={<StudentProfile readOnly={true} />} />
+                <Route path="/support/logs" element={<Page Component={SupportStaffNotes} backTo="/supportStaff" />} />
+                <Route path="/support/caseload" element={<Page Component={SupportStaffCaseload} backTo="/supportStaff" />} />
+                <Route path="/supportStaff/notes" element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="notes" />} />
+                <Route path="/supportStaff/studentProfile" element={<Page Component={StudentProfile} backTo="/supportStaff" extraProps={{ readOnly: true }} />} />
               </Route>
             </Route>
 
