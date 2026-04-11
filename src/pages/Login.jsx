@@ -465,6 +465,33 @@ function MobileLogin({ form, onCreateAccount }) {
         ))}
       </div>
       <p style={{ marginTop: 20, fontSize: 11, color: BRAND.muted, textAlign: 'center' }}>{t('footer_note') || "Each demo uses a real school's branding & colors throughout."}</p>
+      
+      {/* Footer Links */}
+      <div style={{ marginTop: 24, textAlign: 'center', fontSize: 10, color: BRAND.muted }}>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+          <a 
+            href="/PRIVACY_POLICY.md" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ color: BRAND.muted, textDecoration: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = BRAND.primary}
+            onMouseLeave={e => e.currentTarget.style.color = BRAND.muted}
+          >
+            Privacy Policy
+          </a>
+          <span style={{ color: BRAND.muted }}>·</span>
+          <a 
+            href="/TERMS_OF_SERVICE.md" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ color: BRAND.muted, textDecoration: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.color = BRAND.primary}
+            onMouseLeave={e => e.currentTarget.style.color = BRAND.muted}
+          >
+            Terms of Service
+          </a>
+        </div>
+      </div>
     </div>
   )
 }
@@ -612,6 +639,33 @@ function DesktopLogin({ form, onCreateAccount }) {
                   <div style={{ fontSize: 11, color: BRAND.muted, marginTop: 3 }}>{demo.school}</div>
                 </button>
               ))}
+            </div>
+            
+            {/* Footer Links */}
+            <div style={{ marginTop: 32, textAlign: 'center', fontSize: 10, color: BRAND.muted }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 16, flexWrap: 'wrap' }}>
+                <a 
+                  href="/PRIVACY_POLICY.md" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ color: BRAND.muted, textDecoration: 'none', cursor: 'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.color = BRAND.primary}
+                  onMouseLeave={e => e.currentTarget.style.color = BRAND.muted}
+                >
+                  Privacy Policy
+                </a>
+                <span style={{ color: BRAND.muted }}>·</span>
+                <a 
+                  href="/TERMS_OF_SERVICE.md" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ color: BRAND.muted, textDecoration: 'none', cursor: 'pointer' }}
+                  onMouseEnter={e => e.currentTarget.style.color = BRAND.primary}
+                  onMouseLeave={e => e.currentTarget.style.color = BRAND.muted}
+                >
+                  Terms of Service
+                </a>
+              </div>
             </div>
           </div>
         </div>
