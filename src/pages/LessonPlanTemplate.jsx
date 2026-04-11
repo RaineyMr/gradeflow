@@ -227,7 +227,7 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
         }}
       />
 
-      {data && data.length > 0 && (
+      {data && Array.isArray(data) && data.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
             Selected ({data.length})
@@ -608,7 +608,7 @@ function AccommodationsSection({ data, onChange }) {
             Specify lesson-specific accommodations and modifications for students with IEPs, 504 plans, or ELL needs.
           </p>
           <textarea
-            value={data.accommodations || ''}
+            value={data || ''}
             onChange={(e) => onChange('accommodations', e.target.value)}
             placeholder="e.g., - Provide visual aids for plant cell diagram
 - Simplify vocabulary for ELL students
@@ -688,12 +688,12 @@ function AttachmentsSection({ data, onChange }) {
             </div>
           </div>
 
-          {data.attachments && data.attachments.length > 0 && (
+          {data && Array.isArray(data) && data.length > 0 && (
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
-                Attached Files ({data.attachments.length})
+                Attached Files ({data.length})
               </div>
-              {data.attachments.map((file, i) => (
+              {data.map((file, i) => (
                 <div
                   key={i}
                   style={{
@@ -710,7 +710,7 @@ function AttachmentsSection({ data, onChange }) {
                   <span>📄 {file.name || `File ${i + 1}`}</span>
                   <button
                     onClick={() => {
-                      const updated = data.attachments.filter((_, idx) => idx !== i)
+                      const updated = data.filter((_, idx) => idx !== i)
                       onChange('attachments', updated)
                     }}
                     style={{
@@ -774,7 +774,7 @@ function OptionalAddOnsSection({ data, onChange }) {
               Enrichment Activities (for early finishers)
             </label>
             <textarea
-              value={data.enrichment || ''}
+              value={data?.enrichment || ''}
               onChange={(e) => onChange('optionalAddOns', { ...data, enrichment: e.target.value })}
               placeholder="e.g., - Research photosynthesis in different plant types
 - Create a photosynthesis comic strip
@@ -799,7 +799,7 @@ function OptionalAddOnsSection({ data, onChange }) {
               Supplemental Resources & Links
             </label>
             <textarea
-              value={data.supplementalLinks || ''}
+              value={data?.supplementalLinks || ''}
               onChange={(e) => onChange('optionalAddOns', { ...data, supplementalLinks: e.target.value })}
               placeholder="e.g., - Khan Academy: Plant Cells (https://...)
 - National Geographic: Photosynthesis Explainer
@@ -824,7 +824,7 @@ function OptionalAddOnsSection({ data, onChange }) {
               Notes & Reflections
             </label>
             <textarea
-              value={data.reflections || ''}
+              value={data?.reflections || ''}
               onChange={(e) => onChange('optionalAddOns', { ...data, reflections: e.target.value })}
               placeholder="e.g., - Pacing notes
 - Student misconceptions to watch for

@@ -1327,7 +1327,7 @@ function OptionalAddOnsSection({ data, onChange }) {
               Enrichment Activities (for early finishers)
             </label>
             <textarea
-              value={data.enrichment || ''}
+              value={data?.enrichment || ''}
               onChange={(e) => onChange('optionalAddOns', { ...data, enrichment: e.target.value })}
               placeholder="e.g., - Research photosynthesis in different plant types
 - Create a photosynthesis comic strip
@@ -1352,7 +1352,7 @@ function OptionalAddOnsSection({ data, onChange }) {
               Supplemental Resources & Links
             </label>
             <textarea
-              value={data.supplementalLinks || ''}
+              value={data?.supplementalLinks || ''}
               onChange={(e) => onChange('optionalAddOns', { ...data, supplementalLinks: e.target.value })}
               placeholder="e.g., - Khan Academy: Plant Cells (https://...)
 - National Geographic: Photosynthesis Explainer
@@ -1377,7 +1377,7 @@ function OptionalAddOnsSection({ data, onChange }) {
               Notes & Reflections
             </label>
             <textarea
-              value={data.reflections || ''}
+              value={data?.reflections || ''}
               onChange={(e) => onChange('optionalAddOns', { ...data, reflections: e.target.value })}
               placeholder="e.g., - Pacing notes
 - Student misconceptions to watch for
