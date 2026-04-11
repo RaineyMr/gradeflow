@@ -806,7 +806,6 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
               onChange('standards', standards)
               setShowPicker(false)
             }}
-            topic={headerData?.title}
             schoolName={currentUser?.schoolName}
           />
         </div>
