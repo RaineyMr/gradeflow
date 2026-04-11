@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
-import { generateLessonPlan, extractAccommodations, generateLessonAccommodations, callAI } from '../lib/ai'
+import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
 import StandardsSelector from '../components/standards/StandardsSelector'
 
 const C = {
@@ -524,14 +524,14 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
           {showStandards && (
             <div style={{ marginTop: 12 }}>
               <StandardsSelector
-                subject={subject}
-                grade={grade}
-                selectedStandards={selectedStandards}
-                onChange={(standards) => {
-                  setSelectedStandards(standards)
-                }}
                 topic={form.textbook || `${subject} lesson`}
+                maxSelections={3}
+                showRecommendations={true}
                 schoolName={currentUser?.schoolName}
+                onStandardsChange={(standards) => {
+                  setSelectedStandards(standards)
+                  setShowStandards(false)
+                }}
               />
             </div>
           )}
@@ -732,11 +732,6 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
   const [showPicker, setShowPicker] = React.useState(false)
   const [generating, setGenerating] = React.useState(false)
 
-  // Debug what we're receiving
-  console.log('StandardsSection render - data:', data)
-  console.log('StandardsSection render - data.standards:', data.standards)
-  console.log('StandardsSection render - headerData:', headerData)
-
   const handleAIGenerate = async (mode) => {
     setGenerating(true)
     await onAIGenerate('standards', mode, data)
@@ -767,92 +762,56 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
             cursor: 'pointer',
           }}
         >
-          {showPicker ? 'Hide Picker' : 'Browse Standards'}
+          {showPicker ? '▲ Hide Picker' : '▼ Browse Standards'}
         </button>
       </div>
 
-      {data.standards && data.standards.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {data.standards.map((std, i) => (
-            <span
-              key={i}
-              style={{
-                background: `${C.blue}20`,
-                color: C.blue,
-                border: `1px solid ${C.blue}40`,
-                borderRadius: 6,
-                padding: '4px 10px',
-                fontSize: 12,
-                fontWeight: 600,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              {typeof std === 'string' ? std : std.code}
-              <button
-                onClick={() => onChange('standards', data.standards.filter((_, idx) => idx !== i))}
-                style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
-              >
-                ×
-              </button>
-            </span>
-          ))}
-        </div>
+      {showPicker && (
+        <StandardsSelector
+          subject={headerData?.subject}
+          grade={headerData?.gradeLevel}
+          selectedStandards={data.standards || []}
+          topic={headerData?.title}
+          schoolName={currentUser?.schoolName}
+          onChange={(standards) => {
+            onChange('standards', standards)
+            setShowPicker(false)
+          }}
+        />
       )}
 
-      {showPicker && (
+      {data.standards && data.standards.length > 0 && (
         <div style={{ marginTop: 12 }}>
-          {/* Selected standards with X buttons */}
-          {data.standards && data.standards.length > 0 && (
-            <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Selected Standards ({data.standards.length})
-              </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {data.standards.map((std, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      background: `${C.green}20`,
-                      color: C.green,
-                      border: `1px solid ${C.green}40`,
-                      borderRadius: 6,
-                      padding: '4px 8px',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    {typeof std === 'string' ? std : std.code}
-                    <button
-                      onClick={() => {
-                        const newStandards = data.standards.filter((_, idx) => idx !== i)
-                        onChange('standards', newStandards)
-                      }}
-                      style={{ background: 'none', border: 'none', color: C.green, cursor: 'pointer', fontSize: 12, padding: 0, lineHeight: 1 }}
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <StandardsSelector
-            subject={headerData?.subject}
-            grade={headerData?.gradeLevel}
-            selectedStandards={data.standards || []}
-            onChange={(standards) => {
-              console.log('StandardsSelector onChange:', standards)
-              onChange('standards', standards)
-            }}
-            topic={headerData?.title || `${headerData?.subject || 'Lesson'} Plan`}
-            schoolName={currentUser?.schoolName}
-          />
+          <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
+            Selected ({data.standards.length})
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {data.standards.map((std, i) => (
+              <span
+                key={i}
+                style={{
+                  background: `${C.blue}20`,
+                  color: C.blue,
+                  border: `1px solid ${C.blue}40`,
+                  borderRadius: 6,
+                  padding: '4px 10px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                {typeof std === 'string' ? std : std.code}
+                <button
+                  onClick={() => onChange('standards', data.standards.filter((_, idx) => idx !== i))}
+                  style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
         </div>
       )}
     </SectionWithAI>
@@ -1590,7 +1549,7 @@ function BuildFromScratch({ onBack }) {
       {/* Content */}
       <div style={{ padding: '20px', maxWidth: 1000, margin: '0 auto' }}>
         <LessonHeaderSection data={lessonData.header} onChange={handleSectionChange} />
-        <StandardsSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
+        <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
         <ObjectivesSection data={lessonData.objectives} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
         <CFSSection data={lessonData.cfs} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
         <LessonStepsSection data={lessonData.lessonSteps} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
