@@ -55,6 +55,17 @@ export default function AppShell() {
   // Close dropdown on outside click
   useEffect(() => {
     function onClickOutside(e) {
+      // Don't close if clicking on input, textarea, or select elements
+      const target = e.target;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
+        return;
+      }
+      
+      // Don't close if clicking inside an input/textarea/select
+      if (target.closest('input, textarea, select')) {
+        return;
+      }
+      
       if (menuRef.current && !menuRef.current.contains(e.target)) {
         setMenuOpen(false)
       }
