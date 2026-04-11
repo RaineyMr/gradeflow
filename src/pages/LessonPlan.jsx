@@ -528,7 +528,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
                 grade={grade}
                 selectedStandards={selectedStandards}
                 onChange={(standards) => {
-                  useStore.setState({ selectedStandards: standards })
+                  setSelectedStandards(standards)
                 }}
                 topic={form.textbook || `${subject} lesson`}
                 schoolName={currentUser?.schoolName}
