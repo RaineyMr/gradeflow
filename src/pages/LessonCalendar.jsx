@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '@lib/store'
 import { supabase } from '@lib/supabase'
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
+import CurriculumPrepopulate from '@components/curriculum/CurriculumPrepopulate'
 
 const C = {
   bg: '#060810',
@@ -237,10 +238,12 @@ function LessonOptionsModal({ date, onClose, navigate }) {
 // ── Main Component ─────────────────────────────────────────────────────
 export default function LessonCalendar() {
   const navigate = useNavigate()
-  const { calendarLessons = [] } = useStore()
+  const { user, classes, fetchCalendarLessons } = useStore()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState(null)
+  const [calendarLessons, setCalendarLessons] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showPrepopulate, setShowPrepopulate] = useState(false)
 
   // Load curriculum data on mount
   useEffect(() => {
@@ -283,6 +286,12 @@ export default function LessonCalendar() {
 
   function handleSelectDay(date) {
     setSelectedDay(date)
+  }
+
+  function handlePrepopulateSuccess(result) {
+    // Refresh calendar lessons after successful prepopulation
+    fetchCalendarLessons()
+    console.log('Prepopulated lessons:', result)
   }
 
   const today = new Date()
@@ -362,6 +371,41 @@ export default function LessonCalendar() {
         </button>
       </div>
 
+      {/* Prepopulate Button */}
+      <div style={{ marginBottom: 24, textAlign: 'center' }}>
+        <button
+          onClick={() => setShowPrepopulate(true)}
+          style={{
+            background: `linear-gradient(135deg, ${C.purple}, ${C.blue})`,
+            border: 'none',
+            borderRadius: 12,
+            padding: '12px 24px',
+            color: '#fff',
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 8px 25px rgba(155, 110, 245, 0.3)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = 'none'
+          }}
+        >
+          <span style={{ fontSize: 18 }}>✨</span>
+          Populate from Curriculum
+        </button>
+        <p style={{ fontSize: 12, color: C.muted, marginTop: 8, margin: 0 }}>
+          Auto-create lesson shells from your curriculum standards
+        </p>
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 12 }}>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <div key={day} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -391,6 +435,14 @@ export default function LessonCalendar() {
           date={selectedDay}
           onClose={() => setSelectedDay(null)}
           navigate={navigate}
+        />
+      )}
+
+      {showPrepopulate && (
+        <CurriculumPrepopulate
+          isOpen={showPrepopulate}
+          onClose={() => setShowPrepopulate(false)}
+          onSuccess={handlePrepopulateSuccess}
         />
       )}
     </div>
