@@ -803,13 +803,52 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
 
       {showPicker && (
         <div style={{ marginTop: 12 }}>
+          {/* Selected standards with X buttons */}
+          {data.standards && data.standards.length > 0 && (
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Selected Standards ({data.standards.length})
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {data.standards.map((std, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      background: `${C.green}20`,
+                      color: C.green,
+                      border: `1px solid ${C.green}40`,
+                      borderRadius: 6,
+                      padding: '4px 8px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    {typeof std === 'string' ? std : std.code}
+                    <button
+                      onClick={() => {
+                        const newStandards = data.standards.filter((_, idx) => idx !== i)
+                        onChange('standards', newStandards)
+                      }}
+                      style={{ background: 'none', border: 'none', color: C.green, cursor: 'pointer', fontSize: 12, padding: 0, lineHeight: 1 }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           <StandardsSelector
             subject={headerData?.subject}
             grade={headerData?.gradeLevel}
             selectedStandards={data.standards || []}
             onChange={(standards) => {
+              console.log('StandardsSelector onChange:', standards)
               onChange('standards', standards)
-              setShowPicker(false)
             }}
             topic={headerData?.title || `${headerData?.subject || 'Lesson'} Plan`}
             schoolName={currentUser?.schoolName}
