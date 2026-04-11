@@ -238,29 +238,31 @@ function LessonOptionsModal({ date, onClose, navigate }) {
 // ── Main Component ─────────────────────────────────────────────────────
 export default function LessonCalendar() {
   const navigate = useNavigate()
-  const { user, classes, fetchCalendarLessons } = useStore()
+  const { user, classes, lessons } = useStore()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState(null)
-  const [calendarLessons, setCalendarLessons] = useState([])
   const [loading, setLoading] = useState(true)
   const [showPrepopulate, setShowPrepopulate] = useState(false)
 
   // Load curriculum data on mount
   useEffect(() => {
-    // Simulate loading
     setLoading(false)
   }, [])
 
   // Group lessons by date
   const lessonsByDate = useMemo(() => {
     const grouped = {}
-    ;(calendarLessons || []).forEach(lesson => {
-      const dateKey = lesson.lesson_date || lesson.date
-      if (!grouped[dateKey]) grouped[dateKey] = []
-      grouped[dateKey].push(lesson)
+    // Get all lessons from all classes, focusing on class 1 (Math)
+    const allLessons = lessons[1] || []
+    allLessons.forEach(lesson => {
+      const dateKey = lesson.date
+      if (dateKey) {
+        if (!grouped[dateKey]) grouped[dateKey] = []
+        grouped[dateKey].push(lesson)
+      }
     })
     return grouped
-  }, [calendarLessons])
+  }, [lessons])
 
   // Get calendar days for current month
   const year = currentDate.getFullYear()
@@ -290,7 +292,6 @@ export default function LessonCalendar() {
 
   function handlePrepopulateSuccess(result) {
     // Refresh calendar lessons after successful prepopulation
-    fetchCalendarLessons()
     console.log('Prepopulated lessons:', result)
   }
 
