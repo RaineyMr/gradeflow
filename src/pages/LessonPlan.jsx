@@ -299,33 +299,69 @@ function LessonView({ lesson, onBack, onEdit }) {
 
 // ─── AI Generator ────────────────────────────────────────────────────────────
 function AIPlanGenerator({ onBack }) {
-  const { currentUser, selectedStandards, setSelectedStandards } = useStore()
-  const [form, setForm] = useState({ textbook:'' })
+  const { currentUser, selectedStandards, clearSelectedStandards } = useStore()
+  const [form, setForm] = useState({ state:'', subject:'', grade:'', textbook:'', topic:'', standard:'' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showStandards, setShowStandards] = useState(false)
   const [plan, setPlan] = useState(null)
+  const [lessonAdjustments, setLessonAdjustments] = useState(null)
   const [generatingAdjust, setGeneratingAdjust] = useState(false)
+  const activeClass = useStore(s => s.classes.find(c => c.id === s.activeClassId))
   const students = useStore(s => s.students)
   const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
 
-  const subject = currentUser?.subjects?.[0] || 'Math'
-  const grade = currentUser?.gradeLevel || '5'
+  // Auto-populate form based on teacher profile
+  useEffect(() => {
+    console.log('Gradeflow LessonPlan - currentUser:', currentUser)
+    if (currentUser) {
+      console.log('Gradeflow LessonPlan - setting form with:', {
+        subject: currentUser.subjects?.[0] || '',
+        grade: currentUser.gradeLevel || ''
+      })
+      setForm(prev => ({
+        ...prev,
+        state: prev.state || getTeacherState(),
+        subject: prev.subject || currentUser.subjects?.[0] || '',
+        grade: prev.grade || currentUser.gradeLevel || ''
+      }))
+    }
+  }, [currentUser])
+
+  // Get teacher's state based on school
+  function getTeacherState() {
+    if (!currentUser?.school) return ''
+    const districtId = currentUser.school.district_id
+    if (districtId === 'houston-isd' || districtId === 'kipp-texas' || districtId === 'yes-prep-tx') return 'Texas'
+    if (districtId === 'kipp-la' || districtId === 'renew-nola' || districtId === 'collegiate-nola') return 'Louisiana'
+    return ''
+  }
+
+  // Clear standards when topic changes significantly
+  useEffect(() => {
+    if (form.topic && showStandards) {
+      // Clear previous standards when topic changes to get fresh recommendations
+      clearSelectedStandards()
+    }
+  }, [form.topic])
+
+  function set(key, val) { setForm(f => ({ ...f, [key]: val })) }
 
   async function handleGenerate() {
-    setLoading(true)
-    setError('')
-    setPlan(null)
+    if (!form.topic.trim()) { setError('Topic is required'); return }
+    setLoading(true); setError(''); setPlan(null); setLessonAdjustments(null)
 
     try {
+      // Build standards context for AI
       const standardsText = selectedStandards.length > 0 ? 
         selectedStandards.map(s => `${s.code}: ${s.description}`).join('\n') : 
         ''
 
+      // Use the proper lesson plan generation function
       const result = await generateLessonPlan({
-        subject: subject,
-        grade: grade,
-        topic: form.textbook || `${subject} lesson`,
+        subject: form.subject,
+        grade: form.grade,
+        topic: form.topic,
         duration: 50,
         standards: standardsText
       })
@@ -336,20 +372,21 @@ function AIPlanGenerator({ onBack }) {
 
       setPlan(result)
 
+      // Generate accommodations if needed
       if (accommodationStudents.length > 0) {
         setGeneratingAdjust(true)
         try {
           const accommodations = extractAccommodations(accommodationStudents)
           const adjPrompt = `Create specific lesson adjustments for this lesson plan: ${JSON.stringify(result)}. 
 Student accommodations: ${JSON.stringify(accommodations)}
-Subject: ${subject}, Grade: ${grade}
+Subject: ${form.subject}, Grade: ${form.grade}, Topic: ${form.topic}
 ${standardsText ? `Standards: ${standardsText}` : ''}
 
 Return JSON: {"adjustments": ["specific adjustments for each accommodation type"]}`
-
+          
           const adjResult = safeParseJSON(await callAI(adjPrompt, 'You are an expert special education consultant. Generate practical, specific instructional adjustments for individual students based on their accommodation needs and the current lesson.', 1500))
           if (adjResult?.adjustments) {
-            // Handle adjustments
+            setLessonAdjustments(adjResult.adjustments)
           }
         } catch (adjErr) {
           console.error('Adjustment generation failed:', adjErr)
@@ -369,7 +406,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
       <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
-      <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{subject} · {grade}</p>
+      <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{form.subject} · {form.grade} · {form.topic}</p>
 
       {selectedStandards.length > 0 && (
         <div style={{ background: `${C.teal}12`, border: `1px solid ${C.teal}30`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
@@ -393,157 +430,156 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
         <div style={{ background:C.inner, borderRadius:12, padding:'12px 14px', fontSize:13, color:C.muted, marginBottom:16 }}>{plan.notes}</div>
       )}
 
+      {/* Accommodations section */}
       {generatingAdjust && (
         <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
-          Generating lesson adjustments...
+          &#10095; Generating lesson adjustments for {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''}...
         </div>
       )}
       <AccommodationsSection
-        lessonTopic={form.textbook || `${subject} lesson`}
-        lessonSubject={subject}
-        lessonGrade={grade}
+        lessonTopic={form.topic}
+        lessonSubject={form.subject}
+        lessonGrade={form.grade}
       />
     </div>
   )
 
   return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:100 }}>
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
       <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>AI Lesson Plan Generator</h1>
+      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>&#10095; AI Lesson Plan Generator</h1>
 
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        {/* 1. LESSON HEADER */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Lesson Header</h2>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Subject *</label>
-              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px', fontSize: 14, color: C.text }}>
-                {subject}
-              </div>
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Grade Level *</label>
-              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px', fontSize: 14, color: C.text }}>
-                {grade}
-              </div>
+      <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:16 }}>
+        {/* Auto-populated fields - read-only */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>State/Region</label>
+            <div style={{ 
+              background: C.bg, 
+              border:`1px solid ${C.border}`, 
+              borderRadius:12, 
+              padding:'11px 14px', 
+              color:C.text, 
+              fontSize:13 
+            }}>
+              {form.state || 'Not detected'}
             </div>
           </div>
-
           <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Textbook (optional)</label>
-            <input
-              type="text"
-              value={form.textbook}
-              onChange={(e) => setForm(f => ({ ...f, textbook: e.target.value }))}
-              placeholder="Publisher or title..."
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                fontSize: 14,
-                background: C.inner,
-                color: C.text,
-                outline: 'none',
-              }}
-            />
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Subject</label>
+            <div style={{ 
+              background: C.bg, 
+              border:`1px solid ${C.border}`, 
+              borderRadius:12, 
+              padding:'11px 14px', 
+              color:C.text, 
+              fontSize:13 
+            }}>
+              {form.subject || 'Not set in profile'}
+            </div>
           </div>
         </div>
 
-        {/* 2. STANDARDS */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>2. Standards</h2>
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Grade Level</label>
+          <div style={{ 
+            background: C.bg, 
+            border:`1px solid ${C.border}`, 
+            borderRadius:12, 
+            padding:'11px 14px', 
+            color:C.text, 
+            fontSize:13 
+          }}>
+            {form.grade || 'Not set in profile'}
+          </div>
+        </div>
+
+        {/* Editable fields */}
+        <div style={{ marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>
+            Topic * <span style={{ color: C.green, fontSize: 9, fontWeight: 400 }}>(Enter topic first, then select standards)</span>
+          </label>
+          <input
+            value={form.topic} 
+            onChange={e => {
+              set('topic', e.target.value)
+              setShowStandards(false) // Hide standards when topic changes
+            }}
+            placeholder="Fractions, Photosynthesis, Civil War..."
+            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
+          />
+        </div>
+
+        <div style={{ marginBottom:12 }}>
+          <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted, marginBottom:6 }}>Textbook (optional)</label>
+          <input
+            value={form.textbook}
+            onChange={e => set('textbook', e.target.value)}
+            placeholder="Publisher or title..."
+            style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', color:C.text, fontSize:13, outline:'none', boxSizing:'border-box' }}
+          />
+        </div>
+
+        {/* Standards Selection */}
+        <div style={{ marginBottom:12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <label style={{ display:'block', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.06em', color:C.muted }}>
+              Standards / TEKS {!form.topic && <span style={{ color: C.amber }}>(Enter topic first)</span>}
+            </label>
             <button
-              onClick={handleGenerate}
-              disabled={loading}
+              onClick={() => setShowStandards(!showStandards)}
+              disabled={!form.topic}
               style={{
-                background: loading ? C.muted : C.purple,
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                padding: '6px 12px',
+                background: !form.topic ? C.inner : (showStandards ? `${C.teal}18` : C.inner),
+                border: `1px solid ${!form.topic ? C.border : (showStandards ? C.teal : C.border)}`,
+                borderRadius: 8,
+                padding: '4px 8px',
+                color: !form.topic ? C.muted : (showStandards ? C.teal : C.muted),
                 fontSize: 11,
                 fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
-                transition: 'all 0.2s',
+                cursor: !form.topic ? 'not-allowed' : 'pointer',
+                opacity: !form.topic ? 0.6 : 1
               }}
             >
-              {loading ? 'Generating...' : 'Generate'}
+              {showStandards ? 'Hide' : 'Select'} Standards
             </button>
           </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Search TEKS / Common Core Standards</label>
-            <button
-              onClick={() => {
-                console.log('Button clicked, current showStandards:', showStandards);
-                setShowStandards(!showStandards);
-                console.log('Set showStandards to:', !showStandards);
-              }}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${C.blue}`,
-                background: C.inner,
-                color: C.blue,
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              {showStandards ? 'Hide Picker' : 'Browse Standards'}
-            </button>
-          </div>
-
+          
           {selectedStandards.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {selectedStandards.map((std, i) => (
-                <span
-                  key={i}
-                  style={{
-                    background: `${C.blue}20`,
-                    color: C.blue,
-                    border: `1px solid ${C.blue}40`,
-                    borderRadius: 6,
-                    padding: '4px 10px',
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  {typeof std === 'string' ? std : std.code}
-                </span>
-              ))}
+            <div style={{ 
+              background: `${C.teal}12`, 
+              border: `1px solid ${C.teal}30`, 
+              borderRadius: 8, 
+              padding: '8px 10px', 
+              marginBottom: 8,
+              fontSize: 12
+            }}>
+              {selectedStandards.length} standard{selectedStandards.length !== 1 ? 's' : ''} selected
             </div>
           )}
 
-          {showStandards && (
-            <div style={{ marginTop: 12 }}>
-              <StandardsSelector
-                subject={subject}
-                grade={grade}
-                selectedStandards={selectedStandards}
-                onChange={(standards) => {
-                  setSelectedStandards(standards)
-                }}
-                topic={form.textbook || `${subject} lesson`}
-                schoolName={currentUser?.schoolName}
-              />
-            </div>
+          {showStandards && form.topic && (
+            <StandardsSelector 
+              topic={form.topic}
+              maxSelections={3}
+              showRecommendations={true}
+              schoolName={currentUser?.schoolName}
+            />
           )}
         </div>
 
-        {error && <p style={{ color: C.red, fontSize: 12 }}>{error}</p>}
-
         {accommodationStudents.length > 0 && (
-          <div style={{ background: `${C.purple}12`, border: `1px solid ${C.purple}30`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: C.purple }}>
-            {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations adjustments will be auto-generated after the lesson plan.
+          <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
+            &#10095; {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations &#8212; adjustments will be auto-generated after the lesson plan.
           </div>
         )}
+
+        {error && <p style={{ color:C.red, fontSize:12, marginBottom:12 }}>{error}</p>}
+
+        <button onClick={handleGenerate}
+          style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
+          &#10095; Generate Lesson Plan
+        </button>
       </div>
     </div>
   )
