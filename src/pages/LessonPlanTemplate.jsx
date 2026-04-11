@@ -907,7 +907,7 @@ export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
       
       // Add auth header if user exists
       if (currentUser) {
-        if (currentUser.id === 'demo-user') {
+        if (currentUser.id?.startsWith('demo-')) {
           // Demo account - use demo token
           headers.Authorization = 'Bearer demo-token'
         } else {

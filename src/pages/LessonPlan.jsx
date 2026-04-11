@@ -1470,19 +1470,30 @@ function BuildFromScratch({ onBack }) {
       // Get current user from store
       const { currentUser } = useStore.getState()
       
+      console.log('DEBUG: Current user:', currentUser)
+      console.log('DEBUG: User ID:', currentUser?.id)
+      console.log('DEBUG: User starts with demo-:', currentUser?.id?.startsWith('demo-'))
+      
       // Prepare headers with authentication
       const headers = { 'Content-Type': 'application/json' }
       
       // Add auth header if user exists
       if (currentUser) {
-        if (currentUser.id === 'demo-user') {
+        if (currentUser.id?.startsWith('demo-')) {
           // Demo account - use demo token
           headers.Authorization = 'Bearer demo-token'
+          console.log('DEBUG: Using demo token authentication')
         } else {
           // Real user - use actual auth token
           headers.Authorization = `Bearer ${currentUser.id}`
+          console.log('DEBUG: Using real user authentication')
         }
+      } else {
+        console.log('DEBUG: No current user found')
       }
+      
+      console.log('DEBUG: Headers:', headers)
+      console.log('DEBUG: Lesson data:', lessonData)
       
       const response = await fetch('/api/lesson-plan', {
         method: 'POST',
@@ -1490,12 +1501,17 @@ function BuildFromScratch({ onBack }) {
         body: JSON.stringify(lessonData),
       })
 
+      console.log('DEBUG: Response status:', response.status)
+      console.log('DEBUG: Response ok:', response.ok)
+
       if (!response.ok) {
         const error = await response.json()
+        console.log('DEBUG: Error response:', error)
         throw new Error(error.error || 'Save failed')
       }
       
       const result = await response.json()
+      console.log('DEBUG: Save result:', result)
       alert('Lesson plan saved!')
       onBack()
     } catch (err) {
