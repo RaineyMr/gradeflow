@@ -923,6 +923,28 @@ export const useStore = create((set, get) => ({
     lang: user?.lang || 'en',
   }),
 
+  // OAuth authentication handler
+  setAuth: (user) => {
+    set({
+      currentUser: user,
+      lang: user?.lang || 'en',
+    });
+    
+    // Store session persistence in localStorage for OAuth users
+    if (user?.isOAuthUser) {
+      localStorage.setItem('gradeflow_oauth_user', JSON.stringify({
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        name: user.name,
+        provider: user.provider,
+        avatar_url: user.avatar_url,
+        school_id: user.school_id,
+        isOAuthUser: true
+      }));
+    }
+  },
+
   setLang: (lang) => {
     localStorage.setItem('gradeflow_lang', lang)
     set(state => ({

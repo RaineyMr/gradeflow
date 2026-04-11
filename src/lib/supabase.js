@@ -52,6 +52,42 @@ if (isDemoMode) {
           return Promise.resolve({ data: null, error: null });
         }
       };
+    },
+    // Add auth methods for demo mode
+    auth: {
+      signInWithOAuth: async ({ provider }) => {
+        console.log(`🔗 Demo: Simulating ${provider} OAuth flow`);
+        return {
+          data: { provider, url: '#' },
+          error: null
+        };
+      },
+      getSession: async () => {
+        // Return a mock session for demo purposes
+        return {
+          data: {
+            session: {
+              user: {
+                id: 'demo-oauth-user',
+                email: 'demo.teacher@houstonsd.org',
+                user_metadata: {
+                  full_name: 'Demo Teacher',
+                  avatar_url: 'https://ui-avatars.com/api/?name=Demo+Teacher&background=4285F4&color=fff'
+                }
+              }
+            }
+          },
+          error: null
+        };
+      },
+      signOut: async () => {
+        console.log('🔓 Demo: Signed out');
+        return { error: null };
+      },
+      onAuthStateChange: () => {
+        // Return unsubscribe function
+        return () => {};
+      }
     }
   };
 } else {

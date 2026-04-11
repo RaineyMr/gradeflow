@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
 import { demoLoginList, getDemoAccountByCredentials } from '../lib/demoAccounts'
+import GoogleSignInButton from '../components/GoogleSignInButton'
 
 const ROLES = [
   { id: 'teacher',      labelKey: 'teacher_label',      icon: '🧑‍🏫' },
@@ -424,8 +425,23 @@ function MobileLogin({ form, onCreateAccount }) {
           <span style={{ fontSize: 12, color: BRAND.muted }}>{t('or_jump')}</span>
         </div>
 
+        {/* Google OAuth Divider */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
+          <div style={{ flex: 1, height: 1, background: BRAND.border }} />
+          <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 500 }}>
+            {lang === 'es' ? 'O' : 'OR'}
+          </span>
+          <div style={{ flex: 1, height: 1, background: BRAND.border }} />
+        </div>
+
+        {/* Google Sign In Button */}
+        <GoogleSignInButton 
+          compact={true}
+          onError={(error) => console.error('Google sign in error:', error)}
+        />
+
         {/* Quick demo */}
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: BRAND.muted, marginBottom: 10 }}>{t('quick_demo')}</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: BRAND.muted, marginBottom: 10, marginTop: 20 }}>{t('quick_demo')}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 8 }}>
           {demoLoginList.map(demo => (
             <button key={demo.role} onClick={() => handleDemoClick(demo)}
@@ -577,6 +593,21 @@ function DesktopLogin({ form, onCreateAccount }) {
               <span style={{ fontSize: 12, color: BRAND.muted }}>{t('or_jump')}</span>
               <div style={{ flex: 1, height: 1, background: BRAND.border }} />
             </div>
+
+            {/* Google OAuth Divider */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+              <div style={{ flex: 1, height: 1, background: BRAND.border }} />
+              <span style={{ fontSize: 13, color: BRAND.muted, fontWeight: 600 }}>
+                {lang === 'es' ? 'O' : 'OR'}
+              </span>
+              <div style={{ flex: 1, height: 1, background: BRAND.border }} />
+            </div>
+
+            {/* Google Sign In Button */}
+            <GoogleSignInButton 
+              compact={false}
+              onError={(error) => console.error('Google sign in error:', error)}
+            />
 
             {/* Quick demo */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
