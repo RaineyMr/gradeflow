@@ -851,6 +851,11 @@ function OptionalAddOnsSection({ data, onChange }) {
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────
 export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
+  console.log('=== DEBUG: LessonPlanTemplate mounted ===')
+  console.log('DEBUG: currentUser:', currentUser)
+  console.log('DEBUG: currentUser.id:', currentUser?.id)
+  console.log('DEBUG: currentUser.email:', currentUser?.email)
+  
   const [lessonData, setLessonData] = useState({
     header: { title: '', date: '', subject: '', gradeLevel: '' },
     standards: [],

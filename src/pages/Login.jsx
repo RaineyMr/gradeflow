@@ -92,8 +92,17 @@ function useLoginForm(onLogin, onDemoLogin) {
   }
 
   function handleDemoClick(demo) {
+    console.log('=== DEBUG: Demo button clicked ===')
+    console.log('DEBUG: Demo clicked:', demo)
     const account = getDemoAccountByCredentials(demo.email, demo.password, demo.role)
-    if (account) { window.scrollTo(0, 0); onDemoLogin?.({ ...account, lang }) }
+    console.log('DEBUG: Retrieved account:', account)
+    if (account) { 
+      console.log('DEBUG: Calling onDemoLogin with account')
+      window.scrollTo(0, 0); 
+      onDemoLogin?.({ ...account, lang }) 
+    } else {
+      console.log('DEBUG: No account found for demo')
+    }
   }
 
   return { selectedRole, setSelectedRole, email, setEmail, password, setPassword, error, loading, handleSubmit, handleDemoClick, lang, toggleLang }
