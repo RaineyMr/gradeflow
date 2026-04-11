@@ -728,7 +728,7 @@ function LessonHeaderSection({ data, onChange }) {
 
 // ─── 2. STANDARDS ──────────────────────────────────────────────────────────
 function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
-  const { currentUser, selectedStandards, setSelectedStandards } = useStore()
+  const { currentUser } = useStore()
   const [showPicker, setShowPicker] = React.useState(false)
   const [generating, setGenerating] = React.useState(false)
 
@@ -803,7 +803,6 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
             grade={headerData?.gradeLevel}
             selectedStandards={data.standards || []}
             onChange={(standards) => {
-              setSelectedStandards(standards)
               onChange('standards', standards)
               setShowPicker(false)
             }}
@@ -1547,7 +1546,7 @@ function BuildFromScratch({ onBack }) {
       {/* Content */}
       <div style={{ padding: '20px', maxWidth: 1000, margin: '0 auto' }}>
         <LessonHeaderSection data={lessonData.header} onChange={handleSectionChange} />
-        <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
+        <StandardsSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
         <ObjectivesSection data={lessonData.objectives} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
         <CFSSection data={lessonData.cfs} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
         <LessonStepsSection data={lessonData.lessonSteps} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
