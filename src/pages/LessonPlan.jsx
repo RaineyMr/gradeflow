@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
-import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
+import { generateLessonPlan, extractAccommodations, generateLessonAccommodations, callAI } from '../lib/ai'
 import StandardsSelector from '../components/standards/StandardsSelector'
 
 const C = {
@@ -806,6 +806,7 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
               onChange('standards', standards)
               setShowPicker(false)
             }}
+            topic={headerData?.title}
             schoolName={currentUser?.schoolName}
           />
         </div>
