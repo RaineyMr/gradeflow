@@ -732,6 +732,11 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
   const [showPicker, setShowPicker] = React.useState(false)
   const [generating, setGenerating] = React.useState(false)
 
+  // Debug what we're receiving
+  console.log('StandardsSection render - data:', data)
+  console.log('StandardsSection render - data.standards:', data.standards)
+  console.log('StandardsSection render - headerData:', headerData)
+
   const handleAIGenerate = async (mode) => {
     setGenerating(true)
     await onAIGenerate('standards', mode, data)
@@ -798,17 +803,32 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
 
       {showPicker && (
         <div style={{ marginTop: 12 }}>
-          <StandardsSelector
-            subject={headerData?.subject}
-            grade={headerData?.gradeLevel}
-            selectedStandards={data.standards || []}
-            onChange={(standards) => {
-              onChange('standards', standards)
-              setShowPicker(false)
-            }}
-            topic={headerData?.title}
-            schoolName={currentUser?.schoolName}
-          />
+          <div style={{ padding: 12, background: C.inner, borderRadius: 8, border: `1px solid ${C.border}` }}>
+            <h4 style={{ color: C.text, fontSize: 14, margin: '0 0 8px 0' }}>Standards Selector Test</h4>
+            <p style={{ color: C.muted, fontSize: 12, margin: '0 0 12px 0' }}>
+              Current standards: {data.standards?.length || 0} items
+            </p>
+            <button
+              onClick={() => {
+                const testStandard = { code: 'TEST.001', description: 'Test Standard for Debugging' }
+                const newStandards = [...(data.standards || []), testStandard]
+                console.log('Adding test standard:', newStandards)
+                onChange('standards', newStandards)
+                setShowPicker(false)
+              }}
+              style={{
+                background: C.blue,
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                padding: '8px 12px',
+                fontSize: 12,
+                cursor: 'pointer'
+              }}
+            >
+              Add Test Standard
+            </button>
+          </div>
         </div>
       )}
     </SectionWithAI>
