@@ -1124,6 +1124,7 @@ export default function Dashboard({ currentUser, onCameraClick }) {
 
 // Export widget components for use in other dashboards
 export {
+  HomeFeed,
   TodaysLessonsWidget,
   NeedsAttentionWidget,
   MessagesWidget,
