@@ -2241,12 +2241,7 @@ setDemoSupportStaffData: async () => {
       // Check if current user is a demo account
       const currentUser = get().currentUser
       const isDemoAccount = currentUser?.email?.includes('@demo') || 
-                           currentUser?.id?.startsWith('demo-') ||
-                           // Known demo account domains
-                           currentUser?.email?.includes('@kippneworleans.org') ||
-                           currentUser?.email?.includes('@houstonisd.org') ||
-                           currentUser?.email?.includes('@bellaire.org') ||
-                           currentUser?.email?.includes('@lamarhs.org')
+                           currentUser?.id?.startsWith('demo-')
 
       // Only load demo data for actual demo accounts
       if (isDemoAccount) {

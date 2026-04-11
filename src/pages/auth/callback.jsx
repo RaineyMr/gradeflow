@@ -14,105 +14,12 @@ const BRAND = {
   gradient: 'linear-gradient(135deg, #f97316 0%, #2563EB 100%)',
 }
 
-// Role determination based on email domain and patterns
-function determineUserRole(email, userMetadata) {
-  const emailLower = email.toLowerCase()
-  
-  // Houston ISD domain patterns
-  if (emailLower.includes('@houstonsd.org') || emailLower.includes('@houstonisd.org')) {
-    return 'teacher'
-  }
-  
-  // KIPP domain patterns
-  if (emailLower.includes('@kipp') || emailLower.includes('kipp')) {
-    return 'teacher'
-  }
-  
-  // YES Prep domain patterns
-  if (emailLower.includes('@yesprep') || emailLower.includes('yes-prep')) {
-    return 'teacher'
-  }
-  
-  // ReNEW Schools domain patterns
-  if (emailLower.includes('@renew') || emailLower.includes('renew-schools')) {
-    return 'teacher'
-  }
-  
-  // Collegiate Academies domain patterns
-  if (emailLower.includes('@collegiate') || emailLower.includes('collegiate-academies')) {
-    return 'teacher'
-  }
-  
-  // Archdiocese domain patterns
-  if (emailLower.includes('@archdiocese') || emailLower.includes('@nolacatholic')) {
-    return 'teacher'
-  }
-  
-  // Student patterns (typically have numbers or graduation years)
-  if (/\d{4}/.test(emailLower) || emailLower.includes('student') || emailLower.includes('stu.')) {
-    return 'student'
-  }
-  
-  // Parent patterns (often include parent-related keywords)
-  if (emailLower.includes('parent') || emailLower.includes('mom') || emailLower.includes('dad')) {
-    return 'parent'
-  }
-  
-  // Admin patterns (admin, principal, superintendent keywords)
-  if (emailLower.includes('admin') || emailLower.includes('principal') || emailLower.includes('superintendent') || emailLower.includes('director')) {
-    return 'admin'
-  }
-  
-  // Default to teacher for unknown domains (most common use case)
-  return 'teacher'
-}
-
-// Find school based on email domain
-function findSchoolByDomain(email, schools) {
-  const emailLower = email.toLowerCase()
-  
-  // Houston ISD
-  if (emailLower.includes('houstonisd.org') || emailLower.includes('houstonsd.org')) {
-    return schools.find(s => s.district_id === 'houston-isd' && s.type === 'high_school') || 
-           schools.find(s => s.district_id === 'houston-isd')
-  }
-  
-  // KIPP Louisiana
-  if (emailLower.includes('kipp') && (emailLower.includes('.org') || emailLower.includes('kippneworleans'))) {
-    return schools.find(s => s.district_id === 'kipp-la') || 
-           schools.find(s => s.district_id === 'kipp-texas')
-  }
-  
-  // YES Prep
-  if (emailLower.includes('yesprep')) {
-    return schools.find(s => s.district_id === 'yes-prep-nola') || 
-           schools.find(s => s.district_id === 'yes-prep-tx')
-  }
-  
-  // ReNEW Schools
-  if (emailLower.includes('renew')) {
-    return schools.find(s => s.district_id === 'renew-nola')
-  }
-  
-  // Collegiate Academies
-  if (emailLower.includes('collegiate')) {
-    return schools.find(s => s.district_id === 'collegiate-nola')
-  }
-  
-  // Archdiocese
-  if (emailLower.includes('archdiocese') || emailLower.includes('nolacatholic')) {
-    return schools.find(s => s.district_id === 'archdiocese-nola')
-  }
-  
-  // Fallback to a default school
-  return schools.find(s => s.id === 'JFK-HIGH') || schools[0]
-}
 
 export default function OAuthCallback() {
   const [status, setStatus] = useState('loading') // loading, success, error
   const [message, setMessage] = useState('')
   const [user, setUser] = useState(null)
-  const { setAuth, lang, schools } = useStore()
+  const { setAuth, lang } = useStore()
 
   useEffect(() => {
     handleOAuthCallback()
@@ -120,7 +27,7 @@ export default function OAuthCallback() {
 
   const handleOAuthCallback = async () => {
     try {
-      // Get the current session after OAuth redirect
+      // Get current session after OAuth redirect
       const { data: { session }, error } = await supabase.auth.getSession()
       
       if (error) {
@@ -143,44 +50,76 @@ export default function OAuthCallback() {
       const currentUser = session.user
       setUser(currentUser)
 
-      // Determine user role based on email
-      const role = determineUserRole(currentUser.email, currentUser.user_metadata)
-      
-      // Find appropriate school
-      const school = findSchoolByDomain(currentUser.email, schools)
-      
-      // Create user object for the app
-      const userObj = {
-        id: currentUser.id,
-        email: currentUser.email,
-        name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email.split('@')[0],
-        role: role,
-        school_id: school?.id || 'JFK-HIGH',
-        school: school,
-        avatar_url: currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture,
-        lang: lang,
-        isOAuthUser: true,
-        provider: 'google',
-        needsOnboarding: role === 'teacher', // Teachers need profile setup
+      // Check if user exists in teachers table
+      const { data: existingTeacher, error: teacherError } = await supabase
+        .from('teachers')
+        .select('*')
+        .eq('auth_id', currentUser.id)
+        .single()
+
+      if (teacherError && teacherError.code !== 'PGRST116') { // PGRST116 = no rows returned
+        console.error('Teacher lookup error:', teacherError)
+        setStatus('error')
+        setMessage(lang === 'es' 
+          ? 'Error al verificar el perfil. Por favor intenta de nuevo.' 
+          : 'Error checking profile. Please try again.')
+        return
       }
 
-      // Set auth state
-      setAuth(userObj)
-      
-      setStatus('success')
-      setMessage(lang === 'es' 
-        ? '¡Inicio de sesión exitoso! Redirigiendo...' 
-        : 'Sign in successful! Redirecting...')
+      if (existingTeacher) {
+        // User exists - create user object and redirect to dashboard
+        const userObj = {
+          id: existingTeacher.id,
+          auth_id: currentUser.id,
+          email: existingTeacher.email,
+          name: existingTeacher.name,
+          role: existingTeacher.role,
+          school_id: existingTeacher.school_id,
+          avatar_url: existingTeacher.avatar_url,
+          provider: existingTeacher.provider,
+          lang: lang,
+          isOAuthUser: true,
+        }
 
-      // Redirect to appropriate dashboard after a short delay
-      setTimeout(() => {
-        const dashboardPath = role === 'teacher' ? '/teacher' : 
-                            role === 'student' ? '/student' :
-                            role === 'parent' ? '/parent' :
-                            role === 'admin' ? '/admin' : '/teacher'
+        setAuth(userObj)
         
-        window.location.href = dashboardPath
-      }, 1500)
+        setStatus('success')
+        setMessage(lang === 'es' 
+          ? '¡Inicio de sesión exitoso! Redirigiendo...' 
+          : 'Sign in successful! Redirecting...')
+
+        // Redirect to appropriate dashboard
+        setTimeout(() => {
+          const dashboardPath = existingTeacher.role === 'teacher' ? '/teacher' : 
+                              existingTeacher.role === 'student' ? '/student' :
+                              existingTeacher.role === 'parent' ? '/parent' :
+                              existingTeacher.role === 'admin' ? '/admin' : '/teacher'
+          
+          window.location.href = dashboardPath
+        }, 1500)
+      } else {
+        // New user - store OAuth data and redirect to onboarding
+        const oauthData = {
+          auth_id: currentUser.id,
+          email: currentUser.email,
+          name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email.split('@')[0],
+          avatar_url: currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture,
+          provider: 'google',
+        }
+
+        // Store temporarily in sessionStorage for onboarding
+        sessionStorage.setItem('gradeflow_oauth_temp', JSON.stringify(oauthData))
+        
+        setStatus('success')
+        setMessage(lang === 'es' 
+          ? '¡Bienvenido! Configurando tu perfil...' 
+          : 'Welcome! Setting up your profile...')
+
+        // Redirect to onboarding
+        setTimeout(() => {
+          window.location.href = '/onboarding'
+        }, 1000)
+      }
 
     } catch (err) {
       console.error('OAuth callback error:', err)
