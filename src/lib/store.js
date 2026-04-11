@@ -21,125 +21,16 @@ const DEMO_CLASSES = [
 ]
 
 const DEMO_STUDENTS = [
-  {
-    "id": 1,
-    "classId": 1,
-    "name": "Aaliyah Brooks",
-    "grade": 95,
-    "letter": "A",
-    "submitted": false,
-    "submitUngraded": false,
-    "flagged": false,
-    "accommodations": null
-  },
-  {
-    "id": 2,
-    "classId": 1,
-    "name": "Marcus Thompson",
-    "grade": 58,
-    "letter": "F",
-    "submitted": true,
-    "submitUngraded": true,
-    "flagged": true,
-    "accommodations": [
-      "504 plan - Extended time"
-    ]
-  },
-  {
-    "id": 3,
-    "classId": 1,
-    "name": "Sofia Rodriguez",
-    "grade": 82,
-    "letter": "B",
-    "submitted": false,
-    "submitUngraded": false,
-    "flagged": false,
-    "accommodations": null
-  },
-  {
-    "id": 4,
-    "classId": 1,
-    "name": "Jordan Williams",
-    "grade": 74,
-    "letter": "C",
-    "submitted": true,
-    "submitUngraded": false,
-    "flagged": false,
-    "accommodations": null
-  },
-  {
-    "id": 5,
-    "classId": 1,
-    "name": "Priya Patel",
-    "grade": 91,
-    "letter": "A",
-    "submitted": false,
-    "submitUngraded": false,
-    "flagged": false,
-    "accommodations": null
-  },
-  {
-    "id": 6,
-    "classId": 1,
-    "name": "Noah Johnson",
-    "grade": 88,
-    "letter": "B",
-    "submitted": false,
-    "submitUngraded": false,
-    "flagged": false,
-    "accommodations": [
-      "504 plan - Extended time"
-    ]
-  },
-  {
-    "id": 7,
-    "classId": 1,
-    "name": "Emma Davis",
-    "grade": 96,
-    "letter": "A",
-    "submitted": false,
-    "submitUngraded": false,
-    "flagged": false,
-    "accommodations": null
-  },
-  {
-    "id": 8,
-    "classId": 1,
-    "name": "Liam Martinez",
-    "grade": 61,
-    "letter": "D",
-    "submitted": true,
-    "submitUngraded": true,
-    "flagged": true,
-    "accommodations": [
-      "504 plan - Extended time",
-      "Calculator access"
-    ]
-  },
-  {
-    "id": 9,
-    "classId": 1,
-    "name": "Zoe Anderson",
-    "grade": 55,
-    "letter": "F",
-    "submitted": false,
-    "submitUngraded": false,
-    "flagged": true,
-    "accommodations": [
-      "504 plan - Extended time"
-    ]
-  },
-  {
-    "id": 10,
-    "classId": 1,
-    "name": "Ethan Brown",
-    "grade": 79,
-    "letter": "C",
-    "submitted": true,
-    "submitUngraded": false,
-    "flagged": false,
-    "accommodations": null
-  }
+  { id: 1,  classId: 1, name: 'Aaliyah Brooks',  grade: 95, letter: 'A', submitted: false, submitUngraded: false, flagged: false },
+  { id: 2,  classId: 1, name: 'Marcus Thompson', grade: 58, letter: 'F', submitted: true,  submitUngraded: true,  flagged: true  },
+  { id: 3,  classId: 1, name: 'Sofia Rodriguez', grade: 82, letter: 'B', submitted: false, submitUngraded: false, flagged: false },
+  { id: 4,  classId: 1, name: 'Jordan Williams', grade: 74, letter: 'C', submitted: true,  submitUngraded: false, flagged: false },
+  { id: 5,  classId: 1, name: 'Priya Patel',     grade: 91, letter: 'A', submitted: false, submitUngraded: false, flagged: false },
+  { id: 6,  classId: 2, name: 'Noah Johnson',    grade: 88, letter: 'B', submitted: false, submitUngraded: false, flagged: false },
+  { id: 7,  classId: 2, name: 'Emma Davis',      grade: 96, letter: 'A', submitted: false, submitUngraded: false, flagged: false },
+  { id: 8,  classId: 3, name: 'Liam Martinez',   grade: 61, letter: 'D', submitted: true,  submitUngraded: true,  flagged: true  },
+  { id: 9,  classId: 3, name: 'Zoe Anderson',    grade: 55, letter: 'F', submitted: false, submitUngraded: false, flagged: true  },
+  { id: 10, classId: 4, name: 'Ethan Brown',     grade: 79, letter: 'C', submitted: true,  submitUngraded: false, flagged: false },
 ]
 
 const DEMO_ASSIGNMENTS = [
@@ -162,73 +53,27 @@ const DEMO_GRADES = [
   { studentId: 5, assignmentId: 1, score: 93 },
 ]
 
+const DEMO_MESSAGES = [
+  { id: 1, studentName: 'Marcus Thompson', subject: 'Math',    trigger: 'Failed 58%',      status: 'pending', tone: 'Warm & Friendly', draft: "Dear Parent, Marcus received 58% on his Math assessment. I'd love to connect this week to discuss support options.", positiveDraft: "Hi! Just wanted to share that Marcus is showing real effort in class. Let's keep building on that momentum!", dayOld: false },
+  { id: 2, studentName: 'Aaliyah Brooks',  subject: 'Reading', trigger: 'Improved +12pts', status: 'sent',    tone: 'Celebrating',     draft: "Great news! Aaliyah improved her Reading score by 12 points. She's working so hard!", positiveDraft: "Aaliyah is doing amazing work. Her dedication is really paying off!", dayOld: false },
+  { id: 3, studentName: 'Liam Martinez',   subject: 'Science', trigger: 'Failed 61%',      status: 'pending', tone: 'Warm & Friendly', draft: "Dear Parent, I wanted to reach out regarding Liam's recent Science assessment.", positiveDraft: "Liam is showing curiosity in Science class. Here are some ways to support at home!", dayOld: true  },
+]
+
 const DEMO_LESSONS = {
   1: [
-    // Week 1: Place Value & Number Sense
-    { id: 'math-1', classId: 1, dayLabel: 'Mon · Apr 1', title: 'Unit 1 · Place Value to Millions', duration: '45 min', pages: 'Pages 12–15', objective: 'Students will read, write, and compare numbers to millions place.', warmup: ['Number of the day: 2,457,891', 'Place value review'], activities: ['Place value chart modeling', 'Expanded form practice', 'Partner comparison game'], materials: ['Place value charts', 'Base-10 blocks', 'Whiteboards'], homework: 'Workbook page 16, problems 1–12', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-2', classId: 1, dayLabel: 'Tue · Apr 2', title: 'Unit 1 · Ordering & Rounding', duration: '45 min', pages: 'Pages 17–20', objective: 'Students will order and round numbers to millions place.', warmup: ['Quick round: 47,823 to nearest thousand', 'Number line placement'], activities: ['Rounding rules anchor chart', 'Station rotation: rounding practice', 'Real-world rounding problems'], materials: ['Number lines', 'Rounding cards', 'Calculators for checking'], homework: 'Workbook page 21, problems 1–15', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-3', classId: 1, dayLabel: 'Wed · Apr 3', title: 'Unit 1 · Addition & Subtraction Review', duration: '45 min', pages: 'Pages 22–25', objective: 'Students will add and subtract multi-digit numbers with regrouping.', warmup: ['Mental math: 456+789', 'Regrouping review'], activities: ['Standard algorithm practice', 'Word problem strategies', 'Error analysis'], materials: ['Graph paper', 'Colored pencils'], homework: 'Workbook page 26, problems 1–10', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-4', classId: 1, dayLabel: 'Thu · Apr 4', title: 'Unit 1 · Addition Assessment', duration: '45 min', pages: 'Pages 26–28', objective: 'Students will demonstrate mastery of addition and subtraction concepts.', warmup: ['Quick review problems', 'Test-taking strategies'], activities: ['Unit assessment', 'Early finisher challenge'], materials: ['Assessment sheets', 'Calculators for checking'], homework: 'No homework - assessment day', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-5', classId: 1, dayLabel: 'Fri · Apr 5', title: 'Unit 1 · Multiplication Patterns', duration: '45 min', pages: 'Pages 29–32', objective: 'Students will identify and use multiplication patterns.', warmup: ['Times table warm-up', 'Pattern recognition'], activities: ['Multiplication chart exploration', 'Pattern rule writing', 'Mental math strategies'], materials: ['Multiplication charts', 'Pattern cards'], homework: 'Workbook page 33, problems 1–8', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    
-    // Week 2: Multi-Digit Multiplication
-    { id: 'math-6', classId: 1, dayLabel: 'Mon · Apr 8', title: 'Unit 2 · 2-Digit × 2-Digit Multiplication', duration: '45 min', pages: 'Pages 34–37', objective: 'Students will multiply 2-digit by 2-digit numbers.', warmup: ['Mental math: 23×45', 'Estimation practice'], activities: ['Area model demonstration', 'Standard algorithm practice', 'Partner check'], materials: ['Graph paper', 'Base-10 blocks'], homework: 'Workbook page 38, problems 1–12', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-7', classId: 1, dayLabel: 'Tue · Apr 9', title: 'Unit 2 · 3-Digit × 2-Digit Multiplication', duration: '45 min', pages: 'Pages 39–42', objective: 'Students will multiply 3-digit by 2-digit numbers.', warmup: ['Quick multiply: 156×34', 'Place value review'], activities: ['Expanded form method', 'Lattice multiplication', 'Word problem application'], materials: ['Lattice grids', 'Expanded form cards'], homework: 'Workbook page 43, problems 1–10', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-8', classId: 1, dayLabel: 'Wed · Apr 10', title: 'Unit 2 · Multiplication Word Problems', duration: '45 min', pages: 'Pages 44–47', objective: 'Students will solve multi-step multiplication word problems.', warmup: ['Key words identification', 'Operation selection'], activities: ['CUBES strategy practice', 'Real-world scenarios', 'Partner problem creation'], materials: ['CUBES posters', 'Word problem cards'], homework: 'Workbook page 48, problems 1–8', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-9', classId: 1, dayLabel: 'Thu · Apr 11', title: 'Unit 2 · Multiplication Review', duration: '45 min', pages: 'Pages 49–51', objective: 'Students will review multiplication concepts and strategies.', warmup: ['Mixed practice problems', 'Strategy selection'], activities: ['Error analysis', 'Strategy sharing', 'Practice stations'], materials: ['Strategy cards', 'Whiteboards'], homework: 'Study for unit test', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-10', classId: 1, dayLabel: 'Fri · Apr 12', title: 'Unit 2 · Multiplication Unit Test', duration: '45 min', pages: 'Pages 52–54', objective: 'Students will demonstrate multiplication mastery.', warmup: ['Final review questions', 'Test strategies'], activities: ['Unit assessment', 'Extension activities'], materials: ['Test sheets', 'Extension puzzles'], homework: 'No homework - test day', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    
-    // Week 3: Division Concepts
-    { id: 'math-11', classId: 1, dayLabel: 'Mon · Apr 15', title: 'Unit 3 · Division Concepts', duration: '45 min', pages: 'Pages 55–58', objective: 'Students will understand division as equal sharing and repeated subtraction.', warmup: ['Division fact warm-up', 'Sharing scenarios'], activities: ['Manipulatives exploration', 'Repeated subtraction modeling', 'Array connections'], materials: ['Counters', 'Array grids', 'Sharing mats'], homework: 'Workbook page 59, problems 1–10', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-12', classId: 1, dayLabel: 'Tue · Apr 16', title: 'Unit 3 · 2-Digit Division', duration: '45 min', pages: 'Pages 60–63', objective: 'Students will divide 2-digit numbers with and without remainders.', warmup: ['Division fact practice', 'Estimation review'], activities: ['Long division algorithm', 'Remainder interpretation', 'Real-world division'], materials: ['Division charts', 'Base-10 blocks'], homework: 'Workbook page 64, problems 1–12', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-13', classId: 1, dayLabel: 'Wed · Apr 17', title: 'Unit 3 · 3-Digit Division', duration: '45 min', pages: 'Pages 65–68', objective: 'Students will divide 3-digit numbers by 2-digit numbers.', warmup: ['Estimation challenges', 'Place value division'], activities: ['Area model division', 'Standard algorithm practice', 'Word problem application'], materials: ['Area model grids', 'Division templates'], homework: 'Workbook page 69, problems 1–8', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-14', classId: 1, dayLabel: 'Thu · Apr 18', title: 'Unit 3 · Division Word Problems', duration: '45 min', pages: 'Pages 70–73', objective: 'Students will solve division word problems with remainders.', warmup: ['Key words review', 'Remainder interpretation'], activities: ['CUBES for division', 'Real-world scenarios', 'Partner problem solving'], materials: ['Word problem cards', 'Remainder charts'], homework: 'Workbook page 74, problems 1–6', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-15', classId: 1, dayLabel: 'Fri · Apr 19', title: 'Unit 3 · Division Unit Test', duration: '45 min', pages: 'Pages 75–77', objective: 'Students will demonstrate division mastery.', warmup: ['Comprehensive review', 'Calculator strategies'], activities: ['Unit assessment', 'Error analysis'], materials: ['Test sheets', 'Calculators'], homework: 'No homework - test day', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    
-    // Week 4: Fractions Introduction
-    { id: 'math-16', classId: 1, dayLabel: 'Mon · Apr 22', title: 'Unit 4 · Fraction Concepts', duration: '45 min', pages: 'Pages 78–81', objective: 'Students will understand fractions as parts of a whole.', warmup: ['Fraction of the day', 'Visual fraction review'], activities: ['Fraction strips exploration', 'Number line fractions', 'Real-world fractions'], materials: ['Fraction strips', 'Fraction circles', 'Number lines'], homework: 'Workbook page 82, problems 1–10', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-17', classId: 1, dayLabel: 'Tue · Apr 23', title: 'Unit 4 · Equivalent Fractions', duration: '45 min', pages: 'Pages 82–85', objective: 'Students will find and generate equivalent fractions.', warmup: ['Equivalent fraction matching', 'Simplification review'], activities: ['Fraction strip modeling', 'Cross-multiplication practice', 'Real-world examples'], materials: ['Fraction tiles', 'Equivalence cards'], homework: 'Workbook page 86, problems 1–12', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-18', classId: 1, dayLabel: 'Wed · Apr 24', title: 'Unit 4 · Comparing Fractions', duration: '45 min', pages: 'Pages 86–89', objective: 'Students will compare fractions with unlike denominators.', warmup: ['Fraction comparison', 'Benchmark fractions'], activities: ['Common denominator strategy', 'Visual comparison', 'Number line ordering'], materials: ['Fraction circles', 'Number lines'], homework: 'Workbook page 90, problems 1–8', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-19', classId: 1, dayLabel: 'Thu · Apr 25', title: 'Unit 4 · Adding & Subtracting Fractions', duration: '45 min', pages: 'Pages 90–93', objective: 'Students will add and subtract fractions with unlike denominators.', warmup: ['Like denominator review', 'Common denominator practice'], activities: ['LCM strategy', 'Visual modeling', 'Algorithm practice'], materials: ['Fraction strips', 'LCM charts'], homework: 'Workbook page 94, problems 1–10', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-20', classId: 1, dayLabel: 'Fri · Apr 26', title: 'Unit 4 · Fractions Quiz', duration: '45 min', pages: 'Pages 95–97', objective: 'Students will demonstrate fraction concept mastery.', warmup: ['Comprehensive review', 'Strategy selection'], activities: ['Fractions quiz', 'Extension activities'], materials: ['Quiz sheets', 'Fraction manipulatives'], homework: 'No homework - quiz day', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+    { id: 'math-0', classId: 1, dayLabel: 'Today',    date: 'Tue · Mar 10', title: 'Ch. 4 · Fractions & Decimals', duration: '45 min', pages: 'Pages 84–91', objective: 'Students will compare fractions and decimals and convert between forms.', warmup: ['Decimal of the day', 'Quick compare: 0.4 vs 3/8'], activities: ['Mini-lesson on fraction/decimal conversion', 'Partner station sort', 'Guided practice problems 1–8', 'Exit ticket'], materials: ['Workbook', 'Whiteboard', 'Fraction strips'], homework: 'Workbook page 91, problems 9–14', status: 'pending' },
+    { id: 'math-1', classId: 1, dayLabel: 'Previous', date: 'Mon · Mar 9',  title: 'Ch. 4 · Equivalent Fractions', duration: '45 min', pages: 'Pages 80–83', objective: 'Students will identify and generate equivalent fractions.', warmup: ['Visual fraction model review'], activities: ['Teacher modeling', 'Small group practice', 'Independent check'], materials: ['Workbook', 'Fraction tiles'], homework: 'Practice sheet A', status: 'done' },
+    { id: 'math-2', classId: 1, dayLabel: 'Next',     date: 'Wed · Mar 11', title: 'Ch. 4 · Ordering Fractions',   duration: '45 min', pages: 'Pages 92–96', objective: 'Students will order fractions, decimals, and percents.', warmup: ['Number line challenge'], activities: ['Calendar problem', 'Guided examples', 'Station rotation'], materials: ['Workbook', 'Number lines'], homework: 'Workbook page 96', status: 'pending' },
   ],
   2: [
-    { id: 'read-0', classId: 2, dayLabel: 'Today',    date: 'Tue · Mar 10', title: 'Unit 3 · Main Idea & Details', duration: '45 min', pages: 'Pages 56–63', objective: 'Students will identify main idea and supporting details in nonfiction.', warmup: ['Quick write: what is main idea of a paragraph?'], activities: ['Model with mentor text', 'Guided practice', 'Partner work', 'Share out'], materials: ['Anthology', 'Highlighters'], homework: 'Read pages 64–67 and annotate', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'read-1', classId: 2, dayLabel: 'Previous', date: 'Mon · Mar 9',  title: 'Unit 3 · Text Structure',      duration: '45 min', pages: 'Pages 50–55', objective: 'Students will identify cause/effect and compare/contrast structures.', warmup: ['Signal word sort'], activities: ['Text structure chart', 'Partner read', 'Exit ticket'], materials: ['Anthology'], homework: 'Finish graphic organizer', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+    { id: 'read-0', classId: 2, dayLabel: 'Today',    date: 'Tue · Mar 10', title: 'Unit 3 · Main Idea & Details', duration: '45 min', pages: 'Pages 56–63', objective: 'Students will identify main idea and supporting details in nonfiction.', warmup: ['Quick write: what is main idea of a paragraph?'], activities: ['Model with mentor text', 'Guided practice', 'Partner work', 'Share out'], materials: ['Anthology', 'Highlighters'], homework: 'Read pages 64–67 and annotate', status: 'pending' },
+    { id: 'read-1', classId: 2, dayLabel: 'Previous', date: 'Mon · Mar 9',  title: 'Unit 3 · Text Structure',      duration: '45 min', pages: 'Pages 50–55', objective: 'Students will identify cause/effect and compare/contrast structures.', warmup: ['Signal word sort'], activities: ['Text structure chart', 'Partner read', 'Exit ticket'], materials: ['Anthology'], homework: 'Finish graphic organizer', status: 'done' },
   ],
-  5: [
-    // Week 1: Place Value & Number Sense
-    { id: 'math-21', classId: 5, dayLabel: 'Mon · Apr 1', title: 'Unit 1 · Place Value to Millions', duration: '45 min', pages: 'Pages 12–15', objective: 'Students will read, write, and compare numbers to millions place.', warmup: ['Number of the day: 2,457,891', 'Place value review'], activities: ['Place value chart modeling', 'Expanded form practice', 'Partner comparison game'], materials: ['Place value charts', 'Base-10 blocks', 'Whiteboards'], homework: 'Workbook page 16, problems 1–12', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-22', classId: 5, dayLabel: 'Tue · Apr 2', title: 'Unit 1 · Ordering & Rounding', duration: '45 min', pages: 'Pages 17–20', objective: 'Students will order and round numbers to millions place.', warmup: ['Quick round: 47,823 to nearest thousand', 'Number line placement'], activities: ['Rounding rules anchor chart', 'Station rotation: rounding practice', 'Real-world rounding problems'], materials: ['Number lines', 'Rounding cards', 'Calculators for checking'], homework: 'Workbook page 21, problems 1–15', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-23', classId: 5, dayLabel: 'Wed · Apr 3', title: 'Unit 1 · Addition & Subtraction Review', duration: '45 min', pages: 'Pages 22–25', objective: 'Students will add and subtract multi-digit numbers with regrouping.', warmup: ['Mental math: 456+789', 'Regrouping review'], activities: ['Standard algorithm practice', 'Word problem strategies', 'Error analysis'], materials: ['Graph paper', 'Colored pencils'], homework: 'Workbook page 26, problems 1–10', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-24', classId: 5, dayLabel: 'Thu · Apr 4', title: 'Unit 1 · Addition Assessment', duration: '45 min', pages: 'Pages 26–28', objective: 'Students will demonstrate mastery of addition and subtraction concepts.', warmup: ['Quick review problems', 'Test-taking strategies'], activities: ['Unit assessment', 'Early finisher challenge'], materials: ['Assessment sheets', 'Calculators for checking'], homework: 'No homework - assessment day', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-25', classId: 5, dayLabel: 'Fri · Apr 5', title: 'Unit 1 · Multiplication Patterns', duration: '45 min', pages: 'Pages 29–32', objective: 'Students will identify and use multiplication patterns.', warmup: ['Times table warm-up', 'Pattern recognition'], activities: ['Multiplication chart exploration', 'Pattern rule writing', 'Mental math strategies'], materials: ['Multiplication charts', 'Pattern cards'], homework: 'Workbook page 33, problems 1–8', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    
-    // Week 2: Multi-Digit Multiplication
-    { id: 'math-26', classId: 5, dayLabel: 'Mon · Apr 8', title: 'Unit 2 · 2-Digit × 2-Digit Multiplication', duration: '45 min', pages: 'Pages 34–37', objective: 'Students will multiply 2-digit by 2-digit numbers.', warmup: ['Mental math: 23×45', 'Estimation practice'], activities: ['Area model demonstration', 'Standard algorithm practice', 'Partner check'], materials: ['Graph paper', 'Base-10 blocks'], homework: 'Workbook page 38, problems 1–12', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-27', classId: 5, dayLabel: 'Tue · Apr 9', title: 'Unit 2 · 3-Digit × 2-Digit Multiplication', duration: '45 min', pages: 'Pages 39–42', objective: 'Students will multiply 3-digit by 2-digit numbers.', warmup: ['Quick multiply: 156×34', 'Place value review'], activities: ['Expanded form method', 'Lattice multiplication', 'Word problem application'], materials: ['Lattice grids', 'Expanded form cards'], homework: 'Workbook page 43, problems 1–10', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-28', classId: 5, dayLabel: 'Wed · Apr 10', title: 'Unit 2 · Multiplication Word Problems', duration: '45 min', pages: 'Pages 44–47', objective: 'Students will solve multi-step multiplication word problems.', warmup: ['Key words identification', 'Operation selection'], activities: ['CUBES strategy practice', 'Real-world scenarios', 'Partner problem creation'], materials: ['CUBES posters', 'Word problem cards'], homework: 'Workbook page 48, problems 1–8', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-29', classId: 5, dayLabel: 'Thu · Apr 11', title: 'Unit 2 · Multiplication Review', duration: '45 min', pages: 'Pages 49–51', objective: 'Students will review multiplication concepts and strategies.', warmup: ['Mixed practice problems', 'Strategy selection'], activities: ['Error analysis', 'Strategy sharing', 'Practice stations'], materials: ['Strategy cards', 'Whiteboards'], homework: 'Study for unit test', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-30', classId: 5, dayLabel: 'Fri · Apr 12', title: 'Unit 2 · Multiplication Unit Test', duration: '45 min', pages: 'Pages 52–54', objective: 'Students will demonstrate multiplication mastery.', warmup: ['Final review questions', 'Test strategies'], activities: ['Unit assessment', 'Extension activities'], materials: ['Test sheets', 'Extension puzzles'], homework: 'No homework - test day', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    
-    // Week 3: Division Concepts
-    { id: 'math-31', classId: 5, dayLabel: 'Mon · Apr 15', title: 'Unit 3 · Division Concepts', duration: '45 min', pages: 'Pages 55–58', objective: 'Students will understand division as equal sharing and repeated subtraction.', warmup: ['Division fact warm-up', 'Sharing scenarios'], activities: ['Manipulatives exploration', 'Repeated subtraction modeling', 'Array connections'], materials: ['Counters', 'Array grids', 'Sharing mats'], homework: 'Workbook page 59, problems 1–10', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-32', classId: 5, dayLabel: 'Tue · Apr 16', title: 'Unit 3 · 2-Digit Division', duration: '45 min', pages: 'Pages 60–63', objective: 'Students will divide 2-digit numbers with and without remainders.', warmup: ['Division fact practice', 'Estimation review'], activities: ['Long division algorithm', 'Remainder interpretation', 'Real-world division'], materials: ['Division charts', 'Base-10 blocks'], homework: 'Workbook page 64, problems 1–12', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-33', classId: 5, dayLabel: 'Wed · Apr 17', title: 'Unit 3 · 3-Digit Division', duration: '45 min', pages: 'Pages 65–68', objective: 'Students will divide 3-digit numbers by 2-digit numbers.', warmup: ['Estimation challenges', 'Place value division'], activities: ['Area model division', 'Standard algorithm practice', 'Word problem application'], materials: ['Area model grids', 'Division templates'], homework: 'Workbook page 69, problems 1–8', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-34', classId: 5, dayLabel: 'Thu · Apr 18', title: 'Unit 3 · Division Word Problems', duration: '45 min', pages: 'Pages 70–73', objective: 'Students will solve division word problems with remainders.', warmup: ['Key words review', 'Remainder interpretation'], activities: ['CUBES for division', 'Real-world scenarios', 'Partner problem solving'], materials: ['Word problem cards', 'Remainder charts'], homework: 'Workbook page 74, problems 1–6', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-35', classId: 5, dayLabel: 'Fri · Apr 19', title: 'Unit 3 · Division Unit Test', duration: '45 min', pages: 'Pages 75–77', objective: 'Students will demonstrate division mastery.', warmup: ['Comprehensive review', 'Calculator strategies'], activities: ['Unit assessment', 'Error analysis'], materials: ['Test sheets', 'Calculators'], homework: 'No homework - test day', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    
-    // Week 4: Fractions Introduction
-    { id: 'math-36', classId: 5, dayLabel: 'Mon · Apr 22', title: 'Unit 4 · Fraction Concepts', duration: '45 min', pages: 'Pages 78–81', objective: 'Students will understand fractions as parts of a whole.', warmup: ['Fraction of the day', 'Visual fraction review'], activities: ['Fraction strips exploration', 'Number line fractions', 'Real-world fractions'], materials: ['Fraction strips', 'Fraction circles', 'Number lines'], homework: 'Workbook page 82, problems 1–10', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-37', classId: 5, dayLabel: 'Tue · Apr 23', title: 'Unit 4 · Equivalent Fractions', duration: '45 min', pages: 'Pages 82–85', objective: 'Students will find and generate equivalent fractions.', warmup: ['Equivalent fraction matching', 'Simplification review'], activities: ['Fraction strip modeling', 'Cross-multiplication practice', 'Real-world examples'], materials: ['Fraction tiles', 'Equivalence cards'], homework: 'Workbook page 86, problems 1–12', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-38', classId: 5, dayLabel: 'Wed · Apr 24', title: 'Unit 4 · Comparing Fractions', duration: '45 min', pages: 'Pages 86–89', objective: 'Students will compare fractions with unlike denominators.', warmup: ['Fraction comparison', 'Benchmark fractions'], activities: ['Common denominator strategy', 'Visual comparison', 'Number line ordering'], materials: ['Fraction circles', 'Number lines'], homework: 'Workbook page 90, problems 1–8', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-39', classId: 5, dayLabel: 'Thu · Apr 25', title: 'Unit 4 · Adding & Subtracting Fractions', duration: '45 min', pages: 'Pages 90–93', objective: 'Students will add and subtract fractions with unlike denominators.', warmup: ['Like denominator review', 'Common denominator practice'], activities: ['LCM strategy', 'Visual modeling', 'Algorithm practice'], materials: ['Fraction strips', 'LCM charts'], homework: 'Workbook page 94, problems 1–10', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-40', classId: 5, dayLabel: 'Fri · Apr 26', title: 'Unit 4 · Fractions Quiz', duration: '45 min', pages: 'Pages 95–97', objective: 'Students will demonstrate fraction concept mastery.', warmup: ['Comprehensive review', 'Strategy selection'], activities: ['Fractions quiz', 'Extension activities'], materials: ['Quiz sheets', 'Fraction manipulatives'], homework: 'No homework - quiz day', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
   3: [
-    { id: 'sci-0', classId: 3, dayLabel: 'Today', date: 'Tue · Mar 10', title: 'Ch. 6 · States of Matter', duration: '50 min', pages: 'Pages 120–128', objective: 'Students will describe properties of solids, liquids, and gases.', warmup: ['Matter sort: everyday objects'], activities: ['Lab demo — ice melting', 'Diagram labeling', 'Discussion', 'Quick write'], materials: ['Ice', 'Beakers', 'Lab sheets'], homework: 'Read pages 129–131', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+    { id: 'sci-0', classId: 3, dayLabel: 'Today', date: 'Tue · Mar 10', title: 'Ch. 6 · States of Matter', duration: '50 min', pages: 'Pages 120–128', objective: 'Students will describe properties of solids, liquids, and gases.', warmup: ['Matter sort: everyday objects'], activities: ['Lab demo — ice melting', 'Diagram labeling', 'Discussion', 'Quick write'], materials: ['Ice', 'Beakers', 'Lab sheets'], homework: 'Read pages 129–131', status: 'pending' },
   ],
   4: [
-    { id: 'writ-0', classId: 4, dayLabel: 'Today',    date: 'Tue · Mar 10', title: 'Unit 2 · Argumentative Writing', duration: '45 min', pages: 'Pages 34–41', objective: 'Students will write a claim with at least two supporting reasons.', warmup: ['Take a stand: agree or disagree prompt'], activities: ['Model claim writing', 'Outline drafting', 'Peer feedback'], materials: ['Writing journals', 'Mentor texts'], homework: 'Complete outline draft', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+    { id: 'writ-0', classId: 4, dayLabel: 'Today',    date: 'Tue · Mar 10', title: 'Unit 2 · Argumentative Writing', duration: '45 min', pages: 'Pages 34–41', objective: 'Students will write a claim with at least two supporting reasons.', warmup: ['Take a stand: agree or disagree prompt'], activities: ['Model claim writing', 'Outline drafting', 'Peer feedback'], materials: ['Writing journals', 'Mentor texts'], homework: 'Complete outline draft', status: 'pending' },
   ],
 }
 
@@ -788,26 +633,26 @@ const DEMO_ASSIGNMENTS_ES = [
 ]
 
 const DEMO_MESSAGES_ES = [
-  { id: 1, studentName: 'Marcus Thompson', subject: 'Matemáticas', trigger: 'Falló 58%',      status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'], tone: 'Warm & Friendly', draft: 'Estimado Padre, Marcus recibió 58% en su evaluación de Matemáticas. Me encantaría conectar esta semana para discutir opciones de apoyo.', positiveDraft: '¡Hola! Solo quería compartir que Marcus está mostrando un esfuerzo real en clase. Sigamos construyendo ese momento.', dayOld: false },
-  { id: 2, studentName: 'Aaliyah Brooks',  subject: 'Lectura',    trigger: 'Mejoró +12pts', status: 'sent', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],    tone: 'Celebrating',     draft: '¡Buenas noticias! Aaliyah mejoró su puntaje de Lectura en 12 puntos. Está trabajando muy duro.', positiveDraft: 'Aaliyah está haciendo un trabajo increíble. Su dedicación realmente está dando resultados.', dayOld: false },
-  { id: 3, studentName: 'Liam Martinez',   subject: 'Ciencias',   trigger: 'Falló 61%',      status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'], tone: 'Warm & Friendly', draft: 'Estimado Padre, quería contactarlo regarding la evaluación reciente de Ciencias de Liam.', positiveDraft: 'Liam está mostrando curiosidad en la clase de Ciencias. Aquí hay algunas formas de apoyar en casa.', dayOld: true  },
+  { id: 1, studentName: 'Marcus Thompson', subject: 'Matemáticas', trigger: 'Falló 58%',      status: 'pending', tone: 'Warm & Friendly', draft: 'Estimado Padre, Marcus recibió 58% en su evaluación de Matemáticas. Me encantaría conectar esta semana para discutir opciones de apoyo.', positiveDraft: '¡Hola! Solo quería compartir que Marcus está mostrando un esfuerzo real en clase. Sigamos construyendo ese momento.', dayOld: false },
+  { id: 2, studentName: 'Aaliyah Brooks',  subject: 'Lectura',    trigger: 'Mejoró +12pts', status: 'sent',    tone: 'Celebrating',     draft: '¡Buenas noticias! Aaliyah mejoró su puntaje de Lectura en 12 puntos. Está trabajando muy duro.', positiveDraft: 'Aaliyah está haciendo un trabajo increíble. Su dedicación realmente está dando resultados.', dayOld: false },
+  { id: 3, studentName: 'Liam Martinez',   subject: 'Ciencias',   trigger: 'Falló 61%',      status: 'pending', tone: 'Warm & Friendly', draft: 'Estimado Padre, quería contactarlo regarding la evaluación reciente de Ciencias de Liam.', positiveDraft: 'Liam está mostrando curiosidad en la clase de Ciencias. Aquí hay algunas formas de apoyar en casa.', dayOld: true  },
 ]
 
 const DEMO_LESSONS_ES = {
   1: [
-    { id: 'math-0', classId: 1, dayLabel: 'Hoy',    date: 'Mar · 10', title: 'Cap. 4 · Fracciones y Decimales', duration: '45 min', pages: 'Páginas 84–91', objective: 'Los estudiantes compararán fracciones y decimales y convertirán entre formas.', warmup: ['Decimal del día', 'Comparación rápida: 0.4 vs 3/8'], activities: ['Mini-lección sobre conversión fracción/decimal', 'Ordenamiento por estaciones de parejas', 'Problemas de práctica guiada 1–8', 'Boleto de salida'], materials: ['Libro de trabajo', 'Pizarra', 'Tiras de fracciones'], homework: 'Libro de trabajo página 91, problemas 9–14', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-1', classId: 1, dayLabel: 'Anterior', date: 'Mar · 9',  title: 'Cap. 4 · Fracciones Equivalentes', duration: '45 min', pages: 'Páginas 80–83', objective: 'Los estudiantes identificarán y generarán fracciones equivalentes.', warmup: ['Revisión de modelos visuales de fracciones'], activities: ['Modelado del maestro', 'Práctica en grupos pequeños', 'Verificación independiente'], materials: ['Libro de trabajo', 'Fichas de fracciones'], homework: 'Hoja de práctica A', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'math-2', classId: 1, dayLabel: 'Siguiente', date: 'Mar · 11', title: 'Cap. 4 · Ordenar Fracciones',   duration: '45 min', pages: 'Páginas 92–96', objective: 'Los estudiantes ordenarán fracciones, decimales y porcentajes.', warmup: ['Desafío de línea numérica'], activities: ['Problema de calendario', 'Ejemplos guiados', 'Rotación de estaciones'], materials: ['Libro de trabajo', 'Líneas numéricas'], homework: 'Libro de trabajo página 96', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+    { id: 'math-0', classId: 1, dayLabel: 'Hoy',    date: 'Mar · 10', title: 'Cap. 4 · Fracciones y Decimales', duration: '45 min', pages: 'Páginas 84–91', objective: 'Los estudiantes compararán fracciones y decimales y convertirán entre formas.', warmup: ['Decimal del día', 'Comparación rápida: 0.4 vs 3/8'], activities: ['Mini-lección sobre conversión fracción/decimal', 'Ordenamiento por estaciones de parejas', 'Problemas de práctica guiada 1–8', 'Boleto de salida'], materials: ['Libro de trabajo', 'Pizarra', 'Tiras de fracciones'], homework: 'Libro de trabajo página 91, problemas 9–14', status: 'pending' },
+    { id: 'math-1', classId: 1, dayLabel: 'Anterior', date: 'Mar · 9',  title: 'Cap. 4 · Fracciones Equivalentes', duration: '45 min', pages: 'Páginas 80–83', objective: 'Los estudiantes identificarán y generarán fracciones equivalentes.', warmup: ['Revisión de modelos visuales de fracciones'], activities: ['Modelado del maestro', 'Práctica en grupos pequeños', 'Verificación independiente'], materials: ['Libro de trabajo', 'Fichas de fracciones'], homework: 'Hoja de práctica A', status: 'done' },
+    { id: 'math-2', classId: 1, dayLabel: 'Siguiente', date: 'Mar · 11', title: 'Cap. 4 · Ordenar Fracciones',   duration: '45 min', pages: 'Páginas 92–96', objective: 'Los estudiantes ordenarán fracciones, decimales y porcentajes.', warmup: ['Desafío de línea numérica'], activities: ['Problema de calendario', 'Ejemplos guiados', 'Rotación de estaciones'], materials: ['Libro de trabajo', 'Líneas numéricas'], homework: 'Libro de trabajo página 96', status: 'pending' },
   ],
   2: [
-    { id: 'read-0', classId: 2, dayLabel: 'Hoy',    date: 'Mar · 10', title: 'Unidad 3 · Idea Principal y Detalles', duration: '45 min', pages: 'Páginas 56–63', objective: 'Los estudiantes identificarán la idea principal y los detalles de apoyo en no ficción.', warmup: ['Escritura rápida: ¿cuál es la idea principal de un párrafo?'], activities: ['Modelar con texto mentor', 'Práctica guiada', 'Trabajo de parejas', 'Compartir'], materials: ['Antología', 'Resaltadores'], homework: 'Leer páginas 64–67 y anotar', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-    { id: 'read-1', classId: 2, dayLabel: 'Anterior', date: 'Mar · 9',  title: 'Unidad 3 · Estructura del Texto',      duration: '45 min', pages: 'Páginas 50–55', objective: 'Los estudiantes identificarán estructuras causa/efecto y comparar/contrastar.', warmup: ['Ordenamiento de palabras de señal'], activities: ['Cuadro de estructura de texto', 'Lectura de parejas', 'Boleto de salida'], materials: ['Antología'], homework: 'Terminar organizador gráfico', status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+    { id: 'read-0', classId: 2, dayLabel: 'Hoy',    date: 'Mar · 10', title: 'Unidad 3 · Idea Principal y Detalles', duration: '45 min', pages: 'Páginas 56–63', objective: 'Los estudiantes identificarán la idea principal y los detalles de apoyo en no ficción.', warmup: ['Escritura rápida: ¿cuál es la idea principal de un párrafo?'], activities: ['Modelar con texto mentor', 'Práctica guiada', 'Trabajo de parejas', 'Compartir'], materials: ['Antología', 'Resaltadores'], homework: 'Leer páginas 64–67 y anotar', status: 'pending' },
+    { id: 'read-1', classId: 2, dayLabel: 'Anterior', date: 'Mar · 9',  title: 'Unidad 3 · Estructura del Texto',      duration: '45 min', pages: 'Páginas 50–55', objective: 'Los estudiantes identificarán estructuras causa/efecto y comparar/contrastar.', warmup: ['Ordenamiento de palabras de señal'], activities: ['Cuadro de estructura de texto', 'Lectura de parejas', 'Boleto de salida'], materials: ['Antología'], homework: 'Terminar organizador gráfico', status: 'done' },
   ],
   3: [
-    { id: 'sci-0', classId: 3, dayLabel: 'Hoy', date: 'Mar · 10', title: 'Cap. 6 · Estados de la Materia', duration: '50 min', pages: 'Páginas 120–128', objective: 'Los estudiantes describirán las propiedades de sólidos, líquidos y gases.', warmup: ['Clasificación de materia: objetos cotidianos'], activities: ['Demostración de laboratorio — hielo deritiéndose', 'Etiquetado de diagrama', 'Discusión', 'Escritura rápida'], materials: ['Hielo', 'Vasos de precipitados', 'Hojas de laboratorio'], homework: 'Leer páginas 129–131', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+    { id: 'sci-0', classId: 3, dayLabel: 'Hoy', date: 'Mar · 10', title: 'Cap. 6 · Estados de la Materia', duration: '50 min', pages: 'Páginas 120–128', objective: 'Los estudiantes describirán las propiedades de sólidos, líquidos y gases.', warmup: ['Clasificación de materia: objetos cotidianos'], activities: ['Demostración de laboratorio — hielo deritiéndose', 'Etiquetado de diagrama', 'Discusión', 'Escritura rápida'], materials: ['Hielo', 'Vasos de precipitados', 'Hojas de laboratorio'], homework: 'Leer páginas 129–131', status: 'pending' },
   ],
   4: [
-    { id: 'writ-0', classId: 4, dayLabel: 'Hoy', date: 'Mar · 10', title: 'Unidad 2 · Escritura Argumentativa', duration: '45 min', pages: 'Páginas 34–41', objective: 'Los estudiantes escribirán una afirmación con al menos dos razones de apoyo.', warmup: ['Tomar posición: prompt de acuerdo o desacuerdo'], activities: ['Modelar escritura de afirmación', 'Borrador de esquema', 'Retroalimentación de pares'], materials: ['Diarios de escritura', 'Textos mentores'], homework: 'Completar borrador de esquema', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+    { id: 'writ-0', classId: 4, dayLabel: 'Hoy', date: 'Mar · 10', title: 'Unidad 2 · Escritura Argumentativa', duration: '45 min', pages: 'Páginas 34–41', objective: 'Los estudiantes escribirán una afirmación con al menos dos razones de apoyo.', warmup: ['Tomar posición: prompt de acuerdo o desacuerdo'], activities: ['Modelar escritura de afirmación', 'Borrador de esquema', 'Retroalimentación de pares'], materials: ['Diarios de escritura', 'Textos mentores'], homework: 'Completar borrador de esquema', status: 'pending' },
   ],
 }
 
@@ -1457,7 +1302,7 @@ setDemoSupportStaffData: async () => {
         body,
         senderId: currentUser.id,
         senderName: currentUser.name,
-        status: 'sent', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],
+        status: 'sent',
         createdAt: new Date().toISOString(),
         type: 'support_staff_message'
       }
@@ -1495,13 +1340,13 @@ setDemoSupportStaffData: async () => {
   getStudentAttendance: async (studentId) => {
     // Demo attendance data
     return [
-      { date: '2024-10-15', period: '1st', status: 'Present', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-      { date: '2024-10-14', period: '1st', status: 'Present', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-      { date: '2024-10-13', period: '1st', status: 'Tardy', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-      { date: '2024-10-12', period: '1st', status: 'Present', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-      { date: '2024-10-11', period: '1st', status: 'Present', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-      { date: '2024-10-10', period: '1st', status: 'Absent', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
-      { date: '2024-10-09', period: '1st', status: 'Present', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+      { date: '2024-10-15', period: '1st', status: 'Present' },
+      { date: '2024-10-14', period: '1st', status: 'Present' },
+      { date: '2024-10-13', period: '1st', status: 'Tardy' },
+      { date: '2024-10-12', period: '1st', status: 'Present' },
+      { date: '2024-10-11', period: '1st', status: 'Present' },
+      { date: '2024-10-10', period: '1st', status: 'Absent' },
+      { date: '2024-10-09', period: '1st', status: 'Present' },
     ]
   },
 
@@ -1576,7 +1421,7 @@ setDemoSupportStaffData: async () => {
       {
         title: 'Math Support Plan',
         description: 'Weekly tutoring sessions focusing on fraction operations and problem-solving skills.',
-        status: 'Active', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],
+        status: 'Active',
         createdDate: '2024-10-01',
         nextReview: '2024-10-29'
       }
@@ -2603,19 +2448,19 @@ setDemoSupportStaffData: async () => {
     if (!classLessons.length) return {}
 
     if (status === 'done') {
-      classLessons[0] = { ...classLessons[0], status: 'done', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'], dayLabel: 'Previous' }
+      classLessons[0] = { ...classLessons[0], status: 'done', dayLabel: 'Previous' }
       const [completed, ...rest] = classLessons
       const reordered = [...rest, completed]
 
       if (reordered[0]) {
-        reordered[0] = { ...reordered[0], dayLabel: 'Today', status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] }
+        reordered[0] = { ...reordered[0], dayLabel: 'Today', status: 'pending' }
       }
 
       return { lessons: { ...state.lessons, [classId]: reordered } }
     }
 
     if (status === 'tbd') {
-      classLessons[0] = { ...classLessons[0], status: 'tbd', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] }
+      classLessons[0] = { ...classLessons[0], status: 'tbd' }
       return { lessons: { ...state.lessons, [classId]: classLessons } }
     }
 
@@ -2629,7 +2474,7 @@ setDemoSupportStaffData: async () => {
         ...state.lessons,
         [classId]: [
           ...existing,
-          { ...lesson, id: `custom-${Date.now()}`, status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] },
+          { ...lesson, id: `custom-${Date.now()}`, status: 'pending' },
         ],
       },
     }
@@ -2775,13 +2620,13 @@ setDemoSupportStaffData: async () => {
 
   dismissMessage: (id) => set(state => ({
     messages: state.messages.map(m =>
-      m.id === id ? { ...m, status: 'dismissed', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] } : m
+      m.id === id ? { ...m, status: 'dismissed' } : m
     ),
   })),
 
   sendMessage: (id) => set(state => ({
     messages: state.messages.map(m =>
-      m.id === id ? { ...m, status: 'sent', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'] } : m
+      m.id === id ? { ...m, status: 'sent' } : m
     ),
   })),
 
@@ -3307,7 +3152,7 @@ setDemoSupportStaffData: async () => {
           assignedTo: 'Dr. Green',
           dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString(),
           priority: 'medium',
-          status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],
+          status: 'pending',
           studentName: 'Science Intervention Group'
         },
         {
@@ -3320,7 +3165,7 @@ setDemoSupportStaffData: async () => {
           content: 'Math support plan for Marcus Thompson marked as effective - 85% improvement rate',
           studentName: 'Marcus Thompson',
           interventionType: 'academic',
-          status: 'active', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length']
+          status: 'active'
         }
       ]
     } catch (error) {
@@ -3374,7 +3219,7 @@ setDemoSupportStaffData: async () => {
           createdBy: 'Mr. Rivera',
           dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
           priority: 'medium',
-          status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],
+          status: 'pending',
           studentId: studentId,
           timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
         },
@@ -3386,7 +3231,7 @@ setDemoSupportStaffData: async () => {
           createdBy: 'System',
           dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
           priority: 'high',
-          status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],
+          status: 'pending',
           studentId: studentId,
           timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
         }
@@ -3451,7 +3296,7 @@ setDemoSupportStaffData: async () => {
           assignedTo: 'Ms. Davis',
           dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
           priority: 'medium',
-          status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],
+          status: 'pending',
           groupId: groupId
         }
       ]
@@ -3887,7 +3732,7 @@ setDemoSupportStaffData: async () => {
             description: 'Schedule reading intervention sessions',
             assignedTo: 'Reading Specialist',
             dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            status: 'pending', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],
+            status: 'pending',
             priority: 'high',
             comments: 'Focus on phonics and comprehension strategies'
           },
@@ -3896,7 +3741,7 @@ setDemoSupportStaffData: async () => {
             description: 'Follow up with parents regarding home support',
             assignedTo: 'Support Staff',
             dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            status: 'in_progress', accommodations: ['Extended time on tests', 'Calculator use allowed', 'Preferential seating near front', 'Visual aids and graphic organizers'], differentiation: ['Scaffolded worksheets', 'Peer tutoring opportunities', 'Manipulative access', 'Reduced assignment length'],
+            status: 'in_progress',
             priority: 'medium',
             comments: 'Provide parents with reading materials and strategies'
           }
