@@ -427,7 +427,10 @@ function MobileLogin({ form, onCreateAccount }) {
           onError={(error) => console.error('Google sign in error:', error)}
         />
 
-        
+        <div style={{ textAlign: 'center', margin: '14px 0 10px' }}>
+          <span style={{ fontSize: 12, color: BRAND.muted }}>{t('or_jump')}</span>
+        </div>
+
         {/* Quick demo */}
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: BRAND.muted, marginBottom: 10, marginTop: 20 }}>{t('quick_demo')}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 8 }}>
@@ -582,6 +585,12 @@ function DesktopLogin({ form, onCreateAccount }) {
               compact={false}
               onError={(error) => console.error('Google sign in error:', error)}
             />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+              <div style={{ flex: 1, height: 1, background: BRAND.border }} />
+              <span style={{ fontSize: 12, color: BRAND.muted }}>{t('or_jump')}</span>
+              <div style={{ flex: 1, height: 1, background: BRAND.border }} />
+            </div>
 
             {/* Quick demo */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
