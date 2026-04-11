@@ -766,9 +766,9 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
         </button>
       </div>
 
-      {selectedStandards.length > 0 && (
+      {data.standards && data.standards.length > 0 && (
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {selectedStandards.map((std, i) => (
+          {data.standards.map((std, i) => (
             <span
               key={i}
               style={{
@@ -779,9 +779,18 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
                 padding: '4px 10px',
                 fontSize: 12,
                 fontWeight: 600,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
               }}
             >
               {typeof std === 'string' ? std : std.code}
+              <button
+                onClick={() => onChange('standards', data.standards.filter((_, idx) => idx !== i))}
+                style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
+              >
+                ×
+              </button>
             </span>
           ))}
         </div>
@@ -792,9 +801,8 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
           <StandardsSelector
             subject={headerData?.subject}
             grade={headerData?.gradeLevel}
-            selectedStandards={selectedStandards}
+            selectedStandards={data.standards || []}
             onChange={(standards) => {
-              setSelectedStandards(standards)
               onChange('standards', standards)
               setShowPicker(false)
             }}
