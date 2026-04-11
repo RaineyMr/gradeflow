@@ -92,16 +92,10 @@ function useLoginForm(onLogin, onDemoLogin) {
   }
 
   function handleDemoClick(demo) {
-    console.log('=== DEBUG: Demo button clicked ===')
-    console.log('DEBUG: Demo clicked:', demo)
     const account = getDemoAccountByCredentials(demo.email, demo.password, demo.role)
-    console.log('DEBUG: Retrieved account:', account)
-    if (account) { 
-      console.log('DEBUG: Calling onDemoLogin with account')
+    if (account) {
       window.scrollTo(0, 0); 
       onDemoLogin?.({ ...account, lang }) 
-    } else {
-      console.log('DEBUG: No account found for demo')
     }
   }
 
@@ -666,21 +660,15 @@ export default function Login({ onLogin, onDemoLogin }) {
             ))}
           </div>
         </div>
-
-        <div style={{ flex: 1, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 24px', overflowY: 'auto' }}>
-          <div style={{ width: '100%', maxWidth: 460, background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 22, padding: isDesktop ? '36px 40px' : '28px 22px' }}>
-            <CreateAccountPanel
-              onBack={() => setShowCreate(false)}
-              onLogin={onLogin}
-              compact={!isDesktop}
-            />
-          </div>
-        </div>
       </div>
     )
   }
 
-  return isDesktop
-    ? <DesktopLogin form={form} onCreateAccount={() => setShowCreate(true)} />
-    : <MobileLogin  form={form} onCreateAccount={() => setShowCreate(true)} />
+  return (
+    <div>
+      {isDesktop
+        ? <DesktopLogin form={form} onCreateAccount={() => setShowCreate(true)} />
+        : <MobileLogin  form={form} onCreateAccount={() => setShowCreate(true)} />}
+    </div>
+  )
 }

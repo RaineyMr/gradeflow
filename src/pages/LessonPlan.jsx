@@ -853,9 +853,11 @@ function ObjectivesSection({ data, onChange, onAIGenerate }) {
           background: C.inner,
           color: C.text,
           outline: 'none',
-          fontFamily: 'Inter, monospace',
+          fontFamily: 'Inter, sans-serif',
           minHeight: 120,
           lineHeight: 1.5,
+          pointerEvents: 'auto',
+          userSelect: 'text',
         }}
       />
     </SectionWithAI>
@@ -884,8 +886,8 @@ function CFSSection({ data, onChange, onAIGenerate }) {
           Success Criteria: Students will demonstrate understanding by...
         </label>
         <textarea
-          value={data.successCriteria || ''}
-          onChange={(e) => onChange('cfs', { ...data, successCriteria: e.target.value })}
+          value={data.cfs?.successCriteria || ''}
+          onChange={(e) => onChange('cfs', { ...data.cfs, successCriteria: e.target.value })}
           placeholder="e.g., - Correctly label plant cell structures on a diagram
 - Write a 3-sentence explanation of photosynthesis
 - Score 80% or higher on exit ticket"
@@ -909,8 +911,8 @@ function CFSSection({ data, onChange, onAIGenerate }) {
           Culturally Responsive Notes (optional)
         </label>
         <textarea
-          value={data.culturalNotes || ''}
-          onChange={(e) => onChange('cfs', { ...data, culturalNotes: e.target.value })}
+          value={data.cfs?.culturalNotes || ''}
+          onChange={(e) => onChange('cfs', { ...data.cfs, culturalNotes: e.target.value })}
           placeholder="e.g., Use examples from students' local ecosystems
 - Incorporate diverse scientists' contributions
 - Connect to real-world environmental justice issues"
@@ -1327,8 +1329,8 @@ function OptionalAddOnsSection({ data, onChange }) {
               Enrichment Activities (for early finishers)
             </label>
             <textarea
-              value={data?.enrichment || ''}
-              onChange={(e) => onChange('optionalAddOns', { ...data, enrichment: e.target.value })}
+              value={data.optionalAddOns?.enrichment || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data.optionalAddOns, enrichment: e.target.value })}
               placeholder="e.g., - Research photosynthesis in different plant types
 - Create a photosynthesis comic strip
 - Design an experiment to test light requirements"
@@ -1352,8 +1354,8 @@ function OptionalAddOnsSection({ data, onChange }) {
               Supplemental Resources & Links
             </label>
             <textarea
-              value={data?.supplementalLinks || ''}
-              onChange={(e) => onChange('optionalAddOns', { ...data, supplementalLinks: e.target.value })}
+              value={data.optionalAddOns?.supplementalLinks || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data.optionalAddOns, supplementalLinks: e.target.value })}
               placeholder="e.g., - Khan Academy: Plant Cells (https://...)
 - National Geographic: Photosynthesis Explainer
 - YouTube: Amoeba Sisters Photosynthesis Video"
@@ -1377,8 +1379,8 @@ function OptionalAddOnsSection({ data, onChange }) {
               Notes & Reflections
             </label>
             <textarea
-              value={data?.reflections || ''}
-              onChange={(e) => onChange('optionalAddOns', { ...data, reflections: e.target.value })}
+              value={data.optionalAddOns?.reflections || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data.optionalAddOns, reflections: e.target.value })}
               placeholder="e.g., - Pacing notes
 - Student misconceptions to watch for
 - What went well / what to improve next time"
@@ -1405,6 +1407,7 @@ function OptionalAddOnsSection({ data, onChange }) {
 // ─── BuildFromScratch Component ────────────────────────────────────────────
 function BuildFromScratch({ onBack }) {
   const { currentUser } = useStore()
+  
   const [lessonData, setLessonData] = React.useState({
     header: { title: '', date: '', subject: '', gradeLevel: '' },
     standards: [],
@@ -1470,10 +1473,6 @@ function BuildFromScratch({ onBack }) {
       // Get current user from store
       const { currentUser } = useStore.getState()
       
-      console.log('DEBUG: Current user:', currentUser)
-      console.log('DEBUG: User ID:', currentUser?.id)
-      console.log('DEBUG: User starts with demo-:', currentUser?.id?.startsWith('demo-'))
-      
       // Prepare headers with authentication
       const headers = { 'Content-Type': 'application/json' }
       
@@ -1482,18 +1481,11 @@ function BuildFromScratch({ onBack }) {
         if (currentUser.id?.startsWith('demo-')) {
           // Demo account - use demo token
           headers.Authorization = 'Bearer demo-token'
-          console.log('DEBUG: Using demo token authentication')
         } else {
           // Real user - use actual auth token
           headers.Authorization = `Bearer ${currentUser.id}`
-          console.log('DEBUG: Using real user authentication')
         }
-      } else {
-        console.log('DEBUG: No current user found')
       }
-      
-      console.log('DEBUG: Headers:', headers)
-      console.log('DEBUG: Lesson data:', lessonData)
       
       const response = await fetch('/api/lesson-plan', {
         method: 'POST',
@@ -1501,17 +1493,12 @@ function BuildFromScratch({ onBack }) {
         body: JSON.stringify(lessonData),
       })
 
-      console.log('DEBUG: Response status:', response.status)
-      console.log('DEBUG: Response ok:', response.ok)
-
       if (!response.ok) {
         const error = await response.json()
-        console.log('DEBUG: Error response:', error)
         throw new Error(error.error || 'Save failed')
       }
       
       const result = await response.json()
-      console.log('DEBUG: Save result:', result)
       alert('Lesson plan saved!')
       onBack()
     } catch (err) {
@@ -1588,14 +1575,14 @@ function BuildFromScratch({ onBack }) {
       <div style={{ padding: '20px', maxWidth: 1000, margin: '0 auto' }}>
         <LessonHeaderSection data={lessonData.header} onChange={handleSectionChange} />
         <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
-        <ObjectivesSection data={lessonData.objectives} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <CFSSection data={lessonData.cfs} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <LessonStepsSection data={lessonData.lessonSteps} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <ExitTicketSection data={lessonData.exitTicket} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <HomeworkSection data={lessonData.homework} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <AccommodationsSection_Builtin data={lessonData.accommodations} onChange={handleSectionChange} />
-        <AttachmentsSection_Builtin data={lessonData.attachments} onChange={handleSectionChange} />
-        <OptionalAddOnsSection data={lessonData.optionalAddOns} onChange={handleSectionChange} />
+        <ObjectivesSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <CFSSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <LessonStepsSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <ExitTicketSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <HomeworkSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <AccommodationsSection_Builtin data={lessonData} onChange={handleSectionChange} />
+        <AttachmentsSection_Builtin data={lessonData} onChange={handleSectionChange} />
+        <OptionalAddOnsSection data={lessonData} onChange={handleSectionChange} />
       </div>
     </div>
   )
@@ -1740,6 +1727,12 @@ function UploadDoc({ onBack }) {
 
 // ─── Main Menu ────────────────────────────────────────────────────────────────
 export default function LessonPlan({ initialMode, classId, onBack }) {
+  const store = useStore()
+  const { teacher, activeScreen, activeLessonClassId } = store
+  const routerNav = useNavigate()
+  
+  // DEBUG: Add page indicator
+  
   const navigate = useNavigate()
   const { goBack, getTodayLesson } = useStore()
   const handleBack  = onBack || goBack

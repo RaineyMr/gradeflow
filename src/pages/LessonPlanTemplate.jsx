@@ -287,7 +287,25 @@ function ObjectivesSection({ data, onChange, onAIGenerate }) {
       </label>
       <textarea
         value={data.objectives || ''}
-        onChange={(e) => onChange('objectives', e.target.value)}
+        onChange={(e) => {
+          console.log('=== TEXTAREA DEBUG ===')
+          console.log('onChange event triggered')
+          console.log('event.target.value:', e.target.value)
+          console.log('current data.objectives:', data.objectives)
+          onChange('objectives', e.target.value)
+        }}
+        onFocus={(e) => {
+          console.log('=== TEXTAREA FOCUS ===')
+          console.log('textarea focused')
+        }}
+        onBlur={(e) => {
+          console.log('=== TEXTAREA BLUR ===')
+          console.log('textarea blurred')
+        }}
+        onClick={(e) => {
+          console.log('=== TEXTAREA CLICK ===')
+          console.log('textarea clicked')
+        }}
         placeholder="e.g., - Identify the three main parts of a plant cell
 - Explain how photosynthesis converts light to chemical energy
 - Compare cellular respiration and photosynthesis"
@@ -300,9 +318,11 @@ function ObjectivesSection({ data, onChange, onAIGenerate }) {
           background: C.inner,
           color: C.text,
           outline: 'none',
-          fontFamily: 'Inter, monospace',
+          fontFamily: 'Inter, sans-serif',
           minHeight: 120,
           lineHeight: 1.5,
+          pointerEvents: 'auto',
+          userSelect: 'text',
         }}
       />
     </Section>
@@ -947,6 +967,9 @@ export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
     setSaving(false)
   }
 
+  // Simple test input in lesson plan
+  const [testValue, setTestValue] = useState('')
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -955,6 +978,59 @@ export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
       fontFamily: 'Inter, Arial, sans-serif',
       paddingBottom: 100,
     }}>
+      {/* DEBUG: Test input in lesson plan */}
+      <div style={{
+        position: 'fixed',
+        top: '150px',
+        left: '10px',
+        background: 'green',
+        color: 'white',
+        padding: '10px',
+        zIndex: 9997,
+        border: '2px solid white'
+      }}>
+        <h4>Lesson Plan Input Test</h4>
+        <input 
+          type="text"
+          value={testValue}
+          onChange={(e) => {
+            console.log('=== INPUT DEBUG ===')
+            console.log('input onChange triggered:', e.target.value)
+            setTestValue(e.target.value)
+          }}
+          placeholder="Type here..."
+          style={{
+            background: 'white',
+            color: 'black',
+            padding: '5px',
+            border: '1px solid black'
+          }}
+        />
+        <div>You typed: {testValue}</div>
+        
+        {/* Test textarea in same component */}
+        <div style={{ marginTop: '10px' }}>
+          <textarea
+            value={testValue}
+            onChange={(e) => {
+              console.log('=== TEST TEXTAREA DEBUG ===')
+              console.log('test textarea onChange triggered:', e.target.value)
+              setTestValue(e.target.value)
+            }}
+            placeholder="Test textarea..."
+            style={{
+              background: 'white',
+              color: 'black',
+              padding: '5px',
+              border: '1px solid black',
+              width: '100%',
+              height: '60px'
+            }}
+          />
+        </div>
+      </div>
+
+      
       {/* Header */}
       <div style={{
         background: C.card,
@@ -1015,15 +1091,15 @@ export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
       {/* Content */}
       <div style={{ padding: '20px', maxWidth: 1000, margin: '0 auto' }}>
         <LessonHeaderSection data={lessonData.header} onChange={handleSectionChange} />
-        <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <ObjectivesSection data={lessonData.objectives} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <CFSSection data={lessonData.cfs} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <LessonStepsSection data={lessonData.lessonSteps} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <ExitTicketSection data={lessonData.exitTicket} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <HomeworkSection data={lessonData.homework} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <AccommodationsSection data={lessonData.accommodations} onChange={handleSectionChange} />
-        <AttachmentsSection data={lessonData.attachments} onChange={handleSectionChange} />
-        <OptionalAddOnsSection data={lessonData.optionalAddOns} onChange={handleSectionChange} />
+        <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
+        <ObjectivesSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <CFSSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <LessonStepsSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <ExitTicketSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <HomeworkSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <AccommodationsSection data={lessonData} onChange={handleSectionChange} />
+        <AttachmentsSection data={lessonData} onChange={handleSectionChange} />
+        <OptionalAddOnsSection data={lessonData} onChange={handleSectionChange} />
       </div>
 
       {/* Bottom Navigation */}
