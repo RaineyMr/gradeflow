@@ -25,18 +25,10 @@ function getSupabaseClient() {
 }
 
 function validateLessonData(data) {
-  const required = ['header']
-  const missing = required.filter(field => !data[field])
-  
-  if (missing.length > 0) {
-    throw new Error(`Missing required fields: ${missing.join(', ')}`)
-  }
-
-  const headerRequired = ['title', 'subject', 'gradeLevel']
-  const headerMissing = headerRequired.filter(f => !data.header[f] || data.header[f].toString().trim() === '')
-  
-  if (headerMissing.length > 0) {
-    throw new Error(`Missing required header fields: ${headerMissing.join(', ')}`)
+  // Allow saving any lesson plan data, even completely empty ones
+  // Just ensure we have a basic structure
+  if (!data || typeof data !== 'object') {
+    throw new Error('Invalid lesson plan data')
   }
   
   return true
@@ -158,10 +150,10 @@ async function handleCreateLesson(req, res, teacherId) {
       const mockLesson = {
         id: `demo-lesson-${Date.now()}`,
         teacher_id: teacherId,
-        title: lessonData.header.title,
-        subject: lessonData.header.subject,
-        grade_level: lessonData.header.gradeLevel,
-        lesson_date: lessonData.header.date || new Date().toISOString().split('T')[0],
+        title: lessonData.header?.title || 'Untitled Lesson',
+        subject: lessonData.header?.subject || '',
+        grade_level: lessonData.header?.gradeLevel || '',
+        lesson_date: lessonData.header?.date || new Date().toISOString().split('T')[0],
         status: 'draft',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -178,11 +170,11 @@ async function handleCreateLesson(req, res, teacherId) {
       teacher_id: teacherId,
       class_id: lessonData.classId || null,
       
-      // Section 1: Header
-      title: lessonData.header.title,
-      subject: lessonData.header.subject,
-      grade_level: lessonData.header.gradeLevel,
-      lesson_date: lessonData.header.date || new Date().toISOString().split('T')[0],
+      // Section 1: Header (handle missing/empty header)
+      title: lessonData.header?.title || 'Untitled Lesson',
+      subject: lessonData.header?.subject || '',
+      grade_level: lessonData.header?.gradeLevel || '',
+      lesson_date: lessonData.header?.date || new Date().toISOString().split('T')[0],
       
       // Section 2: Standards (stored as array, relationships in lesson_standards table)
       standards: lessonData.standards || [],

@@ -1552,20 +1552,20 @@ function BuildFromScratch({ onBack }) {
             </button>
             <button
               onClick={handleSave}
-              disabled={saving || !lessonData.header.title.trim()}
+              disabled={saving}
               style={{
-                background: lessonData.header.title.trim() ? C.blue : C.muted,
+                background: C.blue,
                 color: 'white',
                 border: 'none',
                 borderRadius: 8,
                 padding: '8px 16px',
                 fontSize: 12,
                 fontWeight: 600,
-                cursor: lessonData.header.title.trim() && !saving ? 'pointer' : 'not-allowed',
-                opacity: (lessonData.header.title.trim() && !saving) ? 1 : 0.6,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
               }}
             >
-              {saving ? '💾 Saving...' : '💾 Save Lesson Plan'}
+              {saving ? 'Saving...' : 'Save Lesson Plan'}
             </button>
           </div>
         </div>
