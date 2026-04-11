@@ -728,7 +728,7 @@ function LessonHeaderSection({ data, onChange }) {
 
 // ─── 2. STANDARDS ──────────────────────────────────────────────────────────
 function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
-  const { currentUser } = useStore()
+  const { currentUser, selectedStandards, setSelectedStandards } = useStore()
   const [showPicker, setShowPicker] = React.useState(false)
   const [generating, setGenerating] = React.useState(false)
 
@@ -762,56 +762,45 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
             cursor: 'pointer',
           }}
         >
-          {showPicker ? '▲ Hide Picker' : '▼ Browse Standards'}
+          {showPicker ? 'Hide Picker' : 'Browse Standards'}
         </button>
       </div>
 
-      {showPicker && (
-        <StandardsSelector
-          subject={headerData?.subject}
-          grade={headerData?.gradeLevel}
-          selectedStandards={data.standards || []}
-          topic={headerData?.title}
-          schoolName={currentUser?.schoolName}
-          onChange={(standards) => {
-            onChange('standards', standards)
-            setShowPicker(false)
-          }}
-        />
+      {selectedStandards.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {selectedStandards.map((std, i) => (
+            <span
+              key={i}
+              style={{
+                background: `${C.blue}20`,
+                color: C.blue,
+                border: `1px solid ${C.blue}40`,
+                borderRadius: 6,
+                padding: '4px 10px',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              {typeof std === 'string' ? std : std.code}
+            </span>
+          ))}
+        </div>
       )}
 
-      {data.standards && data.standards.length > 0 && (
+      {showPicker && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
-            Selected ({data.standards.length})
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {data.standards.map((std, i) => (
-              <span
-                key={i}
-                style={{
-                  background: `${C.blue}20`,
-                  color: C.blue,
-                  border: `1px solid ${C.blue}40`,
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                {typeof std === 'string' ? std : std.code}
-                <button
-                  onClick={() => onChange('standards', data.standards.filter((_, idx) => idx !== i))}
-                  style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
+          <StandardsSelector
+            subject={headerData?.subject}
+            grade={headerData?.gradeLevel}
+            selectedStandards={selectedStandards}
+            onChange={(standards) => {
+              setSelectedStandards(standards)
+              onChange('standards', standards)
+              setShowPicker(false)
+            }}
+            topic={headerData?.title}
+            schoolName={currentUser?.schoolName}
+          />
         </div>
       )}
     </SectionWithAI>
