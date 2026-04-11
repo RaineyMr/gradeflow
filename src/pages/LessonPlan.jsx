@@ -404,10 +404,11 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 
   if (plan) return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
+      <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
       <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{form.subject} · {form.grade} · {form.topic}</p>
 
+      {/* Show selected standards */}
       {selectedStandards.length > 0 && (
         <div style={{ background: `${C.teal}12`, border: `1px solid ${C.teal}30`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
@@ -433,7 +434,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
       {/* Accommodations section */}
       {generatingAdjust && (
         <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
-          &#10095; Generating lesson adjustments for {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''}...
+          ✨ Generating lesson adjustments for {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''}...
         </div>
       )}
       <AccommodationsSection
@@ -446,8 +447,8 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>&#10095; AI Lesson Plan Generator</h1>
+      <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
+      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>✨ AI Lesson Plan Generator</h1>
 
       <div style={{ background:C.card, border:`1px solid ${C.border}`, borderRadius:16, padding:'16px', marginBottom:16 }}>
         {/* Auto-populated fields - read-only */}
@@ -570,7 +571,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 
         {accommodationStudents.length > 0 && (
           <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
-            &#10095; {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations &#8212; adjustments will be auto-generated after the lesson plan.
+            ✨ {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations — adjustments will be auto-generated after the lesson plan.
           </div>
         )}
 
@@ -578,12 +579,13 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 
         <button onClick={handleGenerate}
           style={{ width:'100%', background:'var(--school-color)', color:'#fff', border:'none', borderRadius:999, padding:'14px', fontSize:15, fontWeight:800, cursor:'pointer' }}>
-          &#10095; Generate Lesson Plan
+          ✨ Generate Lesson Plan
         </button>
       </div>
     </div>
   )
 }
+
 // ─── Build from Scratch ───────────────────────────────────────────────────────
 
 // ─── AI Assist Button Component ────────────────────────────────────────────
@@ -764,8 +766,6 @@ function LessonHeaderSection({ data, onChange }) {
 
 // ─── 2. STANDARDS ──────────────────────────────────────────────────────────
 function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
-  const { currentUser } = useStore()
-  const [showPicker, setShowPicker] = React.useState(false)
   const [generating, setGenerating] = React.useState(false)
 
   const handleAIGenerate = async (mode) => {
@@ -784,37 +784,18 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
         <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
           Search TEKS / Common Core Standards
         </label>
-        <button
-          onClick={() => setShowPicker(!showPicker)}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            border: `1px solid ${C.blue}`,
-            background: C.inner,
-            color: C.blue,
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          {showPicker ? '▲ Hide Picker' : '▼ Browse Standards'}
-        </button>
       </div>
 
-      {showPicker && (
-        <StandardsSelector
-          subject={headerData?.subject}
-          grade={headerData?.gradeLevel}
-          selectedStandards={data.standards || []}
-          topic={headerData?.title}
-          schoolName={currentUser?.schoolName}
-          onChange={(standards) => {
-            onChange('standards', standards)
-            setShowPicker(false)
-          }}
-        />
-      )}
+      <StandardsSelector
+        subject={headerData?.subject}
+        grade={headerData?.gradeLevel}
+        selectedStandards={data.standards || []}
+        topic={headerData?.title}
+        schoolName="GradeFlow"
+        onChange={(standards) => {
+          onChange('standards', standards)
+        }}
+      />
 
       {data.standards && data.standards.length > 0 && (
         <div style={{ marginTop: 12 }}>
@@ -1472,17 +1453,12 @@ function BuildFromScratch({ onBack }) {
         ? currentUser.subjects[0] 
         : currentUser.subjects || '';
 
-      // Get selectedDate from URL query params (set by Lesson Calendar)
-      const params = new URLSearchParams(window.location.search)
-      const selectedDate = params.get('date') // e.g., "2025-04-15"
-
       setLessonData(prev => ({
         ...prev,
         header: {
           ...prev.header,
           subject: subject,
           gradeLevel: gradeNum || prev.header.gradeLevel,
-          date: selectedDate || prev.header.date, // ← Pre-fill with calendar date
         }
       }))
     }
@@ -1738,24 +1714,11 @@ function UploadDoc({ onBack }) {
 
 // ─── Main Menu ────────────────────────────────────────────────────────────────
 export default function LessonPlan({ initialMode, classId, onBack }) {
-  const navigate = useNavigate()
   const { goBack, getTodayLesson } = useStore()
   const handleBack  = onBack || goBack
   const todayLesson = classId ? getTodayLesson(classId) : null
-  
-  // Read mode from URL query params (set by Lesson Calendar)
-  const params = new URLSearchParams(window.location.search)
-  const urlMode = params.get('mode') // e.g., "ai", "build", "upload"
-  
-  const startMode   = urlMode || (initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu'))
+  const startMode   = initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu')
   const [mode, setMode] = useState(startMode)
-
-  // Watch for URL mode changes and update state
-  useEffect(() => {
-    if (urlMode && urlMode !== mode) {
-      setMode(urlMode)
-    }
-  }, [urlMode, mode])
 
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
   if (mode === 'ai')     return <AIPlanGenerator   onBack={() => setMode('menu')} />
@@ -1789,7 +1752,7 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
             <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>{item.label}</div>
             <div style={{ fontSize:11, color:C.muted }}>{item.desc}</div>
           </div>
-          <span style={{ marginLeft:'auto', color:C.muted, fontSize:18 }}>{'>'}</span>
+          <span style={{ marginLeft:'auto', color:C.muted, fontSize:18 }}>›</span>
         </button>
       ))}
     </div>
