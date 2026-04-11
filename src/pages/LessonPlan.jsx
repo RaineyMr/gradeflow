@@ -524,14 +524,14 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
           {showStandards && (
             <div style={{ marginTop: 12 }}>
               <StandardsSelector
-                topic={form.textbook || `${subject} lesson`}
-                maxSelections={3}
-                showRecommendations={true}
-                schoolName={currentUser?.schoolName}
-                onStandardsChange={(standards) => {
-                  setSelectedStandards(standards)
-                  setShowStandards(false)
+                subject={subject}
+                grade={grade}
+                selectedStandards={selectedStandards}
+                onChange={(standards) => {
+                  useStore.setState({ selectedStandards: standards })
                 }}
+                topic={form.textbook || `${subject} lesson`}
+                schoolName={currentUser?.schoolName}
               />
             </div>
           )}
