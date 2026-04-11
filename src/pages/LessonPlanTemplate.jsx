@@ -899,22 +899,45 @@ export default function LessonPlanTemplate({ currentUser, lessonId, onBack }) {
   async function handleSave() {
     setSaving(true)
     try {
+      // Get current user from store
+      const { currentUser } = useStore.getState()
+      
+      // Prepare headers with authentication
+      const headers = { 'Content-Type': 'application/json' }
+      
+      // Add auth header if user exists
+      if (currentUser) {
+        if (currentUser.id === 'demo-user') {
+          // Demo account - use demo token
+          headers.Authorization = 'Bearer demo-token'
+        } else {
+          // Real user - use actual auth token
+          headers.Authorization = `Bearer ${currentUser.id}`
+        }
+      }
+      
       const payload = {
         lessonId,
         ...lessonData,
       }
-      const response = await fetch('/api/lesson-plans', {
+      
+      const response = await fetch('/api/lesson-plan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       })
 
-      if (!response.ok) throw new Error('Save failed')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Save failed')
+      }
+      
+      const result = await response.json()
       alert('Lesson plan saved!')
       if (onBack) onBack()
     } catch (err) {
       console.error('Save error:', err)
-      alert('Failed to save. Please try again.')
+      alert(`Failed to save: ${err.message}`)
     }
     setSaving(false)
   }
