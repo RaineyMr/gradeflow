@@ -803,6 +803,7 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
             grade={headerData?.gradeLevel}
             selectedStandards={data.standards || []}
             onChange={(standards) => {
+              setSelectedStandards(standards)
               onChange('standards', standards)
               setShowPicker(false)
             }}
