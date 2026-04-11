@@ -421,24 +421,15 @@ function MobileLogin({ form, onCreateAccount }) {
           </button>
         </div>
 
-        <div style={{ textAlign: 'center', margin: '14px 0 10px' }}>
-          <span style={{ fontSize: 12, color: BRAND.muted }}>{t('or_jump')}</span>
-        </div>
-
-        {/* Google OAuth Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '20px 0' }}>
-          <div style={{ flex: 1, height: 1, background: BRAND.border }} />
-          <span style={{ fontSize: 12, color: BRAND.muted, fontWeight: 500 }}>
-            {lang === 'es' ? 'O' : 'OR'}
-          </span>
-          <div style={{ flex: 1, height: 1, background: BRAND.border }} />
-        </div>
-
         {/* Google Sign In Button */}
         <GoogleSignInButton 
           compact={true}
           onError={(error) => console.error('Google sign in error:', error)}
         />
+
+        <div style={{ textAlign: 'center', margin: '14px 0 10px' }}>
+          <span style={{ fontSize: 12, color: BRAND.muted }}>{t('or_jump')}</span>
+        </div>
 
         {/* Quick demo */}
         <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: BRAND.muted, marginBottom: 10, marginTop: 20 }}>{t('quick_demo')}</div>
@@ -591,15 +582,6 @@ function DesktopLogin({ form, onCreateAccount }) {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
               <div style={{ flex: 1, height: 1, background: BRAND.border }} />
               <span style={{ fontSize: 12, color: BRAND.muted }}>{t('or_jump')}</span>
-              <div style={{ flex: 1, height: 1, background: BRAND.border }} />
-            </div>
-
-            {/* Google OAuth Divider */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-              <div style={{ flex: 1, height: 1, background: BRAND.border }} />
-              <span style={{ fontSize: 13, color: BRAND.muted, fontWeight: 600 }}>
-                {lang === 'es' ? 'O' : 'OR'}
-              </span>
               <div style={{ flex: 1, height: 1, background: BRAND.border }} />
             </div>
 
