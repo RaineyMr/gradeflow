@@ -1,5 +1,6 @@
 // src/components/support/SupportStaffNotes.jsx
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useStore } from '../../lib/store'
 import SupportLogEditor from './SupportLogEditor'
 import SupportLogCard from './SupportLogCard'
@@ -13,7 +14,8 @@ const C = {
   teal:'#0fb8a0', purple:'#9b6ef5',
 }
 
-export default function SupportStaffNotes({ onBack, studentId = null }) {
+export default function SupportStaffNotes({ studentId = null }) {
+  const navigate = useNavigate()
   const [showAI, setShowAI] = useState(false)
   const [showParentAI, setShowParentAI] = useState(false)
   const {
@@ -85,7 +87,7 @@ export default function SupportStaffNotes({ onBack, studentId = null }) {
     <div style={{ minHeight:'100vh', background:C.bg }}>
       {/* Header */}
       <div style={{ background:C.card, borderBottom:`1px solid ${C.border}`, padding:'16px 20px', display:'flex', alignItems:'center', gap:16 }}>
-        <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:8, width:36, height:36, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>←</button>
+        <button onClick={() => navigate(-1)} style={{ background:C.inner, border:'none', borderRadius:8, width:36, height:36, color:C.soft, fontSize:18, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>←</button>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:18, fontWeight:700, color:C.text, marginBottom:2 }}>Support Logs</div>
           <div style={{ fontSize:12, color:C.muted }}>{selectedStudentId ? 'Student-specific logs' : 'All support logs'}</div>

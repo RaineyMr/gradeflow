@@ -11,13 +11,13 @@ export function GradebookSyncButton() {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 mobile-sync-gap">
       <button
         onClick={handleClick}
         disabled={isSyncing}
-        className="px-3 py-1.5 rounded-md text-sm font-medium bg-blue-600 text-white disabled:opacity-60"
+        className="px-2 py-1 rounded-md text-xs font-medium bg-blue-600 text-white disabled:opacity-60 mobile-sync-btn"
       >
-        {isSyncing ? 'Syncing to District Gradebook…' : 'Sync to District Gradebook'}
+        {isSyncing ? 'Syncing…' : 'Sync Gradebook'}
       </button>
       {lastSync && (
         <span className="text-xs text-gray-500">

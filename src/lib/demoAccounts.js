@@ -6,6 +6,7 @@ import { DEMO_SCHOOLS } from './store'
 
 export const demoAccounts = {
   teacher: {
+    id: 'demo-teacher-houston',
     role: 'teacher',
     email: 'teacher@houstonisd.org',
     password: 'demo123',
@@ -17,7 +18,6 @@ export const demoAccounts = {
     studentName: null,
     avatar: '👩‍🏫',
     lang: 'en', // Default language
-    // Teacher profile for standards integration
     gradeLevel: '5th Grade',
     subjects: ['Math', 'Science'],
     logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Houston_ISD_logo.svg/200px-Houston_ISD_logo.svg.png',
@@ -44,6 +44,7 @@ export const demoAccounts = {
   },
 
   student: {
+    id: 'demo-student-houston',
     role: 'student',
     email: 'student@houstonisd.org',
     password: 'demo123',
@@ -79,6 +80,7 @@ export const demoAccounts = {
   },
 
   parent: {
+    id: 'demo-parent-bellaire',
     role: 'parent',
     email: 'parent@bellaire.org',
     password: 'demo123',
@@ -88,7 +90,7 @@ export const demoAccounts = {
     district_id: 'bellaire-parish', // Bellaire district
     userName: 'Sarah Johnson',
     studentName: 'Emma',
-    avatar: '�',
+    avatar: '👪',
     lang: 'en', // Default language
     logoUrl: 'https://upload.wikimedia.org/wikipedia/en/thumb/9/9b/KIPP_Foundation_logo.svg/200px-KIPP_Foundation_logo.svg.png',
     theme: {
@@ -107,13 +109,14 @@ export const demoAccounts = {
       soft:           'rgba(200,16,46,0.18)',
       navActive:      '#C8102E',
       green:          '#22c97a',
-      blue:           '#3b7ef4',
+      blue:           '#C8102E',
       amber:          '#f5a623',
       red:            '#f04a4a',
     },
   },
 
   admin: {
+    id: 'demo-admin-lamar',
     role: 'admin',
     email: 'admin@lamarhs.org',
     password: 'demo123',
@@ -149,6 +152,7 @@ export const demoAccounts = {
   },
 
   supportStaff: {
+    id: 'demo-support-houston',
     role: 'supportStaff',
     email: 'support@houstonisd.org',
     password: 'demo123',

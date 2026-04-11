@@ -196,7 +196,6 @@ function LessonHeaderSection({ data, onChange }) {
 
 // ─── 2. STANDARDS ──────────────────────────────────────────────────────────
 function StandardsSection({ data, onChange, onAIGenerate }) {
-  const [showPicker, setShowPicker] = useState(false)
   const [generating, setGenerating] = useState(false)
 
   const handleAIGenerate = async (mode) => {
@@ -215,43 +214,26 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
         <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>
           Search TEKS / Common Core Standards
         </label>
-        <button
-          onClick={() => setShowPicker(!showPicker)}
-          style={{
-            width: '100%',
-            padding: '10px 12px',
-            border: `1px solid ${C.blue}`,
-            background: C.inner,
-            color: C.blue,
-            borderRadius: 8,
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}
-        >
-          {showPicker ? '▲ Hide Picker' : '▼ Browse Standards'}
-        </button>
       </div>
 
-      {showPicker && (
-        <StandardsSelector
-          topic={data.title}
-          maxSelections={5}
-          showRecommendations
-          onStandardsChange={(standards) => {
-            onChange('standards', standards)
-            setShowPicker(false)
-          }}
-        />
-      )}
+      <StandardsSelector
+        subject={data?.subject}
+        grade={data?.gradeLevel}
+        selectedStandards={data || []}
+        topic={data?.title}
+        schoolName="GradeFlow"
+        onChange={(standards) => {
+          onChange('standards', standards)
+        }}
+      />
 
-      {data.standards && data.standards.length > 0 && (
+      {data && data.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
-            Selected ({data.standards.length})
+            Selected ({data.length})
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {data.standards.map((std, i) => (
+            {data.map((std, i) => (
               <span
                 key={i}
                 style={{
@@ -267,9 +249,9 @@ function StandardsSection({ data, onChange, onAIGenerate }) {
                   gap: 6,
                 }}
               >
-                {std}
+                {typeof std === 'string' ? std : std.code}
                 <button
-                  onClick={() => onChange('standards', data.standards.filter((_, idx) => idx !== i))}
+                  onClick={() => onChange('standards', data.filter((_, idx) => idx !== i))}
                   style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
                 >
                   ×

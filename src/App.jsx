@@ -1,17 +1,14 @@
 import React, { useEffect } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useStore } from '@lib/store'
-import { useHashRouter } from '@hooks/useHashRouter'
-import { initializeRouter, pageToHash } from '@lib/hashRouter'
 import { SchoolThemeProvider } from '@components/SchoolThemeProvider_Enhanced'
 
-// ── Layout & guards ───────────────────────────────────────────────────────────
-import AppShell      from '@components/layout/AppShell'
-import MobileLayout  from '@layouts/MobileLayout'
+// Layout & guards
+import AppShell from '@components/layout/AppShell'
 import SupportStaffLayoutWrapper from '@components/layout/SupportStaffLayoutWrapper'
 import ProtectedRoute from './router/ProtectedRoute'
 
-// ── Pages ─────────────────────────────────────────────────────────────────────
+// Pages
 import Login from '@pages/Login'
 import TeacherOnboarding from '@pages/TeacherOnboarding'
 import CurriculumOnboarding from '@pages/CurriculumOnboarding'
@@ -22,6 +19,7 @@ import Gradebook from '@pages/Gradebook'
 import LessonPlan from '@pages/LessonPlan'
 import LessonPlanTemplate from '@pages/LessonPlanTemplate'
 import ParentDashboard from '@pages/ParentDashboard'
+import LessonCalendar from "@pages/LessonCalendar"
 import ParentMessages from '@pages/ParentMessages'
 import Reports from '@pages/Reports'
 import StudentDashboard from '@pages/StudentDashboard'
@@ -32,9 +30,10 @@ import TestingSuite from '@pages/TestingSuite'
 import Widgets from '@pages/Widgets'
 import ClassFeed from '@pages/ClassFeed'
 import Integrations from '@pages/Integrations'
-import Camera          from '@pages/Camera'
-import ClassCreation   from '@pages/ClassCreation'
-import Tutorials       from '@pages/Tutorials'
+import Camera from '@pages/Camera'
+import ClassCreation from '@pages/ClassCreation'
+import Tutorials from '@pages/Tutorials'
+import { HomeFeed } from '@pages/Dashboard'
 import ProfileSettings from '@components/ProfileSettings'
 import SupportStaffGroupScreen from '@pages/SupportStaffGroupScreen'
 import SupportStaffMessaging from '@components/support/SupportStaffMessaging'
@@ -51,54 +50,18 @@ import CaseConference from '@pages/CaseConference'
 import Crawler from '@pages/Crawler'
 import AppRouter from './appRouter'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 /**
- * Wraps a page component and injects:
- *   onBack    →  navigate(backTo)   (falls back to browser history -1)
- *   + any extraProps you pass in
- *
- * Keeps all page components free from direct router imports.
+ * Extract role dashboards from store, pass currentUser as prop
  */
-function Page({ Component, backTo, extraProps = {} }) {
-  const navigate = useNavigate()
-  return <Component {...extraProps} onBack={() => navigate(backTo ?? -1)} />
-}
-
-/**
- * Tiny wrappers that pull currentUser from the store and pass it
- * to role dashboards that still expect it as a prop.
- */
-function TeacherHome()  { 
+function TeacherHome() {
   const currentUser = useStore(s => s.currentUser)
   const navigate = useNavigate()
   
-  console.log('TeacherHome - currentUser:', currentUser)
-  console.log('TeacherHome - needsOnboarding:', currentUser?.needsOnboarding)
-  console.log('TeacherHome - isNewAccount:', currentUser?.isNewAccount)
-  
   // Check if new teacher needs onboarding
   if (currentUser?.needsOnboarding && currentUser?.isNewAccount) {
-    console.log('Redirecting to onboarding')
-    // Use React Router navigate instead of window.location.hash
     navigate('/teacher/onboarding', { replace: true })
     return null
   }
-  
-  console.log('Rendering dashboard')
-  console.log('Teacher account info:', {
-    email: currentUser?.email,
-    id: currentUser?.id,
-    isRealAccount: currentUser?.id?.startsWith('new-'),
-    isDemoAccount: currentUser?.email?.includes('@demo') || 
-                   currentUser?.id?.startsWith('demo-') ||
-                   currentUser?.email?.includes('@kippneworleans.org') ||
-                   currentUser?.email?.includes('@houstonisd.org') ||
-                   currentUser?.email?.includes('@bellaire.org') ||
-                   currentUser?.email?.includes('@lamarhs.org')
-  })
   
   // Use working dashboard for real users, demo dashboard for demo accounts
   // Demo accounts: predefined demo emails OR demo- prefix IDs
@@ -112,34 +75,46 @@ function TeacherHome()  {
                         currentUser?.email?.includes('@lamarhs.org')
   // Real accounts have timestamp-based IDs from registration
   const isRealAccount = currentUser?.id?.startsWith('new-')
-  const DashboardComponent = isRealAccount ? WorkingDashboard : Dashboard
-  
-  console.log('Dashboard component selected:', isRealAccount ? 'WorkingDashboard' : 'Dashboard')
+  const DashboardComponent = isDemoAccount ? Dashboard : WorkingDashboard
   
   return <DashboardComponent currentUser={currentUser} /> 
 }
-function StudentHome()  { const u = useStore(s => s.currentUser); return <StudentDashboard currentUser={u} /> }
-function ParentHome()   { const u = useStore(s => s.currentUser); return <ParentDashboard  currentUser={u} /> }
-function AdminHome()    { const u = useStore(s => s.currentUser); return <AdminDashboard   currentUser={u} /> }
-function SupportStaffHome() { const u = useStore(s => s.currentUser); return <SupportStaffDashboard currentUser={u} /> }
 
-// ─────────────────────────────────────────────────────────────────────────────
+function StudentHome() { 
+  const u = useStore(s => s.currentUser); 
+  return <StudentDashboard currentUser={u} /> 
+}
+
+function ParentHome()   { 
+  const u = useStore(s => s.currentUser); 
+  return <ParentDashboard  currentUser={u} /> 
+}
+
+function AdminHome()    { 
+  const u = useStore(s => s.currentUser); 
+  return <AdminDashboard   currentUser={u} /> 
+}
+
+function SupportStaffHome() { 
+  const u = useStore(s => s.currentUser); 
+  return <SupportStaffDashboard currentUser={u} /> 
+}
+
 // Public routes
-// ─────────────────────────────────────────────────────────────────────────────
 
-/** / → dashboard if authed, login if not */
+/**
+ * Root -> always redirect to login
+ */
 function RootRedirect() {
-  // Always open landing/login first, regardless of persisted session.
-  // Authenticated users can still be redirected via /login route behavior.
   return <Navigate to="/login" replace />
 }
 
-/** /login → always show Login page */
+/**
+ * Login page: handles both demo and real account login
+ */
 function LoginRoute() {
-  const navigate  = useNavigate()
-  const { navigateToPage } = useHashRouter()
-  const { isHydrated } = useStore(s => ({ isHydrated: s.isHydrated }))
-  const { setCurrentUser, setLang } = useStore()
+  const navigate = useNavigate()
+  const { isHydrated, setCurrentUser, setLang, loadTeacherData } = useStore()
 
   if (!isHydrated) {
     return (
@@ -162,50 +137,71 @@ function LoginRoute() {
     )
   }
 
-  // Invalid persisted user → clear
-  useEffect(() => {
-    const raw = localStorage.getItem('gradeflow_user')
-    if (raw) {
-      try {
-        const user = JSON.parse(raw)
-        if (!user?.role) {
-          localStorage.removeItem('gradeflow_user')
-          setCurrentUser(null)
-        }
-      } catch {
-        localStorage.removeItem('gradeflow_user')
-        setCurrentUser(null)
-      }
-    }
-  }, [setCurrentUser])
-
+  /**
+   * Handle login: mark as not needing onboarding, navigate to dashboard or onboarding
+   */
   function handleLogin(account) {
-    if (!account?.role) return
-    setCurrentUser(account)
-    setLang(account.lang ?? 'en')
-    localStorage.setItem('gradeflow_user', JSON.stringify(account))
-    document.documentElement.lang = account.lang ?? 'en'
+    console.log('=== DEBUG: handleLogin called ===')
+    console.log('DEBUG: account:', account)
+    console.log('DEBUG: account.role:', account?.role)
+    console.log('DEBUG: account.id:', account?.id)
+    console.log('DEBUG: account.email:', account?.email)
     
-    // Reset browser history and navigate to role-specific dashboard
-    useStore.getState().resetToHome()
-    
-    // Check if new account needs onboarding
-    if (account.isNewAccount && account.needsOnboarding && account.role === 'teacher') {
-      // Navigate to onboarding for new teachers
-      navigate('/teacher/onboarding')
-    } else {
-      // Navigate to the correct role-specific home path
-      const homePath = account.role === 'admin' ? '/admin' : `/${account.role}`
-      navigate(homePath)
+    if (!account?.role || !account?.id) {
+      console.log('DEBUG: No role or ID, returning')
+      return
     }
+
+    // Determine if this is a demo account
+    const isDemoAccount = account.isDemoAccount === true ||
+      account.email?.includes('@demo') ||
+      account.id?.startsWith('demo-') ||
+      // Known demo account domains
+      account.email?.includes('@kippneworleans.org') ||
+      account.email?.includes('@houstonisd.org') ||
+      account.email?.includes('@bellaire.org') ||
+      account.email?.includes('@lamarhs.org')
+
+    console.log('DEBUG: isDemoAccount:', isDemoAccount)
+
+    // Set account with onboarding cleared
+    const finalAccount = {
+      ...account,
+      isDemoAccount,
+      needsOnboarding: false,
+      isNewAccount: false,
+    }
+
+    console.log('DEBUG: finalAccount:', finalAccount)
+
+    setCurrentUser(finalAccount)
+    setLang(finalAccount.lang ?? 'en')
+    localStorage.setItem('gradeflow_user', JSON.stringify(finalAccount))
+    document.documentElement.lang = finalAccount.lang ?? 'en'
+
+    // Apply school branding if available
+    const { primary, secondary } = finalAccount.theme ?? {}
+    if (primary) {
+      document.documentElement.style.setProperty('--school-color', primary)
+      document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
+    }
+
+    // Load real teacher data from Supabase
+    if (finalAccount.role === 'teacher' && !isDemoAccount) {
+      console.log('DEBUG: Loading teacher data for real account')
+      loadTeacherData()
+    }
+
+    // Navigate to role-specific dashboard
+    const homePath = finalAccount.role === 'admin' ? '/admin' : `/${finalAccount.role}`
+    console.log('DEBUG: Navigating to:', homePath)
+    navigate(homePath, { replace: true })
   }
 
   return <Login onLogin={handleLogin} onDemoLogin={handleLogin} currentUser={null} />
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// App — route tree
-// ─────────────────────────────────────────────────────────────────────────────
+// Loading component
 
 function Loading() {
   return (
@@ -235,62 +231,78 @@ function Loading() {
   )
 }
 
-export default function App() {
-  const { loadFromDB, setCurrentUser, setLang, isHydrated, page, currentUser } = useStore()
+// Main App
 
-  // Rehydrate auth session + apply school CSS vars on first load
+export default function App() {
+  const { loadFromDB, setCurrentUser, setLang, isHydrated, currentUser, loadTeacherData } = useStore()
+
+  // Hydrate auth state on mount
   useEffect(() => {
     const raw = localStorage.getItem('gradeflow_user')
-    console.log('App useEffect - loading user from localStorage:', raw)
+    let userToSet = null
+
     if (raw) {
       try {
         const user = JSON.parse(raw)
-        console.log('App useEffect - parsed user:', user)
-        setCurrentUser(user)
-        setLang(user.lang ?? 'en')
-        document.documentElement.lang = user.lang ?? 'en'
+        if (user?.role && user?.id) {
+          userToSet = user
+          setCurrentUser(user)
+          setLang(user.lang ?? 'en')
+          document.documentElement.lang = user.lang ?? 'en'
 
-        const { primary, secondary } = user.theme ?? {}
-        if (primary) {
-          document.documentElement.style.setProperty('--school-color',     primary)
-          document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
+          const { primary, secondary } = user.theme ?? {}
+          if (primary) {
+            document.documentElement.style.setProperty('--school-color', primary)
+            document.documentElement.style.setProperty('--school-secondary', secondary ?? primary)
+          }
+        } else {
+          localStorage.removeItem('gradeflow_user')
         }
       } catch {
         localStorage.removeItem('gradeflow_user')
-        console.log('Cleared invalid localStorage user')
       }
     } else {
-      // No saved user, but check for saved language preference
       const savedLang = localStorage.getItem('gradeflow_lang')
       if (savedLang) {
         setLang(savedLang)
         document.documentElement.lang = savedLang
       }
     }
-    
-    // Load database after user state is set
+
+    // Load demo or real data AFTER user is set
+    // Use userToSet directly instead of get().currentUser to avoid race condition
     setTimeout(() => {
-      loadFromDB()
+      if (userToSet) {
+        const isDemoAccount = userToSet.email?.includes('@demo') || 
+                               userToSet.id?.startsWith('demo-') ||
+                               userToSet.email?.includes('@kippneworleans.org') ||
+                               userToSet.email?.includes('@houstonisd.org') ||
+                               userToSet.email?.includes('@bellaire.org') ||
+                               userToSet.email?.includes('@lamarhs.org')
+        
+        if (isDemoAccount) {
+          loadFromDB() // Will load demo data
+        } else if (userToSet.role === 'teacher') {
+          loadTeacherData() // Will load teacher data
+        }
+        // If NOT demo, leave data empty (they'll build their classes)
+        else {
+          loadFromDB() // Just hydrate store without loading data
+        }
+      }
     }, 100)
-  }, [setCurrentUser, setLang])
 
-  // Initialize hash router on app mount
-  useEffect(() => {
-    const cleanup = initializeRouter(useStore)
-    return cleanup
-  }, [])
+    // Add timeout fallback to prevent infinite loading on mobile
+    const timeoutId = setTimeout(() => {
+      const { isHydrated: currentHydrated } = useStore.getState()
+      if (!currentHydrated) {
+        console.warn('App hydration timeout - forcing hydration to prevent infinite loading')
+        useStore.setState({ isHydrated: true })
+      }
+    }, 5000) // 5 second timeout
 
-  // Sync page state changes back to hash (only if authenticated)
-  useEffect(() => {
-    if (!currentUser) return // Don't sync hash if not authenticated
-    
-    const role = currentUser?.role || null
-    const hash = pageToHash(page, role)
-
-    if (window.location.hash !== hash) {
-      window.history.replaceState({ page, role }, '', hash)
-    }
-  }, [page, currentUser])
+    return () => clearTimeout(timeoutId)
+  }, [setCurrentUser, setLang, loadFromDB, loadTeacherData])
 
   if (!isHydrated) {
     return <Loading />
@@ -300,108 +312,99 @@ export default function App() {
     <SchoolThemeProvider>
       <Routes>
 
-      {/* ── Public ─────────────────────────────────────────────────────── */}
-      <Route path="/"      element={<RootRedirect />} />
-      <Route path="/login" element={<LoginRoute />} />
+        {/* Public */}
+        <Route path="/" element={<RootRedirect />} />
+        <Route path="/login" element={<LoginRoute />} />
 
-      {/* ── Onboarding Routes (outside AppShell, but protected) ───────────── */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
-          <Route path="/teacher/onboarding" element={<TeacherOnboarding />} />
-          <Route path="/teacher/curriculum-onboarding" element={<CurriculumOnboarding />} />
-        </Route>
-      </Route>
-
-      {/* ── Protected (requires auth) ───────────────────────────────────
-           All protected routes share the AppShell layout (sticky header).
-           Role-scoped subtrees add a second ProtectedRoute layer that
-           redirects to the user's own dashboard if the role doesn't match.
-      ──────────────────────────────────────────────────────────────── */}
-      <Route element={<ProtectedRoute />}>
-        {/* ── Main App Routes (with AppShell) ─────────────────────────── */}
-        <Route element={<AppShell />}>
-
-          {/* Shared across all roles */}
-          <Route path="/tutorials" element={<Tutorials />} />
-          <Route path="/profile"   element={<ProfileSettings />} />
-          <Route path="/camera"    element={<Page Component={Camera} backTo={-1} />} />
-
-          {/* ── Debug Tools ─────────────────────────────────────────────── */}
-          <Route path="/debug/crawler" element={<Crawler />} />
-
-          {/* ── Teacher ─────────────────────────────────────────────── */}
+        {/* Onboarding (protected, outside AppShell) */}
+        <Route element={<ProtectedRoute />}>
           <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
-            <Route path="/teacher"              element={<TeacherHome />} />
-            <Route path="/teacher/lessons"      element={<Page Component={LessonPlan}     backTo="/teacher" />} />
-            <Route path="/teacher/gradebook"    element={<Page Component={Gradebook}      backTo="/teacher" />} />
-            <Route path="/teacher/lesson-plan-template" element={<Page Component={LessonPlanTemplate} backTo="/teacher" />} />
-            <Route path="/teacher/reports"      element={<Page Component={Reports}        backTo="/teacher" />} />
-            <Route path="/teacher/messages"     element={<Page Component={ParentMessages} backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
-            <Route path="/teacher/testing"      element={<Page Component={TestingSuite}   backTo="/teacher" />} />
-            <Route path="/teacher/app"          element={<AppRouter />} />
-            <Route path="/teacher/feed"         element={<Page Component={ClassFeed}      backTo="/teacher" extraProps={{ viewerRole: 'teacher' }} />} />
-            <Route path="/teacher/widgets"      element={<Page Component={Widgets}        backTo="/teacher" />} />
-            <Route path="/teacher/integrations" element={<Page Component={Integrations}   backTo="/teacher" />} />
-            
-            {/* Class Management Routes */}
-            <Route path="/teacher/classes/create" element={<ClassCreation />} />
-            <Route path="/teacher/classes/upload" element={<div style={{padding: 20, color: '#fff'}}>Upload Classes - Coming Soon</div>} />
-
+            <Route path="/teacher/onboarding" element={<TeacherOnboarding />} />
+            <Route path="/teacher/curriculum-onboarding" element={<CurriculumOnboarding />} />
           </Route>
-
-          {/* ── Student ─────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute allowedRoles={['student']} />}>
-            <Route path="/student"            element={<StudentHome />} />
-            <Route path="/student/widgets"    element={<Page Component={Widgets}       backTo="/student" />} />
-            <Route path="/student/messages"   element={<Page Component={ParentMessages} backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
-            <Route path="/student/feed"       element={<Page Component={ClassFeed}      backTo="/student" extraProps={{ viewerRole: 'student' }} />} />
-          </Route>
-
-          {/* ── Parent ──────────────────────────────────────────────── */}
-          <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
-            <Route path="/parent"            element={<ParentHome />} />
-            <Route path="/parent/widgets"    element={<Page Component={Widgets}       backTo="/parent" />} />
-            <Route path="/parent/messages"   element={<Page Component={ParentMessages} backTo="/parent" extraProps={{ viewerRole: 'parent' }} />} />
-          </Route>
-
-          {/* ── Admin ───────────────────────────────────────────────── */ }
-          <Route element={<ProtectedRoute allowedRoles={['admin']} />} >
-            <Route path="/admin"            element={<AdminHome />} />
-            <Route path="/admin/widgets"    element={<Page Component={Widgets}       backTo="/admin" />} />
-            <Route path="/admin/messages"   element={<Page Component={ParentMessages} backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
-            <Route path="/admin/feed"       element={<Page Component={ClassFeed}      backTo="/admin" extraProps={{ viewerRole: 'admin' }} />} />
-            <Route path="/admin/reports"    element={<Page Component={Reports}        backTo="/admin" />} />
-          </Route>
-
-          {/* ── Support Staff ───────────────────────────────────────────────────── */ }
-          <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />} >
-            <Route element={<SupportStaffLayoutWrapper />}>
-              <Route path="/supportStaff"           element={<SupportStaffHome />} />
-              <Route path="/supportStaff/ai"        element={<SupportStaffAI />} />
-              <Route path="/supportStaff/insights"   element={<SupportStaffInsights />} />
-              <Route path="/supportStaff/collaboration" element={<SupportCollaborationFeed />} />
-              <Route path="/supportStaff/reports"    element={<SupportReports />} />
-              <Route path="/supportStaff/groups"    element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
-              <Route path="/support/groups"         element={<Page Component={SupportStaffGroups} backTo="/supportStaff" />} />
-              <Route path="/supportStaff/trends"    element={<Page Component={StudentTrends} backTo="/supportStaff" />} />
-              <Route path="/supportStaff/messages"  element={<Page Component={ParentMessages} backTo="/supportStaff" extraProps={{ viewerRole: 'supportStaff' }} />} />
-              <Route path="/support/messages"       element={<SupportStaffMessaging />} />
-              <Route path="/support/student/:studentId" element={<SupportStaffStudentProfile />} />
-              <Route path="/support/case/:studentId" element={<CaseConference />} />
-              <Route path="/support/logs"           element={<Page Component={SupportStaffNotes} backTo="/supportStaff" />} />
-              <Route path="/support/caseload"       element={<Page Component={SupportStaffCaseload} backTo="/supportStaff" />} />
-              <Route path="/supportStaff/notes"     element={<Page Component={SupportStaffDashboard} backTo="/supportStaff" subPage="notes" />} />
-              <Route path="/supportStaff/studentProfile" element={<Page Component={StudentProfile} backTo="/supportStaff" extraProps={{ readOnly: true }} />} />
-            </Route>
-          </Route>
-
         </Route>
-      </Route>
 
-      {/* ── 404 ────────────────────────────────────────────────────────── */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Protected Routes (with AppShell) */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppShell />}>
 
-    </Routes>
+            {/* Shared */}
+            <Route path="/tutorials" element={<Tutorials />} />
+            <Route path="/profile" element={<ProfileSettings />} />
+            <Route path="/debug/crawler" element={<Crawler />} />
+
+            {/* Teacher */}
+            <Route element={<ProtectedRoute allowedRoles={['teacher']} />}>
+              <Route path="/teacher" element={<TeacherHome />} />
+              <Route path="/teacher/lessons" element={<LessonPlan />} />
+              <Route path="/teacher/lessons/calendar" element={<LessonCalendar />} />
+              <Route path="/teacher/gradebook" element={<Gradebook />} />
+              <Route path="/teacher/lesson-plan-template" element={<LessonPlanTemplate />} />
+              <Route path="/teacher/reports" element={<Reports />} />
+              <Route path="/teacher/messages" element={<ParentMessages viewerRole="teacher" />} />
+              <Route path="/teacher/testing" element={<TestingSuite />} />
+              <Route path="/teacher/app" element={<AppRouter />} />
+              <Route path="/teacher/feed" element={<ClassFeed viewerRole="teacher" />} />
+              <Route path="/teacher/widgets" element={<Widgets />} />
+              <Route path="/teacher/integrations" element={<Integrations />} />
+              <Route path="/teacher/camera" element={<Camera />} />
+              <Route path="/teacher/classes/create" element={<ClassCreation />} />
+              <Route path="/teacher/classes/upload" element={<div style={{ padding: 20, color: '#fff' }}>Upload Classes - Coming Soon</div>} />
+            </Route>
+
+            {/* Student */}
+            <Route element={<ProtectedRoute allowedRoles={['student']} />}>
+              <Route path="/student" element={<StudentHome />} />
+              <Route path="/student/widgets" element={<Widgets />} />
+              <Route path="/student/messages" element={<ParentMessages viewerRole="student" />} />
+              <Route path="/student/feed" element={<ClassFeed viewerRole="student" />} />
+            </Route>
+
+            {/* Parent */}
+            <Route element={<ProtectedRoute allowedRoles={['parent']} />}>
+              <Route path="/parent" element={<ParentHome />} />
+              <Route path="/parent/widgets" element={<Widgets />} />
+              <Route path="/parent/messages" element={<ParentMessages viewerRole="parent" />} />
+            </Route>
+
+            {/* Admin */}
+            <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/admin" element={<AdminHome />} />
+              <Route path="/admin/widgets" element={<Widgets />} />
+              <Route path="/admin/messages" element={<ParentMessages viewerRole="admin" />} />
+              <Route path="/admin/feed" element={<ClassFeed viewerRole="admin" />} />
+              <Route path="/admin/reports" element={<Reports />} />
+            </Route>
+
+            {/* Support Staff */}
+            <Route element={<ProtectedRoute allowedRoles={['supportStaff']} />}>
+              <Route element={<SupportStaffLayoutWrapper />}>
+                <Route path="/supportStaff" element={<SupportStaffHome />} />
+                <Route path="/supportStaff/ai" element={<SupportStaffAI />} />
+                <Route path="/supportStaff/insights" element={<SupportStaffInsights />} />
+                <Route path="/supportStaff/collaboration" element={<SupportCollaborationFeed />} />
+                <Route path="/supportStaff/reports" element={<SupportReports />} />
+                <Route path="/supportStaff/groups" element={<SupportStaffGroups />} />
+                <Route path="/support/groups" element={<SupportStaffGroups />} />
+                <Route path="/supportStaff/trends" element={<StudentTrends />} />
+                <Route path="/supportStaff/messages" element={<ParentMessages viewerRole="supportStaff" />} />
+                <Route path="/support/messages" element={<SupportStaffMessaging />} />
+                <Route path="/support/student/:studentId" element={<SupportStaffStudentProfile />} />
+                <Route path="/support/case/:studentId" element={<CaseConference />} />
+                <Route path="/support/logs" element={<SupportStaffNotes />} />
+                <Route path="/support/caseload" element={<SupportStaffCaseload />} />
+                <Route path="/supportStaff/notes" element={<SupportStaffDashboard subPage="notes" />} />
+                <Route path="/supportStaff/studentProfile" element={<StudentProfile readOnly={true} />} />
+              </Route>
+            </Route>
+
+          </Route>
+        </Route>
+
+        {/* 404 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+
+      </Routes>
     </SchoolThemeProvider>
   )
 }
