@@ -803,32 +803,21 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
 
       {showPicker && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ padding: 12, background: C.inner, borderRadius: 8, border: `1px solid ${C.border}` }}>
-            <h4 style={{ color: C.text, fontSize: 14, margin: '0 0 8px 0' }}>Standards Selector Test</h4>
-            <p style={{ color: C.muted, fontSize: 12, margin: '0 0 12px 0' }}>
-              Current standards: {data.standards?.length || 0} items
-            </p>
-            <button
-              onClick={() => {
-                const testStandard = { code: 'TEST.001', description: 'Test Standard for Debugging' }
-                const newStandards = [...(data.standards || []), testStandard]
-                console.log('Adding test standard:', newStandards)
-                onChange('standards', newStandards)
-                setShowPicker(false)
-              }}
-              style={{
-                background: C.blue,
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                padding: '8px 12px',
-                fontSize: 12,
-                cursor: 'pointer'
-              }}
-            >
-              Add Test Standard
-            </button>
+          <div style={{ padding: 8, background: C.inner, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 8 }}>
+            <p style={{ color: C.muted, fontSize: 11, margin: 0 }}>Loading StandardsSelector...</p>
           </div>
+          <StandardsSelector
+            subject={headerData?.subject}
+            grade={headerData?.gradeLevel}
+            selectedStandards={data.standards || []}
+            onChange={(standards) => {
+              console.log('StandardsSelector onChange called with:', standards)
+              onChange('standards', standards)
+              setShowPicker(false)
+            }}
+            topic={headerData?.title}
+            schoolName={currentUser?.schoolName}
+          />
         </div>
       )}
     </SectionWithAI>
