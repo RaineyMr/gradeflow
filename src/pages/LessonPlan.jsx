@@ -803,19 +803,15 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
 
       {showPicker && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ padding: 8, background: C.inner, borderRadius: 8, border: `1px solid ${C.border}`, marginBottom: 8 }}>
-            <p style={{ color: C.muted, fontSize: 11, margin: 0 }}>Loading StandardsSelector...</p>
-          </div>
           <StandardsSelector
             subject={headerData?.subject}
             grade={headerData?.gradeLevel}
             selectedStandards={data.standards || []}
             onChange={(standards) => {
-              console.log('StandardsSelector onChange called with:', standards)
               onChange('standards', standards)
               setShowPicker(false)
             }}
-            topic={headerData?.title}
+            topic={headerData?.title || `${headerData?.subject || 'Lesson'} Plan`}
             schoolName={currentUser?.schoolName}
           />
         </div>
