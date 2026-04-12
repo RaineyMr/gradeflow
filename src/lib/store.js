@@ -4236,6 +4236,37 @@ setDemoSupportStaffData: async () => {
   // ── Gradebook Data ─────────────────────────────────────────────────────────────
   currentGradebookData: null,
 
+  fetchGradebookData: async (classId) => {
+    console.log('DEBUG: fetchGradebookData called with classId:', classId, 'typeof:', typeof classId)
+    
+    try {
+      const url = `/api/teacher/gradebook?classId=${classId}`
+      console.log('DEBUG: Fetching URL:', url)
+      
+      const res = await fetch(url)
+      
+      if (!res.ok) {
+        throw new Error(`API returned ${res.status}`)
+      }
+
+      const data = await res.json()
+      set({ currentGradebookData: data })
+      return data
+    } catch (err) {
+      console.error('Gradebook API fetch failed, falling back to demo data:', err)
+      
+      // Fallback to demo data if API fails
+      const fallbackData = {
+        students: DEMO_STUDENTS.filter(s => s.classId === Number(classId)),
+        assignments: DEMO_ASSIGNMENTS.filter(a => a.classId === Number(classId)),
+        grades: DEMO_GRADES,
+      }
+      
+      set({ currentGradebookData: fallbackData })
+      return fallbackData
+    }
+  },
+
 
 })) // closes store
 
