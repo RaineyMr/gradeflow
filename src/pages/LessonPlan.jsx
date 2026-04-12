@@ -575,6 +575,8 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
           {showStandards && (
             <div style={{ marginTop: 12 }}>
               <StandardsSelector
+                subject={subject}
+                grade={grade}
                 topic={form.textbook || `${subject} lesson`}
                 maxSelections={3}
                 showRecommendations={true}
@@ -822,7 +824,7 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
         <StandardsSelector
           subject={headerData?.subject}
           grade={headerData?.gradeLevel}
-          selectedStandards={data.standards || []}
+          selectedStandards={data || []}
           topic={headerData?.title}
           schoolName={currentUser?.schoolName}
           onChange={(standards) => {
@@ -832,13 +834,13 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
         />
       )}
 
-      {data.standards && data.standards.length > 0 && (
+      {data && data.length > 0 && (
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
-            Selected ({data.standards.length})
+            Selected ({data.length})
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {data.standards.map((std, i) => (
+            {data.map((std, i) => (
               <span
                 key={i}
                 style={{
@@ -856,7 +858,7 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
               >
                 {typeof std === 'string' ? std : std.code}
                 <button
-                  onClick={() => onChange('standards', data.standards.filter((_, idx) => idx !== i))}
+                  onClick={() => onChange('standards', data.filter((_, idx) => idx !== i))}
                   style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
                 >
                   ×
