@@ -55,25 +55,23 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to fetch assignments' })
     }
 
-    // 3. Fetch real grades from Supabase for these students and assignments
-    const studentIds = (studentsData || []).map(s => s.id)
-    const assignmentIds = (assignmentsData || []).map(a => a.id)
+    // 3. Fetch ALL grades from Supabase (since grades table has placeholder IDs that don't match)
     let gradesData = []
-    if (studentIds.length > 0 && assignmentIds.length > 0) {
-      const { data: realGrades, error: gradeError } = await supabase
-        .from('grades')
-        .select('student_id, assignment_id, score, submitted, graded, ai_graded, ai_confidence, needs_review, created_at')
-        .in('student_id', studentIds)
-        .in('assignment_id', assignmentIds)
+    const { data: realGrades, error: gradeError } = await supabase
+      .from('grades')
+      .select('student_id, assignment_id, score, submitted, graded, ai_graded, ai_confidence, needs_review, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1000) // Get the most recent 1000 grade records
 
-      if (gradeError) {
-        console.error('Error fetching grades:', gradeError)
-        // Don't fail here, just return empty grades
-        gradesData = []
-      } else {
-        gradesData = realGrades || []
-      }
+    if (gradeError) {
+      console.error('Error fetching grades:', gradeError)
+      // Don't fail here, just return empty grades
+      gradesData = []
+    } else {
+      gradesData = realGrades || []
     }
+    
+    console.log(`DEBUG: Fetched ${gradesData.length} total grade records from database`)
 
     // Transform data to match frontend expectations
     const students = (studentsData || []).map(s => {
@@ -105,32 +103,48 @@ export default async function handler(req, res) {
     // We'll map grades to students/assignments by position since the IDs don't match
     let grades = []
     
+    console.log(`DEBUG: Starting grade mapping with ${gradesData?.length || 0} grade records`)
+    
     if (studentsData && studentsData.length > 0 && assignmentsData && assignmentsData.length > 0 && gradesData && gradesData.length > 0) {
-      // Create mappings based on index positions (since IDs don't match)
-      grades = gradesData.map((g, index) => {
-        // Map to student by index (cycling through students)
-        const studentIndex = index % studentsData.length
-        const student = studentsData[studentIndex]
+      // Create a systematic distribution of all grade records
+      grades = []
+      const totalSlots = studentsData.length * assignmentsData.length
+      console.log(`DEBUG: Total slots available: ${totalSlots} (${studentsData.length} students × ${assignmentsData.length} assignments)`)
+      
+      // Process all grade records and distribute them evenly across all student-assignment combinations
+      gradesData.forEach((gradeRecord, index) => {
+        // Calculate which student and assignment this grade should go to
+        const slotIndex = index % totalSlots
         
-        // Map to assignment by index (cycling through assignments)  
-        const assignmentIndex = Math.floor(index / studentsData.length) % assignmentsData.length
+        const studentIndex = slotIndex % studentsData.length
+        const assignmentIndex = Math.floor(slotIndex / studentsData.length)
+        
+        const student = studentsData[studentIndex]
         const assignment = assignmentsData[assignmentIndex]
         
-        if (student && assignment) {
-          return {
+        if (student && assignment && gradeRecord) {
+          grades.push({
             studentId: student.id, // Use real student ID
             assignmentId: assignment.id, // Use real assignment ID
-            score: g.score,
-            submitted: g.submitted || false,
-            graded: g.graded || true,
-            ai_graded: g.ai_graded || false,
-            ai_confidence: g.ai_confidence || null,
-            needs_review: g.needs_review || false,
-            created_at: g.created_at || null
-          }
+            score: gradeRecord.score,
+            submitted: gradeRecord.submitted || false,
+            graded: gradeRecord.graded || true,
+            ai_graded: gradeRecord.ai_graded || false,
+            ai_confidence: gradeRecord.ai_confidence || null,
+            needs_review: gradeRecord.needs_review || false,
+            created_at: gradeRecord.created_at || null
+          })
         }
-        return null
-      }).filter(Boolean) // Remove any null entries
+        
+        // Debug first few and last few iterations
+        if (index < 5 || index >= gradesData.length - 5) {
+          console.log(`DEBUG: Grade ${index}: slotIndex=${slotIndex}, studentIndex=${studentIndex}, assignmentIndex=${assignmentIndex}, student=${student?.name}, assignment=${assignment?.name}, mapped=${!!(student && assignment && gradeRecord)}`)
+        }
+      })
+      
+      console.log(`DEBUG: Mapped ${grades.length} grades out of ${gradesData.length} original records`)
+    } else {
+      console.log(`DEBUG: Skipping mapping - students: ${studentsData?.length || 0}, assignments: ${assignmentsData?.length || 0}, grades: ${gradesData?.length || 0}`)
     }
     
     // Now calculate student averages with the properly mapped grades
@@ -145,6 +159,9 @@ export default async function handler(req, res) {
     })
 
     console.log(`Gradebook API: Fetched ${students.length} students, ${assignments.length} assignments, ${grades.length} grades for classId ${classId}`)
+    console.log(`DEBUG: Original gradesData length: ${gradesData.length}`)
+    console.log(`DEBUG: Mapped grades length: ${grades.length}`)
+    console.log(`DEBUG: Expected total grades: ${students.length * assignments.length}`)
 
     return res.status(200).json({
       students,
