@@ -16,6 +16,20 @@ const PORT = process.env.API_PORT || 3002
 app.use(cors())
 app.use(express.json())
 
+// Fix for Vite proxy HMR issue - strip :1 suffix from query params globally
+app.use((req, res, next) => {
+  if (req.query && Object.keys(req.query).length > 0) {
+    Object.keys(req.query).forEach(key => {
+      if (typeof req.query[key] === 'string' && req.query[key].includes(':')) {
+        console.log(`DEBUG: Global middleware - stripping : suffix from ${key}:`, req.query[key])
+        req.query[key] = req.query[key].split(':')[0]
+        console.log(`DEBUG: Global middleware - cleaned ${key}:`, req.query[key])
+      }
+    })
+  }
+  next()
+})
+
 // ─── API Routes ──────────────────────────────────────────────────────────────
 
 // Lesson Plan API
@@ -31,6 +45,13 @@ app.use('/api/lesson-plan', async (req, res) => {
 // Gradebook API
 app.get('/api/teacher/gradebook', async (req, res) => {
   try {
+    // Fix for Vite proxy HMR issue - strip :1 suffix from query params before handler
+    if (req.query.classId && typeof req.query.classId === 'string' && req.query.classId.includes(':')) {
+      console.log('DEBUG: Server-level URL fix - original classId:', req.query.classId)
+      req.query.classId = req.query.classId.split(':')[0]
+      console.log('DEBUG: Server-level URL fix - cleaned classId:', req.query.classId)
+    }
+    
     await gradebookHandler(req, res)
   } catch (error) {
     console.error('Gradebook API Error:', error)
