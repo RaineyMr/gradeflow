@@ -260,6 +260,11 @@ function FullLessonView({ lesson, isOpen, onClose, onBack }) {
 
         <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
           <button
+            onClick={() => {
+              // Navigate to lesson editor with the selected lesson
+              const lessonDate = new Date(lesson.date).toISOString().split('T')[0]
+              window.location.hash = `#/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
+            }}
             style={{
               flex: 1,
               background: C.blue,
