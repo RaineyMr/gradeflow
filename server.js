@@ -6,7 +6,7 @@ const { default: lessonPlanHandler } = await import('./api/lesson-plan.js')
 const { default: gradebookHandler } = await import('./api/teacher/gradebook.js')
 
 const app = express()
-const PORT = process.env.API_PORT || 3001
+const PORT = process.env.API_PORT || 3002
 
 // Middleware
 app.use(cors())

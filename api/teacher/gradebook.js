@@ -1,6 +1,14 @@
 // api/teacher/gradebook.js
 // Handler for GET /api/teacher/gradebook?classId=<id>
+// Fetches REAL data from Supabase
 // Returns: { students, assignments, grades }
+
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
+)
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -14,53 +22,88 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Demo data - structured to match what Gradebook.jsx expects
-    const DEMO_STUDENTS = [
-      { id: 1, classId: 1, name: 'Aaliyah Brooks', grade: 95, letter: 'A', flagged: false, accommodations: null },
-      { id: 2, classId: 1, name: 'Marcus Thompson', grade: 58, letter: 'F', flagged: true, accommodations: ['504 plan - Extended time'] },
-      { id: 3, classId: 1, name: 'Sofia Rodriguez', grade: 82, letter: 'B', flagged: false, accommodations: null },
-      { id: 4, classId: 1, name: 'Jordan Williams', grade: 74, letter: 'C', flagged: false, accommodations: null },
-      { id: 5, classId: 1, name: 'Priya Patel', grade: 91, letter: 'A', flagged: false, accommodations: null },
-      { id: 6, classId: 2, name: 'Noah Johnson', grade: 88, letter: 'B', flagged: false, accommodations: ['504 plan - Extended time'] },
-      { id: 7, classId: 2, name: 'Emma Davis', grade: 96, letter: 'A', flagged: false, accommodations: null },
-      { id: 8, classId: 3, name: 'Liam Martinez', grade: 61, letter: 'D', flagged: true, accommodations: ['504 plan - Extended time', 'Calculator access'] },
-      { id: 9, classId: 3, name: 'Zoe Anderson', grade: 55, letter: 'F', flagged: true, accommodations: ['504 plan - Extended time'] },
-      { id: 10, classId: 4, name: 'Ethan Brown', grade: 79, letter: 'C', flagged: false, accommodations: null },
-    ]
+    const numClassId = Number(classId)
 
-    const DEMO_ASSIGNMENTS = [
-      { id: 1, classId: 1, name: 'Ch.3 Quiz', type: 'quiz', categoryId: 2, date: '2024-10-14', dueDate: '2024-10-14', hasKey: true },
-      { id: 2, classId: 1, name: 'Ch.3 Homework', type: 'homework', categoryId: 3, date: '2024-10-12', dueDate: '2024-10-12', hasKey: true },
-      { id: 3, classId: 1, name: 'Unit Test 1', type: 'test', categoryId: 1, date: '2024-10-10', dueDate: '2024-10-10', hasKey: false },
-      { id: 4, classId: 1, name: 'Participation', type: 'participation', categoryId: 4, date: '2024-10-01', dueDate: '2024-10-31', hasKey: false },
-    ]
+    // 1. Fetch students for this class
+    const { data: studentsData, error: studentError } = await supabase
+      .from('students')
+      .select('id, class_id, name, email, grade, flagged, accommodations')
+      .eq('class_id', numClassId)
 
-    const DEMO_GRADES = [
-      { studentId: 1, assignmentId: 1, score: 95 },
-      { studentId: 1, assignmentId: 2, score: 98 },
-      { studentId: 1, assignmentId: 3, score: 92 },
-      { studentId: 2, assignmentId: 1, score: 58 },
-      { studentId: 2, assignmentId: 2, score: 72 },
-      { studentId: 2, assignmentId: 3, score: 45 },
-      { studentId: 3, assignmentId: 1, score: 84 },
-      { studentId: 3, assignmentId: 2, score: 88 },
-      { studentId: 4, assignmentId: 1, score: 76 },
-      { studentId: 5, assignmentId: 1, score: 93 },
-    ]
+    if (studentError) {
+      console.error('Error fetching students:', studentError)
+      return res.status(500).json({ error: 'Failed to fetch students' })
+    }
 
-    // Filter by classId
-    const students = DEMO_STUDENTS.filter(s => s.classId === Number(classId))
-    const assignments = DEMO_ASSIGNMENTS.filter(a => a.classId === Number(classId))
+    // 2. Fetch assignments for this class
+    const { data: assignmentsData, error: assignmentError } = await supabase
+      .from('assignments')
+      .select('id, class_id, name, type, category_id, assign_date, due_date, weight')
+      .eq('class_id', numClassId)
 
-    console.log(`Gradebook API: Fetched ${students.length} students and ${assignments.length} assignments for classId ${classId}`)
+    if (assignmentError) {
+      console.error('Error fetching assignments:', assignmentError)
+      return res.status(500).json({ error: 'Failed to fetch assignments' })
+    }
+
+    // 3. Fetch all grades for students in this class
+    const studentIds = (studentsData || []).map(s => s.id)
+    
+    let gradesData = []
+    if (studentIds.length > 0) {
+      const { data: grades, error: gradeError } = await supabase
+        .from('grades')
+        .select('student_id, assignment_id, score')
+        .in('student_id', studentIds)
+
+      if (gradeError) {
+        console.error('Error fetching grades:', gradeError)
+        // Don't fail here, just return empty grades
+        gradesData = []
+      } else {
+        gradesData = grades || []
+      }
+    }
+
+    // Transform Supabase data to match frontend expectations
+    const students = (studentsData || []).map(s => ({
+      id: s.id,
+      classId: s.class_id,
+      name: s.name,
+      email: s.email,
+      grade: s.grade || 0,
+      letter: s.grade >= 90 ? 'A' : s.grade >= 80 ? 'B' : s.grade >= 70 ? 'C' : s.grade >= 60 ? 'D' : 'F',
+      flagged: s.flagged || false,
+      accommodations: s.accommodations || null,
+    }))
+
+    const assignments = (assignmentsData || []).map(a => ({
+      id: a.id,
+      classId: a.class_id,
+      name: a.name,
+      type: a.type,
+      categoryId: a.category_id,
+      date: a.assign_date,
+      dueDate: a.due_date,
+      weight: a.weight,
+      hasKey: false,
+    }))
+
+    const grades = (gradesData || []).map(g => ({
+      studentId: g.student_id,
+      assignmentId: g.assignment_id,
+      score: g.score,
+    }))
+
+    console.log(`Gradebook API: Fetched ${students.length} students, ${assignments.length} assignments, ${grades.length} grades for classId ${classId}`)
 
     return res.status(200).json({
       students,
       assignments,
-      grades: DEMO_GRADES,
+      grades,
     })
   } catch (error) {
     console.error('Gradebook API error:', error)
-    return res.status(500).json({ error: 'Internal server error' })
+    return res.status(500).json({ error: 'Internal server error', details: error.message })
   }
 }

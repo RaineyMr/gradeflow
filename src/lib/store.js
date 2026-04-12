@@ -986,6 +986,84 @@ export const useStore = create((set, get) => ({
     get().loadFromDB()
   },
 
+  // ✨ FETCH GRADEBOOK DATA ──────────────────────────────────────────────────
+  fetchGradebookData: async (classId) => {
+    try {
+      const response = await fetch(`/api/teacher/gradebook?classId=${classId}`)
+      
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`)
+      }
+
+      const data = await response.json()
+      
+      set(state => ({
+        currentGradebookData: {
+          students: data.students || [],
+          assignments: data.assignments || [],
+          grades: data.grades || [],
+        }
+      }))
+
+      return data
+    } catch (error) {
+      console.warn('Gradebook API fetch failed, falling back to demo data:', error)
+      
+      // Fall back to demo data filtered by classId
+      const demoStudents = DEMO_STUDENTS.filter(s => s.classId === classId)
+      const demoAssignments = DEMO_ASSIGNMENTS.filter(a => a.classId === classId)
+      const demoGrades = DEMO_GRADES
+
+      set(state => ({
+        currentGradebookData: {
+          students: demoStudents,
+          assignments: demoAssignments,
+          grades: demoGrades,
+        }
+      }))
+
+      return {
+        students: demoStudents,
+        assignments: demoAssignments,
+        grades: demoGrades,
+      }
+    }
+  },
+
+  fetchAssignmentsFromSupabase: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('assignments')
+        .select('*')
+      
+      if (error) throw error
+      
+      set(state => ({
+        ...state,
+        assignments: data || [],
+      }))
+    } catch (error) {
+      console.error('Error in fetchAssignmentsFromSupabase:', error)
+    }
+  },
+
+  fetchLessonsFromSupabase: async () => {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+      
+      if (error) throw error
+      
+      set(state => ({
+        ...state,
+        lessons: data || [],
+      }))
+    } catch (error) {
+      console.error('Error in fetchLessonsFromSupabase:', error)
+    }
+  },
+
   /**
    * Set the current page and update browser hash
    * Call this from components instead of manually setState
