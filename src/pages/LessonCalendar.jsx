@@ -179,8 +179,8 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
               color: C.blue,
               fontWeight: 600,
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              whiteSpace: 'normal',
+              lineHeight: 1.2,
               border: `0.5px solid ${C.blue}40`,
             }}
             title={lesson.title}
@@ -494,11 +494,11 @@ export default function LessonCalendar({ onBack }) {
             key={day}
             style={{
               textAlign: 'center',
-              fontSize: 10,
+              fontSize: 8,
               fontWeight: 700,
               color: C.muted,
               textTransform: 'uppercase',
-              paddingBottom: 6,
+              paddingBottom: 4,
             }}
           >
             {day}
