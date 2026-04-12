@@ -1479,8 +1479,67 @@ function BuildFromScratch({ onBack, initialLesson }) {
           assignment: initialLesson.homework || prev.homework.assignment,
         },
       }))
+    } else {
+      // If no initial lesson, generate curriculum-based content
+      const { connectedCurricula } = useStore.getState()
+      const mathCurriculum = connectedCurricula['Math'] || 'hisd-zearn'
+      
+      console.log('Using curriculum source:', mathCurriculum)
+      
+      // Generate curriculum-aligned content based on lesson title/topic
+      if (lessonData.header.title) {
+        generateCurriculumContent(lessonData.header.title, mathCurriculum)
+      }
     }
   }, [initialLesson])
+
+  // Function to generate curriculum-aligned content
+  async function generateCurriculumContent(lessonTitle, curriculumSource) {
+    console.log('Generating curriculum content for:', lessonTitle, 'from:', curriculumSource)
+    
+    // This would integrate with curriculum service to generate standards-aligned content
+    // For now, use AI generation with curriculum context
+    try {
+      const response = await fetch('/api/ai/generate-lesson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'lesson-plan-section',
+          section: 'full-lesson',
+          context: {
+            lessonTitle,
+            curriculum: curriculumSource,
+            gradeLevel: '5',
+            subject: 'Math'
+          }
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Generated curriculum content:', result)
+        // Update lesson data with curriculum-generated content
+        setLessonData(prev => ({
+          ...prev,
+          objectives: result.objectives || prev.objectives,
+          lessonSteps: {
+            ...prev.lessonSteps,
+            warmUp: result.warmUp || prev.lessonSteps.warmUp,
+            directInstruction: result.directInstruction || prev.lessonSteps.directInstruction,
+            guidedPractice: result.guidedPractice || prev.lessonSteps.guidedPractice,
+            independentPractice: result.independentPractice || prev.lessonSteps.independentPractice,
+            closure: result.closure || prev.lessonSteps.closure,
+          },
+          homework: {
+            ...prev.homework,
+            assignment: result.homework || prev.homework.assignment,
+          },
+        }))
+      }
+    } catch (err) {
+      console.error('Failed to generate curriculum content:', err)
+    }
+  }
 
   function handleSectionChange(section, value) {
     setLessonData(prev => ({
