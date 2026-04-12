@@ -1465,14 +1465,14 @@ function BuildFromScratch({ onBack, initialLesson }) {
           ...prev.header,
           title: initialLesson.title || prev.header.title,
           date: initialLesson.date || prev.header.date,
-          subject: initialLesson.subject || prev.header.subject,
-          gradeLevel: initialLesson.gradeLevel || prev.header.gradeLevel,
+          subject: 'Math', // Default to Math for demo lessons
+          gradeLevel: '5', // Default to 5th grade for demo lessons
         },
         objectives: initialLesson.objective || prev.objectives,
         lessonSteps: {
           ...prev.lessonSteps,
-          warmUp: initialLesson.warmup || prev.lessonSteps.warmUp,
-          directInstruction: initialLesson.activities || prev.lessonSteps.directInstruction,
+          warmUp: Array.isArray(initialLesson.warmup) ? initialLesson.warmup.join('\n') : initialLesson.warmup || prev.lessonSteps.warmUp,
+          directInstruction: Array.isArray(initialLesson.activities) ? initialLesson.activities.join('\n') : initialLesson.activities || prev.lessonSteps.directInstruction,
         },
         homework: {
           ...prev.homework,
