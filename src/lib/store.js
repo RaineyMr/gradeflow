@@ -4257,36 +4257,17 @@ setDemoSupportStaffData: async () => {
       params.append('classId', classId.toString())
       // Add cache-busting to prevent any caching issues
       params.append('_t', Date.now().toString())
-      const url = `/api/teacher/gradebook?${params.toString()}`
-      console.log('DEBUG: Fetching URL:', url)
-      console.log('DEBUG: URL string length:', url.length)
-      console.log('DEBUG: params.toString():', params.toString())
+      const directUrl = `http://localhost:3002/api/teacher/gradebook?${params.toString()}`
+      console.log('DEBUG: Using direct API call to bypass proxy:', directUrl)
       
-      let res
-      try {
-        // First try normal proxy
-        res = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'Content-Type': 'application/json'
-          }
-        })
-      } catch (proxyError) {
-        console.log('DEBUG: Proxy request failed, trying direct API call:', proxyError)
-        // Fallback: Try direct API call to bypass proxy
-        const directUrl = `http://localhost:3002/api/teacher/gradebook?${params.toString()}`
-        console.log('DEBUG: Trying direct URL:', directUrl)
-        res = await fetch(directUrl, {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache',
-            'Content-Type': 'application/json'
-          }
-        })
-      }
+      const res = await fetch(directUrl, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
+          'Content-Type': 'application/json'
+        }
+      })
       
       if (!res.ok) {
         throw new Error(`API returned ${res.status}`)
