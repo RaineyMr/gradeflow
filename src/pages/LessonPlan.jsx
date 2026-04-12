@@ -1959,7 +1959,7 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
         try {
           const headers = {
             'Content-Type': 'application/json',
-            'Authorization': store.currentUser?.email?.includes('@demo') 
+            'Authorization': (store.currentUser?.id?.startsWith('demo-') || store.currentUser?.email?.includes('@demo')) 
               ? 'Bearer demo-token' 
               : `Bearer ${store.currentUser?.id}`
           }
