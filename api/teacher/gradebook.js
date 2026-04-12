@@ -19,7 +19,14 @@ export default async function handler(req, res) {
   console.log('DEBUG: API handler received req.url:', req.url)
   console.log('DEBUG: classId from req.query.classId:', req.query.classId, 'typeof:', typeof req.query.classId)
   
-  const { classId } = req.query
+  let { classId } = req.query
+
+  // Fix for Vite proxy HMR issue that appends :1 suffix
+  if (classId && typeof classId === 'string' && classId.includes(':')) {
+    console.log('DEBUG: classId contains colon, stripping suffix:', classId)
+    classId = classId.split(':')[0]
+    console.log('DEBUG: classId after stripping:', classId)
+  }
 
   if (!classId) {
     return res.status(400).json({ error: 'classId is required' })
