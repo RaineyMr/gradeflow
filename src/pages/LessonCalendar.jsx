@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
 import { supabase } from '../lib/supabase'
@@ -198,9 +198,9 @@ function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
-            { id: 'ai', icon: '??', label: 'AI Generate', desc: '3 questions  full lesson', color: C.purple },
-            { id: 'build', icon: '??', label: 'Build from Scratch', desc: 'Write your own lesson', color: C.blue },
-            { id: 'upload', icon: '??', label: 'Upload Document', desc: 'PDF, Word, or image', color: C.teal },
+            { id: 'ai', icon: '⚡', label: 'AI Generate', desc: '3 questions  full lesson', color: C.purple },
+            { id: 'build', icon: '✏️', label: 'Build from Scratch', desc: 'Write your own lesson', color: C.blue },
+            { id: 'upload', icon: '📄', label: 'Upload Document', desc: 'PDF, Word, or image', color: C.teal },
           ].map(mode => (
             <button
               key={mode.id}
@@ -400,18 +400,15 @@ export default function LessonCalendar({ onBack }) {
     try {
       setLoading(true)
       
-      console.log('=== LESSON CALENDAR DEBUG ===')
-      console.log('Current user from store:', currentUser)
-      console.log('User ID:', currentUser?.id)
-      console.log('User email:', currentUser?.email)
-      console.log('Is demo account?', currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-'))
-      
       if (!currentUser?.id) {
-        console.error('No user ID found - cannot query lessons')
+        console.error('❌ No user ID found')
+        setAllLessons([])
         return
       }
       
-      // Always fetch from Supabase for all users (including demo accounts)
+      console.log('📚 Loading lessons for teacher:', currentUser.id)
+      
+      // Direct query: lessons table has teacher_id column
       const { data, error } = await supabase
         .from('lessons')
         .select(`
@@ -420,21 +417,16 @@ export default function LessonCalendar({ onBack }) {
           lesson_date,
           title,
           duration,
-          status,
-          classes!inner(
-            id,
-            subject,
-            period,
-            color,
-            teacher_id
-          )
+          subject,
+          classes(id, subject, period, color)
         `)
-        .eq('classes.teacher_id', currentUser?.id)
+        .eq('teacher_id', currentUser.id)
         .order('lesson_date', { ascending: true })
 
       if (error) {
-        console.error('Supabase error:', error)
-        throw error
+        console.error('❌ Supabase error:', error.message)
+        setAllLessons([])
+        return
       }
 
       const mapped = (data || []).map(row => ({
@@ -443,31 +435,17 @@ export default function LessonCalendar({ onBack }) {
         date: row.lesson_date,
         title: row.title || 'Untitled',
         duration: row.duration || 45,
-        status: row.status || 'pending',
-        subject: row.classes?.subject,
+        status: 'pending',
+        subject: row.subject || row.classes?.subject,
         period: row.classes?.period,
-        classColor: row.classes?.color,
+        classColor: row.classes?.color || '#3b7ef4',
       }))
 
-      console.log('Mapped lessons count:', mapped.length)
-      if (mapped.length > 0) {
-        console.log('Sample lesson:', mapped[0])
-      }
-      
-      console.log('Setting lessons from Supabase to state...')
+      console.log(`✅ Loaded ${mapped.length} lessons`)
       setAllLessons(mapped)
-      console.log('=== END LESSON CALENDAR DEBUG ===')
     } catch (err) {
-      console.error('Load lessons error:', err)
-      // Fallback: load all demo classes
-      const allClassLessons = []
-      for (let classId = 1; classId <= 4; classId++) {
-        const classLessons = lessons[classId] || []
-        allClassLessons.push(...classLessons)
-      }
-      console.log('Setting demo lessons:', allClassLessons.length)
-      setAllLessons(allClassLessons)
-      console.log('=== END FALLBACK ===')
+      console.error('❌ Error:', err.message)
+      setAllLessons([])
     } finally {
       setLoading(false)
     }
@@ -517,28 +495,22 @@ export default function LessonCalendar({ onBack }) {
       build: `?date=${dateStr}&mode=build`,
       upload: `?date=${dateStr}&mode=upload`,
     }
-    // Navigate to lessonPlan with params
     window.location.hash = `#/teacher/lessons${paths[mode]}` 
   }
 
   function handleSelectLesson(lesson) {
-    console.log('Selected lesson:', lesson)
     if (!lesson || !lesson.id) {
       console.error('Invalid lesson data:', lesson)
       return
     }
     
-    // Set active lesson class and navigate using store
     store.setActiveLessonClass(lesson.classId)
     store.setScreen('lessonPlan')
     store.setLessonPlanMode('edit')
     
-    // Navigate using React Router URL format
     const lessonDate = new Date(lesson.date).toISOString().split('T')[0]
     const url = `/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
     window.location.href = url
-    
-    console.log('Navigating to lesson plan for lesson:', lesson.id, 'with URL:', url)
   }
 
   return (
@@ -564,7 +536,7 @@ export default function LessonCalendar({ onBack }) {
               Lesson Calendar
             </h1>
             <p style={{ fontSize: 12, color: C.muted, margin: 0, marginTop: 4 }}>
-              {allLessons.length} lessons planned (User: {currentUser?.id?.slice(0, 8)}...)
+              {allLessons.length} lessons loaded
             </p>
           </div>
         </div>
@@ -681,7 +653,7 @@ export default function LessonCalendar({ onBack }) {
         ))}
       </div>
 
-{/* Calendar grid - standardized cells */}
+      {/* Calendar grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, gridAutoRows: '120px' }}>
         {days.map((date, idx) => {
           const dateKey = date.toISOString().split('T')[0]
