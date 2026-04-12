@@ -1,11 +1,9 @@
-import React, { useState, useMemo, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useStore } from '@lib/store'
 import { supabase } from '@lib/supabase'
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
-import CurriculumPrepopulate from '@components/curriculum/CurriculumPrepopulate'
+import { ChevronLeft, ChevronRight, Plus, X, Calendar, AlertCircle } from 'lucide-react'
 
-const C = {
+const COLORS = {
   bg: '#060810',
   card: '#161923',
   inner: '#1e2231',
@@ -22,116 +20,53 @@ const C = {
   teal: '#0fb8a0',
 }
 
-// ── Day cell with lessons for that date ────────────────────────────────────
-function DayCell({ date, lessons, isToday, onSelectDay }) {
-  const dateObj = new Date(date)
-  const dayNum = dateObj.getDate()
-  const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+// ────────────────────────────────────────────────────────────────────────────
+// MODAL: Create Lesson (AI / Build / Upload)
+// ────────────────────────────────────────────────────────────────────────────
+function CreateLessonModal({ date, isOpen, onClose, onCreateMode }) {
+  if (!isOpen) return null
 
-  return (
-    <div
-      onClick={() => onSelectDay(date)}
-      style={{
-        borderRadius: 12,
-        border: `1px solid ${C.border}`,
-        background: isToday ? C.raised : C.card,
-        padding: '12px 8px',
-        minHeight: 120,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        position: 'relative',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.borderColor = 'var(--school-color, ' + C.blue + ')'
-        e.currentTarget.style.background = C.raised
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.borderColor = C.border
-        e.currentTarget.style.background = isToday ? C.raised : C.card
-      }}
-    >
-      <div style={{ marginBottom: 8 }}>
-        <div style={{ fontSize: 11, color: C.muted, textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
-          {dayName}
-        </div>
-        <div style={{ fontSize: 18, fontWeight: 800, color: isToday ? 'var(--school-color, ' + C.blue + ')' : C.text }}>
-          {dayNum}
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
-        {(lessons || []).slice(0, 2).map(lesson => (
-          <div
-            key={lesson.id}
-            style={{
-              fontSize: 10,
-              padding: '4px 6px',
-              borderRadius: 6,
-              background: 'rgba(59, 126, 244, 0.15)',
-              color: C.blue,
-              fontWeight: 600,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {lesson.title}
-          </div>
-        ))}
-        {(lessons || []).length > 2 && (
-          <div style={{ fontSize: 9, color: C.muted, paddingLeft: 6 }}>
-            +{lessons.length - 2} more
-          </div>
-        )}
-      </div>
-
-      <button
-        onClick={e => {
-          e.stopPropagation()
-        }}
-        style={{
-          position: 'absolute',
-          bottom: 8,
-          right: 8,
-          width: 24,
-          height: 24,
-          borderRadius: 6,
-          background: 'rgba(34, 201, 122, 0.1)',
-          border: 'none',
-          color: C.green,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.2s',
-        }}
-        onMouseEnter={e => {
-          e.currentTarget.style.background = 'rgba(34, 201, 122, 0.2)'
-        }}
-        onMouseLeave={e => {
-          e.currentTarget.style.background = 'rgba(34, 201, 122, 0.1)'
-        }}
-      >
-        <Plus size={16} />
-      </button>
-    </div>
-  )
-}
-
-// ── Lesson Options Modal (AI / Build / Upload) ────────────────────────────
-function LessonOptionsModal({ date, onClose, navigate }) {
   const dateObj = new Date(date)
   const dateStr = dateObj.toISOString().split('T')[0]
+  const displayDate = dateObj.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  })
+
+  const modes = [
+    {
+      id: 'ai',
+      icon: '✨',
+      label: 'AI Generate',
+      desc: 'Answer 3 questions → full lesson plan',
+      color: COLORS.purple,
+    },
+    {
+      id: 'build',
+      icon: '📝',
+      label: 'Build from Scratch',
+      desc: 'Write your own lesson with guided sections',
+      color: COLORS.blue,
+    },
+    {
+      id: 'upload',
+      icon: '📤',
+      label: 'Upload Document',
+      desc: 'PDF, Word, image — AI extracts lesson details',
+      color: COLORS.teal,
+    },
+  ]
 
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(6, 8, 16, 0.8)',
+        background: 'rgba(6, 8, 16, 0.85)',
         display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        alignItems: 'flex-end',
         zIndex: 1000,
       }}
       onClick={onClose}
@@ -139,21 +74,23 @@ function LessonOptionsModal({ date, onClose, navigate }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '90%',
-          maxWidth: 500,
-          background: C.card,
-          borderRadius: '20px',
-          padding: '32px',
-          borderTop: `1px solid ${C.border}`,
+          width: '100%',
+          maxWidth: '100%',
+          background: COLORS.card,
+          borderRadius: '24px 24px 0 0',
+          padding: '32px 20px',
+          borderTop: `1px solid ${COLORS.border}`,
+          animation: 'slideUp 0.3s ease-out',
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        {/* Header */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
           <div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>
-              New Lesson
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: COLORS.text, margin: 0, marginBottom: 4 }}>
+              Create Lesson
             </h2>
-            <div style={{ fontSize: 13, color: C.muted }}>
-              {dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            <div style={{ fontSize: 13, color: COLORS.muted }}>
+              {displayDate}
             </div>
           </div>
           <button
@@ -161,123 +98,392 @@ function LessonOptionsModal({ date, onClose, navigate }) {
             style={{
               background: 'none',
               border: 'none',
-              color: C.muted,
+              color: COLORS.muted,
               cursor: 'pointer',
-              padding: 4,
+              padding: '4px 8px',
+              fontSize: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
+            aria-label="Close"
           >
             <X size={20} />
           </button>
         </div>
 
+        {/* Mode buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {[
-            { id: 'ai', icon: '✨', label: 'AI Generate', desc: 'Fill in subject, grade, topic → full lesson plan', color: C.purple },
-            { id: 'build', icon: '📝', label: 'Build from Scratch', desc: 'Write your own lesson plan with guided sections', color: C.blue },
-            { id: 'upload', icon: '📤', label: 'Upload Document', desc: 'PDF · Word · CSV · Image — AI scans for accommodations', color: C.teal },
-          ].map(item => (
+          {modes.map(mode => (
             <button
-              key={item.id}
+              key={mode.id}
               onClick={() => {
+                onCreateMode(dateStr, mode.id)
                 onClose()
-                setTimeout(() => {
-                  navigate(`/teacher/lessons?date=${dateStr}&mode=${item.id}`)
-                }, 100)
               }}
               style={{
                 width: '100%',
-                background: C.inner,
-                border: `1px solid ${item.color}22`,
-                borderRadius: 12,
-                padding: '14px 16px',
+                background: COLORS.inner,
+                border: `1.5px solid ${mode.color}30`,
+                borderRadius: 14,
+                padding: '16px',
                 textAlign: 'left',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
-                transition: 'all 0.2s',
+                gap: 14,
+                transition: 'all 0.2s ease',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.borderColor = item.color
-                e.currentTarget.style.background = C.raised
+                e.currentTarget.style.borderColor = mode.color
+                e.currentTarget.style.background = COLORS.raised
+                e.currentTarget.style.transform = 'translateX(4px)'
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.borderColor = `${item.color}22`
-                e.currentTarget.style.background = C.inner
+                e.currentTarget.style.borderColor = `${mode.color}30`
+                e.currentTarget.style.background = COLORS.inner
+                e.currentTarget.style.transform = 'translateX(0)'
               }}
             >
-              <div style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                background: `${item.color}22`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 18,
-                flexShrink: 0,
-              }}>
-                {item.icon}
+              <div
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 12,
+                  background: `${mode.color}22`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 22,
+                  flexShrink: 0,
+                  border: `1px solid ${mode.color}44`,
+                }}
+              >
+                {mode.icon}
               </div>
               <div>
-                <div style={{ fontSize: 14, fontWeight: 700, color: C.text }}>
-                  {item.label}
+                <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text }}>
+                  {mode.label}
                 </div>
-                <div style={{ fontSize: 12, color: C.muted, marginTop: 2 }}>
-                  {item.desc}
+                <div style={{ fontSize: 12, color: COLORS.muted, marginTop: 3 }}>
+                  {mode.desc}
                 </div>
               </div>
             </button>
           ))}
         </div>
+
+        {/* Divider */}
+        <div style={{ height: '1px', background: COLORS.border, margin: '24px 0' }} />
+
+        {/* Quick actions */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 10,
+              padding: '12px',
+              color: COLORS.soft,
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = COLORS.inner
+              e.currentTarget.style.borderColor = COLORS.blue
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = 'none'
+              e.currentTarget.style.borderColor = COLORS.border
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onClose}
+            style={{
+              background: COLORS.blue,
+              border: 'none',
+              borderRadius: 10,
+              padding: '12px',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.opacity = '0.9'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.opacity = '1'
+            }}
+          >
+            Browse Templates
+          </button>
+        </div>
       </div>
+
+      <style>{`
+        @keyframes slideUp {
+          from {
+            transform: translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   )
 }
 
-// ── Main Component ─────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// DAY CELL: Single calendar day with lessons
+// ────────────────────────────────────────────────────────────────────────────
+function DayCell({ date, lessons, isToday, isCurrentMonth, onAddClick, onDayClick }) {
+  const dateObj = new Date(date)
+  const dayNum = dateObj.getDate()
+  const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+
+  return (
+    <div
+      onClick={() => onDayClick(date)}
+      style={{
+        borderRadius: 12,
+        border: `1px solid ${isToday ? COLORS.blue : COLORS.border}`,
+        background: isCurrentMonth ? (isToday ? COLORS.raised : COLORS.card) : 'transparent',
+        padding: '12px 8px',
+        minHeight: 120,
+        cursor: isCurrentMonth ? 'pointer' : 'default',
+        transition: 'all 0.2s ease',
+        position: 'relative',
+        opacity: isCurrentMonth ? 1 : 0.4,
+      }}
+      onMouseEnter={e => {
+        if (isCurrentMonth) {
+          e.currentTarget.style.borderColor = COLORS.blue
+          e.currentTarget.style.background = COLORS.raised
+        }
+      }}
+      onMouseLeave={e => {
+        if (isCurrentMonth) {
+          e.currentTarget.style.borderColor = isToday ? COLORS.blue : COLORS.border
+          e.currentTarget.style.background = isToday ? COLORS.raised : COLORS.card
+        }
+      }}
+    >
+      {/* Date header */}
+      <div style={{ marginBottom: 8 }}>
+        <div
+          style={{
+            fontSize: 10,
+            color: COLORS.muted,
+            textTransform: 'uppercase',
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            marginBottom: 4,
+          }}
+        >
+          {dayName}
+        </div>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 800,
+            color: isToday ? COLORS.blue : COLORS.text,
+          }}
+        >
+          {dayNum}
+        </div>
+      </div>
+
+      {/* Lessons list */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 8, minHeight: 40 }}>
+        {(lessons || []).slice(0, 2).map(lesson => (
+          <div
+            key={lesson.id}
+            style={{
+              fontSize: 9,
+              padding: '3px 6px',
+              borderRadius: 5,
+              background: `${COLORS.blue}22`,
+              color: COLORS.blue,
+              fontWeight: 600,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              border: `0.5px solid ${COLORS.blue}44`,
+            }}
+            title={lesson.title}
+          >
+            {lesson.title}
+          </div>
+        ))}
+        {(lessons || []).length > 2 && (
+          <div style={{ fontSize: 9, color: COLORS.muted, paddingLeft: 6 }}>
+            +{lessons.length - 2} more
+          </div>
+        )}
+      </div>
+
+      {/* Add button */}
+      {isCurrentMonth && (
+        <button
+          onClick={e => {
+            e.stopPropagation()
+            onAddClick(date)
+          }}
+          style={{
+            position: 'absolute',
+            bottom: 8,
+            right: 8,
+            width: 28,
+            height: 28,
+            borderRadius: 8,
+            background: `${COLORS.green}15`,
+            border: `1px solid ${COLORS.green}44`,
+            color: COLORS.green,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            padding: 0,
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = `${COLORS.green}30`
+            e.currentTarget.style.borderColor = COLORS.green
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = `${COLORS.green}15`
+            e.currentTarget.style.borderColor = `${COLORS.green}44`
+          }}
+          title="Add lesson"
+          aria-label="Add lesson"
+        >
+          <Plus size={16} strokeWidth={2.5} />
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// MAIN COMPONENT
+// ────────────────────────────────────────────────────────────────────────────
 export default function LessonCalendar() {
-  const navigate = useNavigate()
-  const { user, classes, lessons } = useStore()
+  const { currentUser, lessons, activeLessonClassId } = useStore()
+
+  // State
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDay, setSelectedDay] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [showPrepopulate, setShowPrepopulate] = useState(false)
+  const [selectedDate, setSelectedDate] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [allLessons, setAllLessons] = useState([])
 
-  // Load curriculum data on mount
+  // Load lessons on mount and when class changes
   useEffect(() => {
-    setLoading(false)
-  }, [])
+    loadLessons()
+  }, [currentUser, activeLessonClassId])
 
-  // Group lessons by date
+  async function loadLessons() {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const classId = activeLessonClassId || 1
+
+      // Check if demo account
+      const isDemo = currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')
+
+      if (isDemo) {
+        // Demo mode: use store data
+        const classLessons = lessons[classId] || []
+        setAllLessons(classLessons)
+      } else {
+        // Real mode: fetch from Supabase
+        const { data, error: queryError } = await supabase
+          .from('lessons')
+          .select('*')
+          .eq('class_id', classId)
+          .order('lesson_date', { ascending: true })
+
+        if (queryError) throw queryError
+
+        // Map database rows to lesson objects
+        const mapped = (data || []).map(row => ({
+          id: row.id,
+          classId: row.class_id,
+          date: row.lesson_date,
+          title: row.title || 'Untitled',
+          duration: row.duration || 45,
+          pages: row.pages || '',
+          objective: row.plan_data?.objective || '',
+          status: row.status || 'pending',
+        }))
+
+        setAllLessons(mapped)
+      }
+    } catch (err) {
+      console.error('Load lessons error:', err)
+      setError('Failed to load lessons. Showing demo data.')
+      // Fallback to demo
+      setAllLessons(lessons[activeLessonClassId || 1] || [])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Group lessons by date (YYYY-MM-DD)
   const lessonsByDate = useMemo(() => {
     const grouped = {}
-    // Get all lessons from all classes, focusing on class 1 (Math)
-    const allLessons = lessons[1] || []
     allLessons.forEach(lesson => {
-      const dateKey = lesson.date
-      if (dateKey) {
-        if (!grouped[dateKey]) grouped[dateKey] = []
-        grouped[dateKey].push(lesson)
-      }
+      if (!lesson.date) return
+      const dateKey = typeof lesson.date === 'string'
+        ? lesson.date.split('T')[0]
+        : lesson.date.toISOString().split('T')[0]
+      if (!grouped[dateKey]) grouped[dateKey] = []
+      grouped[dateKey].push(lesson)
     })
     return grouped
-  }, [lessons])
+  }, [allLessons])
 
-  // Get calendar days for current month
+  // Calendar grid calculation
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const startingDayOfWeek = new Date(year, month, 1).getDay()
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  const daysInMonth = lastDay.getDate()
+  const startingDayOfWeek = firstDay.getDay()
 
+  // Build calendar array (may include prev/next month dates)
   const calendarDays = []
-  for (let i = 0; i < startingDayOfWeek; i++) {
-    calendarDays.push(null)
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    calendarDays.push(new Date(year, month, i))
+
+  // Prev month filler
+  const prevMonthLastDay = new Date(year, month, 0).getDate()
+  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+    calendarDays.push(new Date(year, month - 1, prevMonthLastDay - i))
   }
 
+  // Current month
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push(new Date(year, month, day))
+  }
+
+  // Next month filler
+  const remainingDays = 42 - calendarDays.length
+  for (let day = 1; day <= remainingDays; day++) {
+    calendarDays.push(new Date(year, month + 1, day))
+  }
+
+  // Navigation
   function goToPreviousMonth() {
     setCurrentDate(new Date(year, month - 1, 1))
   }
@@ -286,166 +492,286 @@ export default function LessonCalendar() {
     setCurrentDate(new Date(year, month + 1, 1))
   }
 
-  function handleSelectDay(date) {
-    setSelectedDay(date)
+  function goToToday() {
+    setCurrentDate(new Date())
   }
 
-  function handlePrepopulateSuccess(result) {
-    // Refresh calendar lessons after successful prepopulation
-    console.log('Prepopulated lessons:', result)
+  function handleAddClick(date) {
+    setSelectedDate(date)
+    setShowCreateModal(true)
   }
 
+  function handleCreateMode(dateStr, mode) {
+    // Route to appropriate creation page
+    const routes = {
+      ai: `/teacher/lessons?date=${dateStr}&mode=ai`,
+      build: `/teacher/lessons?date=${dateStr}&mode=build`,
+      upload: `/teacher/lessons?date=${dateStr}&mode=upload`,
+    }
+    window.location.href = routes[mode]
+  }
+
+  // Today's date
   const today = new Date()
   const todayKey = today.toISOString().split('T')[0]
 
-  if (loading) {
+  if (loading && allLessons.length === 0) {
     return (
-      <div style={{ padding: '16px', paddingBottom: 100, textAlign: 'center', color: C.muted }}>
-        <div style={{ fontSize: 20, marginBottom: 12 }}>📚</div>
-        <div>Loading calendar...</div>
+      <div
+        style={{
+          padding: '32px 16px',
+          textAlign: 'center',
+          color: COLORS.muted,
+          minHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Calendar size={48} style={{ marginBottom: 16, opacity: 0.5 }} />
+        <div style={{ fontSize: 16, fontWeight: 600 }}>Loading calendar...</div>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: '16px', paddingBottom: 100 }}>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+    <div style={{ padding: '16px', paddingBottom: 120, background: COLORS.bg, minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 800, color: COLORS.text, margin: '0 0 8px 0' }}>
+          Lesson Calendar
+        </h1>
+        <p style={{ fontSize: 14, color: COLORS.muted, margin: 0 }}>
+          {allLessons.length} {allLessons.length === 1 ? 'lesson' : 'lessons'} planned
+        </p>
+      </div>
+
+      {/* Error banner */}
+      {error && (
+        <div
+          style={{
+            background: `${COLORS.red}15`,
+            border: `1px solid ${COLORS.red}44`,
+            borderRadius: 12,
+            padding: '12px 16px',
+            marginBottom: 20,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            color: COLORS.red,
+            fontSize: 13,
+          }}
+        >
+          <AlertCircle size={16} />
+          <span>{error}</span>
           <button
-            onClick={() => navigate('/teacher/lessons')}
+            onClick={() => setError(null)}
             style={{
+              marginLeft: 'auto',
               background: 'none',
               border: 'none',
-              color: C.muted,
+              color: COLORS.red,
               cursor: 'pointer',
-              fontSize: 20,
+              padding: 4,
             }}
           >
-            ←
+            ✕
           </button>
-          <h1 style={{ fontSize: 28, fontWeight: 800, color: C.text, margin: 0 }}>
-            Lesson Calendar
-          </h1>
         </div>
-        <p style={{ fontSize: 14, color: C.muted, margin: 0, paddingLeft: 40 }}>
-          Plan your lessons by date
-        </p>
+      )}
+
+      {/* Controls */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 28,
+          gap: 12,
+          flexWrap: 'wrap',
+        }}
+      >
+        {/* Month navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            onClick={goToPreviousMonth}
+            style={{
+              background: COLORS.inner,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 10,
+              padding: '8px 12px',
+              color: COLORS.muted,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = COLORS.blue
+              e.currentTarget.style.background = COLORS.raised
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = COLORS.border
+              e.currentTarget.style.background = COLORS.inner
+            }}
+          >
+            <ChevronLeft size={18} />
+          </button>
+
+          <h2 style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, margin: 0, minWidth: 180, textAlign: 'center' }}>
+            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+          </h2>
+
+          <button
+            onClick={goToNextMonth}
+            style={{
+              background: COLORS.inner,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 10,
+              padding: '8px 12px',
+              color: COLORS.muted,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = COLORS.blue
+              e.currentTarget.style.background = COLORS.raised
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = COLORS.border
+              e.currentTarget.style.background = COLORS.inner
+            }}
+          >
+            <ChevronRight size={18} />
+          </button>
+
+          <button
+            onClick={goToToday}
+            style={{
+              background: COLORS.inner,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 10,
+              padding: '8px 12px',
+              color: COLORS.soft,
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = COLORS.blue
+              e.currentTarget.style.background = COLORS.raised
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = COLORS.border
+              e.currentTarget.style.background = COLORS.inner
+            }}
+          >
+            Today
+          </button>
+        </div>
+
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => window.location.href = '/teacher/lessons'}
+            style={{
+              background: 'none',
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 10,
+              padding: '8px 16px',
+              color: COLORS.soft,
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = COLORS.blue
+              e.currentTarget.style.background = COLORS.inner
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = COLORS.border
+              e.currentTarget.style.background = 'none'
+            }}
+          >
+            List View
+          </button>
+        </div>
       </div>
 
-      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button
-          onClick={goToPreviousMonth}
-          style={{
-            background: C.inner,
-            border: `1px solid ${C.border}`,
-            borderRadius: 10,
-            padding: '8px 12px',
-            color: C.muted,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-          }}
-        >
-          <ChevronLeft size={18} /> Prev
-        </button>
-
-        <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0 }}>
-          {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-        </h2>
-
-        <button
-          onClick={goToNextMonth}
-          style={{
-            background: C.inner,
-            border: `1px solid ${C.border}`,
-            borderRadius: 10,
-            padding: '8px 12px',
-            color: C.muted,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-          }}
-        >
-          Next <ChevronRight size={18} />
-        </button>
-      </div>
-
-      {/* Prepopulate Button */}
-      <div style={{ marginBottom: 24, textAlign: 'center' }}>
-        <button
-          onClick={() => setShowPrepopulate(true)}
-          style={{
-            background: `linear-gradient(135deg, ${C.purple}, ${C.blue})`,
-            border: 'none',
-            borderRadius: 12,
-            padding: '12px 24px',
-            color: '#fff',
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 8,
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transform = 'translateY(-2px)'
-            e.currentTarget.style.boxShadow = '0 8px 25px rgba(155, 110, 245, 0.3)'
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
-        >
-          <span style={{ fontSize: 18 }}>✨</span>
-          Populate from Curriculum
-        </button>
-        <p style={{ fontSize: 12, color: C.muted, marginTop: 8, margin: 0 }}>
-          Auto-create lesson shells from your curriculum standards
-        </p>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 12 }}>
+      {/* Day headers */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 8,
+          marginBottom: 12,
+        }}
+      >
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-          <div key={day} style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          <div
+            key={day}
+            style={{
+              textAlign: 'center',
+              fontSize: 11,
+              fontWeight: 700,
+              color: COLORS.muted,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              paddingBottom: 8,
+            }}
+          >
             {day}
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 32 }}>
-        {calendarDays.map((date, idx) =>
-          date ? (
+      {/* Calendar grid */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(7, 1fr)',
+          gap: 8,
+          marginBottom: 32,
+        }}
+      >
+        {calendarDays.map((date, idx) => {
+          const dateKey = date.toISOString().split('T')[0]
+          const isCurrentMonth = date.getMonth() === month
+          const isToday = dateKey === todayKey
+
+          return (
             <DayCell
-              key={date.toISOString()}
-              date={date.toISOString().split('T')[0]}
-              lessons={lessonsByDate[date.toISOString().split('T')[0]] || []}
-              isToday={date.toISOString().split('T')[0] === todayKey}
-              onSelectDay={handleSelectDay}
+              key={idx}
+              date={date}
+              lessons={lessonsByDate[dateKey] || []}
+              isToday={isToday}
+              isCurrentMonth={isCurrentMonth}
+              onAddClick={handleAddClick}
+              onDayClick={() => {
+                // Could navigate to day view in future
+              }}
             />
-          ) : (
-            <div key={`empty-${idx}`} />
           )
-        )}
+        })}
       </div>
 
-      {selectedDay && (
-        <LessonOptionsModal
-          date={selectedDay}
-          onClose={() => setSelectedDay(null)}
-          navigate={navigate}
-        />
-      )}
-
-      {showPrepopulate && (
-        <CurriculumPrepopulate
-          isOpen={showPrepopulate}
-          onClose={() => setShowPrepopulate(false)}
-          onSuccess={handlePrepopulateSuccess}
-        />
-      )}
+      {/* Create modal */}
+      <CreateLessonModal
+        date={selectedDate || new Date()}
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false)
+          setSelectedDate(null)
+        }}
+        onCreateMode={handleCreateMode}
+      />
     </div>
   )
 }
