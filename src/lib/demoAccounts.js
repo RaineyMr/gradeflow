@@ -6,9 +6,9 @@ import { DEMO_SCHOOLS } from './store'
 
 export const demoAccounts = {
   teacher: {
-    id: '73f3eb26-d45d-477f-97e3-5831b5443e82',
+    id: 'demo-teacher-houston',
     role: 'teacher',
-    email: 'ms.rodriguez@hisd.edu',
+    email: 'teacher@houstonisd.org',
     password: 'demo123',
     schoolName: 'Houston ISD',
     districtName: 'Houston Independent School District',
@@ -16,7 +16,7 @@ export const demoAccounts = {
     district_id: 'houston-isd', // Houston ISD district
     userName: 'Ms. Rodriguez',
     studentName: null,
-    avatar: '🧑‍🏫',
+    avatar: '👩‍🏫',
     lang: 'en', // Default language
     gradeLevel: '5th Grade',
     subjects: ['Math', 'Science'],
