@@ -11,7 +11,7 @@ const C = {
   red: '#f04a4a', amber: '#f5a623', purple: '#9b6ef5', teal: '#0fb8a0',
 }
 
-// ─── Weight Editor ─────────────────────────────────────────────────────────────
+// Weight Editor Component
 function WeightEditor({ onClose }) {
   const { categories, setCategories, gradingMethod, setGradingMethod } = useStore()
   const t = useT()
@@ -29,7 +29,7 @@ function WeightEditor({ onClose }) {
   function addCategory() {
     if (!newCatName.trim()) return
     const remaining = Math.max(0, 100 - total)
-    setDraft(d => [...d, { id: Date.now(), name: newCatName.trim(), weight: remaining, color: C.purple, icon: '📌' }])
+    setDraft(d => [...d, { id: Date.now(), name: newCatName.trim(), weight: remaining, color: C.purple, icon: '???' }])
     setNewCatName('')
   }
 
@@ -56,7 +56,7 @@ function WeightEditor({ onClose }) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 8 }}>Grading Method</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {[['weighted', '⚖ Category Weights'], ['total_points', '∑ Total Points']].map(([val, label]) => (
+          {[['weighted', '?? Category Weights'], ['total_points', '?? Total Points']].map(([val, label]) => (
             <button key={val} onClick={() => setGradingMethod(val)}
               style={{ flex: 1, padding: '10px', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
                 background: gradingMethod === val ? 'var(--school-color, #BA0C2F)' : C.inner,
@@ -119,7 +119,7 @@ function WeightEditor({ onClose }) {
                 </button>
               </div>
             )}
-            {totalOk && <div style={{ fontSize: 11, color: C.green, marginTop: 6 }}>✓ Weights sum to 100%</div>}
+            {totalOk && <div style={{ fontSize: 11, color: C.green, marginTop: 6 }}>?? Weights sum to 100%</div>}
           </div>
         </>
       )}
@@ -131,32 +131,32 @@ function WeightEditor({ onClose }) {
   )
 }
 
-// ─── Main Gradebook Component ──────────────────────────────────────────────────
+// Main Gradebook Component
 export default function Gradebook() {
   const { activeClass, fetchGradebookData, currentGradebookData, categories } = useStore()
   const t = useT()
 
-  // ✨ DATA LOADING STATE ────────────────────────────────────────────────────
+  // Data loading state
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  // UI STATE ────────────────────────────────────────────────────────────────
+  // UI state
   const [view, setView] = useState('table')
   const [search, setSearch] = useState('')
   const [sortBy, setSortBy] = useState('name')
   
-  // MODAL STATE ─────────────────────────────────────────────────────────────
+  // Modal state
   const [weightModal, setWeightModal] = useState(false)
   const [newAssignModal, setNewAssignModal] = useState(false)
   const [newStudentModal, setNewStudentModal] = useState(false)
   const [editModal, setEditModal] = useState(null)
   const [newScore, setNewScore] = useState('')
   
-  // FORM STATE ──────────────────────────────────────────────────────────────
+  // Form state
   const [newAssign, setNewAssign] = useState({ name: '', categoryId: 1, type: '', includeInGrade: true })
   const [newStudent, setNewStudent] = useState({ name: '', email: '' })
 
-  // ✨ FETCH DATA WHEN CLASS CHANGES ─────────────────────────────────────────
+  // Fetch data when class changes
   useEffect(() => {
     if (!activeClass?.id) {
       setError('No class selected')
@@ -183,10 +183,10 @@ export default function Gradebook() {
     load()
   }, [activeClass?.id, fetchGradebookData])
 
-  // ✨ EXTRACT DATA FROM STORE ──────────────────────────────────────────────
+  // Extract data from store
   const { students = [], assignments = [], grades = [] } = currentGradebookData || {}
 
-  // COMPUTE STUDENT GRADE SUMMARIES ──────────────────────────────────────────
+  // Compute student grade summaries
   const studentGrades = useMemo(() => {
     console.log('DEBUG: Computing student grades with', students.length, 'students and', grades.length, 'grades')
     
@@ -207,7 +207,7 @@ export default function Gradebook() {
     })
   }, [students, grades])
 
-  // SORT AND FILTER ─────────────────────────────────────────────────────────
+  // Sort and filter
   const sorted = useMemo(() => {
     let filtered = studentGrades.filter(s => 
       s.name.toLowerCase().includes(search.toLowerCase())
@@ -222,7 +222,7 @@ export default function Gradebook() {
     return filtered
   }, [studentGrades, search, sortBy])
 
-  // HELPER: Grade color ───────────────────────────────────────────────────────
+  // Helper: Grade color
   const gradeColor = (score) => {
     if (score >= 90) return C.green
     if (score >= 80) return C.amber
@@ -231,7 +231,7 @@ export default function Gradebook() {
     return C.red
   }
 
-  // HANDLERS ──────────────────────────────────────────────────────────────────
+  // Handlers
   const handleSaveGrade = () => {
     if (!editModal) return
     console.log(`Saving grade for ${editModal.student.name}: ${newScore}`)
@@ -253,11 +253,11 @@ export default function Gradebook() {
     setNewStudent({ name: '', email: '' })
   }
 
-  // RENDER ────────────────────────────────────────────────────────────────────
+  // Render
   if (loading) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', color: C.muted }}>
-        <div style={{ fontSize: 16, marginBottom: 12 }}>⏳ Loading gradebook...</div>
+        <div style={{ fontSize: 16, marginBottom: 12 }}>?? Loading gradebook...</div>
       </div>
     )
   }
@@ -265,7 +265,7 @@ export default function Gradebook() {
   if (error && students.length === 0) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', color: C.red }}>
-        <div style={{ fontSize: 16, marginBottom: 12 }}>⚠️ {error}</div>
+        <div style={{ fontSize: 16, marginBottom: 12 }}>?? {error}</div>
         <button onClick={() => activeClass?.id && fetchGradebookData(activeClass.id)}
           style={{ background: C.blue, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 16px', cursor: 'pointer', fontSize: 13 }}>
           Retry
@@ -276,7 +276,7 @@ export default function Gradebook() {
 
   return (
     <div style={{ paddingBottom: 40 }}>
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{ padding: '16px', borderBottom: `1px solid ${C.border}` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
           <div>
@@ -287,7 +287,7 @@ export default function Gradebook() {
             <GradebookSyncButton />
             <button onClick={() => setWeightModal(true)}
               style={{ background: C.inner, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-              ⚙️ Edit Weights
+              ?? Edit Weights
             </button>
           </div>
         </div>
@@ -301,7 +301,7 @@ export default function Gradebook() {
         </div>
       </div>
 
-      {/* ── Controls ── */}
+      {/* Controls */}
       <div style={{ padding: '12px 16px', display: 'flex', gap: 8, alignItems: 'center', borderBottom: `1px solid ${C.border}` }}>
         <input
           type="text"
@@ -317,8 +317,8 @@ export default function Gradebook() {
         </select>
         <select value={view} onChange={e => setView(e.target.value)}
           style={{ background: C.inner, border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 10px', color: C.text, fontSize: 12, outline: 'none', cursor: 'pointer' }}>
-          <option value="table">📊 Table</option>
-          <option value="grid">📑 Grid</option>
+          <option value="table">?? Table</option>
+          <option value="grid">??? Grid</option>
         </select>
         <button onClick={() => setNewAssignModal(true)}
           style={{ background: C.teal, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
@@ -326,46 +326,144 @@ export default function Gradebook() {
         </button>
       </div>
 
-      {/* ── Table view ── */}
+      {/* Spreadsheet-style Table view */}
       {view === 'table' && (
-        <div>
-          <div style={{ display: 'grid', gridTemplateColumns: '200px repeat(auto-fit, minmax(100px, 1fr))', gap: 0, borderCollapse: 'collapse' }}>
-            {/* Header */}
-            <div style={{ background: C.inner, padding: '12px', borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 700, color: C.muted }}>Student</div>
-            {assignments.map(a => (
-              <div key={a.id} style={{ background: C.inner, padding: '12px', borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, fontSize: 10, fontWeight: 700, color: C.muted, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.name}>
-                {a.name}
-              </div>
-            ))}
-            <div style={{ background: C.inner, padding: '12px', borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 700, color: C.muted }}>Avg</div>
-
-            {/* Rows */}
-            {sorted.map(student => (
-              <React.Fragment key={student.id}>
-                <div style={{ padding: '12px', borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, fontSize: 13, fontWeight: 600, color: C.text, cursor: 'pointer' }}>
-                  {student.name}
-                  {student.flagged && <div style={{ fontSize: 9, color: C.red, marginTop: 2 }}>⚑ Flagged</div>}
-                </div>
-                {assignments.map(a => {
-                  const grade = grades.find(g => g.studentId === student.id && g.assignmentId === a.id)
-                  return (
-                    <div key={a.id} style={{ padding: '12px', borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, textAlign: 'center', cursor: 'pointer', background: grade ? 'transparent' : `${C.border}66` }} onClick={() => setEditModal({ student, assignment: a })}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: grade ? gradeColor(grade.score) : C.muted }}>
-                        {grade ? `${grade.score}%` : '—'}
-                      </span>
+        <div style={{ overflowX: 'auto', backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 8, margin: '16px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            {/* Fixed Header */}
+            <thead>
+              <tr>
+                <th style={{ 
+                  position: 'sticky', 
+                  left: 0, 
+                  background: C.inner, 
+                  padding: '12px', 
+                  border: `1px solid ${C.border}`, 
+                  fontSize: 11, 
+                  fontWeight: 700, 
+                  color: C.muted, 
+                  textAlign: 'left',
+                  minWidth: '180px',
+                  zIndex: 10
+                }}>
+                  Student Name
+                </th>
+                {assignments.map(a => (
+                  <th key={a.id} style={{ 
+                    padding: '12px 8px', 
+                    border: `1px solid ${C.border}`, 
+                    fontSize: 10, 
+                    fontWeight: 700, 
+                    color: C.muted, 
+                    textAlign: 'center',
+                    minWidth: '100px',
+                    maxWidth: '120px',
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis'
+                  }} title={a.name}>
+                    <div style={{ transform: 'rotate(-45deg)', transformOrigin: 'center', marginBottom: '8px' }}>
+                      {a.name.length > 15 ? a.name.substring(0, 15) + '...' : a.name}
                     </div>
-                  )
-                })}
-                <div style={{ padding: '12px', borderBottom: `1px solid ${C.border}`, textAlign: 'center', fontWeight: 700, fontSize: 12, color: gradeColor(student.grade) }}>
-                  {student.grade}%
-                </div>
-              </React.Fragment>
-            ))}
-          </div>
+                  </th>
+                ))}
+                <th style={{ 
+                  position: 'sticky', 
+                  right: 0, 
+                  background: C.inner, 
+                  padding: '12px', 
+                  border: `1px solid ${C.border}`, 
+                  fontSize: 11, 
+                  fontWeight: 700, 
+                  color: C.muted, 
+                  textAlign: 'center',
+                  minWidth: '80px',
+                  zIndex: 10
+                }}>
+                  Avg
+                </th>
+              </tr>
+            </thead>
+            
+            {/* Scrollable Body */}
+            <tbody>
+              {sorted.map(student => (
+                <tr key={student.id}>
+                  {/* Fixed Student Name Column */}
+                  <td style={{ 
+                    position: 'sticky', 
+                    left: 0, 
+                    background: C.card, 
+                    padding: '10px 12px', 
+                    border: `1px solid ${C.border}`, 
+                    fontSize: 13, 
+                    fontWeight: 600, 
+                    color: C.text,
+                    minWidth: '180px',
+                    zIndex: 5
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <div>{student.name}</div>
+                      {student.flagged && <div style={{ fontSize: 9, color: C.red, marginTop: 2 }}>Flagged</div>}
+                    </div>
+                  </td>
+                  
+                  {/* Grade Cells */}
+                  {assignments.map(a => {
+                    const grade = grades.find(g => g.studentId === student.id && g.assignmentId === a.id)
+                    return (
+                      <td key={a.id} style={{ 
+                        padding: '8px', 
+                        border: `1px solid ${C.border}`, 
+                        textAlign: 'center', 
+                        cursor: 'pointer',
+                        minWidth: '100px',
+                        maxWidth: '120px',
+                        background: grade ? 'transparent' : `${C.border}33`,
+                        transition: 'background 0.2s'
+                      }} 
+                      onMouseEnter={(e) => e.currentTarget.style.background = grade ? `${C.border}22` : `${C.border}55`}
+                      onMouseLeave={(e) => e.currentTarget.style.background = grade ? 'transparent' : `${C.border}33`}
+                      onClick={() => setEditModal({ student, assignment: a })}>
+                        <span style={{ 
+                          fontSize: 11, 
+                          fontWeight: 700, 
+                          color: grade ? gradeColor(grade.score) : C.muted,
+                          display: 'block'
+                        }}>
+                          {grade ? `${grade.score}%` : '---'}
+                        </span>
+                        {grade && grade.submitted === false && (
+                          <div style={{ fontSize: 8, color: C.amber, marginTop: 2 }}>Missing</div>
+                        )}
+                      </td>
+                    )
+                  })}
+                  
+                  {/* Fixed Average Column */}
+                  <td style={{ 
+                    position: 'sticky', 
+                    right: 0, 
+                    background: C.card, 
+                    padding: '10px', 
+                    border: `1px solid ${C.border}`, 
+                    textAlign: 'center', 
+                    fontWeight: 700, 
+                    fontSize: 12, 
+                    color: gradeColor(student.grade),
+                    minWidth: '80px',
+                    zIndex: 5
+                  }}>
+                    {student.grade}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      {/* ── Grid view ── */}
+      {/* Grid view */}
       {view === 'grid' && (
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px' }}>
           {sorted.map(s => {
@@ -379,15 +477,15 @@ export default function Gradebook() {
                   <span style={{ fontSize: 22, fontWeight: 800, color: gradeColor(s.grade) }}>{s.grade}%</span>
                   <span style={{ fontSize: 16, fontWeight: 700, color: gradeColor(s.grade) }}>{letter}</span>
                 </div>
-                {s.flagged && <div style={{ fontSize: 9, color: C.red, marginTop: 4 }}>⚑ Needs attention</div>}
+                {s.flagged && <div style={{ fontSize: 9, color: C.red, marginTop: 4 }}>?? Needs attention</div>}
               </button>
             )
           })}
         </div>
       )}
 
-      {/* ── Modals ── */}
-      <Modal open={!!editModal} onClose={() => setEditModal(null)} title={`Edit Grade — ${editModal?.student?.name}`}>
+      {/* Modals */}
+      <Modal open={!!editModal} onClose={() => setEditModal(null)} title={`Edit Grade - ${editModal?.student?.name}`}>
         {editModal && (
           <div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
