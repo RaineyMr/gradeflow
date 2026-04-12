@@ -95,8 +95,12 @@ export default async function handler(req, res) {
 // Get Lessons
 async function handleGetLessons(req, res, teacherId) {
   try {
+    if (!supabase) {
+      return res.status(200).json({ lessons: [], pagination: { limit: 20, offset: 0, hasMore: false } })
+    }
+
     const { classId, limit = 20, offset = 0 } = req.query
-    
+
     let query = supabase
       .from('lessons')
       .select(`
@@ -280,9 +284,13 @@ async function handleCreateLesson(req, res, teacherId) {
 // Update Lesson
 async function handleUpdateLesson(req, res, teacherId) {
   try {
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database not configured' })
+    }
+
     const { lessonId } = req.query
     const lessonData = req.body
-    
+
     if (!lessonId) {
       return res.status(400).json({ error: 'Lesson ID required' })
     }
@@ -421,8 +429,12 @@ async function handleUpdateLesson(req, res, teacherId) {
 // Delete Lesson (soft delete/archive)
 async function handleDeleteLesson(req, res, teacherId) {
   try {
+    if (!supabase) {
+      return res.status(503).json({ error: 'Database not configured' })
+    }
+
     const { lessonId } = req.query
-    
+
     if (!lessonId) {
       return res.status(400).json({ error: 'Lesson ID required' })
     }
