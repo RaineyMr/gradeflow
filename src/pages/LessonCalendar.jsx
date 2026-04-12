@@ -470,8 +470,8 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
               color: C.blue,
               fontWeight: 600,
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              whiteSpace: 'normal',
+              lineHeight: 1.2,
               border: `0.5px solid ${C.blue}40`,
             }}
             title={lesson.title}
