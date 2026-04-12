@@ -1950,7 +1950,57 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
 
   // Handle edit mode with specific lessonId from calendar
   if (mode === 'edit' && urlLessonId) {
-    // Find the lesson from store data
+    // First try to fetch from API for real lessons
+    const [apiLesson, setApiLesson] = useState(null)
+    const [loadingApi, setLoadingApi] = useState(true)
+    
+    useEffect(() => {
+      const fetchLesson = async () => {
+        try {
+          const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': store.currentUser?.email?.includes('@demo') 
+              ? 'Bearer demo-token' 
+              : `Bearer ${store.currentUser?.id}`
+          }
+          
+          const response = await fetch(`/api/lesson-plan?lessonId=${urlLessonId}`, { 
+            method: 'GET', 
+            headers 
+          })
+          
+          if (response.ok) {
+            const result = await response.json()
+            const lesson = result.lessons?.[0] || result.lesson
+            if (lesson) {
+              setApiLesson(lesson)
+            }
+          } else {
+            console.error('Failed to fetch lesson:', response.status)
+          }
+        } catch (error) {
+          console.error('Error fetching lesson:', error)
+        } finally {
+          setLoadingApi(false)
+        }
+      }
+      
+      fetchLesson()
+    }, [urlLessonId])
+    
+    if (loadingApi) {
+      return (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
+          <LoadingSpinner label="Loading lesson..." />
+        </div>
+      )
+    }
+    
+    if (apiLesson) {
+      return <BuildFromScratch onBack={handleBack} initialLesson={apiLesson} />
+    }
+    
+    // Fallback: try to find in store data
     const { lessons } = store
     let targetLesson = null
     
