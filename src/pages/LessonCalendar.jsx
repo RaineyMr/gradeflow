@@ -472,10 +472,10 @@ export default function LessonCalendar({ onBack }) {
     store.setScreen('lessonPlan')
     store.setLessonPlanMode('edit')
     
-    // Also set URL parameters for the lesson plan component
+    // Navigate using React Router URL format
     const lessonDate = new Date(lesson.date).toISOString().split('T')[0]
-    const url = `#/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
-    window.location.hash = url
+    const url = `/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
+    window.location.href = url
     
     console.log('Navigating to lesson plan for lesson:', lesson.id, 'with URL:', url)
   }
