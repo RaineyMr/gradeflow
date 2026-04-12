@@ -19,16 +19,6 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
     schoolName 
   })
 
-  // Auto-select recommended standards when topic changes
-  useEffect(() => {
-    if (hasRecommendations && recommendedStandards.length > 0 && topic) {
-      // Auto-select the top recommended standard if none are selected
-      if (selectedStandards.length === 0) {
-        onChange([recommendedStandards[0]])
-      }
-    }
-  }, [recommendedStandards, topic, selectedStandards.length, onChange])
-
   const standardsSystem = getStandardsSystem(schoolName)
   const systemInfo = {
     'TEKS': { name: 'Texas Essential Knowledge and Skills', color: C.blue, state: 'Texas' },
