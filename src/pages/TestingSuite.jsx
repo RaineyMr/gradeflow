@@ -17,11 +17,11 @@ function QuestionCard({ q, index, onChange, onDelete }) {
         <div style={{ display:'flex', gap:6 }}>
           {['mc','tf','short','essay'].map(t => (
             <button key={t} onClick={() => onChange({ ...q, type:t })}
-              style={{ background:q.type===t?`${C.blue}22`:C.inner, color:q.type===t?C.blue:C.muted, border:'none', borderRadius:6, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
+              style={{ background:q.type===t?C.blue+'22':C.inner, color:q.type===t?C.blue:C.muted, border:'none', borderRadius:6, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer' }}>
               {t.toUpperCase()}
             </button>
           ))}
-          <button onClick={onDelete} style={{ background:`${C.red}22`, color:C.red, border:'none', borderRadius:6, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer' }}>✕</button>
+          <button onClick={onDelete} style={{ background:C.red+'22', color:C.red, border:'none', borderRadius:6, padding:'3px 8px', fontSize:10, fontWeight:700, cursor:'pointer' }}>✕</button>
         </div>
       </div>
       <textarea value={q.text} onChange={e => onChange({ ...q, text:e.target.value })}
@@ -33,7 +33,7 @@ function QuestionCard({ q, index, onChange, onDelete }) {
           {['A','B','C','D'].map(opt => (
             <div key={opt} style={{ display:'flex', gap:8, alignItems:'center' }}>
               <button onClick={() => onChange({ ...q, correct:opt })}
-                style={{ width:28, height:28, borderRadius:6, border:`1.5px solid ${q.correct===opt ? C.green : C.border}`, background:q.correct===opt ? `${C.green}22` : 'transparent', cursor:'pointer', fontSize:11, fontWeight:700, color:q.correct===opt ? C.green : C.muted, flexShrink:0 }}>
+                style={{ width:28, height:28, borderRadius:6, border:`1.5px solid ${q.correct===opt ? C.green : C.border}`, background:q.correct===opt ? C.green+'22' : 'transparent', cursor:'pointer', fontSize:11, fontWeight:700, color:q.correct===opt ? C.green : C.muted, flexShrink:0 }}>
                 {opt}
               </button>
               <input value={q.options?.[opt] || ''} onChange={e => onChange({ ...q, options:{ ...(q.options||{}), [opt]:e.target.value } })}
@@ -48,7 +48,7 @@ function QuestionCard({ q, index, onChange, onDelete }) {
         <div style={{ display:'flex', gap:8 }}>
           {['True','False'].map(v => (
             <button key={v} onClick={() => onChange({ ...q, correct:v })}
-              style={{ flex:1, padding:'8px', borderRadius:10, border:`1.5px solid ${q.correct===v ? C.green : C.border}`, background:q.correct===v ? `${C.green}22` : C.bg, color:q.correct===v ? C.green : C.muted, cursor:'pointer', fontSize:12, fontWeight:700 }}>
+              style={{ flex:1, padding:'8px', borderRadius:10, border:`1.5px solid ${q.correct===v ? C.green : C.border}`, background:q.correct===v ? C.green+'22' : C.bg, color:q.correct===v ? C.green : C.muted, cursor:'pointer', fontSize:12, fontWeight:700 }}>
               {v}
             </button>
           ))}
@@ -149,10 +149,10 @@ export default function TestingSuite({ onBack }) {
       <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
         {MODES.map(m => (
           <button key={m.id} onClick={() => setMode(m.id)}
-            style={{ background:C.card, border:`1px solid ${m.color}22`, borderRadius:16, padding:'16px', textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}
+            style={{ background:C.card, border:'1px solid '+m.color+'22', borderRadius:16, padding:'16px', textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14 }}
             onMouseEnter={e => e.currentTarget.style.borderColor=m.color}
-            onMouseLeave={e => e.currentTarget.style.borderColor=`${m.color}22`}>
-            <div style={{ width:48, height:48, borderRadius:12, background:`${m.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>{m.icon}</div>
+            onMouseLeave={e => e.currentTarget.style.borderColor=m.color+'22'}>
+            <div style={{ width:48, height:48, borderRadius:12, background:m.color+'22', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>{m.icon}</div>
             <div>
               <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>{m.label}</div>
               <div style={{ fontSize:11, color:C.muted }}>{m.sub}</div>
@@ -184,7 +184,7 @@ export default function TestingSuite({ onBack }) {
           <h2 style={{ color:C.text, marginBottom:8 }}>Test Published!</h2>
           <p style={{ color:C.muted, fontSize:13, marginBottom:20 }}>Students will see it at their next login · {opts.monitor && 'Monitoring active'}</p>
           {opts.monitor && (
-            <div style={{ background:C.card, border:`1px solid ${C.blue}30`, borderRadius:14, padding:'14px 16px', textAlign:'left', marginBottom:16 }}>
+            <div style={{ background:C.card, border:'1px solid '+C.blue+'30', borderRadius:14, padding:'14px 16px', textAlign:'left', marginBottom:16 }}>
               <div style={{ fontWeight:700, color:C.blue, marginBottom:8 }}>👁 Live Monitor</div>
               {[{ name:'Aaliyah Brooks', status:'In progress' },{ name:'Marcus Thompson', status:'Not started' },{ name:'Sofia Rodriguez', status:'Submitted ✓' }].map(s => (
                 <div key={s.name} style={{ display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom:`1px solid ${C.inner}`, fontSize:12 }}>
@@ -217,7 +217,7 @@ export default function TestingSuite({ onBack }) {
               </button>
             ))}
             <button onClick={aiGenerateQuestions} disabled={generating}
-              style={{ background:`${C.purple}22`, border:`1px solid ${C.purple}33`, borderRadius:10, padding:'8px 14px', color:C.purple, cursor:generating?'not-allowed':'pointer', fontSize:12, fontWeight:700, opacity:generating?0.6:1 }}>
+              style={{ background:C.purple+'22', border:'1px solid '+C.purple+'33', borderRadius:10, padding:'8px 14px', color:C.purple, cursor:generating?'not-allowed':'pointer', fontSize:12, fontWeight:700, opacity:generating?0.6:1 }}>
               {generating ? '⟳ Generating...' : '✨ AI Generate'}
             </button>
           </div>
