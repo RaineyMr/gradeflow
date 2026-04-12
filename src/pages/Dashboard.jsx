@@ -813,6 +813,7 @@ function NeedsAttentionPage({ onBack }) {
 
 function ClassesPage({ onBack, navigate }) {
   const { classes, setActiveClass } = useStore()
+  const t = useT()
   return (
     <SubPage>
       <div style={{ padding:'20px 16px 0', display:'flex', alignItems:'center', gap:12, marginBottom:20 }}>
