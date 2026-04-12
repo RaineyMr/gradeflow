@@ -2254,6 +2254,61 @@ setDemoSupportStaffData: async () => {
     }
     return { studentAccommodations: next }
   }),
+
+  fetchLessonsFromSupabase: async () => {
+    try {
+      const { currentUser } = get()
+      if (!currentUser || currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')) {
+        return // Skip for demo accounts
+      }
+
+      const { data: lessonsData, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('teacher_id', currentUser.id)
+        .order('lesson_date', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching lessons:', error)
+        return
+      }
+
+      if (lessonsData && lessonsData.length > 0) {
+        // Transform lessons data to match the expected format
+        const transformedLessons = {}
+        lessonsData.forEach(lesson => {
+          const classId = lesson.class_id
+          if (!transformedLessons[classId]) {
+            transformedLessons[classId] = []
+          }
+          
+          const plan = lesson.plan_data || {}
+          transformedLessons[classId].push({
+            id: lesson.id,
+            classId: lesson.class_id,
+            dayLabel: plan.dayLabel || 'Today',
+            date: lesson.lesson_date,
+            title: lesson.title,
+            duration: lesson.duration ? `${lesson.duration} min` : '45 min',
+            pages: lesson.pages || '',
+            objective: plan.objective || lesson.objective || '',
+            warmup: plan.warmup || [],
+            activities: plan.activities || [],
+            materials: plan.materials || [],
+            homework: plan.homework || lesson.homework_assignment || '',
+            status: lesson.status || 'pending',
+            pdf: plan.pdf || ''
+          })
+        })
+        
+        set({ lessons: transformedLessons })
+        console.log(`Loaded ${lessonsData.length} lesson plans from Supabase`)
+      }
+    } catch (error) {
+      console.error('Error in fetchLessonsFromSupabase:', error)
+    }
+  },
+
   loadFromDB: async () => {
     try {
 
