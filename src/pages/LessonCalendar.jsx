@@ -620,8 +620,13 @@ export default function LessonCalendar({ onBack }) {
         ))}
       </div>
 
+<<<<<<< HEAD
+      {/* Calendar grid - standardized cells */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, gridAutoRows: '120px' }}>
+=======
       {/* Calendar grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
+>>>>>>> d3d8008451b293a5b25f56ad4a77651dac2a96e6
         {days.map((date, idx) => {
           const dateKey = date.toISOString().split('T')[0]
           const isCurrentMonth = date.getMonth() === month
