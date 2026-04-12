@@ -328,7 +328,7 @@ export default function Gradebook() {
 
       {/* Spreadsheet-style Table view */}
       {view === 'table' && (
-        <div style={{ overflowX: 'auto', backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 8, margin: '16px' }}>
+        <div style={{ overflowX: 'auto', backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 8, margin: '16px', maxHeight: '70vh', overflowY: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             {/* Fixed Header */}
             <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
