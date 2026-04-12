@@ -403,7 +403,7 @@ export default function LessonCalendar({ onBack }) {
   async function loadLessons() {
     try {
       setLoading(true)
-
+      
       console.log('=== LESSON CALENDAR DEBUG ===')
       console.log('Current user from store:', currentUser)
       console.log('User ID:', currentUser?.id)
@@ -416,13 +416,15 @@ export default function LessonCalendar({ onBack }) {
       }
       
       // Always fetch from Supabase for all users (including demo accounts)
-      console.log('Executing Supabase query...')
-      
-      // Try to find teacher by email first, then by ID
-      let teacherQuery = supabase
+      const { data, error } = await supabase
         .from('lessons')
         .select(`
-          *,
+          id,
+          class_id,
+          lesson_date,
+          title,
+          duration,
+          status,
           classes!inner(
             id,
             subject,
@@ -431,23 +433,9 @@ export default function LessonCalendar({ onBack }) {
             teacher_id
           )
         `)
-      
-      // Use email if it's a string/contains @, otherwise use ID
-      if (currentUser?.email && currentUser.email.includes('@')) {
-        console.log('Querying by teacher email:', currentUser.email)
-        teacherQuery = teacherQuery.eq('classes.teacher.email', currentUser.email)
-      } else {
-        console.log('Querying by teacher ID:', currentUser?.id)
-        teacherQuery = teacherQuery.eq('classes.teacher_id', currentUser?.id)
-      }
-      
-      const { data, error } = await teacherQuery
+        .eq('teacher_id', currentUser?.id)
         .order('lesson_date', { ascending: true })
 
-      console.log('Supabase query completed:')
-      console.log('- Data length:', data?.length || 0)
-      console.log('- Error:', error)
-      
       if (error) {
         console.error('Supabase error:', error)
         throw error
@@ -474,9 +462,7 @@ export default function LessonCalendar({ onBack }) {
       setAllLessons(mapped)
       console.log('=== END LESSON CALENDAR DEBUG ===')
     } catch (err) {
-      console.error('=== LOAD LESSONS CATCH BLOCK ===')
-      console.error('Error:', err)
-      console.log('Falling back to demo data...')
+      console.error('Load lessons error:', err)
       // Fallback: load all demo classes
       const allClassLessons = []
       for (let classId = 1; classId <= 4; classId++) {
