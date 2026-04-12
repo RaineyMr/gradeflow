@@ -19,6 +19,17 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
     schoolName 
   })
 
+  // Debug logging
+  console.log('=== StandardsSelector Debug ===')
+  console.log('Props:', { subject, grade, topic, schoolName })
+  console.log('useStandards result:', { 
+    hasRecommendations, 
+    recommendedStandardsLength: recommendedStandards?.length, 
+    loading, 
+    hasData 
+  })
+  console.log('Recommended standards:', recommendedStandards)
+
   // Auto-select recommended standards when topic changes
   useEffect(() => {
     if (hasRecommendations && recommendedStandards.length > 0 && topic) {
@@ -210,7 +221,7 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
       />
 
       {/* Toggle between recommended and all standards */}
-      {hasRecommendations && (
+      {true && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <button
             onClick={() => setShowRecommended(true)}
@@ -258,12 +269,18 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
         </div>
       ) : (
         <div style={{ maxHeight: 300, overflowY: 'auto' }}>
-          {showRecommended && hasRecommendations ? (
+          {showRecommended ? (
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.amber, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-                ⭐ Recommended for "{topic}"
+                {topic ? `Recommended for "${topic}"` : 'Recommended Standards'}
               </div>
-              {recommendedStandards.map(standard => renderStandard(standard, true))}
+              {recommendedStandards.length > 0 ? (
+                recommendedStandards.map(standard => renderStandard(standard, true))
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: C.muted, fontSize: 12 }}>
+                  {topic ? `No recommendations found for "${topic}". Try a different topic or browse all standards.` : 'Enter a lesson topic to see recommended standards.'}
+                </div>
+              )}
             </div>
           ) : (
             <div>
