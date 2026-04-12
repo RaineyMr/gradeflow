@@ -1405,7 +1405,7 @@ function OptionalAddOnsSection({ data, onChange }) {
 }
 
 // ─── BuildFromScratch Component ────────────────────────────────────────────
-function BuildFromScratch({ onBack }) {
+function BuildFromScratch({ onBack, initialLesson }) {
   const { currentUser } = useStore()
   
   const [lessonData, setLessonData] = React.useState({
@@ -1454,6 +1454,33 @@ function BuildFromScratch({ onBack }) {
       }))
     }
   }, [currentUser, lessonData.header.subject, lessonData.header.gradeLevel])
+
+  // Pre-populate lesson data when initialLesson is provided
+  useEffect(() => {
+    if (initialLesson) {
+      console.log('Pre-populating lesson data from:', initialLesson)
+      setLessonData(prev => ({
+        ...prev,
+        header: {
+          ...prev.header,
+          title: initialLesson.title || prev.header.title,
+          date: initialLesson.date || prev.header.date,
+          subject: initialLesson.subject || prev.header.subject,
+          gradeLevel: initialLesson.gradeLevel || prev.header.gradeLevel,
+        },
+        objectives: initialLesson.objective || prev.objectives,
+        lessonSteps: {
+          ...prev.lessonSteps,
+          warmUp: initialLesson.warmup || prev.lessonSteps.warmUp,
+          directInstruction: initialLesson.activities || prev.lessonSteps.directInstruction,
+        },
+        homework: {
+          ...prev.homework,
+          assignment: initialLesson.homework || prev.homework.assignment,
+        },
+      }))
+    }
+  }, [initialLesson])
 
   function handleSectionChange(section, value) {
     setLessonData(prev => ({
