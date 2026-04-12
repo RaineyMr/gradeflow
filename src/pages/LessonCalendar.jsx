@@ -546,15 +546,18 @@ export default function LessonCalendar({ onBack }) {
       return;
     }
 
+    // Set lesson in store before navigation
     store.setActiveLessonClass(lesson.classId);
+    store.setActiveLessonId(lesson.id);
     store.setScreen('lessonPlan');
     store.setLessonPlanMode('edit');
 
     const lessonDate = new Date(lesson.date).toISOString().split('T')[0];
-    const url = `/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`;
-    window.location.href = url;
+    // Use hash routing instead of URL routing
+    const hash = `#/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`;
+    window.location.hash = hash;
 
-    console.log('Navigating to lesson plan for lesson:', lesson.id, 'with URL:', url);
+    console.log('Navigating to lesson plan for lesson:', lesson.id, 'with hash:', hash);
   }
 
   return (
