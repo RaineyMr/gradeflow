@@ -198,9 +198,9 @@ function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
-            { id: 'ai', icon: '??', label: 'AI Generate', desc: '3 questions  full lesson', color: C.purple },
-            { id: 'build', icon: '??', label: 'Build from Scratch', desc: 'Write your own lesson', color: C.blue },
-            { id: 'upload', icon: '??', label: 'Upload Document', desc: 'PDF, Word, or image', color: C.teal },
+            { id: 'ai', icon: '✨', label: 'AI Generate', desc: '3 questions + full lesson', color: C.purple },
+            { id: 'build', icon: '✏️', label: 'Build from Scratch', desc: 'Write your own lesson', color: C.blue },
+            { id: 'upload', icon: '📄', label: 'Upload Document', desc: 'PDF, Word, or image', color: C.teal },
           ].map(mode => (
             <button
               key={mode.id}
@@ -243,11 +243,15 @@ function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
   )
 }
 
-// DAY CELL
+// DAY CELL - Fixed height with proper text wrapping
 function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
   const dateObj = new Date(date)
   const day = dateObj.getDate()
   const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+
+  // Fixed height is 120px; content area is ~80px after date header
+  const CELL_HEIGHT = 120
+  const CONTENT_HEIGHT = 80
 
   return (
     <div
@@ -259,11 +263,13 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
         border: `1px solid ${isToday ? C.blue : C.border}`,
         background: isCurrentMonth ? (isToday ? C.raised : C.card) : 'transparent',
         padding: 10,
-        minHeight: 100,
+        height: CELL_HEIGHT,
         cursor: isCurrentMonth ? 'pointer' : 'default',
         transition: 'all 0.2s',
         position: 'relative',
         opacity: isCurrentMonth ? 1 : 0.35,
+        display: 'flex',
+        flexDirection: 'column',
       }}
       onMouseEnter={e => {
         if (isCurrentMonth) {
@@ -278,7 +284,8 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
         }
       }}
     >
-      <div style={{ marginBottom: 8 }}>
+      {/* Date header */}
+      <div style={{ marginBottom: 8, flexShrink: 0 }}>
         <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, marginBottom: 2 }}>
           {dayName}
         </div>
@@ -287,34 +294,51 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 6, minHeight: 30 }}>
-        {(lessons || []).slice(0, 1).map(lesson => (
+      {/* Lessons container - bounded by CONTENT_HEIGHT */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          flex: 1,
+          minHeight: 0, // Allows flex to constrain height
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {(lessons || []).slice(0, 2).map((lesson, idx) => (
           <div
             key={lesson.id}
             style={{
               fontSize: 9,
-              padding: '2px 6px',
+              padding: '3px 6px',
               borderRadius: 4,
               background: `${C.blue}20`,
               color: C.blue,
               fontWeight: 600,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
               border: `0.5px solid ${C.blue}40`,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 2,
+              lineHeight: '1.3em',
+              wordBreak: 'break-word',
+              title: lesson.title,
             }}
-            title={lesson.title}
           >
             {lesson.title}
           </div>
         ))}
-        {(lessons || []).length > 1 && (
-          <div style={{ fontSize: 8, color: C.muted, paddingLeft: 4 }}>
-            +{lessons.length - 1} more
+
+        {/* "X more" indicator */}
+        {(lessons || []).length > 2 && (
+          <div style={{ fontSize: 8, color: C.muted, paddingLeft: 4, marginTop: 'auto', flexShrink: 0 }}>
+            +{lessons.length - 2} more
           </div>
         )}
       </div>
 
+      {/* Add button */}
       {isCurrentMonth && (
         <button
           onClick={e => {
@@ -337,15 +361,19 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
             justifyContent: 'center',
             transition: 'all 0.2s',
             padding: 0,
+            fontSize: 14,
+            fontWeight: 700,
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = `${C.green}30` 
+            e.currentTarget.style.background = `${C.green}30`
+            e.currentTarget.style.borderColor = C.green
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = `${C.green}15` 
+            e.currentTarget.style.background = `${C.green}15`
+            e.currentTarget.style.borderColor = `${C.green}40`
           }}
         >
-          <Plus size={13} strokeWidth={2.5} />
+          <Plus size={14} />
         </button>
       )}
     </div>
@@ -356,72 +384,53 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
 export default function LessonCalendar({ onBack }) {
   const store = useStore()
   const t = useT()
-  const { currentUser, lessons, activeLessonClassId } = store
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [allLessons, setAllLessons] = useState([])
+  const [isLoading, setIsLoading] = useState(true)
 
+  // Fetch lessons on mount
   useEffect(() => {
     loadLessons()
-  }, [currentUser])
+  }, [])
 
   async function loadLessons() {
     try {
-      setLoading(true)
-
-      const isDemo = currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')
-
-      if (isDemo) {
-        // Load from all demo classes (1-4)
-        const allClassLessons = []
-        for (let classId = 1; classId <= 4; classId++) {
-          const classLessons = lessons[classId] || []
-          allClassLessons.push(...classLessons)
-        }
-        setAllLessons(allClassLessons)
-      } else {
-        const { data, error } = await supabase
-          .from('lessons')
-          .select('*')
-          .order('lesson_date', { ascending: true })
-
-        if (error) throw error
-
-        const mapped = (data || []).map(row => ({
-          id: row.id,
-          classId: row.class_id,
-          date: row.lesson_date,
-          title: row.title || 'Untitled',
-          duration: row.duration || 45,
-          status: row.status || 'pending',
-        }))
-
-        setAllLessons(mapped)
+      setIsLoading(true)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        console.error('No session found')
+        return
       }
+
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('teacher_id', session.user.id)
+        .order('date', { ascending: true })
+
+      if (error) {
+        console.error('Error fetching lessons:', error)
+        return
+      }
+
+      setAllLessons(data || [])
     } catch (err) {
-      console.error('Load lessons error:', err)
-      // Fallback: load all demo classes
-      const allClassLessons = []
-      for (let classId = 1; classId <= 4; classId++) {
-        const classLessons = lessons[classId] || []
-        allClassLessons.push(...classLessons)
-      }
-      setAllLessons(allClassLessons)
+      console.error('Unexpected error loading lessons:', err)
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }
 
+  // Group lessons by date
   const lessonsByDate = useMemo(() => {
     const grouped = {}
     allLessons.forEach(lesson => {
-      if (!lesson.date) return
-      const key = typeof lesson.date === 'string'
-        ? lesson.date.split('T')[0]
+      const key = lesson.date instanceof Date
+        ? lesson.date.toISOString().split('T')[0]
         : lesson.date.toISOString().split('T')[0]
       if (!grouped[key]) grouped[key] = []
       grouped[key].push(lesson)
@@ -456,7 +465,6 @@ export default function LessonCalendar({ onBack }) {
       build: `?date=${dateStr}&mode=build`,
       upload: `?date=${dateStr}&mode=upload`,
     }
-    // Navigate to lessonPlan with params
     window.location.hash = `#/teacher/lessons${paths[mode]}` 
   }
 
@@ -467,12 +475,10 @@ export default function LessonCalendar({ onBack }) {
       return
     }
     
-    // Set active lesson class and navigate using store
     store.setActiveLessonClass(lesson.classId)
     store.setScreen('lessonPlan')
     store.setLessonPlanMode('edit')
     
-    // Navigate using React Router URL format
     const lessonDate = new Date(lesson.date).toISOString().split('T')[0]
     const url = `/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
     window.location.href = url
@@ -620,8 +626,8 @@ export default function LessonCalendar({ onBack }) {
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
+      {/* Calendar grid - standardized cells */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, auto: 'max-content' }}>
         {days.map((date, idx) => {
           const dateKey = date.toISOString().split('T')[0]
           const isCurrentMonth = date.getMonth() === month
