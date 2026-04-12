@@ -681,7 +681,6 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
       />
     </div>
   )
-}
 
 // Mobile responsive CSS
 const style = document.createElement('style')
