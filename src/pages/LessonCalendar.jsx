@@ -21,12 +21,34 @@ export default function LessonCalendar() {
     try {
       console.log('📚 Looking up teacher by ID or legacy_id:', currentUser.id);
 
-      // First, resolve the teacher UUID (handle both UUID and legacy_id lookups)
-      const { data: teacherData, error: teacherError } = await supabase
+      // First, try to find teacher by legacy_id if currentUser.id is a string
+      // If it's a UUID, try direct ID lookup
+      let teacherData = null;
+      let teacherError = null;
+
+      // Try legacy_id first (for string IDs like 'demo-teacher-houston')
+      const { data: legacyData, error: legacyError } = await supabase
         .from('teachers')
         .select('id')
-        .or(`id.eq.${currentUser.id},legacy_id.eq.${currentUser.id}`)
+        .eq('legacy_id', currentUser.id)
         .single();
+
+      if (legacyData) {
+        teacherData = legacyData;
+      } else {
+        // If no legacy_id match, try direct UUID match
+        const { data: idData, error: idError } = await supabase
+          .from('teachers')
+          .select('id')
+          .eq('id', currentUser.id)
+          .single();
+        
+        if (idData) {
+          teacherData = idData;
+        } else {
+          teacherError = idError || legacyError;
+        }
+      }
 
       if (teacherError) {
         console.error('❌ Teacher lookup failed:', teacherError);
