@@ -199,7 +199,7 @@ async function handleCreateLesson(req, res, teacherId) {
       // Section 7: Homework
       homework_assignment: lessonData.homework?.assignment || '',
       homework_due_date: lessonData.homework?.dueDate || null,
-      homework_max_points: lessonData.homework?.maxPoints ? parseInt(lessonData.homework.maxPoints) : null,
+      homework_max_points: lessonData.homework?.maxPoints ? parseInt(lessonData.homework?.maxPoints) : null,
       
       // Section 8: Accommodations (text field; specific accommodations in lesson_accommodations table)
       accommodations_notes: lessonData.accommodations || '',
