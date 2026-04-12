@@ -468,7 +468,7 @@ export default function LessonCalendar({ onBack }) {
     }
     
     // Set active lesson class and navigate using store
-    store.setActiveLessonClassId(lesson.classId)
+    store.setActiveLessonClass(lesson.classId)
     store.setScreen('lessonPlan')
     store.setLessonPlanMode('edit')
     
