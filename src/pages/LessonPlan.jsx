@@ -834,41 +834,7 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
         />
       )}
 
-      {data && data.length > 0 && (
-        <div style={{ marginTop: 12 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: C.muted, marginBottom: 8, textTransform: 'uppercase' }}>
-            Selected ({data.length})
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {data.map((std, i) => (
-              <span
-                key={i}
-                style={{
-                  background: `${C.blue}20`,
-                  color: C.blue,
-                  border: `1px solid ${C.blue}40`,
-                  borderRadius: 6,
-                  padding: '4px 10px',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                }}
-              >
-                {typeof std === 'string' ? std : std.code}
-                <button
-                  onClick={() => onChange('standards', data.filter((_, idx) => idx !== i))}
-                  style={{ background: 'none', border: 'none', color: C.blue, cursor: 'pointer', fontSize: 14, padding: 0 }}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-    </SectionWithAI>
+          </SectionWithAI>
   )
 }
 
