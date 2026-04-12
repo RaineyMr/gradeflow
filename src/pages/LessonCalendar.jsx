@@ -402,44 +402,52 @@ export default function LessonCalendar({ onBack }) {
     try {
       console.log('📚 Looking up teacher by ID or legacy_id:', currentUser.id);
 
-      // First, try to find teacher by legacy_id if currentUser.id is a string
-      // If it's a UUID, try direct ID lookup
+      // First, try to find teacher by email
       let teacherData = null;
       let teacherError = null;
-
-      // Try legacy_id first (for string IDs like 'demo-teacher-houston')
-      const { data: legacyData, error: legacyError } = await supabase
+      const { data: emailData, error: emailError } = await supabase
         .from('teachers')
         .select('id')
-        .eq('legacy_id', currentUser.id)
+        .eq('email', currentUser.id)
         .single();
 
-      if (legacyData) {
-        teacherData = legacyData;
+      if (emailData) {
+        teacherData = emailData;
       } else {
-        // If no legacy_id match, try direct UUID match
-        const { data: idData, error: idError } = await supabase
+        // Try legacy_id (for string IDs like 'demo-teacher-houston')
+        const { data: legacyData, error: legacyError } = await supabase
           .from('teachers')
           .select('id')
-          .eq('id', currentUser.id)
+          .eq('legacy_id', currentUser.id)
           .single();
-        
-        if (idData) {
-          teacherData = idData;
+
+        if (legacyData) {
+          teacherData = legacyData;
         } else {
-          teacherError = idError || legacyError;
+          // If no legacy_id match, try direct UUID match
+          const { data: idData, error: idError } = await supabase
+            .from('teachers')
+            .select('id')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (idData) {
+            teacherData = idData;
+          } else {
+            teacherError = emailError || legacyError || idError;
+          }
         }
       }
 
       if (teacherError) {
-        console.error('❌ Teacher lookup failed:', teacherError);
+        console.error('Teacher lookup failed:', teacherError);
         setLessons([]);
         setLoading(false);
         return;
       }
 
       if (!teacherData) {
-        console.warn('⚠️ Teacher not found');
+        console.warn('Teacher not found');
         setLessons([]);
         setLoading(false);
         return;
