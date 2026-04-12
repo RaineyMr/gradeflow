@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useStore } from '../lib/store';
-import { supabase } from '../lib/supabase';
-import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { useStore } from '../lib/store'
+import { supabase } from '../lib/supabase'
+import ViewLessonsModal from './ViewLessonsModal'
+import CreateLessonModal from './CreateLessonModal'
+import LessonViewModal from '../components/LessonViewModal'
+import '../pages/LessonCalendar.css';
 
 const C = {
   bg: '#060810',
@@ -387,6 +391,8 @@ export default function LessonCalendar({ onBack }) {
   const [selectedDate, setSelectedDate] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showLessonViewModal, setShowLessonViewModal] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState(null);
   const [loading, setLoading] = useState(false);
   const [allLessons, setAllLessons] = useState([]);
 
@@ -546,17 +552,10 @@ export default function LessonCalendar({ onBack }) {
       return;
     }
 
-    // Set lesson in store before navigation
-    store.setActiveLessonClass(lesson.classId);
-    store.setScreen('lessonPlan');
-    store.setLessonPlanMode('edit');
-
-    const lessonDate = new Date(lesson.date).toISOString().split('T')[0];
-    // Use hash routing instead of URL routing
-    const hash = `#/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`;
-    window.location.hash = hash;
-
-    console.log('Navigating to lesson plan for lesson:', lesson.id, 'with hash:', hash);
+    // Show lesson in popup modal instead of navigating
+    setSelectedLesson(lesson);
+    setShowLessonViewModal(true);
+    console.log('Opening lesson modal for lesson:', lesson.id);
   }
 
   return (
@@ -747,6 +746,16 @@ export default function LessonCalendar({ onBack }) {
           onSelect={handleCreateMode}
         />
       )}
+
+      {/* Lesson View Modal */}
+      <LessonViewModal
+        lesson={selectedLesson}
+        isOpen={showLessonViewModal}
+        onClose={() => {
+          setShowLessonViewModal(false);
+          setSelectedLesson(null);
+        }}
+      />
     </div>
   );
 }
