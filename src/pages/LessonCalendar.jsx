@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
 import { supabase } from '../lib/supabase'
@@ -396,11 +396,7 @@ export default function LessonCalendar({ onBack }) {
   const [loading, setLoading] = useState(false)
   const [allLessons, setAllLessons] = useState([])
 
-  useEffect(() => {
-    loadLessons()
-  }, [currentUser])
-
-  async function loadLessons() {
+  const loadLessons = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -433,7 +429,7 @@ export default function LessonCalendar({ onBack }) {
             teacher_id
           )
         `)
-        .eq('teacher_id', currentUser?.id)
+        .eq('classes.teacher_id', currentUser?.id)
         .order('lesson_date', { ascending: true })
 
       if (error) {
@@ -475,7 +471,11 @@ export default function LessonCalendar({ onBack }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [currentUser?.id])
+
+  useEffect(() => {
+    loadLessons()
+  }, [loadLessons])
 
   const lessonsByDate = useMemo(() => {
     const grouped = {}
