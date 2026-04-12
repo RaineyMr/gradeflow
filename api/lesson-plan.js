@@ -134,7 +134,9 @@ async function handleGetLessons(req, res, teacherId) {
       .from('lessons')
       .select(`
         *,
-        classes(id, subject, period, color)
+        lesson_standards(standard_id, standard_label),
+        lesson_attachments(id, file_name, file_url),
+        lesson_accommodations(id, student_id, accommodation_type, specific_needs, instructional_adjustments)
       `)
       .eq('teacher_id', teacherId)
     
@@ -216,13 +218,13 @@ async function handleCreateLesson(req, res, teacherId) {
       criteria_for_success: lessonData.cfs?.successCriteria || '',
       cultural_notes: lessonData.cfs?.culturalNotes || '',
       
-      // Section 5: Lesson Steps (6 substeps)
+      // Section 5: Lesson Steps (5 substeps + optional enrichment/extension)
       warm_up: lessonData.lessonSteps?.warmUp || '',
       direct_instruction: lessonData.lessonSteps?.directInstruction || '',
       guided_practice: lessonData.lessonSteps?.guidedPractice || '',
       independent_practice: lessonData.lessonSteps?.independentPractice || '',
       closure: lessonData.lessonSteps?.closure || '',
-      extension: lessonData.lessonSteps?.extension || '',
+      enrichment_activities: lessonData.lessonSteps?.enrichment || lessonData.optionalAddOns?.enrichment || '',
       
       // Section 6: Exit Ticket
       exit_ticket: lessonData.exitTicket || '',
@@ -238,8 +240,7 @@ async function handleCreateLesson(req, res, teacherId) {
       // Section 9: Attachments (file references in lesson_attachments table)
       // (handled separately below)
       
-      // Section 10: Optional Add-Ons
-      enrichment_activities: lessonData.optionalAddOns?.enrichment || '',
+      // Section 10: Optional Add-Ons (supplemental links and reflections only)
       supplemental_links: lessonData.optionalAddOns?.supplementalLinks || '',
       teacher_reflections: lessonData.optionalAddOns?.reflections || '',
       
@@ -378,14 +379,14 @@ async function handleUpdateLesson(req, res, teacherId) {
       if (lessonData.cfs.culturalNotes !== undefined) updateRecord.cultural_notes = lessonData.cfs.culturalNotes
     }
     
-    // Section 5: Lesson Steps
+    // Section 5: Lesson Steps (5 substeps)
     if (lessonData.lessonSteps) {
       if (lessonData.lessonSteps.warmUp !== undefined) updateRecord.warm_up = lessonData.lessonSteps.warmUp
       if (lessonData.lessonSteps.directInstruction !== undefined) updateRecord.direct_instruction = lessonData.lessonSteps.directInstruction
       if (lessonData.lessonSteps.guidedPractice !== undefined) updateRecord.guided_practice = lessonData.lessonSteps.guidedPractice
       if (lessonData.lessonSteps.independentPractice !== undefined) updateRecord.independent_practice = lessonData.lessonSteps.independentPractice
       if (lessonData.lessonSteps.closure !== undefined) updateRecord.closure = lessonData.lessonSteps.closure
-      if (lessonData.lessonSteps.extension !== undefined) updateRecord.extension = lessonData.lessonSteps.extension
+      if (lessonData.lessonSteps.enrichment !== undefined) updateRecord.enrichment_activities = lessonData.lessonSteps.enrichment
     }
     
     // Section 6: Exit Ticket
@@ -418,9 +419,8 @@ async function handleUpdateLesson(req, res, teacherId) {
       }
     }
     
-    // Section 10: Optional Add-Ons
+    // Section 10: Optional Add-Ons (supplemental links and reflections only)
     if (lessonData.optionalAddOns) {
-      if (lessonData.optionalAddOns.enrichment !== undefined) updateRecord.enrichment_activities = lessonData.optionalAddOns.enrichment
       if (lessonData.optionalAddOns.supplementalLinks !== undefined) updateRecord.supplemental_links = lessonData.optionalAddOns.supplementalLinks
       if (lessonData.optionalAddOns.reflections !== undefined) updateRecord.teacher_reflections = lessonData.optionalAddOns.reflections
     }
@@ -499,3 +499,4 @@ async function handleDeleteLesson(req, res, teacherId) {
   } catch (error) {
     return handleApiError(res, error, 'Failed to archive lesson plan', 400)
   }
+}
