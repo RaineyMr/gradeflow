@@ -233,7 +233,9 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
 
   return (
     <div
-      onClick={onClick}
+      onClick={() => {
+        if (isCurrentMonth) onClick(date)
+      }}
       style={{
         borderRadius: 10,
         border: `1px solid ${isToday ? C.blue : C.border}`,
@@ -616,21 +618,25 @@ export default function LessonCalendar({ onBack }) {
       </div>
 
       {/* View Lessons Modal */}
-      <ViewLessonsModal
-        date={selectedDate || new Date()}
-        lessons={(lessonsByDate[selectedDate?.toISOString().split('T')[0]] || []).filter(Boolean)}
-        isOpen={showViewModal}
-        onClose={() => setShowViewModal(false)}
-        onSelectLesson={handleSelectLesson}
-      />
+      {selectedDate && (
+        <ViewLessonsModal
+          date={selectedDate}
+          lessons={(lessonsByDate[selectedDate.toISOString().split('T')[0]] || []).filter(Boolean)}
+          isOpen={showViewModal}
+          onClose={() => setShowViewModal(false)}
+          onSelectLesson={handleSelectLesson}
+        />
+      )}
 
       {/* Create Lesson Modal */}
-      <CreateLessonModal
-        date={selectedDate || new Date()}
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSelect={handleCreateMode}
-      />
+      {selectedDate && (
+        <CreateLessonModal
+          date={selectedDate}
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSelect={handleCreateMode}
+        />
+      )}
     </div>
   )
 }
