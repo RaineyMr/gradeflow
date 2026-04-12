@@ -469,7 +469,7 @@ export default function LessonCalendar({ onBack }) {
     const lessonDate = new Date(lesson.date).toISOString().split('T')[0]
     const url = `#/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
     console.log('Navigating to:', url)
-    window.location.hash = url
+    window.location.assign(url)
   }
 
   return (
