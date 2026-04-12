@@ -1,6 +1,10 @@
 // Simple API server for GradeFlow development
 import express from 'express'
 import cors from 'cors'
+import dotenv from 'dotenv'
+
+// Load environment variables from .env file
+dotenv.config()
 
 const { default: lessonPlanHandler } = await import('./api/lesson-plan.js')
 const { default: gradebookHandler } = await import('./api/teacher/gradebook.js')
