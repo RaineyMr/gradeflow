@@ -1900,7 +1900,17 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
         const response = await fetch('/api/lesson-plan', { method: 'GET', headers })
         if (response.ok) {
           const result = await response.json()
-          setSavedLessons(result.lessons || [])
+          // Map API response to match existing plan_data structure
+          const mappedLessons = (result.lessons || []).map(lesson => ({
+            ...lesson,
+            // Use plan_data if available, otherwise fall back to individual columns
+            objective: lesson.plan_data?.objective || lesson.objectives || '',
+            warmup: lesson.plan_data?.warmup || [],
+            activities: lesson.plan_data?.activities || [],
+            materials: lesson.plan_data?.materials || [],
+            homework: lesson.plan_data?.homework || lesson.homework_assignment || ''
+          }))
+          setSavedLessons(mappedLessons)
         }
       } catch (err) {
         console.error('Error fetching saved lessons:', err)
