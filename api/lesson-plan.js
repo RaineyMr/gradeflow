@@ -128,8 +128,30 @@ async function handleGetLessons(req, res, teacherId) {
       return res.status(200).json({ lessons: [], pagination: { limit: 20, offset: 0, hasMore: false } })
     }
 
-    const { classId, limit = 20, offset = 0 } = req.query
+    const { classId, lessonId, limit = 20, offset = 0 } = req.query
 
+    // If lessonId is provided, fetch single lesson
+    if (lessonId) {
+      const { data: lesson, error } = await supabase
+        .from('lessons')
+        .select(`
+          *,
+          classes(id, subject, period, color)
+        `)
+        .eq('id', lessonId)
+        .eq('teacher_id', teacherId)
+        .single()
+      
+      if (error) throw error
+      
+      if (!lesson) {
+        return res.status(404).json({ error: 'Lesson not found' })
+      }
+      
+      return res.status(200).json({ lesson })
+    }
+
+    // Otherwise, fetch list of lessons
     let query = supabase
       .from('lessons')
       .select(`
@@ -139,7 +161,7 @@ async function handleGetLessons(req, res, teacherId) {
         lesson_accommodations(id, student_id, accommodation_type, specific_needs, instructional_adjustments)
       `)
       .eq('teacher_id', teacherId)
-    
+      
     if (classId) {
       query = query.eq('class_id', classId)
     }
