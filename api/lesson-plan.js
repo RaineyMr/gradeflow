@@ -134,9 +134,7 @@ async function handleGetLessons(req, res, teacherId) {
       .from('lessons')
       .select(`
         *,
-        lesson_standards(standard_id, standard_label),
-        lesson_attachments(id, file_name, file_url),
-        lesson_accommodations(id, student_id, accommodation_type, specific_needs, instructional_adjustments)
+        classes(id, subject, period, color)
       `)
       .eq('teacher_id', teacherId)
     

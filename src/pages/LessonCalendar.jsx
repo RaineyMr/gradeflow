@@ -548,7 +548,6 @@ export default function LessonCalendar({ onBack }) {
 
     // Set lesson in store before navigation
     store.setActiveLessonClass(lesson.classId);
-    store.setActiveLessonId(lesson.id);
     store.setScreen('lessonPlan');
     store.setLessonPlanMode('edit');
 

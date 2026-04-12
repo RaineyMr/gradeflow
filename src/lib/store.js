@@ -2833,12 +2833,14 @@ setDemoSupportStaffData: async () => {
   })),
 
   setActiveLessonClass: (classId) => set({ activeLessonClassId: classId }),
+  setActiveLessonId:    (lessonId) => set({ activeLessonId: lessonId }),
   setCameraIntent:      (intent)  => set({ cameraIntent: intent }),
   setLessonPlanMode:    (mode)    => set({ lessonPlanMode: mode }),
 
   // ── Lesson status mutations ─────────────────────────────────────────────────
   setLessonStatus: (classId, status) => set(state => {
     const classLessons = [...(state.lessons[classId] || [])]
+    // ... (rest of the code remains the same)
     if (!classLessons.length) return {}
 
     if (status === 'done') {
