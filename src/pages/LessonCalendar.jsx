@@ -115,7 +115,7 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
                       {lesson.title || 'Untitled Lesson'}
                     </div>
                     <div style={{ display: 'flex', gap: 12, fontSize: 11, color: C.muted }}>
-                      <span>Class {lesson.classId || 1}</span>
+                      <span>{lesson.subject || 'Class'} {lesson.period || ''}</span>
                       <span>{lesson.duration || 45} min</span>
                       <span style={{ textTransform: 'capitalize' }}>{lesson.status || 'pending'}</span>
                     </div>
@@ -306,29 +306,32 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
           position: 'relative',
         }}
       >
-        {(lessons || []).slice(0, 2).map((lesson, idx) => (
-          <div
-            key={lesson.id}
-            style={{
-              fontSize: 9,
-              padding: '3px 6px',
-              borderRadius: 4,
-              background: `${C.blue}20`,
-              color: C.blue,
-              fontWeight: 600,
-              border: `0.5px solid ${C.blue}40`,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitBoxOrient: 'vertical',
-              WebkitLineClamp: 2,
-              lineHeight: '1.3em',
-              wordBreak: 'break-word',
-              title: lesson.title,
-            }}
-          >
-            {lesson.title}
-          </div>
-        ))}
+        {(lessons || []).slice(0, 2).map((lesson, idx) => {
+          const lessonColor = lesson.classColor || C.blue
+          return (
+            <div
+              key={lesson.id}
+              style={{
+                fontSize: 9,
+                padding: '3px 6px',
+                borderRadius: 4,
+                background: `${lessonColor}20`,
+                color: lessonColor,
+                fontWeight: 600,
+                border: `0.5px solid ${lessonColor}40`,
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: 2,
+                lineHeight: '1.3em',
+                wordBreak: 'break-word',
+                title: `${lesson.title} - ${lesson.subject || 'Class'} ${lesson.period || ''}`,
+              }}
+            >
+              {lesson.title}
+            </div>
+          )
+        })}
 
         {/* "X more" indicator */}
         {(lessons || []).length > 2 && (
@@ -401,35 +404,37 @@ export default function LessonCalendar({ onBack }) {
     try {
       setLoading(true)
 
-      const isDemo = currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')
+      // Always fetch from Supabase for all users (including demo accounts)
+      const { data, error } = await supabase
+        .from('lessons')
+        .select(`
+          *,
+          classes!inner(
+            id,
+            subject,
+            period,
+            color,
+            teacher_id
+          )
+        `)
+        .eq('classes.teacher_id', currentUser?.id)
+        .order('lesson_date', { ascending: true })
 
-      if (isDemo) {
-        // Load from all demo classes (1-4)
-        const allClassLessons = []
-        for (let classId = 1; classId <= 4; classId++) {
-          const classLessons = lessons[classId] || []
-          allClassLessons.push(...classLessons)
-        }
-        setAllLessons(allClassLessons)
-      } else {
-        const { data, error } = await supabase
-          .from('lessons')
-          .select('*')
-          .order('lesson_date', { ascending: true })
+      if (error) throw error
 
-        if (error) throw error
+      const mapped = (data || []).map(row => ({
+        id: row.id,
+        classId: row.class_id,
+        date: row.lesson_date,
+        title: row.title || 'Untitled',
+        duration: row.duration || 45,
+        status: row.status || 'pending',
+        subject: row.classes?.subject,
+        period: row.classes?.period,
+        classColor: row.classes?.color,
+      }))
 
-        const mapped = (data || []).map(row => ({
-          id: row.id,
-          classId: row.class_id,
-          date: row.lesson_date,
-          title: row.title || 'Untitled',
-          duration: row.duration || 45,
-          status: row.status || 'pending',
-        }))
-
-        setAllLessons(mapped)
-      }
+      setAllLessons(mapped)
     } catch (err) {
       console.error('Load lessons error:', err)
       // Fallback: load all demo classes
