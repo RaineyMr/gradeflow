@@ -187,7 +187,7 @@ export const demoAccounts = {
 }
 
 export const demoLoginList = [
-  { role: 'teacher',      labelKey: 'teacher_demo',      email: 'teacher@houstonisd.org', password: 'demo123', school: 'Houston ISD' },
+  { role: 'teacher',      labelKey: 'teacher_demo',      email: 'ms.rodriguez@hisd.edu', password: 'demo123', school: 'Houston ISD' },
   { role: 'student',      labelKey: 'student_demo',     email: 'student@houstonisd.org',     password: 'demo123', school: 'Houston ISD' },
   { role: 'parent',       labelKey: 'parent_demo',       email: 'parent@bellaire.org',        password: 'demo123', school: 'Bellaire High School' },
   { role: 'admin',        labelKey: 'admin_demo',         email: 'admin@lamarhs.org',          password: 'demo123', school: 'Lamar High School' },
