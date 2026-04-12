@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { useStore } from '@lib/store'
-import { supabase } from '@lib/supabase'
-import { ChevronLeft, ChevronRight, Plus, X, Calendar, AlertCircle } from 'lucide-react'
+import { useStore } from '../lib/store'
+import { useT } from '../lib/i18n'
+import { supabase } from '../lib/supabase'
+import BottomNav from '../components/ui/BottomNav'
+import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 
-const COLORS = {
+const C = {
   bg: '#060810',
-  card: '#161923',
-  inner: '#1e2231',
-  raised: '#252b3d',
+  card: '#111520',
+  inner: '#1a1f2e',
+  raised: '#1e2436',
   text: '#eef0f8',
   soft: '#c8cce0',
   muted: '#6b7494',
-  border: '#2a2f42',
+  border: '#252b3d',
   green: '#22c97a',
   blue: '#3b7ef4',
   red: '#f04a4a',
@@ -20,53 +22,22 @@ const COLORS = {
   teal: '#0fb8a0',
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// MODAL: Create Lesson (AI / Build / Upload)
-// ────────────────────────────────────────────────────────────────────────────
-function CreateLessonModal({ date, isOpen, onClose, onCreateMode }) {
+// ─── CREATE LESSON MODAL ─────────────────────────────────────────────────────
+function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
   if (!isOpen) return null
 
   const dateObj = new Date(date)
   const dateStr = dateObj.toISOString().split('T')[0]
-  const displayDate = dateObj.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  })
-
-  const modes = [
-    {
-      id: 'ai',
-      icon: '✨',
-      label: 'AI Generate',
-      desc: 'Answer 3 questions → full lesson plan',
-      color: COLORS.purple,
-    },
-    {
-      id: 'build',
-      icon: '📝',
-      label: 'Build from Scratch',
-      desc: 'Write your own lesson with guided sections',
-      color: COLORS.blue,
-    },
-    {
-      id: 'upload',
-      icon: '📤',
-      label: 'Upload Document',
-      desc: 'PDF, Word, image — AI extracts lesson details',
-      color: COLORS.teal,
-    },
-  ]
 
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        background: 'rgba(6, 8, 16, 0.85)',
+        background: 'rgba(0, 0, 0, 0.5)',
         display: 'flex',
-        alignItems: 'flex-end',
+        alignItems: 'center',
+        justifyContent: 'center',
         zIndex: 1000,
       }}
       onClick={onClose}
@@ -74,23 +45,22 @@ function CreateLessonModal({ date, isOpen, onClose, onCreateMode }) {
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          width: '100%',
-          maxWidth: '100%',
-          background: COLORS.card,
-          borderRadius: '24px 24px 0 0',
-          padding: '32px 20px',
-          borderTop: `1px solid ${COLORS.border}`,
-          animation: 'slideUp 0.3s ease-out',
+          width: '90%',
+          maxWidth: 450,
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 16,
+          padding: 24,
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
         }}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: COLORS.text, margin: 0, marginBottom: 4 }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>
               Create Lesson
             </h2>
-            <div style={{ fontSize: 13, color: COLORS.muted }}>
-              {displayDate}
+            <div style={{ fontSize: 12, color: C.muted }}>
+              {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </div>
           </div>
           <button
@@ -98,257 +68,149 @@ function CreateLessonModal({ date, isOpen, onClose, onCreateMode }) {
             style={{
               background: 'none',
               border: 'none',
-              color: COLORS.muted,
+              color: C.muted,
               cursor: 'pointer',
-              padding: '4px 8px',
+              padding: 4,
               fontSize: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
             }}
-            aria-label="Close"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Mode buttons */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {modes.map(mode => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {[
+            { id: 'ai', icon: '✨', label: 'AI Generate', desc: '3 questions → full lesson', color: C.purple },
+            { id: 'build', icon: '📝', label: 'Build from Scratch', desc: 'Write your own lesson', color: C.blue },
+            { id: 'upload', icon: '📤', label: 'Upload Document', desc: 'PDF, Word, or image', color: C.teal },
+          ].map(mode => (
             <button
               key={mode.id}
               onClick={() => {
-                onCreateMode(dateStr, mode.id)
+                onSelect(dateStr, mode.id)
                 onClose()
               }}
               style={{
                 width: '100%',
-                background: COLORS.inner,
-                border: `1.5px solid ${mode.color}30`,
-                borderRadius: 14,
-                padding: '16px',
+                background: C.inner,
+                border: `1px solid ${mode.color}30`,
+                borderRadius: 12,
+                padding: 12,
                 textAlign: 'left',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
-                transition: 'all 0.2s ease',
+                gap: 12,
+                transition: 'all 0.15s',
               }}
               onMouseEnter={e => {
                 e.currentTarget.style.borderColor = mode.color
-                e.currentTarget.style.background = COLORS.raised
-                e.currentTarget.style.transform = 'translateX(4px)'
+                e.currentTarget.style.background = C.raised
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.borderColor = `${mode.color}30`
-                e.currentTarget.style.background = COLORS.inner
-                e.currentTarget.style.transform = 'translateX(0)'
+                e.currentTarget.style.background = C.inner
               }}
             >
-              <div
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 12,
-                  background: `${mode.color}22`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 22,
-                  flexShrink: 0,
-                  border: `1px solid ${mode.color}44`,
-                }}
-              >
-                {mode.icon}
-              </div>
+              <div style={{ fontSize: 18 }}>{mode.icon}</div>
               <div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: COLORS.text }}>
-                  {mode.label}
-                </div>
-                <div style={{ fontSize: 12, color: COLORS.muted, marginTop: 3 }}>
-                  {mode.desc}
-                </div>
+                <div style={{ color: C.text, fontWeight: 600, fontSize: 13 }}>{mode.label}</div>
+                <div style={{ color: C.muted, fontSize: 11, marginTop: 2 }}>{mode.desc}</div>
               </div>
             </button>
           ))}
         </div>
-
-        {/* Divider */}
-        <div style={{ height: '1px', background: COLORS.border, margin: '24px 0' }} />
-
-        {/* Quick actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 10,
-              padding: '12px',
-              color: COLORS.soft,
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = COLORS.inner
-              e.currentTarget.style.borderColor = COLORS.blue
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'none'
-              e.currentTarget.style.borderColor = COLORS.border
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={onClose}
-            style={{
-              background: COLORS.blue,
-              border: 'none',
-              borderRadius: 10,
-              padding: '12px',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.opacity = '0.9'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.opacity = '1'
-            }}
-          >
-            Browse Templates
-          </button>
-        </div>
       </div>
-
-      <style>{`
-        @keyframes slideUp {
-          from {
-            transform: translateY(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// DAY CELL: Single calendar day with lessons
-// ────────────────────────────────────────────────────────────────────────────
-function DayCell({ date, lessons, isToday, isCurrentMonth, onAddClick, onDayClick }) {
+// ─── DAY CELL ────────────────────────────────────────────────────────────────
+function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
   const dateObj = new Date(date)
-  const dayNum = dateObj.getDate()
+  const day = dateObj.getDate()
   const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
 
   return (
     <div
-      onClick={() => onDayClick(date)}
+      onClick={onClick}
       style={{
-        borderRadius: 12,
-        border: `1px solid ${isToday ? COLORS.blue : COLORS.border}`,
-        background: isCurrentMonth ? (isToday ? COLORS.raised : COLORS.card) : 'transparent',
-        padding: '12px 8px',
-        minHeight: 120,
+        borderRadius: 10,
+        border: `1px solid ${isToday ? C.blue : C.border}`,
+        background: isCurrentMonth ? (isToday ? C.raised : C.card) : 'transparent',
+        padding: 10,
+        minHeight: 100,
         cursor: isCurrentMonth ? 'pointer' : 'default',
-        transition: 'all 0.2s ease',
+        transition: 'all 0.2s',
         position: 'relative',
-        opacity: isCurrentMonth ? 1 : 0.4,
+        opacity: isCurrentMonth ? 1 : 0.35,
       }}
       onMouseEnter={e => {
         if (isCurrentMonth) {
-          e.currentTarget.style.borderColor = COLORS.blue
-          e.currentTarget.style.background = COLORS.raised
+          e.currentTarget.style.borderColor = C.blue
+          e.currentTarget.style.background = C.raised
         }
       }}
       onMouseLeave={e => {
         if (isCurrentMonth) {
-          e.currentTarget.style.borderColor = isToday ? COLORS.blue : COLORS.border
-          e.currentTarget.style.background = isToday ? COLORS.raised : COLORS.card
+          e.currentTarget.style.borderColor = isToday ? C.blue : C.border
+          e.currentTarget.style.background = isToday ? C.raised : C.card
         }
       }}
     >
-      {/* Date header */}
       <div style={{ marginBottom: 8 }}>
-        <div
-          style={{
-            fontSize: 10,
-            color: COLORS.muted,
-            textTransform: 'uppercase',
-            fontWeight: 700,
-            letterSpacing: '0.05em',
-            marginBottom: 4,
-          }}
-        >
+        <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, marginBottom: 2 }}>
           {dayName}
         </div>
-        <div
-          style={{
-            fontSize: 18,
-            fontWeight: 800,
-            color: isToday ? COLORS.blue : COLORS.text,
-          }}
-        >
-          {dayNum}
+        <div style={{ fontSize: 16, fontWeight: 800, color: isToday ? C.blue : C.text }}>
+          {day}
         </div>
       </div>
 
-      {/* Lessons list */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 8, minHeight: 40 }}>
-        {(lessons || []).slice(0, 2).map(lesson => (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 6, minHeight: 30 }}>
+        {(lessons || []).slice(0, 1).map(lesson => (
           <div
             key={lesson.id}
             style={{
               fontSize: 9,
-              padding: '3px 6px',
-              borderRadius: 5,
-              background: `${COLORS.blue}22`,
-              color: COLORS.blue,
+              padding: '2px 6px',
+              borderRadius: 4,
+              background: `${C.blue}20`,
+              color: C.blue,
               fontWeight: 600,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-              border: `0.5px solid ${COLORS.blue}44`,
+              border: `0.5px solid ${C.blue}40`,
             }}
             title={lesson.title}
           >
             {lesson.title}
           </div>
         ))}
-        {(lessons || []).length > 2 && (
-          <div style={{ fontSize: 9, color: COLORS.muted, paddingLeft: 6 }}>
-            +{lessons.length - 2} more
+        {(lessons || []).length > 1 && (
+          <div style={{ fontSize: 8, color: C.muted, paddingLeft: 4 }}>
+            +{lessons.length - 1} more
           </div>
         )}
       </div>
 
-      {/* Add button */}
       {isCurrentMonth && (
         <button
           onClick={e => {
             e.stopPropagation()
-            onAddClick(date)
+            onAdd(date)
           }}
           style={{
             position: 'absolute',
-            bottom: 8,
-            right: 8,
-            width: 28,
-            height: 28,
-            borderRadius: 8,
-            background: `${COLORS.green}15`,
-            border: `1px solid ${COLORS.green}44`,
-            color: COLORS.green,
+            bottom: 6,
+            right: 6,
+            width: 24,
+            height: 24,
+            borderRadius: 6,
+            background: `${C.green}15`,
+            border: `1px solid ${C.green}40`,
+            color: C.green,
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
@@ -357,38 +219,55 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAddClick, onDayClic
             padding: 0,
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = `${COLORS.green}30`
-            e.currentTarget.style.borderColor = COLORS.green
+            e.currentTarget.style.background = `${C.green}30`
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = `${COLORS.green}15`
-            e.currentTarget.style.borderColor = `${COLORS.green}44`
+            e.currentTarget.style.background = `${C.green}15`
           }}
-          title="Add lesson"
-          aria-label="Add lesson"
         >
-          <Plus size={16} strokeWidth={2.5} />
+          <Plus size={13} strokeWidth={2.5} />
         </button>
       )}
     </div>
   )
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// MAIN COMPONENT
-// ────────────────────────────────────────────────────────────────────────────
-export default function LessonCalendar() {
-  const { currentUser, lessons, activeLessonClassId } = useStore()
+// ─── MAIN CALENDAR COMPONENT ─────────────────────────────────────────────────
+export default function LessonCalendar({ onBack }) {
+  const store = useStore()
+  const t = useT()
+  const { currentUser, lessons, activeLessonClassId, navigateToPage } = store
 
-  // State
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [allLessons, setAllLessons] = useState([])
 
-  // Load lessons on mount and when class changes
+  // Navigation state for BottomNav
+  const [activeNav, setActiveNav] = useState('classes')
+  const isSubPage = true
+
+  // Handle BottomNav navigation
+  function handleNavSelect(navId) {
+    if (navId === '__back__') {
+      onBack?.()
+      return
+    }
+    
+    setActiveNav(navId)
+    
+    // Navigate to appropriate pages based on nav selection
+    const navRoutes = {
+      classes: () => window.location.hash = '#/teacher/gradebook',
+      messages: () => window.location.hash = '#/teacher/messages',
+      reports: () => window.location.hash = '#/teacher/reports',
+      alerts: () => window.location.hash = '#/teacher/alerts',
+    }
+    
+    navRoutes[navId]?.()
+  }
+
   useEffect(() => {
     loadLessons()
   }, [currentUser, activeLessonClassId])
@@ -396,36 +275,28 @@ export default function LessonCalendar() {
   async function loadLessons() {
     try {
       setLoading(true)
-      setError(null)
 
       const classId = activeLessonClassId || 1
-
-      // Check if demo account
       const isDemo = currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')
 
       if (isDemo) {
-        // Demo mode: use store data
         const classLessons = lessons[classId] || []
         setAllLessons(classLessons)
       } else {
-        // Real mode: fetch from Supabase
-        const { data, error: queryError } = await supabase
+        const { data, error } = await supabase
           .from('lessons')
           .select('*')
           .eq('class_id', classId)
           .order('lesson_date', { ascending: true })
 
-        if (queryError) throw queryError
+        if (error) throw error
 
-        // Map database rows to lesson objects
         const mapped = (data || []).map(row => ({
           id: row.id,
           classId: row.class_id,
           date: row.lesson_date,
           title: row.title || 'Untitled',
           duration: row.duration || 45,
-          pages: row.pages || '',
-          objective: row.plan_data?.objective || '',
           status: row.status || 'pending',
         }))
 
@@ -433,298 +304,201 @@ export default function LessonCalendar() {
       }
     } catch (err) {
       console.error('Load lessons error:', err)
-      setError('Failed to load lessons. Showing demo data.')
-      // Fallback to demo
       setAllLessons(lessons[activeLessonClassId || 1] || [])
     } finally {
       setLoading(false)
     }
   }
 
-  // Group lessons by date (YYYY-MM-DD)
   const lessonsByDate = useMemo(() => {
     const grouped = {}
     allLessons.forEach(lesson => {
       if (!lesson.date) return
-      const dateKey = typeof lesson.date === 'string'
+      const key = typeof lesson.date === 'string'
         ? lesson.date.split('T')[0]
         : lesson.date.toISOString().split('T')[0]
-      if (!grouped[dateKey]) grouped[dateKey] = []
-      grouped[dateKey].push(lesson)
+      if (!grouped[key]) grouped[key] = []
+      grouped[key].push(lesson)
     })
     return grouped
   }, [allLessons])
 
-  // Calendar grid calculation
+  // Calendar grid
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
-  const firstDay = new Date(year, month, 1)
-  const lastDay = new Date(year, month + 1, 0)
-  const daysInMonth = lastDay.getDate()
-  const startingDayOfWeek = firstDay.getDay()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const firstDay = new Date(year, month, 1).getDay()
 
-  // Build calendar array (may include prev/next month dates)
-  const calendarDays = []
-
-  // Prev month filler
+  const days = []
   const prevMonthLastDay = new Date(year, month, 0).getDate()
-  for (let i = startingDayOfWeek - 1; i >= 0; i--) {
-    calendarDays.push(new Date(year, month - 1, prevMonthLastDay - i))
+  for (let i = firstDay - 1; i >= 0; i--) {
+    days.push(new Date(year, month - 1, prevMonthLastDay - i))
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(new Date(year, month, i))
+  }
+  const remaining = 42 - days.length
+  for (let i = 1; i <= remaining; i++) {
+    days.push(new Date(year, month + 1, i))
   }
 
-  // Current month
-  for (let day = 1; day <= daysInMonth; day++) {
-    calendarDays.push(new Date(year, month, day))
-  }
-
-  // Next month filler
-  const remainingDays = 42 - calendarDays.length
-  for (let day = 1; day <= remainingDays; day++) {
-    calendarDays.push(new Date(year, month + 1, day))
-  }
-
-  // Navigation
-  function goToPreviousMonth() {
-    setCurrentDate(new Date(year, month - 1, 1))
-  }
-
-  function goToNextMonth() {
-    setCurrentDate(new Date(year, month + 1, 1))
-  }
-
-  function goToToday() {
-    setCurrentDate(new Date())
-  }
-
-  function handleAddClick(date) {
-    setSelectedDate(date)
-    setShowCreateModal(true)
-  }
+  const today = new Date().toISOString().split('T')[0]
 
   function handleCreateMode(dateStr, mode) {
-    // Route to appropriate creation page
-    const routes = {
-      ai: `/teacher/lessons?date=${dateStr}&mode=ai`,
-      build: `/teacher/lessons?date=${dateStr}&mode=build`,
-      upload: `/teacher/lessons?date=${dateStr}&mode=upload`,
+    const paths = {
+      ai: `?date=${dateStr}&mode=ai`,
+      build: `?date=${dateStr}&mode=build`,
+      upload: `?date=${dateStr}&mode=upload`,
     }
-    window.location.href = routes[mode]
-  }
-
-  // Today's date
-  const today = new Date()
-  const todayKey = today.toISOString().split('T')[0]
-
-  if (loading && allLessons.length === 0) {
-    return (
-      <div
-        style={{
-          padding: '32px 16px',
-          textAlign: 'center',
-          color: COLORS.muted,
-          minHeight: '60vh',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <Calendar size={48} style={{ marginBottom: 16, opacity: 0.5 }} />
-        <div style={{ fontSize: 16, fontWeight: 600 }}>Loading calendar...</div>
-      </div>
-    )
+    // Navigate to lessonPlan with params
+    window.location.hash = `#/teacher/lessons${paths[mode]}`
   }
 
   return (
-    <div style={{ padding: '16px', paddingBottom: 120, background: COLORS.bg, minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
       {/* Header */}
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 32, fontWeight: 800, color: COLORS.text, margin: '0 0 8px 0' }}>
-          Lesson Calendar
-        </h1>
-        <p style={{ fontSize: 14, color: COLORS.muted, margin: 0 }}>
-          {allLessons.length} {allLessons.length === 1 ? 'lesson' : 'lessons'} planned
-        </p>
+      <div className="mobile-header" style={{ padding: '20px 16px 0', marginBottom: 16 }}>
+        {onBack && (
+          <button 
+            onClick={onBack}
+            className="mobile-back-btn"
+            style={{ 
+              background: C.inner, 
+              border: 'none', 
+              borderRadius: 10, 
+              padding: '8px 14px', 
+              color: C.text, 
+              cursor: 'pointer', 
+              fontSize: 13, 
+              fontWeight: 600, 
+              marginBottom: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            <ChevronLeft size={16} />
+            Back
+          </button>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <div>
+            <h1 className="mobile-page-title" style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>
+              Lesson Calendar
+            </h1>
+            <p className="mobile-page-subtitle" style={{ fontSize: 12, color: C.muted, margin: 0 }}>
+              {allLessons.length} lessons planned
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div
+      {/* Month controls */}
+      <div className="mobile-month-controls" style={{ 
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 16px',
+        marginBottom: 20,
+        gap: 8,
+      }}>
+        <button
+          onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
+          className="mobile-nav-btn"
           style={{
-            background: `${COLORS.red}15`,
-            border: `1px solid ${COLORS.red}44`,
-            borderRadius: 12,
-            padding: '12px 16px',
-            marginBottom: 20,
+            background: C.inner,
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            padding: '6px 10px',
+            color: C.muted,
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
-            color: COLORS.red,
-            fontSize: 13,
+            gap: 4,
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = C.blue
+            e.currentTarget.style.background = C.raised
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = C.border
+            e.currentTarget.style.background = C.inner
           }}
         >
-          <AlertCircle size={16} />
-          <span>{error}</span>
-          <button
-            onClick={() => setError(null)}
-            style={{
-              marginLeft: 'auto',
-              background: 'none',
-              border: 'none',
-              color: COLORS.red,
-              cursor: 'pointer',
-              padding: 4,
-            }}
-          >
-            ✕
-          </button>
-        </div>
-      )}
+          <ChevronLeft size={16} />
+        </button>
 
-      {/* Controls */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 28,
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
-        {/* Month navigation */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <button
-            onClick={goToPreviousMonth}
-            style={{
-              background: COLORS.inner,
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 10,
-              padding: '8px 12px',
-              color: COLORS.muted,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = COLORS.blue
-              e.currentTarget.style.background = COLORS.raised
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = COLORS.border
-              e.currentTarget.style.background = COLORS.inner
-            }}
-          >
-            <ChevronLeft size={18} />
-          </button>
+        <h2 className="mobile-month-title" style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0, minWidth: 140, textAlign: 'center' }}>
+          {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+        </h2>
 
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: COLORS.text, margin: 0, minWidth: 180, textAlign: 'center' }}>
-            {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-          </h2>
+        <button
+          onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
+          className="mobile-nav-btn"
+          style={{
+            background: C.inner,
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            padding: '6px 10px',
+            color: C.muted,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = C.blue
+            e.currentTarget.style.background = C.raised
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = C.border
+            e.currentTarget.style.background = C.inner
+          }}
+        >
+          <ChevronRight size={16} />
+        </button>
 
-          <button
-            onClick={goToNextMonth}
-            style={{
-              background: COLORS.inner,
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 10,
-              padding: '8px 12px',
-              color: COLORS.muted,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = COLORS.blue
-              e.currentTarget.style.background = COLORS.raised
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = COLORS.border
-              e.currentTarget.style.background = COLORS.inner
-            }}
-          >
-            <ChevronRight size={18} />
-          </button>
-
-          <button
-            onClick={goToToday}
-            style={{
-              background: COLORS.inner,
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 10,
-              padding: '8px 12px',
-              color: COLORS.soft,
-              cursor: 'pointer',
-              fontSize: 12,
-              fontWeight: 600,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = COLORS.blue
-              e.currentTarget.style.background = COLORS.raised
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = COLORS.border
-              e.currentTarget.style.background = COLORS.inner
-            }}
-          >
-            Today
-          </button>
-        </div>
-
-        {/* Action buttons */}
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={() => window.location.href = '/teacher/lessons'}
-            style={{
-              background: 'none',
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 10,
-              padding: '8px 16px',
-              color: COLORS.soft,
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.borderColor = COLORS.blue
-              e.currentTarget.style.background = COLORS.inner
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.borderColor = COLORS.border
-              e.currentTarget.style.background = 'none'
-            }}
-          >
-            List View
-          </button>
-        </div>
+        <button
+          onClick={() => setCurrentDate(new Date())}
+          className="mobile-today-btn"
+          style={{
+            background: 'none',
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            padding: '6px 10px',
+            color: C.soft,
+            cursor: 'pointer',
+            fontSize: 11,
+            fontWeight: 600,
+            transition: 'all 0.15s',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.borderColor = C.blue
+            e.currentTarget.style.background = C.inner
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.borderColor = C.border
+            e.currentTarget.style.background = 'none'
+          }}
+        >
+          Today
+        </button>
       </div>
 
       {/* Day headers */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
+      <div className="mobile-day-headers" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, padding: '0 16px', marginBottom: 8 }}>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <div
             key={day}
             style={{
               textAlign: 'center',
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: 700,
-              color: COLORS.muted,
+              color: C.muted,
               textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-              paddingBottom: 8,
+              paddingBottom: 6,
             }}
           >
             {day}
@@ -733,18 +507,11 @@ export default function LessonCalendar() {
       </div>
 
       {/* Calendar grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(7, 1fr)',
-          gap: 8,
-          marginBottom: 32,
-        }}
-      >
-        {calendarDays.map((date, idx) => {
+      <div className="mobile-calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, padding: '0 16px' }}>
+        {days.map((date, idx) => {
           const dateKey = date.toISOString().split('T')[0]
           const isCurrentMonth = date.getMonth() === month
-          const isToday = dateKey === todayKey
+          const isToday = dateKey === today
 
           return (
             <DayCell
@@ -753,25 +520,95 @@ export default function LessonCalendar() {
               lessons={lessonsByDate[dateKey] || []}
               isToday={isToday}
               isCurrentMonth={isCurrentMonth}
-              onAddClick={handleAddClick}
-              onDayClick={() => {
-                // Could navigate to day view in future
+              onAdd={d => {
+                setSelectedDate(d)
+                setShowModal(true)
               }}
+              onClick={() => {}}
             />
           )
         })}
       </div>
 
-      {/* Create modal */}
+      {/* Modal */}
       <CreateLessonModal
         date={selectedDate || new Date()}
-        isOpen={showCreateModal}
-        onClose={() => {
-          setShowCreateModal(false)
-          setSelectedDate(null)
-        }}
-        onCreateMode={handleCreateMode}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSelect={handleCreateMode}
+      />
+      
+      {/* Bottom Navigation */}
+      <BottomNav 
+        active={activeNav} 
+        onSelect={handleNavSelect} 
+        isSubPage={isSubPage} 
+        role="teacher"
       />
     </div>
   )
+}
+
+// Mobile responsive CSS
+const style = document.createElement('style')
+style.textContent = `
+@media (max-width: 768px) {
+  .mobile-header {
+    padding: 16px 12px 0 !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .mobile-back-btn {
+    padding: 6px 10px !important;
+    font-size: 11px !important;
+    margin-bottom: 8px !important;
+  }
+  
+  .mobile-page-title {
+    font-size: 18px !important;
+  }
+  
+  .mobile-page-subtitle {
+    font-size: 10px !important;
+  }
+  
+  .mobile-month-controls {
+    padding: 0 12px !important;
+    margin-bottom: 16px !important;
+    gap: 6px !important;
+  }
+  
+  .mobile-nav-btn {
+    padding: 4px 8px !important;
+  }
+  
+  .mobile-month-title {
+    font-size: 12px !important;
+    min-width: 120px !important;
+  }
+  
+  .mobile-today-btn {
+    padding: 4px 8px !important;
+    font-size: 10px !important;
+  }
+  
+  .mobile-day-headers {
+    padding: 0 12px !important;
+    gap: 6px !important;
+  }
+  
+  .mobile-day-headers > div {
+    font-size: 8px !important;
+    padding-bottom: 4px !important;
+  }
+  
+  .mobile-calendar-grid {
+    padding: 0 12px !important;
+    gap: 6px !important;
+  }
+}
+`
+if (!document.head.querySelector('style[data-lesson-calendar]')) {
+  style.setAttribute('data-lesson-calendar', 'true')
+  document.head.appendChild(style)
 }
