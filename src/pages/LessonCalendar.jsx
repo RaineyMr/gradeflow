@@ -243,11 +243,15 @@ function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
   )
 }
 
-// DAY CELL
+// DAY CELL - Fixed height with proper text wrapping
 function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
   const dateObj = new Date(date)
   const day = dateObj.getDate()
   const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+
+  // Fixed height is 120px; content area is ~80px after date header
+  const CELL_HEIGHT = 120
+  const CONTENT_HEIGHT = 80
 
   return (
     <div
@@ -259,11 +263,13 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
         border: `1px solid ${isToday ? C.blue : C.border}`,
         background: isCurrentMonth ? (isToday ? C.raised : C.card) : 'transparent',
         padding: 10,
-        minHeight: 100,
+        height: CELL_HEIGHT,
         cursor: isCurrentMonth ? 'pointer' : 'default',
         transition: 'all 0.2s',
         position: 'relative',
         opacity: isCurrentMonth ? 1 : 0.35,
+        display: 'flex',
+        flexDirection: 'column',
       }}
       onMouseEnter={e => {
         if (isCurrentMonth) {
@@ -278,7 +284,8 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
         }
       }}
     >
-      <div style={{ marginBottom: 8 }}>
+      {/* Date header */}
+      <div style={{ marginBottom: 8, flexShrink: 0 }}>
         <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, marginBottom: 2 }}>
           {dayName}
         </div>
@@ -287,34 +294,51 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 6, minHeight: 30 }}>
-        {(lessons || []).slice(0, 1).map(lesson => (
+      {/* Lessons container - bounded by CONTENT_HEIGHT */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          flex: 1,
+          minHeight: 0, // Allows flex to constrain height
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {(lessons || []).slice(0, 2).map((lesson, idx) => (
           <div
             key={lesson.id}
             style={{
               fontSize: 9,
-              padding: '2px 6px',
+              padding: '3px 6px',
               borderRadius: 4,
               background: `${C.blue}20`,
               color: C.blue,
               fontWeight: 600,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
               border: `0.5px solid ${C.blue}40`,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 2,
+              lineHeight: '1.3em',
+              wordBreak: 'break-word',
+              title: lesson.title,
             }}
-            title={lesson.title}
           >
             {lesson.title}
           </div>
         ))}
-        {(lessons || []).length > 1 && (
-          <div style={{ fontSize: 8, color: C.muted, paddingLeft: 4 }}>
-            +{lessons.length - 1} more
+
+        {/* "X more" indicator */}
+        {(lessons || []).length > 2 && (
+          <div style={{ fontSize: 8, color: C.muted, paddingLeft: 4, marginTop: 'auto', flexShrink: 0 }}>
+            +{lessons.length - 2} more
           </div>
         )}
       </div>
 
+      {/* Add button */}
       {isCurrentMonth && (
         <button
           onClick={e => {
@@ -337,15 +361,19 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
             justifyContent: 'center',
             transition: 'all 0.2s',
             padding: 0,
+            fontSize: 14,
+            fontWeight: 700,
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = `${C.green}30` 
+            e.currentTarget.style.background = `${C.green}30`
+            e.currentTarget.style.borderColor = C.green
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = `${C.green}15` 
+            e.currentTarget.style.background = `${C.green}15`
+            e.currentTarget.style.borderColor = `${C.green}40`
           }}
         >
-          <Plus size={13} strokeWidth={2.5} />
+          <Plus size={14} />
         </button>
       )}
     </div>
@@ -620,13 +648,8 @@ export default function LessonCalendar({ onBack }) {
         ))}
       </div>
 
-<<<<<<< HEAD
-      {/* Calendar grid - standardized cells */}
+{/* Calendar grid - standardized cells */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, gridAutoRows: '120px' }}>
-=======
-      {/* Calendar grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
->>>>>>> d3d8008451b293a5b25f56ad4a77651dac2a96e6
         {days.map((date, idx) => {
           const dateKey = date.toISOString().split('T')[0]
           const isCurrentMonth = date.getMonth() === month
