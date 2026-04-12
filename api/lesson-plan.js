@@ -3,25 +3,19 @@
 // Handles 10-section lesson plan model with CFS, proper lesson steps,
 // optional add-ons, and per-section AI assist tracking.
 
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = (process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY)
+  ? createClient(process.env.VITE_SUPABASE_URL, process.env.VITE_SUPABASE_ANON_KEY)
+  : null
+
 // Helper Functions
 function handleApiError(res, error, message, statusCode = 500) {
   console.error('Lesson Plan API Error:', error)
-  return res.status(statusCode).json({ 
+  return res.status(statusCode).json({
     error: message || 'Internal server error',
-    details: error.message 
+    details: error.message
   })
-}
-
-// Get Supabase client with fallback
-function getSupabaseClient() {
-  try {
-    // Try to import Supabase dynamically
-    const { supabase } = require('../lib/supabase')
-    return supabase
-  } catch (error) {
-    console.log('Supabase not configured, using demo mode')
-    return null
-  }
 }
 
 function validateLessonData(data) {
@@ -47,8 +41,14 @@ function extractTeacherId(authHeader) {
     return 'demo-teacher'
   }
   
-  // TODO: Parse JWT and extract user ID
-  return token
+  // For real users, token IS the teacher_id (UUID format)
+  // Validate UUID format before accepting
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) {
+    return token  // Valid UUID format, use as teacher_id
+  }
+  
+  // If not a valid UUID, throw error
+  throw new Error('Invalid auth token format')
 }
 
 // Main Handler
@@ -139,12 +139,11 @@ async function handleCreateLesson(req, res, teacherId) {
     // Validate
     validateLessonData(lessonData)
     
-    // Get Supabase client
-    const supabase = getSupabaseClient()
+    // Supabase client is now global (declared at top)
     
-    // For demo mode without Supabase, return success without saving
-    if (!supabase || process.env.NODE_ENV === 'development' || teacherId === 'demo-teacher') {
-      console.log('DEMO MODE: Simulating lesson plan save without database')
+    // For demo mode, still save to Supabase for persistence
+    if (!supabase) {
+      console.log('DEMO MODE: No Supabase connection - simulating lesson plan save')
       
       // Simulate a lesson record
       const mockLesson = {
@@ -161,7 +160,7 @@ async function handleCreateLesson(req, res, teacherId) {
       
       return res.status(201).json({
         lesson: mockLesson,
-        message: 'Lesson plan saved successfully (demo mode)'
+        message: 'Lesson plan saved successfully (demo mode - no database)'
       })
     }
     

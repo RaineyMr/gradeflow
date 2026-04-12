@@ -306,6 +306,7 @@ function AIPlanGenerator({ onBack }) {
   const [showStandards, setShowStandards] = useState(false)
   const [plan, setPlan] = useState(null)
   const [generatingAdjust, setGeneratingAdjust] = useState(false)
+  const [saving, setSaving] = useState(false)
   const students = useStore(s => s.students)
   const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
 
@@ -363,11 +364,61 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
     setLoading(false)
   }
 
+  async function handleSavePlan() {
+    setSaving(true)
+    try {
+      const headers = { 'Content-Type': 'application/json' }
+      if (currentUser) {
+        headers.Authorization = currentUser.id?.startsWith('demo-')
+          ? 'Bearer demo-token'
+          : `Bearer ${currentUser.id}`
+      }
+      const lessonData = {
+        header: {
+          title: plan.title,
+          subject,
+          gradeLevel: grade,
+          date: new Date().toISOString().split('T')[0],
+        },
+        standards: selectedStandards,
+        objectives: plan.objectives?.join('\n') || '',
+        lessonSteps: {
+          warmUp: '',
+          directInstruction: plan.steps?.join('\n') || '',
+          guidedPractice: '',
+          independentPractice: '',
+          closure: '',
+          extension: '',
+        },
+        exitTicket: plan.assessment?.join('\n') || '',
+        homework: { assignment: plan.homework?.join('\n') || '', dueDate: null, maxPoints: null },
+        optionalAddOns: { enrichment: '', supplementalLinks: '', reflections: plan.notes || '' },
+      }
+      const response = await fetch('/api/lesson-plan', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(lessonData),
+      })
+      if (!response.ok) {
+        const err = await response.json()
+        throw new Error(err.error || 'Save failed')
+      }
+      alert('Lesson plan saved!')
+    } catch (err) {
+      console.error('Save error:', err)
+      alert(`Failed to save: ${err.message}`)
+    }
+    setSaving(false)
+  }
+
   if (loading) return <LoadingSpinner label="Generating your lesson plan..." />
 
   if (plan) return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
+      <div style={{ display:'flex', gap:10, marginBottom:20 }}>
+        <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>Back</button>
+        <button onClick={handleSavePlan} disabled={saving} style={{ background:C.green, border:'none', borderRadius:10, padding:'8px 16px', color:'#fff', cursor: saving ? 'not-allowed' : 'pointer', fontSize:13, fontWeight:700, opacity: saving ? 0.7 : 1 }}>{saving ? 'Saving…' : 'Save Lesson Plan'}</button>
+      </div>
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
       <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{subject} · {grade}</p>
 
@@ -1430,6 +1481,47 @@ function BuildFromScratch({ onBack, initialLesson }) {
   })
 
   const [saving, setSaving] = React.useState(false)
+  const [savedLessons, setSavedLessons] = React.useState([])
+  const [loadingLessons, setLoadingLessons] = React.useState(false)
+
+  // Fetch saved lessons on mount
+  useEffect(() => {
+    async function fetchSavedLessons() {
+      setLoadingLessons(true)
+      try {
+        const { currentUser } = useStore.getState()
+        
+        // Prepare headers with authentication
+        const headers = { 'Content-Type': 'application/json' }
+        
+        // Add auth header if user exists
+        if (currentUser) {
+          if (currentUser.id?.startsWith('demo-')) {
+            headers.Authorization = 'Bearer demo-token'
+          } else {
+            headers.Authorization = `Bearer ${currentUser.id}`
+          }
+        }
+        
+        const response = await fetch('/api/lesson-plan', {
+          method: 'GET',
+          headers
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          setSavedLessons(result.lessons || [])
+        } else {
+          console.error('Failed to fetch lessons:', await response.text())
+        }
+      } catch (err) {
+        console.error('Error fetching saved lessons:', err)
+      }
+      setLoadingLessons(false)
+    }
+
+    fetchSavedLessons()
+  }, [])
 
   // Auto-populate lesson header with teacher's subject and grade level
   useEffect(() => {
@@ -1872,6 +1964,87 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
       <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Lesson Plans</h1>
       <p style={{ color:C.muted, fontSize:13, margin:'0 0 24px' }}>Create · Upload · AI-generate</p>
 
+      {/* My Saved Lessons Section */}
+      <div style={{ marginBottom:24 }}>
+        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>📚 My Saved Lessons</h2>
+        {loadingLessons ? (
+          <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>
+            Loading your saved lessons...
+          </div>
+        ) : savedLessons.length === 0 ? (
+          <div style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'16px', textAlign:'center', color:C.muted, fontSize:13 }}>
+            <div style={{ fontSize:24, marginBottom:8 }}>📝</div>
+            <div>No saved lesson plans yet</div>
+            <div style={{ fontSize:11, marginTop:4 }}>Create your first lesson plan below</div>
+          </div>
+        ) : (
+          <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {savedLessons.map(lesson => (
+              <div 
+                key={lesson.id}
+                style={{ 
+                  background:C.card, 
+                  border:`1px solid ${C.border}`, 
+                  borderRadius:12, 
+                  padding:16, 
+                  cursor:'pointer',
+                  display:'flex',
+                  alignItems:'center',
+                  gap:12
+                }}
+                onClick={() => {
+                  // Navigate to edit mode with this lesson
+                  const params = new URLSearchParams()
+                  params.set('mode', 'edit')
+                  params.set('lessonId', lesson.id)
+                  window.location.search = params.toString()
+                }}
+                onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
+                onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
+              >
+                <div style={{ 
+                  width:48, 
+                  height:48, 
+                  borderRadius:12, 
+                  background:`${C.blue}22`, 
+                  display:'flex', 
+                  alignItems:'center', 
+                  justifyContent:'center', 
+                  fontSize:20, 
+                  flexShrink:0 
+                }}>
+                  📝
+                </div>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:4, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                    {lesson.title}
+                  </div>
+                  <div style={{ fontSize:11, color:C.muted, display:'flex', gap:8, alignItems:'center' }}>
+                    <span>{lesson.subject || 'No subject'}</span>
+                    {lesson.grade_level && <span>·</span>}
+                    <span>{lesson.grade_level}</span>
+                    {lesson.lesson_date && <span>·</span>}
+                    <span>{new Date(lesson.lesson_date).toLocaleDateString()}</span>
+                  </div>
+                </div>
+                <div style={{ 
+                  background:lesson.status === 'published' ? `${C.green}22` : `${C.amber}22`,
+                  color:lesson.status === 'published' ? C.green : C.amber,
+                  borderRadius:6,
+                  padding:'4px 8px',
+                  fontSize:10,
+                  fontWeight:600,
+                  textTransform:'uppercase'
+                }}>
+                  {lesson.status || 'draft'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>Create New Lesson</h2>
       {[
         { id:'ai',       icon:'✨', label:'AI Generate',       desc:'Fill in subject, grade, topic → full lesson plan',  color:C.purple },
         { id:'build',    icon:'📝', label:'Build from Scratch', desc:'Write your own lesson plan with guided sections',   color:C.blue   },
