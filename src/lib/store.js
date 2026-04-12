@@ -53,6 +53,14 @@ const DEMO_GRADES = [
   { studentId: 5, assignmentId: 1, score: 93 },
 ]
 
+// Map demo class IDs to real Supabase class IDs
+const DEMO_TO_SUPABASE_CLASS_MAP = {
+  1: '06b238aa-b55e-45e3-a713-a3aa3f1fe2b9',  // 1st Math
+  2: 'e37032e4-8fed-4338-9acd-cb23cd852213',  // 2nd Reading
+  3: 'e483c9fd-3ce1-42de-a537-a6396f259cb6',  // 3rd Science
+  4: 'ef39aee6-0ff5-4dbe-ab7f-5bf22a8ee31f',  // 4th Writing
+}
+
 const DEMO_MESSAGES = [
   { id: 1, studentName: 'Marcus Thompson', subject: 'Math',    trigger: 'Failed 58%',      status: 'pending', tone: 'Warm & Friendly', draft: "Dear Parent, Marcus received 58% on his Math assessment. I'd love to connect this week to discuss support options.", positiveDraft: "Hi! Just wanted to share that Marcus is showing real effort in class. Let's keep building on that momentum!", dayOld: false },
   { id: 2, studentName: 'Aaliyah Brooks',  subject: 'Reading', trigger: 'Improved +12pts', status: 'sent',    tone: 'Celebrating',     draft: "Great news! Aaliyah improved her Reading score by 12 points. She's working so hard!", positiveDraft: "Aaliyah is doing amazing work. Her dedication is really paying off!", dayOld: false },
@@ -989,7 +997,10 @@ export const useStore = create((set, get) => ({
   // ✨ FETCH GRADEBOOK DATA ──────────────────────────────────────────────────
   fetchGradebookData: async (classId) => {
     try {
-      const response = await fetch(`/api/teacher/gradebook?classId=${classId}`)
+      // Map demo IDs to real Supabase UUIDs
+      const realClassId = DEMO_TO_SUPABASE_CLASS_MAP[classId] || classId
+      
+      const response = await fetch(`/api/teacher/gradebook?classId=${realClassId}`)
       
       if (!response.ok) {
         throw new Error(`API returned ${response.status}`)
