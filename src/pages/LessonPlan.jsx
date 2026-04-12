@@ -574,6 +574,33 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
 
           {showStandards && (
             <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>
+                  Select Learning Standards
+                </div>
+                <button
+                  onClick={() => setShowStandards(false)}
+                  style={{
+                    background: 'none',
+                    border: `1px solid ${C.border}`,
+                    borderRadius: 4,
+                    padding: '4px 8px',
+                    fontSize: 10,
+                    color: C.muted,
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = C.inner
+                    e.target.style.color = C.text
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'none'
+                    e.target.style.color = C.muted
+                  }}
+                >
+                  Hide Picker
+                </button>
+              </div>
               <StandardsSelector
                 subject={subject}
                 grade={grade}
@@ -584,7 +611,6 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
                 selectedStandards={selectedStandards}
                 onChange={(standards) => {
                   setSelectedStandards(standards)
-                  setShowStandards(false)
                 }}
               />
             </div>
@@ -821,7 +847,35 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
       </div>
 
       {showPicker && (
-        <StandardsSelector
+        <div style={{ marginTop: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>
+              Select Learning Standards
+            </div>
+            <button
+              onClick={() => setShowPicker(false)}
+              style={{
+                background: 'none',
+                border: `1px solid ${C.border}`,
+                borderRadius: 4,
+                padding: '4px 8px',
+                fontSize: 10,
+                color: C.muted,
+                cursor: 'pointer',
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = C.inner
+                e.target.style.color = C.text
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'none'
+                e.target.style.color = C.muted
+              }}
+            >
+              Hide Picker
+            </button>
+          </div>
+          <StandardsSelector
           subject={headerData?.subject}
           grade={headerData?.gradeLevel}
           selectedStandards={data || []}
@@ -829,12 +883,11 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
           schoolName={currentUser?.schoolName}
           onChange={(standards) => {
             onChange('standards', standards)
-            setShowPicker(false)
           }}
         />
+        </div>
       )}
-
-          </SectionWithAI>
+    </SectionWithAI>
   )
 }
 
