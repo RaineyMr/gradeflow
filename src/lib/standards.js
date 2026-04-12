@@ -304,26 +304,68 @@ export function searchStandards(subject, grade, query, schoolName) {
 
 export function getRecommendedStandards(subject, grade, topic, schoolName) {
   const standards = getStandardsForGradeSubject(subject, grade, schoolName)
-  const topicKeywords = topic.toLowerCase().split(' ').filter(word => word.length > 2)
+  if (!topic || topic.trim() === '') return []
   
-  return standards
-    .map(standard => {
-      let relevanceScore = 0
-      const description = standard.description.toLowerCase()
-      
-      topicKeywords.forEach(keyword => {
-        if (description.includes(keyword)) {
-          relevanceScore += 1
-        }
-      })
-      
-      if (standard.cluster.toLowerCase().includes(topic.toLowerCase())) {
+  const topicLower = topic.toLowerCase()
+  const topicKeywords = topicLower.split(' ').filter(word => word.length > 2)
+  
+  console.log('=== getRecommendedStandards Debug ===')
+  console.log('Topic:', topic)
+  console.log('Topic keywords:', topicKeywords)
+  console.log('Standards count:', standards.length)
+  
+  const scoredStandards = standards.map(standard => {
+    let relevanceScore = 0
+    const description = standard.description.toLowerCase()
+    const code = standard.code.toLowerCase()
+    const cluster = standard.cluster.toLowerCase()
+    
+    // Direct topic match in cluster (highest weight)
+    if (cluster.includes(topicLower)) {
+      relevanceScore += 3
+    }
+    
+    // Keyword matching in description
+    topicKeywords.forEach(keyword => {
+      if (description.includes(keyword)) {
         relevanceScore += 2
       }
-      
-      return { ...standard, relevanceScore }
+      // Partial word matching
+      if (description.includes(keyword.substring(0, keyword.length - 1))) {
+        relevanceScore += 1
+      }
     })
+    
+    // Check for common math terms that might not be exact matches
+    const mathTerms = {
+      'fraction': ['fraction', 'fractions', 'rational', 'division', 'numerator', 'denominator'],
+      'multiplication': ['multiply', 'multiplication', 'times', 'product', 'multiple'],
+      'addition': ['add', 'addition', 'sum', 'plus', 'total'],
+      'subtraction': ['subtract', 'subtraction', 'difference', 'minus'],
+      'geometry': ['shape', 'shapes', 'angle', 'angles', 'triangle', 'square', 'circle'],
+      'measurement': ['measure', 'measurement', 'length', 'width', 'height', 'area', 'volume']
+    }
+    
+    Object.entries(mathTerms).forEach(([term, synonyms]) => {
+      if (topicLower.includes(term)) {
+        synonyms.forEach(synonym => {
+          if (description.includes(synonym)) {
+            relevanceScore += 1
+          }
+        })
+      }
+    })
+    
+    return { ...standard, relevanceScore }
+  })
+  
+  const recommendations = scoredStandards
     .filter(standard => standard.relevanceScore > 0)
     .sort((a, b) => b.relevanceScore - a.relevanceScore)
     .slice(0, 5)
+  
+  console.log('Recommendations found:', recommendations.length)
+  console.log('Top recommendation:', recommendations[0])
+  
+  return recommendations
 }

@@ -19,17 +19,6 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
     schoolName 
   })
 
-  // Debug logging
-  console.log('=== StandardsSelector Debug ===')
-  console.log('Props:', { subject, grade, topic, schoolName })
-  console.log('useStandards result:', { 
-    hasRecommendations, 
-    recommendedStandardsLength: recommendedStandards?.length, 
-    loading, 
-    hasData 
-  })
-  console.log('Recommended standards:', recommendedStandards)
-
   // Auto-select recommended standards when topic changes
   useEffect(() => {
     if (hasRecommendations && recommendedStandards.length > 0 && topic) {
@@ -48,16 +37,25 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
   }[standardsSystem] || { name: 'Standards', color: C.blue, state: '' }
 
   const handleStandardToggle = (standard) => {
-    const isSelected = selectedStandards.some(s => s.code === standard.code)
+    const isSelected = selectedStandards.some(s => {
+      const selectedCode = typeof s === 'string' ? s : s.code
+      return selectedCode === standard.code
+    })
     if (isSelected) {
-      onChange(selectedStandards.filter(s => s.code !== standard.code))
+      onChange(selectedStandards.filter(s => {
+        const selectedCode = typeof s === 'string' ? s : s.code
+        return selectedCode !== standard.code
+      }))
     } else {
       onChange([...selectedStandards, standard])
     }
   }
 
   const renderStandard = (standard, isRecommended = false) => {
-    const isSelected = selectedStandards.some(s => s.code === standard.code)
+    const isSelected = selectedStandards.some(s => {
+      const selectedCode = typeof s === 'string' ? s : s.code
+      return selectedCode === standard.code
+    })
     
     return (
       <div
@@ -221,7 +219,7 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
       />
 
       {/* Toggle between recommended and all standards */}
-      {true && (
+      {hasRecommendations && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
           <button
             onClick={() => setShowRecommended(true)}
@@ -315,11 +313,52 @@ function StandardsSelector({ subject, grade, selectedStandards, onChange, topic,
           fontSize: 11,
           color: C.green
         }}>
-          <div style={{ fontWeight: 700, marginBottom: 4 }}>
-            ✅ Selected Standards ({selectedStandards.length})
+          <div style={{ fontWeight: 700, marginBottom: 6 }}>
+            {selectedStandards.length} selected
           </div>
-          <div style={{ fontSize: 10, lineHeight: 1.4 }}>
-            {selectedStandards.map(s => s.code).join(', ')}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {selectedStandards.map((standard, i) => {
+              const standardCode = typeof standard === 'string' ? standard : standard.code
+              return (
+                <span
+                  key={i}
+                  style={{
+                    background: `${C.green}20`,
+                    color: C.green,
+                    border: `1px solid ${C.green}40`,
+                    borderRadius: 6,
+                    padding: '4px 8px',
+                    fontSize: 10,
+                    fontWeight: 600,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}
+                >
+                  {standardCode}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onChange(selectedStandards.filter((_, idx) => idx !== i))
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: C.green,
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      padding: 0,
+                      lineHeight: 1,
+                      opacity: 0.8,
+                    }}
+                    onMouseEnter={(e) => e.target.style.opacity = 1}
+                    onMouseLeave={(e) => e.target.style.opacity = 0.8}
+                  >
+                    ×
+                  </button>
+                </span>
+              )
+            })}
           </div>
         </div>
       )}
