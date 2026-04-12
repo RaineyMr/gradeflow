@@ -404,10 +404,22 @@ export default function LessonCalendar({ onBack }) {
     try {
       setLoading(true)
 
-      console.log('Loading lessons for user:', currentUser?.id, currentUser?.email)
+      console.log('=== LESSON CALENDAR DEBUG ===')
+      console.log('Current user from store:', currentUser)
+      console.log('User ID:', currentUser?.id)
+      console.log('User email:', currentUser?.email)
+      console.log('Is demo account?', currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-'))
+      
+      if (!currentUser?.id) {
+        console.error('No user ID found - cannot query lessons')
+        return
+      }
       
       // Always fetch from Supabase for all users (including demo accounts)
-      const { data, error } = await supabase
+      console.log('Executing Supabase query...')
+      
+      // Try to find teacher by email first, then by ID
+      let teacherQuery = supabase
         .from('lessons')
         .select(`
           *,
@@ -419,12 +431,27 @@ export default function LessonCalendar({ onBack }) {
             teacher_id
           )
         `)
-        .eq('classes.teacher_id', currentUser?.id)
+      
+      // Use email if it's a string/contains @, otherwise use ID
+      if (currentUser?.email && currentUser.email.includes('@')) {
+        console.log('Querying by teacher email:', currentUser.email)
+        teacherQuery = teacherQuery.eq('classes.teacher.email', currentUser.email)
+      } else {
+        console.log('Querying by teacher ID:', currentUser?.id)
+        teacherQuery = teacherQuery.eq('classes.teacher_id', currentUser?.id)
+      }
+      
+      const { data, error } = await teacherQuery
         .order('lesson_date', { ascending: true })
 
-      console.log('Supabase query result:', { data: data?.length, error })
-
-      if (error) throw error
+      console.log('Supabase query completed:')
+      console.log('- Data length:', data?.length || 0)
+      console.log('- Error:', error)
+      
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
+      }
 
       const mapped = (data || []).map(row => ({
         id: row.id,
@@ -438,10 +465,17 @@ export default function LessonCalendar({ onBack }) {
         classColor: row.classes?.color,
       }))
 
-      console.log('Setting lessons from Supabase:', mapped.length)
+      console.log('Mapped lessons count:', mapped.length)
+      if (mapped.length > 0) {
+        console.log('Sample lesson:', mapped[0])
+      }
+      
+      console.log('Setting lessons from Supabase to state...')
       setAllLessons(mapped)
+      console.log('=== END LESSON CALENDAR DEBUG ===')
     } catch (err) {
-      console.error('Load lessons error:', err)
+      console.error('=== LOAD LESSONS CATCH BLOCK ===')
+      console.error('Error:', err)
       console.log('Falling back to demo data...')
       // Fallback: load all demo classes
       const allClassLessons = []
@@ -451,6 +485,7 @@ export default function LessonCalendar({ onBack }) {
       }
       console.log('Setting demo lessons:', allClassLessons.length)
       setAllLessons(allClassLessons)
+      console.log('=== END FALLBACK ===')
     } finally {
       setLoading(false)
     }
