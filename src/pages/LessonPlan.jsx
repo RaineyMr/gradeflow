@@ -38,7 +38,7 @@ function LoadingSpinner({ label = 'Loading...' }) {
     <div style={{ textAlign:'center', padding:'32px 0' }}>
       <div style={{ width:36, height:36, border:`3px solid var(--school-color)`, borderTopColor:'transparent', borderRadius:'50%', animation:'spin 0.8s linear infinite', margin:'0 auto 12px' }} />
       <p style={{ color:C.muted, fontSize:13 }}>{label}</p>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{'@keyframes spin { to { transform: rotate(360deg); } }'}</style>
     </div>
   )
 }
