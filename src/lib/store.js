@@ -1022,15 +1022,14 @@ export const useStore = create((set, get) => ({
   },
 
   // ── Teacher profile ─────────────────────────────────────────────────────────
-teacher: {
+  teacher: {
     id: 1,
     name: 'Ms. Rodriguez',
     school: 'Houston ISD',
     schoolColor: '#003057',
-    avatar: '👩‍🏫',
-    gradeLevel: '5th Grade',
-    subjects: ['Math', 'Science'],
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MsRodriguez',
   },
+  subjects: ['Math', 'Science'],
   teacherProfile: null, // Will be set during onboarding
 
   // ── Data (fallback until Supabase loads) ────────────────────────────────────
@@ -2255,57 +2254,258 @@ setDemoSupportStaffData: async () => {
     return { studentAccommodations: next }
   }),
 
-  fetchLessonsFromSupabase: async () => {
+  fetchStudentsFromSupabase: async () => {
     try {
       const { currentUser } = get()
       if (!currentUser || currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')) {
         return // Skip for demo accounts
       }
 
-      const { data: lessonsData, error } = await supabase
-        .from('lessons')
+      // Load students assigned to Ms. Rod (teacher_id = 1)
+      const { data: studentsData, error } = await supabase
+        .from('students')
         .select('*')
-        .eq('teacher_id', currentUser.id)
-        .order('lesson_date', { ascending: false })
+        .eq('teacher_id', 1) // Ms. Rod's teacher ID
 
       if (error) {
-        console.error('Error fetching lessons:', error)
+        console.error('Error fetching students:', error)
         return
       }
 
-      if (lessonsData && lessonsData.length > 0) {
-        // Transform lessons data to match the expected format
-        const transformedLessons = {}
-        lessonsData.forEach(lesson => {
-          const classId = lesson.class_id
-          if (!transformedLessons[classId]) {
-            transformedLessons[classId] = []
-          }
-          
-          const plan = lesson.plan_data || {}
-          transformedLessons[classId].push({
-            id: lesson.id,
-            classId: lesson.class_id,
-            dayLabel: plan.dayLabel || 'Today',
-            date: lesson.lesson_date,
-            title: lesson.title,
-            duration: lesson.duration ? `${lesson.duration} min` : '45 min',
-            pages: lesson.pages || '',
-            objective: plan.objective || lesson.objective || '',
-            warmup: plan.warmup || [],
-            activities: plan.activities || [],
-            materials: plan.materials || [],
-            homework: plan.homework || lesson.homework_assignment || '',
-            status: lesson.status || 'pending',
-            pdf: plan.pdf || ''
-          })
-        })
+      if (studentsData && studentsData.length > 0) {
+        // Transform students data to match the expected format
+        const transformedStudents = studentsData.map(student => ({
+          id: student.id,
+          classId: student.class_id,
+          name: student.name,
+          email: student.email,
+          grade: student.grade || 0,
+          letter: student.grade >= 90 ? 'A' : student.grade >= 80 ? 'B' : student.grade >= 70 ? 'C' : student.grade >= 60 ? 'D' : 'F',
+          submitted: student.submitted || false,
+          submitUngraded: student.submit_ungraded || false,
+          flagged: student.flagged || false,
+          accommodations: student.accommodations || null
+        }))
         
-        set({ lessons: transformedLessons })
-        console.log(`Loaded ${lessonsData.length} lesson plans from Supabase`)
+        set({ students: transformedStudents })
+        console.log(`Loaded ${studentsData.length} students for Ms. Rodriguez from Supabase`)
       }
     } catch (error) {
-      console.error('Error in fetchLessonsFromSupabase:', error)
+      console.error('Error in fetchStudentsFromSupabase:', error)
+    }
+  },
+
+  fetchGradesFromSupabase: async () => {
+    try {
+      const { currentUser } = get()
+      if (!currentUser || currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')) {
+        return // Skip for demo accounts
+      }
+
+      // Load ALL grades from Supabase (not just per teacher)
+      const { data: gradesData, error } = await supabase
+        .from('grades')
+        .select('*')
+
+      if (error) {
+        console.error('Error fetching grades:', error)
+        return
+      }
+
+      if (gradesData && gradesData.length > 0) {
+        // Transform grades data to match the expected format
+        const transformedGrades = gradesData.map(grade => ({
+          studentId: grade.student_id,
+          assignmentId: grade.assignment_id,
+          score: grade.score
+        }))
+        
+        set({ grades: transformedGrades })
+        console.log(`Loaded ${gradesData.length} grades from Supabase`)
+      }
+    } catch (error) {
+      console.error('Error in fetchGradesFromSupabase:', error)
+    }
+  },
+  
+  fetchClassesFromSupabase: async () => {
+    try {
+      const { currentUser } = get()
+      if (!currentUser || currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')) {
+        return // Skip for demo accounts
+      }
+
+      // Load ALL classes from Supabase
+      const { data: classesData, error } = await supabase
+        .from('classes')
+        .select('*')
+
+      if (error) {
+        console.error('Error fetching classes:', error)
+        return
+      }
+
+      if (classesData && classesData.length > 0) {
+        // Transform classes data to match the expected format
+        const transformedClasses = classesData.map(cls => ({
+          id: cls.id,
+          period: cls.period || '1st',
+          subject: cls.subject || 'Math',
+          students: cls.students || 20,
+          gpa: cls.gpa || 85.0,
+          trend: cls.trend || 'stable',
+          color: cls.color || '#3b7ef4',
+          needsAttention: cls.needs_attention || 0
+        }))
+        
+        set({ classes: transformedClasses })
+        console.log(`Loaded ${classesData.length} classes from Supabase`)
+      }
+    } catch (error) {
+      console.error('Error in fetchClassesFromSupabase:', error)
+    }
+  },
+
+  countStudents: async () => {
+    try {
+      console.log('Counting students in Supabase...')
+      
+      // Get total count of students
+      const { count, error } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true })
+      
+      if (error) {
+        console.error('Error counting students:', error)
+        return null
+      }
+
+      console.log(`Total students in database: ${count || 0}`)
+      return count || 0
+
+    } catch (error) {
+      console.error('Error counting students:', error)
+      return null
+    }
+  },
+
+  checkStudentGrades: async () => {
+    try {
+      console.log('Checking students with grades in Supabase...\n')
+
+      // 1. Get total students count
+      const { data: allStudents, error: studentsError } = await supabase
+        .from('students')
+        .select('id, name, email, class_id, grade')
+      
+      if (studentsError) {
+        console.error('Error fetching students:', studentsError)
+        return null
+      }
+
+      console.log(`Total students in database: ${allStudents?.length || 0}`)
+
+      // 2. Get all grades
+      const { data: allGrades, error: gradesError } = await supabase
+        .from('grades')
+        .select('student_id, assignment_id, score')
+      
+      if (gradesError) {
+        console.error('Error fetching grades:', gradesError)
+        return null
+      }
+
+      console.log(`Total grade records in database: ${allGrades?.length || 0}`)
+
+      // 3. Find unique students who have grades
+      const studentsWithGrades = new Set()
+      const gradesByStudent = {}
+      
+      allGrades?.forEach(grade => {
+        studentsWithGrades.add(grade.student_id)
+        if (!gradesByStudent[grade.student_id]) {
+          gradesByStudent[grade.student_id] = []
+        }
+        gradesByStudent[grade.student_id].push(grade.score)
+      })
+
+      console.log(`Students with at least one grade: ${studentsWithGrades.size}`)
+
+      // 4. Find students without grades
+      const studentsWithoutGrades = allStudents?.filter(
+        student => !studentsWithGrades.has(student.id)
+      ) || []
+
+      console.log(`Students without any grades: ${studentsWithoutGrades.length}`)
+
+      // 5. Calculate average grades for students with grades
+      let overallAverage = 0
+      if (Object.keys(gradesByStudent).length > 0) {
+        const averages = Object.values(gradesByStudent).map(grades => {
+          const sum = grades.reduce((a, b) => a + b, 0)
+          return sum / grades.length
+        })
+        
+        overallAverage = averages.reduce((a, b) => a + b, 0) / averages.length
+        console.log(`Average grade for students with grades: ${overallAverage.toFixed(1)}%`)
+      }
+
+      // 6. Show breakdown by class
+      const classBreakdown = {}
+      if (allStudents && allStudents.length > 0) {
+        console.log('\n--- Breakdown by Class ---')
+        
+        const classGroups = {}
+        allStudents.forEach(student => {
+          const classId = student.class_id || 'unassigned'
+          if (!classGroups[classId]) {
+            classGroups[classId] = { total: 0, withGrades: 0, students: [] }
+          }
+          classGroups[classId].total++
+          classGroups[classId].students.push(student)
+          
+          if (studentsWithGrades.has(student.id)) {
+            classGroups[classId].withGrades++
+          }
+        })
+
+        Object.entries(classGroups).forEach(([classId, data]) => {
+          const percentage = data.total > 0 ? Math.round((data.withGrades / data.total) * 100) : 0
+          console.log(`Class ${classId}: ${data.withGrades}/${data.total} students have grades (${percentage}%)`)
+          classBreakdown[classId] = {
+            total: data.total,
+            withGrades: data.withGrades,
+            percentage
+          }
+        })
+      }
+
+      // 7. Summary
+      console.log('\n--- Summary ---')
+      const totalStudents = allStudents?.length || 0
+      const withGrades = studentsWithGrades.size
+      const withoutGrades = studentsWithoutGrades.length
+      const coveragePercentage = totalStudents > 0 ? Math.round((withGrades / totalStudents) * 100) : 0
+
+      console.log(`Grade Coverage: ${withGrades}/${totalStudents} students (${coveragePercentage}%)`)
+      console.log(`Missing Grades: ${withoutGrades} students`)
+      
+      // Return the report data
+      return {
+        timestamp: new Date().toISOString(),
+        totalStudents,
+        studentsWithGrades: withGrades,
+        studentsWithoutGrades: withoutGrades,
+        coveragePercentage,
+        overallAverage,
+        classBreakdown,
+        studentsWithoutGradesList: studentsWithoutGrades.slice(0, 10),
+        totalGradeRecords: allGrades?.length || 0
+      }
+
+    } catch (error) {
+      console.error('Error checking student grades:', error)
+      return null
     }
   },
 
@@ -2379,22 +2579,29 @@ setDemoSupportStaffData: async () => {
           dbError: schoolsError ? schoolsError.message : null
         }))
       } else {
-        // Real teacher - load empty data (they'll set up their own classes)
+        // Real teacher - load data from Supabase
         set(state => ({
           ...state,
-          classes: [], // Empty for real teachers
+          classes: [], // Will be populated from Supabase
           students: [],
           assignments: [],
           grades: [],
           messages: [],
           feed: [],
-          lessons: [],
+          lessons: [], // Will be populated from Supabase
           reminders: [],
           schools: schoolsData || DEMO_SCHOOLS, // Still load schools for validation
           dbLoaded: true,
           isHydrated: true,
           dbError: schoolsError ? schoolsError.message : null
         }))
+        
+        // Fetch real data from Supabase
+        get().fetchClassesFromSupabase()
+        get().fetchStudentsFromSupabase()
+        get().fetchAssignmentsFromSupabase()
+        get().fetchGradesFromSupabase()
+        get().fetchLessonsFromSupabase()
       }
     } catch (error) {
       console.error('Error in loadFromDB:', error);

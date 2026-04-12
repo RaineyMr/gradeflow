@@ -161,8 +161,10 @@ export default function Gradebook({ onBack }) {
 
   const [editModal,        setEditModal]        = useState(null)
   const [newAssignModal,   setNewAssignModal]    = useState(false)
+  const [newStudentModal,  setNewStudentModal]   = useState(false)
   const [weightModal,      setWeightModal]       = useState(false)
   const [newAssign,        setNewAssign]         = useState({ name: '', type: 'quiz', categoryId: 2, includeInGrade: true })
+  const [newStudent,       setNewStudent]        = useState({ name: '', email: '' })
   const [newScore,         setNewScore]          = useState('')
   const [search,           setSearch]            = useState('')
   const [sortBy,           setSortBy]            = useState('name')
@@ -205,6 +207,31 @@ export default function Gradebook({ onBack }) {
     setNewAssign({ name: '', type: 'quiz', categoryId: 2, includeInGrade: true })
   }
 
+  function handleAddStudent() {
+    if (!newStudent.name.trim()) return
+    
+    // Create a new student with a temporary ID
+    const student = {
+      id: Date.now(), // Temporary ID
+      name: newStudent.name.trim(),
+      email: newStudent.email.trim() || `${newStudent.name.trim().toLowerCase().replace(/\s+/g, '.')}@school.edu`,
+      classId: cls.id,
+      grade: 0, // Start with no grade
+      letter: 'F',
+      submitted: false,
+      submitUngraded: false,
+      flagged: false,
+      accommodations: null
+    }
+    
+    // Add student to the store
+    const { students } = useStore.getState()
+    useStore.setState({ students: [...students, student] })
+    
+    setNewStudentModal(false)
+    setNewStudent({ name: '', email: '' })
+  }
+
   const gradeColor = (s) => s >= 90 ? C.green : s >= 80 ? C.blue : s >= 70 ? C.amber : s >= 60 ? '#f97316' : C.red
 
   return (
@@ -227,9 +254,14 @@ export default function Gradebook({ onBack }) {
             <GradebookSyncButton />
           </div>
         </div>
-        <button onClick={() => setNewAssignModal(true)} style={{ background: 'var(--school-color, #BA0C2F)', border: 'none', borderRadius: 12, padding: '8px 14px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-          + Assignment
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => setNewStudentModal(true)} style={{ background: `${C.teal}22`, color: C.teal, border: 'none', borderRadius: 12, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            + Student
+          </button>
+          <button onClick={() => setNewAssignModal(true)} style={{ background: 'var(--school-color, #BA0C2F)', border: 'none', borderRadius: 12, padding: '8px 14px', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            + Assignment
+          </button>
+        </div>
       </div>
 
       {/* ── Grading method + weight summary ── */}
@@ -449,8 +481,44 @@ export default function Gradebook({ onBack }) {
       </Modal>
 
       {/* ── Weight Editor Modal ── */}
-      <Modal open={weightModal} onClose={() => setWeightModal(false)} title="⚖ Grading Setup">
+      <Modal open={weightModal} onClose={() => setWeightModal(false)} title=" Grading Setup">
         <WeightEditor onClose={() => setWeightModal(false)} />
+      </Modal>
+
+      {/* ── New Student Modal ── */}
+      <Modal open={newStudentModal} onClose={() => setNewStudentModal(false)} title="Add New Student">
+        <div>
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 6 }}>Student Name</label>
+            <input 
+              value={newStudent.name} 
+              onChange={e => setNewStudent(n => ({ ...n, name: e.target.value }))}
+              placeholder="e.g. John Smith"
+              style={{ width: '100%', background: C.inner, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 14px', color: C.text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} 
+            />
+          </div>
+
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ display: 'block', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: C.muted, marginBottom: 6 }}>Email (Optional)</label>
+            <input 
+              type="email"
+              value={newStudent.email} 
+              onChange={e => setNewStudent(n => ({ ...n, email: e.target.value }))}
+              placeholder="e.g. john.smith@school.edu"
+              style={{ width: '100%', background: C.inner, border: `1px solid ${C.border}`, borderRadius: 12, padding: '12px 14px', color: C.text, fontSize: 13, outline: 'none', boxSizing: 'border-box' }} 
+            />
+            <p style={{ fontSize: 10, color: C.muted, marginTop: 6 }}>
+              If left blank, a default email will be generated
+            </p>
+          </div>
+
+          <button 
+            onClick={handleAddStudent}
+            style={{ width: '100%', background: C.teal, color: '#fff', border: 'none', borderRadius: 999, padding: '14px', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}
+          >
+            Add Student
+          </button>
+        </div>
       </Modal>
     </div>
   )
