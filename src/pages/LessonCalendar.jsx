@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
 import { supabase } from '../lib/supabase'
-import BottomNav from '../components/ui/BottomNav'
-import LessonPlan from './LessonPlan'
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 
 const C = {
@@ -23,11 +21,12 @@ const C = {
   teal: '#0fb8a0',
 }
 
-// ─── VIEW LESSONS MODAL (click day to see all lessons) ──────────────────────
-function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
+// ─── LESSON SELECTION POPUP ───────────────────────────────────────────────────
+function LessonSelectionPopup({ date, lessons, isOpen, onClose, onSelectLesson }) {
   if (!isOpen) return null
 
   const dateObj = new Date(date)
+  const dateStr = dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
 
   return (
     <div
@@ -46,23 +45,23 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
         onClick={e => e.stopPropagation()}
         style={{
           width: '90%',
-          maxWidth: 450,
+          maxWidth: 500,
+          maxHeight: '80vh',
           background: C.card,
           border: `1px solid ${C.border}`,
           borderRadius: 16,
           padding: 24,
           boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-          maxHeight: '70vh',
           overflowY: 'auto',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
           <div>
             <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>
-              {lessons.length > 0 ? 'Lessons' : 'No Lessons'}
+              Lessons
             </h2>
             <div style={{ fontSize: 12, color: C.muted }}>
-              {dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+              {dateStr}
             </div>
           </div>
           <button
@@ -80,7 +79,7 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
           </button>
         </div>
 
-        {lessons.length > 0 ? (
+        {lessons && lessons.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {lessons.map(lesson => (
               <button
@@ -91,9 +90,12 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
                   background: C.inner,
                   border: `1px solid ${C.border}`,
                   borderRadius: 12,
-                  padding: 14,
+                  padding: 16,
                   textAlign: 'left',
                   cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
                   transition: 'all 0.15s',
                 }}
                 onMouseEnter={e => {
@@ -105,20 +107,207 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
                   e.currentTarget.style.background = C.inner
                 }}
               >
-                <div style={{ color: C.text, fontWeight: 600, fontSize: 13, marginBottom: 4 }}>
-                  {lesson.title}
-                </div>
-                <div style={{ color: C.muted, fontSize: 11 }}>
-                  Class {lesson.classId} • {lesson.duration || 45} min
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: C.text, fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
+                      {lesson.title || 'Untitled Lesson'}
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, fontSize: 11, color: C.muted }}>
+                      <span>Class {lesson.classId || 1}</span>
+                      <span>{lesson.duration || 45} min</span>
+                      <span style={{ textTransform: 'capitalize' }}>{lesson.status || 'pending'}</span>
+                    </div>
+                  </div>
+                  <div style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: lesson.status === 'completed' ? C.green : lesson.status === 'in-progress' ? C.amber : C.blue,
+                  }} />
                 </div>
               </button>
             ))}
           </div>
         ) : (
-          <div style={{ color: C.muted, textAlign: 'center', padding: '20px 0' }}>
-            <p style={{ margin: 0 }}>No lessons scheduled for this day</p>
+          <div style={{ textAlign: 'center', padding: 40, color: C.muted, fontSize: 14 }}>
+            No lessons scheduled for this day
           </div>
         )}
+      </div>
+    </div>
+  )
+}
+
+// ─── FULL LESSON VIEW ────────────────────────────────────────────────────────
+function FullLessonView({ lesson, isOpen, onClose, onBack }) {
+  if (!isOpen) return null
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1001,
+      }}
+      onClick={onClose}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '95%',
+          maxWidth: 800,
+          maxHeight: '90vh',
+          background: C.card,
+          border: `1px solid ${C.border}`,
+          borderRadius: 16,
+          padding: 24,
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+          overflowY: 'auto',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button
+              onClick={onBack}
+              style={{
+                background: C.inner,
+                border: `1px solid ${C.border}`,
+                borderRadius: 8,
+                padding: '8px 12px',
+                color: C.muted,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 600,
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = C.blue
+                e.currentTarget.style.background = C.raised
+                e.currentTarget.style.color = C.blue
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = C.border
+                e.currentTarget.style.background = C.inner
+                e.currentTarget.style.color = C.muted
+              }}
+            >
+              <ChevronLeft size={14} />
+              Back to Calendar
+            </button>
+            <div>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>
+                {lesson.title || 'Untitled Lesson'}
+              </h1>
+              <div style={{ display: 'flex', gap: 12, fontSize: 12, color: C.muted }}>
+                <span>Class {lesson.classId || 1}</span>
+                <span>{lesson.duration || 45} minutes</span>
+                <span style={{ textTransform: 'capitalize' }}>{lesson.status || 'pending'}</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: C.muted,
+              cursor: 'pointer',
+              padding: 4,
+              fontSize: 20,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div style={{ background: C.inner, borderRadius: 12, padding: 20, marginBottom: 16 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: '0 0 12px 0' }}>Lesson Details</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Date</div>
+              <div style={{ fontSize: 13, color: C.text }}>
+                {new Date(lesson.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Duration</div>
+              <div style={{ fontSize: 13, color: C.text }}>{lesson.duration || 45} minutes</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Status</div>
+              <div style={{ fontSize: 13, color: C.text, textTransform: 'capitalize' }}>{lesson.status || 'pending'}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Class</div>
+              <div style={{ fontSize: 13, color: C.text }}>Class {lesson.classId || 1}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ background: C.inner, borderRadius: 12, padding: 20 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: '0 0 12px 0' }}>Lesson Content</h3>
+          <div style={{ fontSize: 13, color: C.soft, lineHeight: 1.6 }}>
+            {lesson.content || 'No lesson content available yet. This lesson plan is ready to be developed.'}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, marginTop: 20 }}>
+          <button
+            style={{
+              flex: 1,
+              background: C.blue,
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 16px',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.background = '#4a8ff5'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.background = C.blue
+            }}
+          >
+            Edit Lesson
+          </button>
+          <button
+            style={{
+              flex: 1,
+              background: 'none',
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              padding: '12px 16px',
+              color: C.soft,
+              cursor: 'pointer',
+              fontSize: 13,
+              fontWeight: 600,
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = C.blue
+              e.currentTarget.style.background = C.inner
+              e.currentTarget.style.color = C.blue
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = C.border
+              e.currentTarget.style.background = 'none'
+              e.currentTarget.style.color = C.soft
+            }}
+          >
+            Share Lesson
+          </button>
+        </div>
       </div>
     </div>
   )
@@ -235,9 +424,7 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
 
   return (
     <div
-      onClick={() => {
-        if (isCurrentMonth) onClick(date)
-      }}
+      onClick={onClick}
       style={{
         borderRadius: 10,
         border: `1px solid ${isToday ? C.blue : C.border}`,
@@ -344,15 +531,15 @@ export default function LessonCalendar({ onBack }) {
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
+  const [showModal, setShowModal] = useState(false)
+  const [showLessonPopup, setShowLessonPopup] = useState(false)
   const [selectedLesson, setSelectedLesson] = useState(null)
-  const [showViewModal, setShowViewModal] = useState(false)
-  const [showCreateModal, setShowCreateModal] = useState(false)
   const [loading, setLoading] = useState(false)
   const [allLessons, setAllLessons] = useState([])
 
   useEffect(() => {
     loadLessons()
-  }, [currentUser])
+  }, [currentUser, activeLessonClassId])
 
   async function loadLessons() {
     try {
@@ -361,14 +548,18 @@ export default function LessonCalendar({ onBack }) {
       const isDemo = currentUser?.email?.includes('@demo') || currentUser?.id?.startsWith('demo-')
 
       if (isDemo) {
-        // Load from all demo classes (1-4)
+        // Load lessons from all classes for demo
         const allClassLessons = []
-        for (let classId = 1; classId <= 4; classId++) {
+        Object.keys(lessons).forEach(classId => {
           const classLessons = lessons[classId] || []
-          allClassLessons.push(...classLessons)
-        }
+          allClassLessons.push(...classLessons.map(lesson => ({
+            ...lesson,
+            classId: parseInt(classId)
+          })))
+        })
         setAllLessons(allClassLessons)
       } else {
+        // Load lessons from all classes for real users
         const { data, error } = await supabase
           .from('lessons')
           .select('*')
@@ -383,18 +574,22 @@ export default function LessonCalendar({ onBack }) {
           title: row.title || 'Untitled',
           duration: row.duration || 45,
           status: row.status || 'pending',
+          content: row.content || null,
         }))
 
         setAllLessons(mapped)
       }
     } catch (err) {
       console.error('Load lessons error:', err)
-      // Fallback: load all demo classes
+      // Fallback to demo data
       const allClassLessons = []
-      for (let classId = 1; classId <= 4; classId++) {
+      Object.keys(lessons).forEach(classId => {
         const classLessons = lessons[classId] || []
-        allClassLessons.push(...classLessons)
-      }
+        allClassLessons.push(...classLessons.map(lesson => ({
+          ...lesson,
+          classId: parseInt(classId)
+        })))
+      })
       setAllLessons(allClassLessons)
     } finally {
       setLoading(false)
@@ -441,68 +636,11 @@ export default function LessonCalendar({ onBack }) {
       build: `?date=${dateStr}&mode=build`,
       upload: `?date=${dateStr}&mode=upload`,
     }
-    // Navigate to lessonPlan with params
     window.location.hash = `#/teacher/lessons${paths[mode]}`
   }
 
-  function handleSelectLesson(lesson) {
-    console.log('Selected lesson:', lesson)
-    
-    if (!lesson) {
-      console.error('No lesson selected')
-      return
-    }
-    
-    // Set the active lesson in store
-    store.setActiveLessonClassId(lesson.classId)
-    
-    // Store the selected lesson to display full editor
-    setSelectedLesson(lesson)
-    setShowViewModal(false)
-  }
-
-  function handleBackToCalendar() {
-    setSelectedLesson(null)
-  }
-
   return (
-    <>
-      {selectedLesson ? (
-        // Show full LessonPlan editor
-        <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
-          <div style={{ padding: '16px 12px' }}>
-            <button
-              onClick={handleBackToCalendar}
-              style={{
-                background: C.inner,
-                border: 'none',
-                borderRadius: 10,
-                padding: '8px 14px',
-                color: C.text,
-                cursor: 'pointer',
-                fontSize: 13,
-                fontWeight: 600,
-                marginBottom: 12,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-              }}
-            >
-              <ChevronLeft size={16} />
-              Back to Calendar
-            </button>
-          </div>
-          <LessonPlan
-            onBack={handleBackToCalendar}
-            initialMode="view"
-            classId={selectedLesson.classId}
-            lessonId={selectedLesson.id}
-          />
-          <BottomNav active="classes" onSelect={handleNavSelect} isSubPage={true} role="teacher" />
-        </div>
-      ) : (
-        // Show calendar view
-        <div style={{ padding: '12px', paddingBottom: 20 }}>
+    <div style={{ padding: '12px', paddingBottom: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -657,39 +795,48 @@ export default function LessonCalendar({ onBack }) {
               isCurrentMonth={isCurrentMonth}
               onAdd={d => {
                 setSelectedDate(d)
-                setShowCreateModal(true)
+                setShowModal(true)
               }}
-              onClick={d => {
-                setSelectedDate(d)
-                setShowViewModal(true)
+              onClick={() => {
+                const dayLessons = lessonsByDate[dateKey] || []
+                if (dayLessons.length > 0) {
+                  setSelectedDate(date)
+                  setShowLessonPopup(true)
+                }
               }}
             />
           )
         })}
       </div>
 
-      {/* View Lessons Modal */}
-      {selectedDate && (
-        <ViewLessonsModal
-          date={selectedDate}
-          lessons={(lessonsByDate[selectedDate.toISOString().split('T')[0]] || []).filter(Boolean)}
-          isOpen={showViewModal}
-          onClose={() => setShowViewModal(false)}
-          onSelectLesson={handleSelectLesson}
-        />
-      )}
+      {/* Modals */}
+      <CreateLessonModal
+        date={selectedDate || new Date()}
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSelect={handleCreateMode}
+      />
 
-      {/* Create Lesson Modal */}
-      {selectedDate && (
-        <CreateLessonModal
-          date={selectedDate}
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
-          onSelect={handleCreateMode}
-        />
-      )}
-        </div>
-      )}
-    </>
+      <LessonSelectionPopup
+        date={selectedDate || new Date()}
+        lessons={lessonsByDate[selectedDate?.toISOString().split('T')[0]] || []}
+        isOpen={showLessonPopup}
+        onClose={() => setShowLessonPopup(false)}
+        onSelectLesson={(lesson) => {
+          setSelectedLesson(lesson)
+          setShowLessonPopup(false)
+        }}
+      />
+
+      <FullLessonView
+        lesson={selectedLesson}
+        isOpen={!!selectedLesson}
+        onClose={() => setSelectedLesson(null)}
+        onBack={() => {
+          setSelectedLesson(null)
+          setShowLessonPopup(true)
+        }}
+      />
+    </div>
   )
 }
