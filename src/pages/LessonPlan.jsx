@@ -1468,7 +1468,7 @@ function BuildFromScratch({ onBack, initialLesson }) {
           subject: 'Math', // Default to Math for demo lessons
           gradeLevel: '5', // Default to 5th grade for demo lessons
         },
-        objectives: initialLesson.objective || prev.objectives,
+        objectives: initialLesson.objectives || prev.objectives,
         lessonSteps: {
           ...prev.lessonSteps,
           warmUp: Array.isArray(initialLesson.warmup) ? initialLesson.warmup.join('\n') : initialLesson.warmup || prev.lessonSteps.warmUp,

@@ -109,7 +109,7 @@ const INITIAL_POSTS = [
 function countWords(str) { return str.trim().split(/\s+/).filter(Boolean).length }
 
 function Chip({ label, color, size=10 }) {
-  return <span style={{ background:`${color}18`, color, borderRadius:999, padding:'3px 8px', fontSize:size, fontWeight:700 }}>{label}</span>
+  return <span style={{ background:color+'18', color, borderRadius:999, padding:'3px 8px', fontSize:size, fontWeight:700 }}>{label}</span>
 }
 
 function Avatar({ emoji, size=32 }) {
@@ -185,7 +185,7 @@ function EngagementPanel({ post, onClose, onGrade }) {
         </div>
 
         {toast && (
-          <div style={{ background:`${C.teal}15`, border:`1px solid ${C.teal}40`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.teal, fontWeight:600 }}>
+          <div style={{ background:C.teal+'15', border:'1px solid '+C.teal+'40', borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:12, color:C.teal, fontWeight:600 }}>
             {toast}
           </div>
         )}
@@ -222,7 +222,7 @@ function EngagementPanel({ post, onClose, onGrade }) {
         </div>
 
         {post.engagement && (
-          <div style={{ background:`${C.blue}12`, border:`1px solid ${C.blue}30`, borderRadius:12, padding:'10px 12px', marginBottom:14, fontSize:11, color:C.soft }}>
+          <div style={{ background:`${C.blue}12`, border:`1px solid ${C.blue}30`, borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:11, color:C.soft }}>
             <strong>Requirements:</strong> Min {post.engagement.minWords} words · Reply to {post.engagement.mustReplyToClassmates}+ classmates
           </div>
         )}
@@ -359,7 +359,9 @@ function ComposePost({ onPost, onClose }) {
         <div style={{ display:'flex', gap:6, marginBottom:14 }}>
           {Object.entries(typeMap).map(([k,v])=>(
             <button key={k} onClick={()=>setPostType(k)}
-              style={{ flex:1, padding:'8px 6px', borderRadius:12, border:`1px solid ${postType===k?v.color:C.border}`, cursor:'pointer', background:postType===k?`${v.color}18`:C.inner, textAlign:'center' }}>
+              style={{ flex:1, padding:'8px 6px', borderRadius:12, border:`1px solid ${postType===k?v.color:C.border}`, cursor:'pointer', fontSize:11, fontWeight:700,
+                background:postType===k?v.color+'18':C.inner,
+                textAlign:'center' }}>
               <div style={{ fontSize:16, marginBottom:2 }}>{v.icon}</div>
               <div style={{ fontSize:10, fontWeight:700, color:postType===k?v.color:C.muted }}>{v.label}</div>
             </button>
@@ -433,7 +435,7 @@ function ComposePost({ onPost, onClose }) {
                     style={{ padding:'5px 10px', borderRadius:999, border:'none', cursor:'pointer', fontSize:10, fontWeight:700,
                       background:gradeCategory===cat.id?`${cat.color}22`:C.raised,
                       color:gradeCategory===cat.id?cat.color:C.muted,
-                      outline: gradeCategory===cat.id?`1px solid ${cat.color}`:'none' }}>
+                      outline: gradeCategory===cat.id?'1px solid '+cat.color:'none' }}>
                     {cat.icon} {cat.name} {cat.weight}%
                   </button>
                 ))}
@@ -528,7 +530,7 @@ function CommentThread({ comment, viewer, canReply, depth=0, classId, addPartici
               <input value={replyText} onChange={e=>setReplyText(e.target.value)}
                 onKeyDown={e=>e.key==='Enter'&&sendReply()}
                 placeholder={`Reply to ${comment.author}...`}
-                style={{ flex:1, background:C.inner, border:`1px solid ${C.border}`, borderRadius:10, padding:'8px 12px', color:C.text, fontSize:12, outline:'none' }}
+                style={{ flex:1, background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'8px 12px', color:C.text, fontSize:12, outline:'none' }}
               />
               <button onClick={sendReply} disabled={!replyText.trim()}
                 style={{ background:replyText.trim()?'var(--school-color,#BA0C2F)':'#2a2f42', color:'#fff', border:'none', borderRadius:10, padding:'8px 12px', fontSize:12, fontWeight:700, cursor:replyText.trim()?'pointer':'not-allowed' }}>
