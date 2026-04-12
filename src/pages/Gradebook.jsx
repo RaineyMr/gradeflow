@@ -188,14 +188,21 @@ export default function Gradebook() {
 
   // COMPUTE STUDENT GRADE SUMMARIES ──────────────────────────────────────────
   const studentGrades = useMemo(() => {
+    console.log('DEBUG: Computing student grades with', students.length, 'students and', grades.length, 'grades')
+    
     return students.map(student => {
       const studentGrades = grades.filter(g => g.studentId === student.id)
+      console.log(`DEBUG: Student ${student.name} (${student.id}) has ${studentGrades.length} grades`)
+      
       const gradeValues = studentGrades.map(g => g.score).filter(s => s !== undefined)
       const avg = gradeValues.length ? Math.round(gradeValues.reduce((a, b) => a + b) / gradeValues.length) : 0
+      
+      console.log(`DEBUG: Student ${student.name} grades:`, studentGrades.slice(0, 3), 'average:', avg)
       
       return {
         ...student,
         grade: avg,
+        detailedGrades: studentGrades,
       }
     })
   }, [students, grades])
@@ -325,7 +332,7 @@ export default function Gradebook() {
           <div style={{ display: 'grid', gridTemplateColumns: '200px repeat(auto-fit, minmax(100px, 1fr))', gap: 0, borderCollapse: 'collapse' }}>
             {/* Header */}
             <div style={{ background: C.inner, padding: '12px', borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, fontSize: 11, fontWeight: 700, color: C.muted }}>Student</div>
-            {assignments.slice(0, 5).map(a => (
+            {assignments.map(a => (
               <div key={a.id} style={{ background: C.inner, padding: '12px', borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, fontSize: 10, fontWeight: 700, color: C.muted, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={a.name}>
                 {a.name}
               </div>
@@ -339,7 +346,7 @@ export default function Gradebook() {
                   {student.name}
                   {student.flagged && <div style={{ fontSize: 9, color: C.red, marginTop: 2 }}>⚑ Flagged</div>}
                 </div>
-                {assignments.slice(0, 5).map(a => {
+                {assignments.map(a => {
                   const grade = grades.find(g => g.studentId === student.id && g.assignmentId === a.id)
                   return (
                     <div key={a.id} style={{ padding: '12px', borderRight: `1px solid ${C.border}`, borderBottom: `1px solid ${C.border}`, textAlign: 'center', cursor: 'pointer', background: grade ? 'transparent' : `${C.border}66` }} onClick={() => setEditModal({ student, assignment: a })}>
