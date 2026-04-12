@@ -317,13 +317,9 @@ export default function Gradebook() {
         </select>
         <select value={view} onChange={e => setView(e.target.value)}
           style={{ background: C.inner, border: `1px solid ${C.border}`, borderRadius: 8, padding: '8px 10px', color: C.text, fontSize: 12, outline: 'none', cursor: 'pointer' }}>
-          <option value="table">?? Table</option>
-          <option value="grid">??? Grid</option>
+          <option value="table">Class</option>
+          <option value="grid">Student</option>
         </select>
-        <button onClick={() => setNewAssignModal(true)}
-          style={{ background: C.teal, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
-          + Assignment
-        </button>
       </div>
 
       {/* Spreadsheet-style Table view */}
