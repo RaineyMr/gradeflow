@@ -15,6 +15,10 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
+  console.log('DEBUG: API handler received req.query:', req.query)
+  console.log('DEBUG: API handler received req.url:', req.url)
+  console.log('DEBUG: classId from req.query.classId:', req.query.classId, 'typeof:', typeof req.query.classId)
+  
   const { classId } = req.query
 
   if (!classId) {

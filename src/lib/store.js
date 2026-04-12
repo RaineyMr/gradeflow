@@ -2816,11 +2816,15 @@ setDemoSupportStaffData: async () => {
     previousScreen: null,
   })),
 
-  setActiveClass: (cls) => set(state => ({
-    activeClass:    cls,
-    previousScreen: state.activeScreen,
-    activeScreen:   cls ? 'gradebook' : state.activeScreen,
-  })),
+  setActiveClass: (cls) => {
+    console.log('DEBUG: setActiveClass called with cls:', cls, 'cls.id:', cls?.id, 'typeof cls.id:', typeof cls?.id)
+    console.log('DEBUG: cls JSON.stringify:', JSON.stringify(cls))
+    return set(state => ({
+      activeClass:    cls,
+      previousScreen: state.activeScreen,
+      activeScreen:   cls ? 'gradebook' : state.activeScreen,
+    }))
+  },
 
   setActiveStudent: (student) => set(state => ({
     activeStudent:  student,
@@ -4238,10 +4242,19 @@ setDemoSupportStaffData: async () => {
 
   fetchGradebookData: async (classId) => {
     console.log('DEBUG: fetchGradebookData called with classId:', classId, 'typeof:', typeof classId)
+    console.log('DEBUG: classId JSON.stringify:', JSON.stringify(classId))
+    console.log('DEBUG: activeClass state:', get().activeClass)
     
     try {
+      // Check if classId is an object or has unexpected structure
+      if (typeof classId === 'object') {
+        console.log('ERROR: classId is an object, not a primitive value:', classId)
+        throw new Error('classId must be a primitive value, not an object')
+      }
+      
       const url = `/api/teacher/gradebook?classId=${classId}`
       console.log('DEBUG: Fetching URL:', url)
+      console.log('DEBUG: URL string length:', url.length)
       
       const res = await fetch(url)
       

@@ -169,6 +169,8 @@ export default function Gradebook() {
       setError(null)
       
       try {
+        console.log('DEBUG: Gradebook useEffect calling fetchGradebookData with activeClass.id:', activeClass.id, 'typeof:', typeof activeClass.id)
+        console.log('DEBUG: activeClass object:', activeClass)
         await fetchGradebookData(activeClass.id)
         setLoading(false)
       } catch (err) {

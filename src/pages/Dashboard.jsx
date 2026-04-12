@@ -822,7 +822,11 @@ function ClassesPage({ onBack, navigate }) {
       </div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, padding:'0 16px' }}>
         {classes.map(cls=>(
-          <button key={cls.id} onClick={()=>{ setActiveClass(cls); navigate('gradebook') }}
+          <button key={cls.id} onClick={()=>{ 
+            console.log('DEBUG: Dashboard setActiveClass called with cls:', cls, 'cls.id:', cls.id, 'typeof cls.id:', typeof cls.id)
+            setActiveClass(cls); 
+            navigate('gradebook') 
+          }}
             style={{ background:C.card, border:`1px solid ${C.border}`, borderLeft:`4px solid ${cls.color}`, borderRadius:16, padding:16, textAlign:'left', cursor:'pointer' }}>
             <div style={{ fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>{cls.period} · {cls.subject}</div>
             <div style={{ fontSize:10, color:C.muted, marginBottom:10 }}>{cls.students} students</div>
@@ -977,7 +981,12 @@ function HomeFeed({ navigate }) {
         <Widget onClick={()=>navigate('classes')} title={`📚 ${t('my_classes')}`} titleRight={<ActionBtn label={`+ ${t('add')}`} color={C.blue} onClick={()=>navigate('gradebook')}/>}>
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
             {classes.map(cls=>(
-              <button key={cls.id} onClick={e=>{ e.stopPropagation(); store.setActiveClass(cls); navigate('gradebook') }}
+              <button key={cls.id} onClick={e=>{ 
+            e.stopPropagation(); 
+            console.log('DEBUG: Dashboard second setActiveClass called with cls:', cls, 'cls.id:', cls.id, 'typeof cls.id:', typeof cls.id)
+            store.setActiveClass(cls); 
+            navigate('gradebook') 
+          }}
                 style={{ background:C.inner, borderRadius:14, padding:'12px 14px', border:'none', borderLeft:`3px solid ${cls.color}`, cursor:'pointer', textAlign:'left', transition:'background 0.15s' }}
                 onMouseEnter={e=>(e.currentTarget.style.background=C.raised)}
                 onMouseLeave={e=>(e.currentTarget.style.background=C.inner)}>
