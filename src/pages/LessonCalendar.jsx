@@ -383,45 +383,46 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
 // MAIN CALENDAR COMPONENT
 export default function LessonCalendar({ onBack }) {
   const store = useStore()
-  const t = useT()
+  const { currentUser } = store
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [allLessons, setAllLessons] = useState([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
-  // Fetch lessons on mount
+  // Fetch lessons on mount or when currentUser changes
   useEffect(() => {
     loadLessons()
-  }, [])
+  }, [currentUser])
 
   async function loadLessons() {
     try {
-      setIsLoading(true)
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) {
-        console.error('No session found')
-        return
-      }
+      setLoading(true)
 
       const { data, error } = await supabase
         .from('lessons')
         .select('*')
-        .eq('teacher_id', session.user.id)
-        .order('date', { ascending: true })
+        .order('lesson_date', { ascending: true })
 
-      if (error) {
-        console.error('Error fetching lessons:', error)
-        return
-      }
+      if (error) throw error
 
-      setAllLessons(data || [])
+      const mapped = (data || []).map(row => ({
+        id: row.id,
+        classId: row.class_id,
+        date: row.lesson_date,
+        title: row.title || 'Untitled',
+        duration: row.duration || 45,
+        status: row.status || 'pending',
+      }))
+
+      setAllLessons(mapped)
     } catch (err) {
-      console.error('Unexpected error loading lessons:', err)
+      console.error('Load lessons error:', err)
+      setAllLessons([])
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
@@ -429,8 +430,9 @@ export default function LessonCalendar({ onBack }) {
   const lessonsByDate = useMemo(() => {
     const grouped = {}
     allLessons.forEach(lesson => {
-      const key = lesson.date instanceof Date
-        ? lesson.date.toISOString().split('T')[0]
+      if (!lesson.date) return
+      const key = typeof lesson.date === 'string'
+        ? lesson.date.split('T')[0]
         : lesson.date.toISOString().split('T')[0]
       if (!grouped[key]) grouped[key] = []
       grouped[key].push(lesson)
