@@ -4286,6 +4286,11 @@ setDemoSupportStaffData: async () => {
       }
 
       const data = await res.json()
+      console.log('DEBUG: API response data:', data)
+      console.log('DEBUG: Students count:', data.students?.length)
+      console.log('DEBUG: Assignments count:', data.assignments?.length)
+      console.log('DEBUG: Grades count:', data.grades?.length)
+      console.log('DEBUG: Sample grades:', data.grades?.slice(0, 5))
       set({ currentGradebookData: data })
       return data
     } catch (err) {
