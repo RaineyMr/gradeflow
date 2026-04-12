@@ -28,6 +28,35 @@ function validateLessonData(data) {
   return true
 }
 
+// Helper: Resolve legacy_id to UUID
+async function resolveTeacherId(teacherId) {
+  if (!teacherId || !supabase) return teacherId
+  
+  // If it's already a valid UUID, return as-is
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(teacherId)) {
+    return teacherId
+  }
+  
+  // Try to resolve legacy_id to UUID
+  try {
+    const { data, error } = await supabase
+      .from('teachers')
+      .select('id')
+      .eq('legacy_id', teacherId)
+      .single()
+    
+    if (data && data.id) {
+      console.log(`Resolved legacy_id "${teacherId}" to UUID "${data.id}"`)
+      return data.id
+    }
+  } catch (err) {
+    console.warn(`Could not resolve legacy_id "${teacherId}":`, err.message)
+  }
+  
+  // If resolution failed, return original ID (might work if it's a demo ID)
+  return teacherId
+}
+
 // Extract Teacher ID from Auth Header
 function extractTeacherId(authHeader) {
   if (!authHeader) return null
@@ -41,14 +70,8 @@ function extractTeacherId(authHeader) {
     return 'demo-teacher'
   }
   
-  // For real users, token IS the teacher_id (UUID format)
-  // Validate UUID format before accepting
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) {
-    return token  // Valid UUID format, use as teacher_id
-  }
-  
-  // If not a valid UUID, throw error
-  throw new Error('Invalid auth token format')
+  // Return the token (could be UUID or legacy_id, will be resolved later)
+  return token
 }
 
 // Main Handler
@@ -71,7 +94,13 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Authorization required' })
     }
     
-    const teacherId = extractTeacherId(authHeader)
+    let teacherId = extractTeacherId(authHeader)
+    
+    // Resolve legacy_id to UUID if needed
+    if (teacherId && teacherId !== 'demo-teacher') {
+      teacherId = await resolveTeacherId(teacherId)
+    }
+    
     const { method } = req
     
     switch (method) {
