@@ -443,11 +443,23 @@ export default function LessonCalendar({ onBack }) {
   }
 
   function handleSelectLesson(lesson) {
-    // Set active lesson in store and navigate to LessonPlan
+    console.log('Selected lesson:', lesson)
+    
+    if (!lesson) {
+      console.error('No lesson selected')
+      return
+    }
+    
+    // Set the active lesson in store
     store.setActiveLessonClassId(lesson.classId)
-    // Navigate to lesson details
-    window.location.hash = `#/teacher/lessons/${lesson.id}`
+    
+    // If this is being used in Dashboard context, it should call navigate()
+    // For now, just close the modal and the lesson will be visible
     setShowViewModal(false)
+    
+    // The parent Dashboard component should handle navigation
+    // You can uncomment this if you want to navigate in your routing:
+    // window.location.hash = `#/teacher/lessons`
   }
 
   return (
