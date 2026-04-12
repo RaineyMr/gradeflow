@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../lib/store';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import './LessonCalendar.css';
 
 export default function LessonCalendar() {
   const [lessons, setLessons] = useState([]);
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1));
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 1)); // March 2026
   const [loading, setLoading] = useState(false);
   const currentUser = useStore((state) => state.currentUser);
 
@@ -138,6 +139,50 @@ export default function LessonCalendar() {
   };
 
   const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+
+  // Get first day of month and number of days
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+  // Build calendar grid
+  const calendarDays = [];
+  
+  // Previous month's trailing days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    calendarDays.push({
+      day: daysInPrevMonth - i,
+      isCurrentMonth: false,
+      date: new Date(year, month - 1, daysInPrevMonth - i),
+    });
+  }
+
+  // Current month's days
+  for (let day = 1; day <= daysInMonth; day++) {
+    calendarDays.push({
+      day,
+      isCurrentMonth: true,
+      date: new Date(year, month, day),
+    });
+  }
+
+  // Next month's leading days
+  const remainingDays = 42 - calendarDays.length; // 6 weeks * 7 days
+  for (let day = 1; day <= remainingDays; day++) {
+    calendarDays.push({
+      day,
+      isCurrentMonth: false,
+      date: new Date(year, month + 1, day),
+    });
+  }
+
+  // Get lessons for a specific date
+  const getLessonsForDate = (date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return monthLessons.filter((lesson) => lesson.date === dateStr);
+  };
 
   return (
     <div className="lesson-calendar">
@@ -145,7 +190,7 @@ export default function LessonCalendar() {
         <div>
           <h2>{monthName}</h2>
           <p className="calendar-subtitle">
-            {loading ? '⏳ Loading...' : `✅ ${monthLessons.length} lessons loaded`}
+            {loading ? '⏳ Loading...' : `✅ ${monthLessons.length} lessons`}
           </p>
         </div>
         <button className="btn btn-primary btn-sm" title="New Lesson">
@@ -163,34 +208,47 @@ export default function LessonCalendar() {
         </button>
       </div>
 
-      <div className="lessons-list">
-        {monthLessons.length === 0 ? (
-          <div className="empty-state">
-            <p>No lessons for {monthName}</p>
-          </div>
-        ) : (
-          monthLessons.map((lesson) => (
-            <div key={lesson.id} className="lesson-card" style={{ borderLeftColor: lesson.classColor }}>
-              <div className="lesson-header">
-                <h3>{lesson.title}</h3>
-                <span className="lesson-status" style={{ backgroundColor: lesson.classColor }}>
-                  {lesson.status}
-                </span>
-              </div>
-              <div className="lesson-meta">
-                <span className="lesson-date">
-                  {new Date(lesson.date).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </span>
-                <span className="lesson-period">Period {lesson.period || '—'}</span>
-                <span className="lesson-duration">⏱️ {lesson.duration} min</span>
+      {/* Day headers */}
+      <div className="calendar-weekdays">
+        <div className="weekday">Sun</div>
+        <div className="weekday">Mon</div>
+        <div className="weekday">Tue</div>
+        <div className="weekday">Wed</div>
+        <div className="weekday">Thu</div>
+        <div className="weekday">Fri</div>
+        <div className="weekday">Sat</div>
+      </div>
+
+      {/* Calendar grid */}
+      <div className="calendar-grid">
+        {calendarDays.map((dayObj, idx) => {
+          const dayLessons = getLessonsForDate(dayObj.date);
+          const isToday =
+            dayObj.date.toDateString() === new Date().toDateString();
+
+          return (
+            <div
+              key={idx}
+              className={`calendar-day ${
+                !dayObj.isCurrentMonth ? 'other-month' : ''
+              } ${isToday ? 'today' : ''}`}
+            >
+              <div className="day-number">{dayObj.day}</div>
+              <div className="day-lessons">
+                {dayLessons.map((lesson) => (
+                  <div
+                    key={lesson.id}
+                    className="lesson-badge"
+                    style={{ backgroundColor: lesson.classColor }}
+                    title={`${lesson.title} (${lesson.duration} min)`}
+                  >
+                    <span className="lesson-title">{lesson.title}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
     </div>
   );
