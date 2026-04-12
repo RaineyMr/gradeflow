@@ -331,7 +331,7 @@ export default function Gradebook() {
         <div style={{ overflowX: 'auto', backgroundColor: C.card, border: `1px solid ${C.border}`, borderRadius: 8, margin: '16px' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             {/* Fixed Header */}
-            <thead>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 20 }}>
               <tr>
                 <th style={{ 
                   position: 'sticky', 
@@ -344,12 +344,15 @@ export default function Gradebook() {
                   color: C.muted, 
                   textAlign: 'left',
                   minWidth: '180px',
-                  zIndex: 10
+                  zIndex: 15
                 }}>
                   Student Name
                 </th>
                 {assignments.map(a => (
                   <th key={a.id} style={{ 
+                    position: 'sticky',
+                    top: 0,
+                    background: C.inner,
                     padding: '12px 8px', 
                     border: `1px solid ${C.border}`, 
                     fontSize: 10, 
@@ -360,7 +363,8 @@ export default function Gradebook() {
                     maxWidth: '120px',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
-                    textOverflow: 'ellipsis'
+                    textOverflow: 'ellipsis',
+                    zIndex: 10
                   }} title={a.name}>
                     <div style={{ transform: 'rotate(-45deg)', transformOrigin: 'center', marginBottom: '8px' }}>
                       {a.name.length > 15 ? a.name.substring(0, 15) + '...' : a.name}
@@ -370,6 +374,7 @@ export default function Gradebook() {
                 <th style={{ 
                   position: 'sticky', 
                   right: 0, 
+                  top: 0,
                   background: C.inner, 
                   padding: '12px', 
                   border: `1px solid ${C.border}`, 
@@ -378,7 +383,7 @@ export default function Gradebook() {
                   color: C.muted, 
                   textAlign: 'center',
                   minWidth: '80px',
-                  zIndex: 10
+                  zIndex: 15
                 }}>
                   Avg
                 </th>
