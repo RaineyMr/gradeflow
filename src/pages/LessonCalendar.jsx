@@ -501,6 +501,7 @@ export default function LessonCalendar({ onBack }) {
 
   // Get lessons for current month
   const monthLessons = useMemo(() => {
+    if (!Array.isArray(lessons)) return [];
     return lessons.filter((lesson) => {
       const lessonDate = new Date(lesson.date);
       return (
@@ -560,6 +561,7 @@ export default function LessonCalendar({ onBack }) {
 
   const lessonsByDate = useMemo(() => {
     const grouped = {}
+    if (!Array.isArray(lessons)) return grouped
     lessons.forEach(lesson => {
       if (!lesson.date) return
       const key = typeof lesson.date === 'string'
