@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
 import { supabase } from '../lib/supabase'
+import BottomNav from '../components/ui/BottomNav'
+import LessonPlan from './LessonPlan'
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 
 const C = {
@@ -342,6 +344,7 @@ export default function LessonCalendar({ onBack }) {
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
+  const [selectedLesson, setSelectedLesson] = useState(null)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -453,17 +456,53 @@ export default function LessonCalendar({ onBack }) {
     // Set the active lesson in store
     store.setActiveLessonClassId(lesson.classId)
     
-    // If this is being used in Dashboard context, it should call navigate()
-    // For now, just close the modal and the lesson will be visible
+    // Store the selected lesson to display full editor
+    setSelectedLesson(lesson)
     setShowViewModal(false)
-    
-    // The parent Dashboard component should handle navigation
-    // You can uncomment this if you want to navigate in your routing:
-    // window.location.hash = `#/teacher/lessons`
+  }
+
+  function handleBackToCalendar() {
+    setSelectedLesson(null)
   }
 
   return (
-    <div style={{ padding: '12px', paddingBottom: 20 }}>
+    <>
+      {selectedLesson ? (
+        // Show full LessonPlan editor
+        <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
+          <div style={{ padding: '16px 12px' }}>
+            <button
+              onClick={handleBackToCalendar}
+              style={{
+                background: C.inner,
+                border: 'none',
+                borderRadius: 10,
+                padding: '8px 14px',
+                color: C.text,
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 600,
+                marginBottom: 12,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <ChevronLeft size={16} />
+              Back to Calendar
+            </button>
+          </div>
+          <LessonPlan
+            onBack={handleBackToCalendar}
+            initialMode="view"
+            classId={selectedLesson.classId}
+            lessonId={selectedLesson.id}
+          />
+          <BottomNav active="classes" onSelect={handleNavSelect} isSubPage={true} role="teacher" />
+        </div>
+      ) : (
+        // Show calendar view
+        <div style={{ padding: '12px', paddingBottom: 20 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -649,6 +688,8 @@ export default function LessonCalendar({ onBack }) {
           onSelect={handleCreateMode}
         />
       )}
-    </div>
+        </div>
+      )}
+    </>
   )
 }
