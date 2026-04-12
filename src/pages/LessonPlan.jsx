@@ -1481,47 +1481,6 @@ function BuildFromScratch({ onBack, initialLesson }) {
   })
 
   const [saving, setSaving] = React.useState(false)
-  const [savedLessons, setSavedLessons] = React.useState([])
-  const [loadingLessons, setLoadingLessons] = React.useState(false)
-
-  // Fetch saved lessons on mount
-  useEffect(() => {
-    async function fetchSavedLessons() {
-      setLoadingLessons(true)
-      try {
-        const { currentUser } = useStore.getState()
-        
-        // Prepare headers with authentication
-        const headers = { 'Content-Type': 'application/json' }
-        
-        // Add auth header if user exists
-        if (currentUser) {
-          if (currentUser.id?.startsWith('demo-')) {
-            headers.Authorization = 'Bearer demo-token'
-          } else {
-            headers.Authorization = `Bearer ${currentUser.id}`
-          }
-        }
-        
-        const response = await fetch('/api/lesson-plan', {
-          method: 'GET',
-          headers
-        })
-
-        if (response.ok) {
-          const result = await response.json()
-          setSavedLessons(result.lessons || [])
-        } else {
-          console.error('Failed to fetch lessons:', await response.text())
-        }
-      } catch (err) {
-        console.error('Error fetching saved lessons:', err)
-      }
-      setLoadingLessons(false)
-    }
-
-    fetchSavedLessons()
-  }, [])
 
   // Auto-populate lesson header with teacher's subject and grade level
   useEffect(() => {
@@ -1924,6 +1883,32 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   
   const startMode   = urlMode || (initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu'))
   const [mode, setMode] = useState(startMode)
+  const [savedLessons, setSavedLessons] = useState([])
+  const [loadingLessons, setLoadingLessons] = useState(false)
+
+  useEffect(() => {
+    async function fetchSavedLessons() {
+      setLoadingLessons(true)
+      try {
+        const { currentUser } = useStore.getState()
+        const headers = { 'Content-Type': 'application/json' }
+        if (currentUser) {
+          headers.Authorization = currentUser.id?.startsWith('demo-')
+            ? 'Bearer demo-token'
+            : `Bearer ${currentUser.id}`
+        }
+        const response = await fetch('/api/lesson-plan', { method: 'GET', headers })
+        if (response.ok) {
+          const result = await response.json()
+          setSavedLessons(result.lessons || [])
+        }
+      } catch (err) {
+        console.error('Error fetching saved lessons:', err)
+      }
+      setLoadingLessons(false)
+    }
+    fetchSavedLessons()
+  }, [])
 
   // Watch for URL mode changes and update state
   useEffect(() => {
