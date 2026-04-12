@@ -299,13 +299,13 @@ function LessonView({ lesson, onBack, onEdit }) {
 
 // ─── AI Generator ────────────────────────────────────────────────────────────
 function AIPlanGenerator({ onBack }) {
-  const { currentUser, selectedStandards, setSelectedStandards } = useStore()
+  const { currentUser } = useStore()
+  const [selectedStandards, setSelectedStandards] = useState([])
   const [form, setForm] = useState({ textbook:'' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [showStandards, setShowStandards] = useState(false)
   const [plan, setPlan] = useState(null)
-  const [generatingAdjust, setGeneratingAdjust] = useState(false)
+  const [showStandards, setShowStandards] = useState(false)
   const [saving, setSaving] = useState(false)
   const students = useStore(s => s.students)
   const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
