@@ -1738,9 +1738,10 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   const handleBack  = onBack || goBack
   const todayLesson = classId ? getTodayLesson(classId) : null
   
-  // Read mode from URL query params (set by Lesson Calendar)
+  // Read mode and lessonId from URL query params (set by Lesson Calendar)
   const params = new URLSearchParams(window.location.search)
-  const urlMode = params.get('mode') // e.g., "ai", "build", "upload"
+  const urlMode = params.get('mode') // e.g., "ai", "build", "upload", "edit"
+  const urlLessonId = params.get('lessonId') // specific lesson to edit
   
   const startMode   = urlMode || (initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu'))
   const [mode, setMode] = useState(startMode)
@@ -1752,6 +1753,27 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
     }
   }, [urlMode, mode])
 
+  // Handle edit mode with specific lessonId from calendar
+  if (mode === 'edit' && urlLessonId) {
+    // Find the lesson from store data
+    const { lessons } = store
+    let targetLesson = null
+    
+    // Search through all classes for the lesson
+    for (const classId in lessons) {
+      const classLessons = lessons[classId] || []
+      const found = classLessons.find(l => l.id === urlLessonId)
+      if (found) {
+        targetLesson = found
+        break
+      }
+    }
+    
+    if (targetLesson) {
+      return <BuildFromScratch onBack={handleBack} initialLesson={targetLesson} />
+    }
+  }
+  
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
   if (mode === 'ai')     return <AIPlanGenerator   onBack={() => setMode('menu')} />
   if (mode === 'build')  return <BuildFromScratch onBack={() => setMode('menu')} />
