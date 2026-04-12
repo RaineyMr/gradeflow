@@ -88,7 +88,7 @@ export default function GoogleSignInButton({ onSuccess, onError, compact = false
     <div>
       <button
         onClick={handleGoogleSignIn}
-        disabled={loading}
+        disabled={loading ? true : undefined}
         style={buttonStyle}
         onMouseEnter={(e) => {
           if (!loading) {
@@ -118,7 +118,7 @@ export default function GoogleSignInButton({ onSuccess, onError, compact = false
           height={compact ? 18 : 20} 
           viewBox="0 0 24 24" 
           style={{ flexShrink: 0 }}
-          aria-hidden="true"
+          aria-hidden={true}
         >
           <path 
             fill="#4285F4" 

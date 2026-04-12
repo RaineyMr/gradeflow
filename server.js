@@ -35,6 +35,10 @@ app.use((req, res, next) => {
 // Lesson Plan API
 app.use('/api/lesson-plan', async (req, res) => {
   try {
+    console.log('Server Debug - Method:', req.method)
+    console.log('Server Debug - URL:', req.url)
+    console.log('Server Debug - Query:', req.query)
+    console.log('Server Debug - Headers:', req.headers.authorization)
     await lessonPlanHandler(req, res)
   } catch (error) {
     console.error('Lesson Plan API Error:', error)

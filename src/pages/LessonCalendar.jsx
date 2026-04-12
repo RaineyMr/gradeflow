@@ -24,229 +24,6 @@ const C = {
   teal: '#0fb8a0',
 };
 
-// VIEW LESSONS MODAL (click day to see all lessons from all classes)
-function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
-  if (!isOpen) return null;
-
-  const dateObj = new Date(date);
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '90%',
-          maxWidth: 500,
-          background: C.card,
-          border: `1px solid ${C.border}`,
-          borderRadius: 16,
-          padding: 24,
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-          maxHeight: '80vh',
-          overflowY: 'auto',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>
-              {lessons.length > 0 ? 'Lessons' : 'No Lessons'}
-            </h2>
-            <div style={{ fontSize: 12, color: C.muted }}>
-              {dateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: C.muted,
-              cursor: 'pointer',
-              padding: 4,
-              fontSize: 20,
-            }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {lessons.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {lessons.map((lesson) => (
-              <button
-                key={lesson.id}
-                onClick={() => {
-                  onSelectLesson(lesson);
-                }}
-                style={{
-                  width: '100%',
-                  background: C.inner,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 12,
-                  padding: 16,
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = C.blue;
-                  e.currentTarget.style.background = C.raised;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = C.border;
-                  e.currentTarget.style.background = C.inner;
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: C.text, fontWeight: 600, fontSize: 14, marginBottom: 4 }}>
-                      {lesson.title || 'Untitled Lesson'}
-                    </div>
-                    <div style={{ display: 'flex', gap: 12, fontSize: 11, color: C.muted }}>
-                      <span>
-                        {lesson.subject || 'Class'} {lesson.period || ''}
-                      </span>
-                      <span>{lesson.duration || 45} min</span>
-                      <span style={{ textTransform: 'capitalize' }}>{lesson.status || 'pending'}</span>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: '50%',
-                      background:
-                        lesson.status === 'completed' ? C.green : lesson.status === 'in-progress' ? C.amber : C.blue,
-                    }}
-                  />
-                </div>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div style={{ textAlign: 'center', padding: 40, color: C.muted, fontSize: 14 }}>
-            No lessons scheduled for this day
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// CREATE LESSON MODAL
-function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
-  if (!isOpen) return null;
-
-  const dateObj = new Date(date);
-  const dateStr = dateObj.toISOString().split('T')[0];
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: '90%',
-          maxWidth: 450,
-          background: C.card,
-          border: `1px solid ${C.border}`,
-          borderRadius: 16,
-          padding: 24,
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>
-              Create Lesson
-            </h2>
-            <div style={{ fontSize: 12, color: C.muted }}>
-              {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: C.muted,
-              cursor: 'pointer',
-              padding: 4,
-              fontSize: 20,
-            }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {[
-            { id: 'ai', icon: '✨', label: 'AI Generate', desc: '3 questions → full lesson', color: C.purple },
-            { id: 'build', icon: '📝', label: 'Build from Scratch', desc: 'Write your own lesson', color: C.blue },
-            { id: 'upload', icon: '📄', label: 'Upload Document', desc: 'PDF, Word, or image', color: C.teal },
-          ].map((mode) => (
-            <button
-              key={mode.id}
-              onClick={() => {
-                onSelect(dateStr, mode.id);
-                onClose();
-              }}
-              style={{
-                width: '100%',
-                background: C.inner,
-                border: `1px solid ${mode.color}30`,
-                borderRadius: 12,
-                padding: 12,
-                textAlign: 'left',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = mode.color;
-                e.currentTarget.style.background = C.raised;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = `${mode.color}30`;
-                e.currentTarget.style.background = C.inner;
-              }}
-            >
-              <div style={{ fontSize: 18 }}>{mode.icon}</div>
-              <div>
-                <div style={{ color: C.text, fontWeight: 600, fontSize: 13 }}>{mode.label}</div>
-                <div style={{ color: C.muted, fontSize: 11, marginTop: 2 }}>{mode.desc}</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // DAY CELL - Fixed height with proper text wrapping
 function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
   const dateObj = new Date(date);
@@ -387,7 +164,7 @@ export default function LessonCalendar({ onBack }) {
   const store = useStore();
   const currentUser = store.currentUser;
 
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 3, 1)); // April 2026
   const [selectedDate, setSelectedDate] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -452,7 +229,7 @@ export default function LessonCalendar({ onBack }) {
       const teacherId = teacherData.id;
       console.log('✅ Resolved teacher UUID:', teacherId);
 
-      // Query lessons
+      // Query lessons with complete data
       const { data, error } = await supabase
         .from('lessons')
         .select(
@@ -463,6 +240,20 @@ export default function LessonCalendar({ onBack }) {
           title,
           duration,
           subject,
+          warm_up,
+          direct_instruction,
+          guided_practice,
+          independent_practice,
+          closure,
+          exit_ticket,
+          criteria_for_success,
+          objectives,
+          cultural_notes,
+          homework_assignment,
+          accommodations_notes,
+          enrichment_activities,
+          supplemental_links,
+          teacher_reflections,
           classes(id, subject, period, color)
         `
         )
@@ -478,7 +269,7 @@ export default function LessonCalendar({ onBack }) {
 
       console.log('✅ Loaded', data.length, 'lessons');
 
-      // Map Supabase data
+      // Map Supabase data with complete lesson information
       const mappedLessons = data.map((row) => ({
         id: row.id,
         classId: row.class_id,
@@ -489,9 +280,33 @@ export default function LessonCalendar({ onBack }) {
         subject: row.subject || row.classes?.subject,
         period: row.classes?.period,
         classColor: row.classes?.color || C.blue,
+        // Include all lesson data for modal
+        warm_up: row.warm_up,
+        direct_instruction: row.direct_instruction,
+        guided_practice: row.guided_practice,
+        independent_practice: row.independent_practice,
+        closure: row.closure,
+        exit_ticket: row.exit_ticket,
+        criteria_for_success: row.criteria_for_success,
+        objectives: row.objectives,
+        cultural_notes: row.cultural_notes,
+        homework_assignment: row.homework_assignment,
+        accommodations_notes: row.accommodations_notes,
+        enrichment_activities: row.enrichment_activities,
+        supplemental_links: row.supplemental_links,
+        teacher_reflections: row.teacher_reflections,
+        // Add a flag to identify lessons with complete data
+        hasCompleteData: !!(row.warm_up && row.direct_instruction && row.guided_practice && row.independent_practice && row.exit_ticket && row.objectives),
       }));
 
-      setAllLessons(mappedLessons);
+      // Sort lessons to prioritize those with complete data
+      const sortedLessons = mappedLessons.sort((a, b) => {
+        if (a.hasCompleteData && !b.hasCompleteData) return -1;
+        if (!a.hasCompleteData && b.hasCompleteData) return 1;
+        return 0;
+      });
+
+      setAllLessons(sortedLessons);
     } catch (err) {
       console.error('❌ Unexpected error loading lessons:', err);
       setAllLessons([]);

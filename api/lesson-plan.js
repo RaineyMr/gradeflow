@@ -65,9 +65,9 @@ function extractTeacherId(authHeader) {
   // Format: "Bearer <token>"
   const token = authHeader.replace('Bearer ', '')
   
-  // Handle demo account - allow demo token
+  // Handle demo account - use actual demo teacher ID
   if (token === 'demo-token') {
-    return 'demo-teacher'
+    return '73f3eb26-d45d-477f-97e3-5831b5443e82'
   }
   
   // Return the token (could be UUID or legacy_id, will be resolved later)
@@ -129,9 +129,14 @@ async function handleGetLessons(req, res, teacherId) {
     }
 
     const { classId, lessonId, limit = 20, offset = 0 } = req.query
+    
+    console.log('API Debug - teacherId:', teacherId)
+    console.log('API Debug - lessonId:', lessonId)
+    console.log('API Debug - query params:', req.query)
 
     // If lessonId is provided, fetch single lesson
     if (lessonId) {
+      console.log('API Debug - Fetching single lesson with ID:', lessonId)
       const { data: lesson, error } = await supabase
         .from('lessons')
         .select(`

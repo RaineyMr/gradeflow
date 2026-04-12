@@ -37,45 +37,10 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
   useEffect(() => {
     if (!isOpen || !lesson) return
 
-    const fetchLessonData = async () => {
-      setLoading(true)
-      setError(null)
-
-      try {
-        // If lesson already has complete data, use it
-        if (lesson.warm_up || lesson.direct_instruction || lesson.criteria_for_success) {
-          setLessonData(lesson)
-        } else {
-          // Otherwise fetch from API
-          const response = await fetch(`/api/lesson-plan?lessonId=${lesson.id}`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer demo-token'
-            }
-          })
-
-          if (response.ok) {
-            const result = await response.json()
-            const fullLesson = result.lesson || result.lessons?.[0]
-            if (fullLesson) {
-              setLessonData(fullLesson)
-            } else {
-              setError('Lesson not found')
-            }
-          } else {
-            setError('Failed to load lesson data')
-          }
-        }
-      } catch (err) {
-        setError('Error loading lesson')
-        console.error('Lesson fetch error:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchLessonData()
+    // Use lesson data directly from calendar
+    setLessonData(lesson)
+    setLoading(false)
+    setError(null)
   }, [isOpen, lesson])
 
   if (!isOpen) return null
