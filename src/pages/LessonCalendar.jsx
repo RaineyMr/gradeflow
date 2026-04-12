@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useStore } from '../lib/store'
 import { useT } from '../lib/i18n'
 import { supabase } from '../lib/supabase'
-import BottomNav from '../components/ui/BottomNav'
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react'
 
 const C = {
@@ -125,128 +124,8 @@ function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
   )
 }
 
-// ─── LESSON DETAILS MODAL ─────────────────────────────────────────────────────
-function LessonDetailsModal({ date, lessons, isOpen, onClose }) {
-  if (!isOpen) return null
-
-  const dateObj = new Date(date)
-  
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-      }}
-      onClick={onClose}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          width: '90%',
-          maxWidth: 500,
-          maxHeight: '80vh',
-          background: C.card,
-          border: `1px solid ${C.border}`,
-          borderRadius: 16,
-          padding: 24,
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-          overflowY: 'auto',
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
-          <div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: C.text, margin: 0, marginBottom: 4 }}>
-              Lessons for {dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </h2>
-            <div style={{ fontSize: 12, color: C.muted }}>
-              {lessons.length} lesson{lessons.length !== 1 ? 's' : ''}
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: C.muted,
-              cursor: 'pointer',
-              padding: 4,
-              fontSize: 20,
-            }}
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {lessons.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted, fontSize: 14 }}>
-              No lessons scheduled for this day
-            </div>
-          ) : (
-            lessons.map(lesson => (
-              <div
-                key={lesson.id}
-                style={{
-                  background: C.inner,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 12,
-                  padding: 16,
-                  cursor: 'pointer',
-                  transition: 'all 0.15s',
-                }}
-                onClick={() => {
-                  // Navigate to lesson plan page with this lesson
-                  window.location.hash = `#/teacher/lessons?lessonId=${lesson.id}`
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.borderColor = C.blue
-                  e.currentTarget.style.background = C.raised
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.borderColor = C.border
-                  e.currentTarget.style.background = C.inner
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 4 }}>
-                      {lesson.title}
-                    </div>
-                    <div style={{ fontSize: 12, color: C.muted }}>
-                      Duration: {lesson.duration || 45} minutes
-                    </div>
-                  </div>
-                  <div style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: '4px 8px',
-                    borderRadius: 6,
-                    background: lesson.status === 'completed' ? `${C.green}20` : 
-                                 lesson.status === 'in-progress' ? `${C.blue}20` : 
-                                 `${C.amber}20`,
-                    color: lesson.status === 'completed' ? C.green : 
-                             lesson.status === 'in-progress' ? C.blue : 
-                             C.amber,
-                  }}>
-                    {lesson.status || 'pending'}
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ─── DAY CELL ────────────────────────────────────────────────────────────────
-function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onShowLessonDetails }) {
+function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
   const dateObj = new Date(date)
   const day = dateObj.getDate()
   const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
@@ -299,8 +178,8 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
               color: C.blue,
               fontWeight: 600,
               overflow: 'hidden',
-              whiteSpace: 'normal',
-              lineHeight: 1.2,
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
               border: `0.5px solid ${C.blue}40`,
             }}
             title={lesson.title}
@@ -353,41 +232,16 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
 }
 
 // ─── MAIN CALENDAR COMPONENT ─────────────────────────────────────────────────
+export default function LessonCalendar({ onBack }) {
   const store = useStore()
   const t = useT()
-  const { currentUser, lessons, activeLessonClassId, navigateToPage } = store
+  const { currentUser, lessons, activeLessonClassId } = store
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(null)
   const [showModal, setShowModal] = useState(false)
-  const [selectedDayLessons, setSelectedDayLessons] = useState([])
-  const [showLessonDetails, setShowLessonDetails] = useState(false)
   const [loading, setLoading] = useState(false)
   const [allLessons, setAllLessons] = useState([])
-
-  // Navigation state for BottomNav
-  const [activeNav, setActiveNav] = useState('classes')
-  const isSubPage = true
-
-  // Handle BottomNav navigation
-  function handleNavSelect(navId) {
-    if (navId === '__back__') {
-      onBack?.()
-      return
-    }
-    
-    setActiveNav(navId)
-    
-    // Navigate to appropriate pages based on nav selection
-    const navRoutes = {
-      classes: () => window.location.hash = '#/teacher/gradebook',
-      messages: () => window.location.hash = '#/teacher/messages',
-      reports: () => window.location.hash = '#/teacher/reports',
-      alerts: () => window.location.hash = '#/teacher/alerts',
-    }
-    
-    navRoutes[navId]?.()
-  }
 
   useEffect(() => {
     loadLessons()
@@ -471,43 +325,32 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
       build: `?date=${dateStr}&mode=build`,
       upload: `?date=${dateStr}&mode=upload`,
     }
-    // Navigate to lessonPlan with params
     window.location.hash = `#/teacher/lessons${paths[mode]}`
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, paddingBottom: 80 }}>
+    <div style={{ padding: '12px', paddingBottom: 20 }}>
       {/* Header */}
-      <div className="mobile-header" style={{ padding: '20px 16px 0', marginBottom: 16 }}>
-        {onBack && (
-          <button 
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
             onClick={onBack}
-            className="mobile-back-btn"
-            style={{ 
-              background: C.inner, 
-              border: 'none', 
-              borderRadius: 10, 
-              padding: '8px 14px', 
-              color: C.text, 
-              cursor: 'pointer', 
-              fontSize: 13, 
-              fontWeight: 600, 
-              marginBottom: 12,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6
+            style={{
+              background: 'none',
+              border: 'none',
+              color: C.muted,
+              cursor: 'pointer',
+              fontSize: 20,
+              padding: '4px 8px',
             }}
           >
-            <ChevronLeft size={16} />
-            Back
+            <ChevronLeft size={20} />
           </button>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
           <div>
-            <h1 className="mobile-page-title" style={{ fontSize: 22, fontWeight: 800, color: C.text, margin: 0 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: 0 }}>
               Lesson Calendar
             </h1>
-            <p className="mobile-page-subtitle" style={{ fontSize: 12, color: C.muted, margin: 0 }}>
+            <p style={{ fontSize: 12, color: C.muted, margin: 0, marginTop: 4 }}>
               {allLessons.length} lessons planned
             </p>
           </div>
@@ -515,17 +358,17 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
       </div>
 
       {/* Month controls */}
-      <div className="mobile-month-controls" style={{ 
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 16px',
-        marginBottom: 20,
-        gap: 8,
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 20,
+          gap: 8,
+        }}
+      >
         <button
           onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
-          className="mobile-nav-btn"
           style={{
             background: C.inner,
             border: `1px solid ${C.border}`,
@@ -550,13 +393,12 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
           <ChevronLeft size={16} />
         </button>
 
-        <h2 className="mobile-month-title" style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0, minWidth: 140, textAlign: 'center' }}>
+        <h2 style={{ fontSize: 14, fontWeight: 700, color: C.text, margin: 0, minWidth: 140, textAlign: 'center' }}>
           {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
         </h2>
 
         <button
           onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
-          className="mobile-nav-btn"
           style={{
             background: C.inner,
             border: `1px solid ${C.border}`,
@@ -583,7 +425,6 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
 
         <button
           onClick={() => setCurrentDate(new Date())}
-          className="mobile-today-btn"
           style={{
             background: 'none',
             border: `1px solid ${C.border}`,
@@ -609,17 +450,17 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
       </div>
 
       {/* Day headers */}
-      <div className="mobile-day-headers" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, padding: '0 16px', marginBottom: 8 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 8 }}>
         {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
           <div
             key={day}
             style={{
               textAlign: 'center',
-              fontSize: 8,
+              fontSize: 10,
               fontWeight: 700,
               color: C.muted,
               textTransform: 'uppercase',
-              paddingBottom: 4,
+              paddingBottom: 6,
             }}
           >
             {day}
@@ -628,7 +469,7 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
       </div>
 
       {/* Calendar grid */}
-      <div className="mobile-calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, padding: '0 16px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8 }}>
         {days.map((date, idx) => {
           const dateKey = date.toISOString().split('T')[0]
           const isCurrentMonth = date.getMonth() === month
@@ -645,12 +486,7 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
                 setSelectedDate(d)
                 setShowModal(true)
               }}
-              onClick={() => {
-                if (lessonsByDate[dateKey] && lessonsByDate[dateKey].length > 0) {
-                  setSelectedDayLessons(lessonsByDate[dateKey])
-                  setShowLessonDetails(true)
-                }
-              }}
+              onClick={() => {}}
             />
           )
         })}
@@ -663,87 +499,6 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick, onSho
         onClose={() => setShowModal(false)}
         onSelect={handleCreateMode}
       />
-      
-      {/* Lesson Details Modal */}
-      <LessonDetailsModal
-        date={selectedDate || new Date()}
-        lessons={selectedDayLessons}
-        isOpen={showLessonDetails}
-        onClose={() => setShowLessonDetails(false)}
-      />
-      
-      {/* Bottom Navigation */}
-      <BottomNav 
-        active={activeNav} 
-        onSelect={handleNavSelect} 
-        isSubPage={isSubPage} 
-        role="teacher"
-      />
     </div>
   )
-
-export default LessonCalendar
-
-// Mobile responsive CSS
-const style = document.createElement('style')
-style.textContent = `
-@media (max-width: 768px) {
-  .mobile-header {
-    padding: 16px 12px 0 !important;
-    margin-bottom: 12px !important;
-  }
-  
-  .mobile-back-btn {
-    padding: 6px 10px !important;
-    font-size: 11px !important;
-    margin-bottom: 8px !important;
-  }
-  
-  .mobile-page-title {
-    font-size: 18px !important;
-  }
-  
-  .mobile-page-subtitle {
-    font-size: 10px !important;
-  }
-  
-  .mobile-month-controls {
-    padding: 0 12px !important;
-    margin-bottom: 16px !important;
-    gap: 6px !important;
-  }
-  
-  .mobile-nav-btn {
-    padding: 4px 8px !important;
-  }
-  
-  .mobile-month-title {
-    font-size: 12px !important;
-    min-width: 120px !important;
-  }
-  
-  .mobile-today-btn {
-    padding: 4px 8px !important;
-    font-size: 10px !important;
-  }
-  
-  .mobile-day-headers {
-    padding: 0 12px !important;
-    gap: 6px !important;
-  }
-  
-  .mobile-day-headers > div {
-    font-size: 8px !important;
-    padding-bottom: 4px !important;
-  }
-  
-  .mobile-calendar-grid {
-    padding: 0 12px !important;
-    gap: 6px !important;
-  }
-}
-`
-if (!document.head.querySelector('style[data-lesson-calendar]')) {
-  style.setAttribute('data-lesson-calendar', 'true')
-  document.head.appendChild(style)
 }
