@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '../lib/supabase';
-import { useStore } from '../lib/store';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import './LessonCalendar.css';
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useStore } from '../lib/store'
+import { supabase } from '../lib/supabase'
+import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 
 const C = {
   bg: '#060810',
@@ -381,7 +380,6 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
 // MAIN CALENDAR COMPONENT
 export default function LessonCalendar({ onBack }) {
   const store = useStore()
-  const t = useT()
   const { currentUser, lessons, activeLessonClassId } = store
 
   const [currentDate, setCurrentDate] = useState(new Date())
