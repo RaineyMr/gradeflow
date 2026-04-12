@@ -120,7 +120,7 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
           <span style={{ fontSize:16 }}>♿</span>
           <span style={{ fontSize:13, fontWeight:700, color:C.text }}>Accommodations</span>
           {count > 0 && (
-            <span style={{ background:`${C.purple}22`, color:C.purple, borderRadius:999, padding:'2px 8px', fontSize:10, fontWeight:700 }}>
+            <span style={{ background:C.purple+'22', color:C.purple, borderRadius:999, padding:'2px 8px', fontSize:10, fontWeight:700 }}>
               {count} student{count !== 1 ? 's' : ''}
             </span>
           )}
@@ -144,7 +144,7 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
             const isEditingNeeds = needsDraft !== undefined
 
             return (
-              <div key={s.name} style={{ background:C.inner, border:`1px solid ${typeColor}25`, borderRadius:12, padding:'12px 14px', marginBottom:10 }}>
+              <div key={s.name} style={{ background:C.inner, border:'1px solid '+typeColor+'25', borderRadius:12, padding:'12px 14px', marginBottom:10 }}>
 
                 {/* Student name + type badge + remove */}
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
@@ -155,9 +155,9 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
                     {ACCOM_TYPES.map(type => (
                       <button key={type} onClick={() => updateAccommodation(s.name, { accommodationType: type })}
                         style={{ padding:'2px 8px', borderRadius:999, border:'none', cursor:'pointer', fontSize:9, fontWeight:700,
-                          background: s.accommodationType === type ? `${ACCOM_TYPE_COLORS[type]}30` : C.raised,
+                          background: s.accommodationType === type ? ACCOM_TYPE_COLORS[type]+'30' : C.raised,
                           color:      s.accommodationType === type ? ACCOM_TYPE_COLORS[type] : C.muted,
-                          outline:    s.accommodationType === type ? `1px solid ${ACCOM_TYPE_COLORS[type]}` : 'none' }}>
+                          outline:    s.accommodationType === type ? '1px solid '+ACCOM_TYPE_COLORS[type] : 'none' }}>
                         {type}
                       </button>
                     ))}
@@ -182,7 +182,7 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
                         style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:8, padding:'6px 10px', color:C.text, fontSize:12, outline:'none' }}
                       />
                       <button onClick={() => handleNeedsSave(s.name)}
-                        style={{ background:`${C.green}20`, color:C.green, border:'none', borderRadius:8, padding:'6px 10px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
+                        style={{ background:C.green+'20', color:C.green, border:'none', borderRadius:8, padding:'6px 10px', fontSize:11, fontWeight:700, cursor:'pointer' }}>
                         Save
                       </button>
                     </div>
@@ -192,7 +192,7 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
                       style={{ cursor:'text', minHeight:28, display:'flex', flexWrap:'wrap', gap:5, alignItems:'center' }}>
                       {(s.specificNeeds || []).length > 0
                         ? s.specificNeeds.map((need, i) => (
-                            <span key={i} style={{ background:`${typeColor}18`, color:typeColor, borderRadius:999, padding:'3px 9px', fontSize:10, fontWeight:600 }}>
+                            <span key={i} style={{ background:typeColor+'18', color:typeColor, borderRadius:999, padding:'3px 9px', fontSize:10, fontWeight:600 }}>
                               {need}
                             </span>
                           ))
@@ -210,7 +210,7 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
                       ✨ Adjustments for This Lesson
                     </div>
                     {s.lessonAdjustments.map((adj, i) => (
-                      <div key={i} style={{ background:`${C.teal}10`, border:`1px solid ${C.teal}20`, borderRadius:8, padding:'7px 10px', marginBottom:5, fontSize:12, color:C.text, lineHeight:1.5 }}>
+                      <div key={i} style={{ background:C.teal+'10', border:'1px solid '+C.teal+'20', borderRadius:8, padding:'7px 10px', marginBottom:5, fontSize:12, color:C.text, lineHeight:1.5 }}>
                         {adj}
                       </div>
                     ))}
@@ -235,7 +235,7 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
               style={{ flex:1, background:C.bg, border:`1px solid ${C.border}`, borderRadius:10, padding:'8px 12px', color:C.text, fontSize:12, outline:'none' }}
             />
             <button onClick={handleAddStudent} disabled={!newName.trim()}
-              style={{ background:newName.trim()?`${C.blue}22`:'transparent', color:newName.trim()?C.blue:C.muted, border:`1px solid ${newName.trim()?C.blue:C.border}`, borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:newName.trim()?'pointer':'not-allowed' }}>
+              style={{ background:newName.trim()?C.blue+'22':'transparent', color:newName.trim()?C.blue:C.muted, border:'1px solid '+(newName.trim()?C.blue:C.border), borderRadius:10, padding:'8px 14px', fontSize:12, fontWeight:700, cursor:newName.trim()?'pointer':'not-allowed' }}>
               + Add
             </button>
           </div>
@@ -243,7 +243,7 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
           {/* Generate lesson adjustments button */}
           {count > 0 && lessonTopic && (
             <button onClick={handleGenerateAdjustments} disabled={generating}
-              style={{ width:'100%', background:generating?C.inner:`${C.purple}20`, color:generating?C.muted:C.purple, border:`1px solid ${generating?C.border:`${C.purple}40`}`, borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, cursor:generating?'not-allowed':'pointer' }}>
+              style={{ width:'100%', background:generating?C.inner:C.purple+'20', color:generating?C.muted:C.purple, border:'1px solid '+(generating?C.border:C.purple+'40'), borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, cursor:generating?'not-allowed':'pointer' }}>
               {generating ? '⟳ Generating adjustments...' : `✨ Generate lesson adjustments for ${count} student${count !== 1 ? 's' : ''}`}
             </button>
           )}
@@ -319,7 +319,7 @@ function AIPlanGenerator({ onBack }) {
 
     try {
       const standardsText = selectedStandards.length > 0 ? 
-        selectedStandards.map(s => `${s.code}: ${s.description}`).join('\n') : 
+        selectedStandards.map(s => s.code+': '+s.description).join('\n') : 
         ''
 
       const result = await generateLessonPlan({
@@ -372,7 +372,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
       <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{subject} · {grade}</p>
 
       {selectedStandards.length > 0 && (
-        <div style={{ background: `${C.teal}12`, border: `1px solid ${C.teal}30`, borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
+        <div style={{ background: C.teal+'12', border: '1px solid '+C.teal+'30', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
             Aligned Standards ({selectedStandards.length})
           </div>
@@ -394,7 +394,7 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
       )}
 
       {generatingAdjust && (
-        <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
+        <div style={{ background:C.purple+'12', border:'1px solid '+C.purple+'30', borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
           Generating lesson adjustments...
         </div>
       )}
@@ -528,7 +528,8 @@ Return JSON: {"adjustments": ["specific adjustments for each accommodation type"
                 maxSelections={3}
                 showRecommendations={true}
                 schoolName={currentUser?.schoolName}
-                onStandardsChange={(standards) => {
+                selectedStandards={selectedStandards}
+                onChange={(standards) => {
                   setSelectedStandards(standards)
                   setShowStandards(false)
                 }}
