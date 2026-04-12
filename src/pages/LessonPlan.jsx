@@ -853,9 +853,11 @@ function ObjectivesSection({ data, onChange, onAIGenerate }) {
           background: C.inner,
           color: C.text,
           outline: 'none',
-          fontFamily: 'Inter, monospace',
+          fontFamily: 'Inter, sans-serif',
           minHeight: 120,
           lineHeight: 1.5,
+          pointerEvents: 'auto',
+          userSelect: 'text',
         }}
       />
     </SectionWithAI>
@@ -884,8 +886,8 @@ function CFSSection({ data, onChange, onAIGenerate }) {
           Success Criteria: Students will demonstrate understanding by...
         </label>
         <textarea
-          value={data.successCriteria || ''}
-          onChange={(e) => onChange('cfs', { ...data, successCriteria: e.target.value })}
+          value={data.cfs?.successCriteria || ''}
+          onChange={(e) => onChange('cfs', { ...data.cfs, successCriteria: e.target.value })}
           placeholder="e.g., - Correctly label plant cell structures on a diagram
 - Write a 3-sentence explanation of photosynthesis
 - Score 80% or higher on exit ticket"
@@ -909,8 +911,8 @@ function CFSSection({ data, onChange, onAIGenerate }) {
           Culturally Responsive Notes (optional)
         </label>
         <textarea
-          value={data.culturalNotes || ''}
-          onChange={(e) => onChange('cfs', { ...data, culturalNotes: e.target.value })}
+          value={data.cfs?.culturalNotes || ''}
+          onChange={(e) => onChange('cfs', { ...data.cfs, culturalNotes: e.target.value })}
           placeholder="e.g., Use examples from students' local ecosystems
 - Incorporate diverse scientists' contributions
 - Connect to real-world environmental justice issues"
@@ -1327,8 +1329,8 @@ function OptionalAddOnsSection({ data, onChange }) {
               Enrichment Activities (for early finishers)
             </label>
             <textarea
-              value={data.enrichment || ''}
-              onChange={(e) => onChange('optionalAddOns', { ...data, enrichment: e.target.value })}
+              value={data.optionalAddOns?.enrichment || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data.optionalAddOns, enrichment: e.target.value })}
               placeholder="e.g., - Research photosynthesis in different plant types
 - Create a photosynthesis comic strip
 - Design an experiment to test light requirements"
@@ -1352,8 +1354,8 @@ function OptionalAddOnsSection({ data, onChange }) {
               Supplemental Resources & Links
             </label>
             <textarea
-              value={data.supplementalLinks || ''}
-              onChange={(e) => onChange('optionalAddOns', { ...data, supplementalLinks: e.target.value })}
+              value={data.optionalAddOns?.supplementalLinks || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data.optionalAddOns, supplementalLinks: e.target.value })}
               placeholder="e.g., - Khan Academy: Plant Cells (https://...)
 - National Geographic: Photosynthesis Explainer
 - YouTube: Amoeba Sisters Photosynthesis Video"
@@ -1377,8 +1379,8 @@ function OptionalAddOnsSection({ data, onChange }) {
               Notes & Reflections
             </label>
             <textarea
-              value={data.reflections || ''}
-              onChange={(e) => onChange('optionalAddOns', { ...data, reflections: e.target.value })}
+              value={data.optionalAddOns?.reflections || ''}
+              onChange={(e) => onChange('optionalAddOns', { ...data.optionalAddOns, reflections: e.target.value })}
               placeholder="e.g., - Pacing notes
 - Student misconceptions to watch for
 - What went well / what to improve next time"
@@ -1403,8 +1405,9 @@ function OptionalAddOnsSection({ data, onChange }) {
 }
 
 // ─── BuildFromScratch Component ────────────────────────────────────────────
-function BuildFromScratch({ onBack }) {
+function BuildFromScratch({ onBack, initialLesson }) {
   const { currentUser } = useStore()
+  
   const [lessonData, setLessonData] = React.useState({
     header: { title: '', date: '', subject: '', gradeLevel: '' },
     standards: [],
@@ -1452,6 +1455,92 @@ function BuildFromScratch({ onBack }) {
     }
   }, [currentUser, lessonData.header.subject, lessonData.header.gradeLevel])
 
+  // Pre-populate lesson data when initialLesson is provided
+  useEffect(() => {
+    if (initialLesson) {
+      console.log('Pre-populating lesson data from:', initialLesson)
+      setLessonData(prev => ({
+        ...prev,
+        header: {
+          ...prev.header,
+          title: initialLesson.title || prev.header.title,
+          date: initialLesson.date || prev.header.date,
+          subject: 'Math', // Default to Math for demo lessons
+          gradeLevel: '5', // Default to 5th grade for demo lessons
+        },
+        objectives: initialLesson.objective || prev.objectives,
+        lessonSteps: {
+          ...prev.lessonSteps,
+          warmUp: Array.isArray(initialLesson.warmup) ? initialLesson.warmup.join('\n') : initialLesson.warmup || prev.lessonSteps.warmUp,
+          directInstruction: Array.isArray(initialLesson.activities) ? initialLesson.activities.join('\n') : initialLesson.activities || prev.lessonSteps.directInstruction,
+        },
+        homework: {
+          ...prev.homework,
+          assignment: initialLesson.homework || prev.homework.assignment,
+        },
+      }))
+    } else {
+      // If no initial lesson, generate curriculum-based content
+      const { connectedCurricula } = useStore.getState()
+      const mathCurriculum = connectedCurricula['Math'] || 'hisd-zearn'
+      
+      console.log('Using curriculum source:', mathCurriculum)
+      
+      // Generate curriculum-aligned content based on lesson title/topic
+      if (lessonData.header.title) {
+        generateCurriculumContent(lessonData.header.title, mathCurriculum)
+      }
+    }
+  }, [initialLesson])
+
+  // Function to generate curriculum-aligned content
+  async function generateCurriculumContent(lessonTitle, curriculumSource) {
+    console.log('Generating curriculum content for:', lessonTitle, 'from:', curriculumSource)
+    
+    // This would integrate with curriculum service to generate standards-aligned content
+    // For now, use AI generation with curriculum context
+    try {
+      const response = await fetch('/api/ai/generate-lesson', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          intent: 'lesson-plan-section',
+          section: 'full-lesson',
+          context: {
+            lessonTitle,
+            curriculum: curriculumSource,
+            gradeLevel: '5',
+            subject: 'Math'
+          }
+        })
+      })
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('Generated curriculum content:', result)
+        // Update lesson data with curriculum-generated content
+        setLessonData(prev => ({
+          ...prev,
+          objectives: result.objectives || prev.objectives,
+          lessonSteps: {
+            ...prev.lessonSteps,
+            warmUp: result.warmUp || prev.lessonSteps.warmUp,
+            directInstruction: result.directInstruction || prev.lessonSteps.directInstruction,
+            guidedPractice: result.guidedPractice || prev.lessonSteps.guidedPractice,
+            independentPractice: result.independentPractice || prev.lessonSteps.independentPractice,
+            closure: result.closure || prev.lessonSteps.closure,
+          },
+          homework: {
+            ...prev.homework,
+            assignment: result.homework || prev.homework.assignment,
+          },
+        }))
+      }
+    } catch (err) {
+      console.error('Failed to generate curriculum content:', err)
+    }
+  }
+
   function handleSectionChange(section, value) {
     setLessonData(prev => ({
       ...prev,
@@ -1467,18 +1556,40 @@ function BuildFromScratch({ onBack }) {
   async function handleSave() {
     setSaving(true)
     try {
-      const response = await fetch('/api/lesson-plans', {
+      // Get current user from store
+      const { currentUser } = useStore.getState()
+      
+      // Prepare headers with authentication
+      const headers = { 'Content-Type': 'application/json' }
+      
+      // Add auth header if user exists
+      if (currentUser) {
+        if (currentUser.id?.startsWith('demo-')) {
+          // Demo account - use demo token
+          headers.Authorization = 'Bearer demo-token'
+        } else {
+          // Real user - use actual auth token
+          headers.Authorization = `Bearer ${currentUser.id}`
+        }
+      }
+      
+      const response = await fetch('/api/lesson-plan', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(lessonData),
       })
 
-      if (!response.ok) throw new Error('Save failed')
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Save failed')
+      }
+      
+      const result = await response.json()
       alert('Lesson plan saved!')
       onBack()
     } catch (err) {
       console.error('Save error:', err)
-      alert('Failed to save. Please try again.')
+      alert(`Failed to save: ${err.message}`)
     }
     setSaving(false)
   }
@@ -1527,20 +1638,20 @@ function BuildFromScratch({ onBack }) {
             </button>
             <button
               onClick={handleSave}
-              disabled={saving || !lessonData.header.title.trim()}
+              disabled={saving}
               style={{
-                background: lessonData.header.title.trim() ? C.blue : C.muted,
+                background: C.blue,
                 color: 'white',
                 border: 'none',
                 borderRadius: 8,
                 padding: '8px 16px',
                 fontSize: 12,
                 fontWeight: 600,
-                cursor: lessonData.header.title.trim() && !saving ? 'pointer' : 'not-allowed',
-                opacity: (lessonData.header.title.trim() && !saving) ? 1 : 0.6,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
               }}
             >
-              {saving ? '💾 Saving...' : '💾 Save Lesson Plan'}
+              {saving ? 'Saving...' : 'Save Lesson Plan'}
             </button>
           </div>
         </div>
@@ -1550,14 +1661,14 @@ function BuildFromScratch({ onBack }) {
       <div style={{ padding: '20px', maxWidth: 1000, margin: '0 auto' }}>
         <LessonHeaderSection data={lessonData.header} onChange={handleSectionChange} />
         <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
-        <ObjectivesSection data={lessonData.objectives} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <CFSSection data={lessonData.cfs} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <LessonStepsSection data={lessonData.lessonSteps} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <ExitTicketSection data={lessonData.exitTicket} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <HomeworkSection data={lessonData.homework} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
-        <AccommodationsSection_Builtin data={lessonData.accommodations} onChange={handleSectionChange} />
-        <AttachmentsSection_Builtin data={lessonData.attachments} onChange={handleSectionChange} />
-        <OptionalAddOnsSection data={lessonData.optionalAddOns} onChange={handleSectionChange} />
+        <ObjectivesSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <CFSSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <LessonStepsSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <ExitTicketSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <HomeworkSection data={lessonData} onChange={handleSectionChange} onAIGenerate={handleAIAssist} />
+        <AccommodationsSection_Builtin data={lessonData} onChange={handleSectionChange} />
+        <AttachmentsSection_Builtin data={lessonData} onChange={handleSectionChange} />
+        <OptionalAddOnsSection data={lessonData} onChange={handleSectionChange} />
       </div>
     </div>
   )
@@ -1702,14 +1813,21 @@ function UploadDoc({ onBack }) {
 
 // ─── Main Menu ────────────────────────────────────────────────────────────────
 export default function LessonPlan({ initialMode, classId, onBack }) {
+  const store = useStore()
+  const { teacher, activeScreen, activeLessonClassId } = store
+  const routerNav = useNavigate()
+  
+  // DEBUG: Add page indicator
+  
   const navigate = useNavigate()
   const { goBack, getTodayLesson } = useStore()
   const handleBack  = onBack || goBack
   const todayLesson = classId ? getTodayLesson(classId) : null
   
-  // Read mode from URL query params (set by Lesson Calendar)
+  // Read mode and lessonId from URL query params (set by Lesson Calendar)
   const params = new URLSearchParams(window.location.search)
-  const urlMode = params.get('mode') // e.g., "ai", "build", "upload"
+  const urlMode = params.get('mode') // e.g., "ai", "build", "upload", "edit"
+  const urlLessonId = params.get('lessonId') // specific lesson to edit
   
   const startMode   = urlMode || (initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu'))
   const [mode, setMode] = useState(startMode)
@@ -1721,6 +1839,27 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
     }
   }, [urlMode, mode])
 
+  // Handle edit mode with specific lessonId from calendar
+  if (mode === 'edit' && urlLessonId) {
+    // Find the lesson from store data
+    const { lessons } = store
+    let targetLesson = null
+    
+    // Search through all classes for the lesson
+    for (const classId in lessons) {
+      const classLessons = lessons[classId] || []
+      const found = classLessons.find(l => l.id === urlLessonId)
+      if (found) {
+        targetLesson = found
+        break
+      }
+    }
+    
+    if (targetLesson) {
+      return <BuildFromScratch onBack={handleBack} initialLesson={targetLesson} />
+    }
+  }
+  
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
   if (mode === 'ai')     return <AIPlanGenerator   onBack={() => setMode('menu')} />
   if (mode === 'build')  return <BuildFromScratch onBack={() => setMode('menu')} />
