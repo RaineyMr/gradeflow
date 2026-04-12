@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { useStore } from '../lib/store'
-import { supabase } from '../lib/supabase'
+import React, { useState, useEffect, useMemo } from 'react';
+import { useStore } from '../lib/store';
+import { supabase } from '../lib/supabase';
 import { ChevronLeft, ChevronRight, Plus, X } from 'lucide-react';
 
 const C = {
@@ -20,7 +20,7 @@ const C = {
   teal: '#0fb8a0',
 };
 
-// VIEW LESSONS MODAL
+// VIEW LESSONS MODAL (click day to see all lessons from all classes)
 function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
   if (!isOpen) return null;
 
@@ -82,8 +82,7 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
             {lessons.map((lesson) => (
               <button
                 key={lesson.id}
-                onClick={(e) => {
-                  e.stopPropagation();
+                onClick={() => {
                   onSelectLesson(lesson);
                 }}
                 style={{
@@ -111,7 +110,9 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
                       {lesson.title || 'Untitled Lesson'}
                     </div>
                     <div style={{ display: 'flex', gap: 12, fontSize: 11, color: C.muted }}>
-                      <span>{lesson.subject || 'Class'} {lesson.period || ''}</span>
+                      <span>
+                        {lesson.subject || 'Class'} {lesson.period || ''}
+                      </span>
                       <span>{lesson.duration || 45} min</span>
                       <span style={{ textTransform: 'capitalize' }}>{lesson.status || 'pending'}</span>
                     </div>
@@ -121,7 +122,8 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
                       width: 8,
                       height: 8,
                       borderRadius: '50%',
-                      background: lesson.status === 'completed' ? C.green : lesson.status === 'in-progress' ? C.amber : C.blue,
+                      background:
+                        lesson.status === 'completed' ? C.green : lesson.status === 'in-progress' ? C.amber : C.blue,
                     }}
                   />
                 </div>
@@ -196,9 +198,9 @@ function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {[
-            { id: 'ai', icon: '??', label: 'AI Generate', desc: '3 questions  full lesson', color: C.purple },
-            { id: 'build', icon: '??', label: 'Build from Scratch', desc: 'Write your own lesson', color: C.blue },
-            { id: 'upload', icon: '??', label: 'Upload Document', desc: 'PDF, Word, or image', color: C.teal },
+            { id: 'ai', icon: '✨', label: 'AI Generate', desc: '3 questions → full lesson', color: C.purple },
+            { id: 'build', icon: '📝', label: 'Build from Scratch', desc: 'Write your own lesson', color: C.blue },
+            { id: 'upload', icon: '📄', label: 'Upload Document', desc: 'PDF, Word, or image', color: C.teal },
           ].map((mode) => (
             <button
               key={mode.id}
@@ -241,11 +243,13 @@ function CreateLessonModal({ date, isOpen, onClose, onSelect }) {
   );
 }
 
-// DAY CELL
+// DAY CELL - Fixed height with proper text wrapping
 function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
   const dateObj = new Date(date);
   const day = dateObj.getDate();
   const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+
+  const CELL_HEIGHT = 120;
 
   return (
     <div
@@ -257,7 +261,7 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
         border: `1px solid ${isToday ? C.blue : C.border}`,
         background: isCurrentMonth ? (isToday ? C.raised : C.card) : 'transparent',
         padding: 10,
-        height: 120,
+        height: CELL_HEIGHT,
         cursor: isCurrentMonth ? 'pointer' : 'default',
         transition: 'all 0.2s',
         position: 'relative',
@@ -280,12 +284,8 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
     >
       {/* Date header */}
       <div style={{ marginBottom: 8, flexShrink: 0 }}>
-        <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, marginBottom: 2 }}>
-          {dayName}
-        </div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: isToday ? C.blue : C.text }}>
-          {day}
-        </div>
+        <div style={{ fontSize: 10, color: C.muted, fontWeight: 700, marginBottom: 2 }}>{dayName}</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: isToday ? C.blue : C.text }}>{day}</div>
       </div>
 
       {/* Lessons container */}
@@ -300,34 +300,35 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
           position: 'relative',
         }}
       >
-        {(lessons || []).slice(0, 2).map((lesson, idx) => {
-          const lessonColor = lesson.classColor || C.blue;
-          return (
-            <div
-              key={lesson.id}
-              style={{
-                fontSize: 9,
-                padding: '3px 6px',
-                borderRadius: 4,
-                background: `${lessonColor}20`,
-                color: lessonColor,
-                fontWeight: 600,
-                border: `0.5px solid ${lessonColor}40`,
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitBoxOrient: 'vertical',
-                WebkitLineClamp: 2,
-                lineHeight: '1.3em',
-                wordBreak: 'break-word',
-                title: `${lesson.title} - ${lesson.subject || 'Class'} ${lesson.period || ''}`,
-              }}
-            >
-              {lesson.title}
-            </div>
-          );
-        })}
+        {(lessons || [])
+          .slice(0, 2)
+          .map((lesson) => {
+            const lessonColor = lesson.classColor || C.blue;
+            return (
+              <div
+                key={lesson.id}
+                style={{
+                  fontSize: 9,
+                  padding: '3px 6px',
+                  borderRadius: 4,
+                  background: `${lessonColor}20`,
+                  color: lessonColor,
+                  fontWeight: 600,
+                  border: `0.5px solid ${lessonColor}40`,
+                  overflow: 'hidden',
+                  display: '-webkit-box',
+                  WebkitBoxOrient: 'vertical',
+                  WebkitLineClamp: 2,
+                  lineHeight: '1.3em',
+                  wordBreak: 'break-word',
+                  title: `${lesson.title} - ${lesson.subject || 'Class'} ${lesson.period || ''}`,
+                }}
+              >
+                {lesson.title}
+              </div>
+            );
+          })}
 
-        {/* "X more" indicator */}
         {(lessons || []).length > 2 && (
           <div style={{ fontSize: 8, color: C.muted, paddingLeft: 4, marginTop: 'auto', flexShrink: 0 }}>
             +{lessons.length - 2} more
@@ -379,22 +380,21 @@ function DayCell({ date, lessons, isToday, isCurrentMonth, onAdd, onClick }) {
 
 // MAIN CALENDAR COMPONENT
 export default function LessonCalendar({ onBack }) {
-  const store = useStore()
-  const { currentUser, lessons, activeLessonClassId } = store
+  const store = useStore();
+  const currentUser = store.currentUser;
 
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState(null)
-  const [showViewModal, setShowViewModal] = useState(false)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [allLessons, setAllLessons] = useState([])
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [allLessons, setAllLessons] = useState([]);
 
   // Load lessons from Supabase
-  const loadLessons = useCallback(async () => {
+  const loadLessons = async () => {
     if (!currentUser?.id) {
       console.log('⚠️ No current user');
       setAllLessons([]);
-      setLessons([]);
       return;
     }
 
@@ -402,53 +402,43 @@ export default function LessonCalendar({ onBack }) {
     try {
       console.log('📚 Looking up teacher by ID or legacy_id:', currentUser.id);
 
-      // First, try to find teacher by email
       let teacherData = null;
       let teacherError = null;
-      const { data: emailData, error: emailError } = await supabase
+
+      // Try legacy_id first (for string IDs like 'demo-teacher-houston')
+      const { data: legacyData, error: legacyError } = await supabase
         .from('teachers')
         .select('id')
-        .eq('email', currentUser.id)
+        .eq('legacy_id', currentUser.id)
         .single();
 
-      if (emailData) {
-        teacherData = emailData;
+      if (legacyData) {
+        teacherData = legacyData;
       } else {
-        // Try legacy_id (for string IDs like 'demo-teacher-houston')
-        const { data: legacyData, error: legacyError } = await supabase
+        // If no legacy_id match, try direct UUID match
+        const { data: idData, error: idError } = await supabase
           .from('teachers')
           .select('id')
-          .eq('legacy_id', currentUser.id)
+          .eq('id', currentUser.id)
           .single();
 
-        if (legacyData) {
-          teacherData = legacyData;
+        if (idData) {
+          teacherData = idData;
         } else {
-          // If no legacy_id match, try direct UUID match
-          const { data: idData, error: idError } = await supabase
-            .from('teachers')
-            .select('id')
-            .eq('id', currentUser.id)
-            .single();
-          
-          if (idData) {
-            teacherData = idData;
-          } else {
-            teacherError = emailError || legacyError || idError;
-          }
+          teacherError = idError || legacyError;
         }
       }
 
       if (teacherError) {
-        console.error('Teacher lookup failed:', teacherError);
-        setLessons([]);
+        console.error('❌ Teacher lookup failed:', teacherError);
+        setAllLessons([]);
         setLoading(false);
         return;
       }
 
       if (!teacherData) {
-        console.warn('Teacher not found');
-        setLessons([]);
+        console.warn('⚠️ Teacher not found');
+        setAllLessons([]);
         setLoading(false);
         return;
       }
@@ -456,10 +446,11 @@ export default function LessonCalendar({ onBack }) {
       const teacherId = teacherData.id;
       console.log('✅ Resolved teacher UUID:', teacherId);
 
-      // Now query lessons with the resolved UUID
+      // Query lessons
       const { data, error } = await supabase
         .from('lessons')
-        .select(`
+        .select(
+          `
           id,
           class_id,
           lesson_date,
@@ -467,20 +458,21 @@ export default function LessonCalendar({ onBack }) {
           duration,
           subject,
           classes(id, subject, period, color)
-        `)
+        `
+        )
         .eq('teacher_id', teacherId)
         .order('lesson_date', { ascending: true });
 
       if (error) {
         console.error('❌ Failed to load lessons:', error);
-        setLessons([]);
+        setAllLessons([]);
         setLoading(false);
         return;
       }
 
       console.log('✅ Loaded', data.length, 'lessons');
 
-      // Map Supabase data to component format
+      // Map Supabase data
       const mappedLessons = data.map((row) => ({
         id: row.id,
         classId: row.class_id,
@@ -490,121 +482,79 @@ export default function LessonCalendar({ onBack }) {
         status: 'pending',
         subject: row.subject || row.classes?.subject,
         period: row.classes?.period,
-        classColor: row.classes?.color || '#3b7ef4',
+        classColor: row.classes?.color || C.blue,
       }));
 
-      setLessons(mappedLessons);
+      setAllLessons(mappedLessons);
     } catch (err) {
       console.error('❌ Unexpected error loading lessons:', err);
-      setLessons([]);
+      setAllLessons([]);
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  };
 
-  // Load lessons on mount and when user changes
   useEffect(() => {
     loadLessons();
-  }, [loadLessons]);
+  }, [currentUser]);
 
-  // Get lessons for current month
-  const monthLessons = useMemo(() => {
-    if (!Array.isArray(lessons)) return [];
-    return lessons.filter((lesson) => {
-      const lessonDate = new Date(lesson.date);
-      return (
-        lessonDate.getMonth() === currentDate.getMonth() &&
-        lessonDate.getFullYear() === currentDate.getFullYear()
-      );
-    });
-  }, [lessons, currentDate]);
-
-  const handlePrevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
-  };
-
-  const monthName = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-
-  // Get first day of month and number of days
-  const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
 
-  // Build calendar grid
-  const calendarDays = [];
-  
-  // Previous month's trailing days
+  const days = [];
+  const prevMonthLastDay = new Date(year, month, 0).getDate();
   for (let i = firstDay - 1; i >= 0; i--) {
-    calendarDays.push({
-      day: daysInPrevMonth - i,
-      isCurrentMonth: false,
-      date: new Date(year, month - 1, daysInPrevMonth - i),
-    });
+    days.push(new Date(year, month - 1, prevMonthLastDay - i));
+  }
+  for (let i = 1; i <= daysInMonth; i++) {
+    days.push(new Date(year, month, i));
+  }
+  const remaining = 42 - days.length;
+  for (let i = 1; i <= remaining; i++) {
+    days.push(new Date(year, month + 1, i));
   }
 
-  // Current month's days
-  for (let day = 1; day <= daysInMonth; day++) {
-    calendarDays.push({
-      day,
-      isCurrentMonth: true,
-      date: new Date(year, month, day),
-    });
-  }
+  const today = new Date().toISOString().split('T')[0];
 
-  // Next month's leading days
-  const remainingDays = 42 - calendarDays.length; // 6 weeks * 7 days
-  for (let day = 1; day <= remainingDays; day++) {
-    calendarDays.push({
-      day,
-      isCurrentMonth: false,
-      date: new Date(year, month + 1, day),
-    });
-  }
-
+  // Group lessons by date
   const lessonsByDate = useMemo(() => {
-    const grouped = {}
-    if (!Array.isArray(lessons)) return grouped
-    lessons.forEach(lesson => {
-      if (!lesson.date) return
-      const key = typeof lesson.date === 'string'
-        ? lesson.date.split('T')[0]
-        : lesson.date.toISOString().split('T')[0]
-      if (!grouped[key]) grouped[key] = []
-      grouped[key].push(lesson)
-    })
-    return grouped
-  }, [lessons])
-
-  const today = new Date().toISOString().split('T')[0]
+    const map = {};
+    allLessons.forEach((lesson) => {
+      if (!map[lesson.date]) {
+        map[lesson.date] = [];
+      }
+      map[lesson.date].push(lesson);
+    });
+    return map;
+  }, [allLessons]);
 
   function handleCreateMode(dateStr, mode) {
     const paths = {
       ai: `?date=${dateStr}&mode=ai`,
       build: `?date=${dateStr}&mode=build`,
       upload: `?date=${dateStr}&mode=upload`,
-    }
-    window.location.hash = `#/teacher/lessons${paths[mode]}` 
+    };
+    window.location.hash = `#/teacher/lessons${paths[mode]}`;
   }
 
   function handleSelectLesson(lesson) {
+    console.log('Selected lesson:', lesson);
     if (!lesson || !lesson.id) {
-      console.error('Invalid lesson data:', lesson)
-      return
+      console.error('Invalid lesson data:', lesson);
+      return;
     }
-    
-    store.setActiveLessonClass(lesson.classId)
-    store.setScreen('lessonPlan')
-    store.setLessonPlanMode('edit')
-    
-    const lessonDate = new Date(lesson.date).toISOString().split('T')[0]
-    const url = `/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
-    window.location.href = url
+
+    store.setActiveLessonClass(lesson.classId);
+    store.setScreen('lessonPlan');
+    store.setLessonPlanMode('edit');
+
+    const lessonDate = new Date(lesson.date).toISOString().split('T')[0];
+    const url = `/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`;
+    window.location.href = url;
+
+    console.log('Navigating to lesson plan for lesson:', lesson.id, 'with URL:', url);
   }
 
   return (
@@ -612,25 +562,25 @@ export default function LessonCalendar({ onBack }) {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button
-            onClick={onBack}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: C.muted,
-              cursor: 'pointer',
-              fontSize: 20,
-              padding: '4px 8px',
-            }}
-          >
-            <ChevronLeft size={20} />
-          </button>
+          {onBack && (
+            <button
+              onClick={onBack}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: C.muted,
+                cursor: 'pointer',
+                fontSize: 20,
+                padding: '4px 8px',
+              }}
+            >
+              <ChevronLeft size={20} />
+            </button>
+          )}
           <div>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: 0 }}>
-              Lesson Calendar
-            </h1>
+            <h1 style={{ fontSize: 24, fontWeight: 800, color: C.text, margin: 0 }}>Lesson Calendar</h1>
             <p style={{ fontSize: 12, color: C.muted, margin: 0, marginTop: 4 }}>
-              {lessons.length} lessons loaded
+              {loading ? '⏳ Loading...' : `✅ ${allLessons.length} lessons planned`}
             </p>
           </div>
         </div>
@@ -660,13 +610,13 @@ export default function LessonCalendar({ onBack }) {
             gap: 4,
             transition: 'all 0.15s',
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.borderColor = C.blue
-            e.currentTarget.style.background = C.raised
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = C.blue;
+            e.currentTarget.style.background = C.raised;
           }}
-          onMouseLeave={e => {
-            e.currentTarget.style.borderColor = C.border
-            e.currentTarget.style.background = C.inner
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = C.border;
+            e.currentTarget.style.background = C.inner;
           }}
         >
           <ChevronLeft size={16} />
@@ -690,13 +640,13 @@ export default function LessonCalendar({ onBack }) {
             gap: 4,
             transition: 'all 0.15s',
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.borderColor = C.blue
-            e.currentTarget.style.background = C.raised
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = C.blue;
+            e.currentTarget.style.background = C.raised;
           }}
-          onMouseLeave={e => {
-            e.currentTarget.style.borderColor = C.border
-            e.currentTarget.style.background = C.inner
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = C.border;
+            e.currentTarget.style.background = C.inner;
           }}
         >
           <ChevronRight size={16} />
@@ -715,13 +665,13 @@ export default function LessonCalendar({ onBack }) {
             fontWeight: 600,
             transition: 'all 0.15s',
           }}
-          onMouseEnter={e => {
-            e.currentTarget.style.borderColor = C.blue
-            e.currentTarget.style.background = C.inner
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = C.blue;
+            e.currentTarget.style.background = C.inner;
           }}
-          onMouseLeave={e => {
-            e.currentTarget.style.borderColor = C.border
-            e.currentTarget.style.background = 'none'
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = C.border;
+            e.currentTarget.style.background = 'none';
           }}
         >
           Today
@@ -730,7 +680,7 @@ export default function LessonCalendar({ onBack }) {
 
       {/* Day headers */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, marginBottom: 8 }}>
-        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
           <div
             key={day}
             style={{
@@ -749,29 +699,29 @@ export default function LessonCalendar({ onBack }) {
 
       {/* Calendar grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 8, gridAutoRows: '120px' }}>
-        {calendarDays.map((dayObj, idx) => {
-          const dateKey = dayObj.date.toISOString().split('T')[0]
-          const isCurrentMonth = dayObj.isCurrentMonth
-          const isToday = dateKey === today
-          const dayLessons = lessonsByDate[dateKey] || []
+        {days.map((date, idx) => {
+          const dateKey = date.toISOString().split('T')[0];
+          const isCurrentMonth = date.getMonth() === month;
+          const isToday = dateKey === today;
+          const dayLessons = lessonsByDate[dateKey] || [];
 
           return (
             <DayCell
               key={idx}
-              date={dayObj.date}
+              date={date}
               lessons={dayLessons}
               isToday={isToday}
               isCurrentMonth={isCurrentMonth}
-              onAdd={d => {
-                setSelectedDate(d)
-                setShowCreateModal(true)
+              onAdd={(d) => {
+                setSelectedDate(d);
+                setShowCreateModal(true);
               }}
               onClick={() => {
-                setSelectedDate(dayObj.date)
-                setShowViewModal(true)
+                setSelectedDate(date);
+                setShowViewModal(true);
               }}
             />
-          )
+          );
         })}
       </div>
 
