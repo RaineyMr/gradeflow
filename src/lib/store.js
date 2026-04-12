@@ -2254,58 +2254,67 @@ setDemoSupportStaffData: async () => {
     }
     return { studentAccommodations: next }
   }),
-
-  // ── Load all data from Supabase ─────────────────────────────────────────────
   loadFromDB: async () => {
     try {
-      // Add timeout to prevent hanging on mobile
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Database connection timeout')), 3000)
-      })
 
-      // Load schools data from Supabase with timeout
+    // Add timeout to prevent hanging on mobile
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Database connection timeout')), 3000)
+    })
+
+    // Load schools data from Supabase with error handling
+    let schoolsData = null
+    let schoolsError = null
+    
+    try {
       const schoolsPromise = supabase
         .from('schools')
         .select('*')
 
-      const { data: schoolsData, error: schoolsError } = await Promise.race([schoolsPromise, timeoutPromise])
-
+      const result = await Promise.race([schoolsPromise, timeoutPromise])
+      schoolsData = result.data
+      schoolsError = result.error
+      
       if (schoolsError) {
         console.error('Error loading schools:', schoolsError);
       }
+    } catch (err) {
+      // Handle case where schools table doesn't exist yet
+      console.warn('Schools table not available, using fallback:', err.message);
+      schoolsError = err
+    }
 
-      // Check if current user is a demo account
-      const currentUser = get().currentUser
-      const isDemoAccount = currentUser?.email?.includes('@demo') || 
+    const currentUser = get().currentUser
+    const isDemoAccount = currentUser?.email?.includes('@demo') || 
                            currentUser?.id?.startsWith('demo-')
 
-      // Only load demo data for actual demo accounts
-      if (isDemoAccount) {
-        // Demo mode - load demo data based on current language
-        const lang = get().lang
-        const data = lang === 'es' 
-          ? {
-              classes:     DEMO_CLASSES_ES,
-              students:    DEMO_STUDENTS_ES,
-              assignments: DEMO_ASSIGNMENTS_ES,
-              grades:      DEMO_GRADES, // Same for both
-              messages:    DEMO_MESSAGES_ES,
-              feed:        DEMO_FEED_ES,
-              lessons:     DEMO_LESSONS_ES,
-              reminders:   DEMO_REMINDERS_ES,
-              schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
-            }
-          : {
-              classes:     DEMO_CLASSES,
-              students:    DEMO_STUDENTS,
-              assignments: DEMO_ASSIGNMENTS,
-              grades:      DEMO_GRADES,
-              messages:    DEMO_MESSAGES,
-              feed:        DEMO_FEED,
-              lessons:     DEMO_LESSONS,
-              reminders:   DEMO_REMINDERS,
-              schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
-            }
+    // Only load demo data for actual demo accounts
+    if (isDemoAccount) {
+      // Demo mode - load demo data based on current language
+      const lang = get().lang
+      const data = lang === 'es' 
+        ? {
+            classes:     DEMO_CLASSES_ES,
+            students:    DEMO_STUDENTS_ES,
+            assignments: DEMO_ASSIGNMENTS_ES,
+            grades:      DEMO_GRADES, // Same for both
+            messages:    DEMO_MESSAGES_ES,
+            feed:        DEMO_FEED_ES,
+            lessons:     DEMO_LESSONS_ES,
+            reminders:   DEMO_REMINDERS_ES,
+            schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
+          }
+        : {
+            classes:     DEMO_CLASSES,
+            students:    DEMO_STUDENTS,
+            assignments: DEMO_ASSIGNMENTS,
+            grades:      DEMO_GRADES,
+            messages:    DEMO_MESSAGES,
+            feed:        DEMO_FEED,
+            lessons:     DEMO_LESSONS,
+            reminders:   DEMO_REMINDERS,
+            schools:     schoolsData || DEMO_SCHOOLS, // Add schools data
+          }
         
         set(state => ({
           ...state,
