@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { supabase } from '../../lib/supabase';
-import { useStore } from '../../store';
+import { supabase } from '../lib/supabase';
+import { useStore } from '../store';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import '../lesson/LessonCalendar.css';
+import './LessonCalendar.css';
 
 export default function LessonCalendar() {
   const [lessons, setLessons] = useState([]);
