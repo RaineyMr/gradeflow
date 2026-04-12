@@ -85,7 +85,11 @@ function ViewLessonsModal({ date, lessons, isOpen, onClose, onSelectLesson }) {
             {lessons.map(lesson => (
               <button
                 key={lesson.id}
-                onClick={() => onSelectLesson(lesson)}
+                onClick={(e) => {
+                console.log('Lesson button clicked:', lesson)
+                e.stopPropagation()
+                onSelectLesson(lesson)
+              }}
                 style={{
                   width: '100%',
                   background: C.inner,
@@ -457,8 +461,15 @@ export default function LessonCalendar({ onBack }) {
   }
 
   function handleSelectLesson(lesson) {
+    console.log('Selected lesson:', lesson)
+    if (!lesson || !lesson.id) {
+      console.error('Invalid lesson data:', lesson)
+      return
+    }
     const lessonDate = new Date(lesson.date).toISOString().split('T')[0]
-    window.location.hash = `#/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
+    const url = `#/teacher/lessons?date=${lessonDate}&mode=edit&lessonId=${lesson.id}`
+    console.log('Navigating to:', url)
+    window.location.hash = url
   }
 
   return (
