@@ -55,13 +55,16 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Failed to fetch assignments' })
     }
 
-    // 3. Fetch real grades from Supabase for these students
+    // 3. Fetch real grades from Supabase for these students and assignments
     const studentIds = (studentsData || []).map(s => s.id)
+    const assignmentIds = (assignmentsData || []).map(a => a.id)
     let gradesData = []
-    if (studentIds.length > 0) {
+    if (studentIds.length > 0 && assignmentIds.length > 0) {
       const { data: realGrades, error: gradeError } = await supabase
         .from('grades')
         .select('student_id, assignment_id, score, submitted, graded, ai_graded, ai_confidence, needs_review, created_at')
+        .in('student_id', studentIds)
+        .in('assignment_id', assignmentIds)
 
       if (gradeError) {
         console.error('Error fetching grades:', gradeError)
