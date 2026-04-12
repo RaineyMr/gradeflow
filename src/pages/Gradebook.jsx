@@ -359,16 +359,14 @@ export default function Gradebook() {
                     fontWeight: 700, 
                     color: C.muted, 
                     textAlign: 'center',
-                    minWidth: '100px',
-                    maxWidth: '120px',
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
+                    minWidth: '120px',
+                    maxWidth: '150px',
+                    whiteSpace: 'normal',
+                    wordWrap: 'break-word',
+                    lineHeight: '1.2',
                     zIndex: 10
                   }} title={a.name}>
-                    <div style={{ transform: 'rotate(-45deg)', transformOrigin: 'center', marginBottom: '8px' }}>
-                      {a.name.length > 15 ? a.name.substring(0, 15) + '...' : a.name}
-                    </div>
+                    {a.name}
                   </th>
                 ))}
                 <th style={{ 
