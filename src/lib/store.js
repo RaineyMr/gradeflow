@@ -4252,9 +4252,21 @@ setDemoSupportStaffData: async () => {
         throw new Error('classId must be a primitive value, not an object')
       }
       
+      // Map demo IDs to real Supabase UUIDs
+      const DEMO_TO_SUPABASE_CLASS_MAP = {
+        '1': '06b238aa-b55e-45e3-a713-a3aa3f1fe2b9',  // 1st Math
+        1: '06b238aa-b55e-45e3-a713-a3aa3f1fe2b9',  // 1st Math (handle both string and number)
+        2: 'e37032e4-8fed-4338-9acd-cb23cd852213',  // 2nd Reading
+        3: 'e483c9fd-3ce1-42de-a537-a6396f259cb6',  // 3rd Science
+        4: 'ef39aee6-0ff5-4dbe-ab7f-5bf22a8ee31f',  // 4th Writing
+      }
+      
+      const realClassId = DEMO_TO_SUPABASE_CLASS_MAP[classId] || classId
+      console.log('DEBUG: Mapped classId:', classId, '-> realClassId:', realClassId)
+      
       // Use URLSearchParams to ensure proper encoding
       const params = new URLSearchParams()
-      params.append('classId', classId.toString())
+      params.append('classId', realClassId.toString())
       // Add cache-busting to prevent any caching issues
       params.append('_t', Date.now().toString())
       const directUrl = `http://localhost:3002/api/teacher/gradebook?${params.toString()}`
