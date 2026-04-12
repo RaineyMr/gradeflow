@@ -51,3 +51,4 @@ import { GradebookSyncButton } from '../components/GradebookSyncButton'
 
 ## Supabase Schema
 See `supabase-schema.sql` - ensure `sync_logs` table exists for payload logging.
+// Trigger Vercel build 04/12/2026 17:57:54
