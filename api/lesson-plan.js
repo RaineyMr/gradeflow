@@ -501,4 +501,3 @@ async function handleDeleteLesson(req, res, teacherId) {
   } catch (error) {
     return handleApiError(res, error, 'Failed to archive lesson plan', 400)
   }
-}
