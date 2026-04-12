@@ -1,14 +1,42 @@
 -- GradeFlow Database Schema
 -- Run this in your Supabase SQL editor
 
+-- Districts
+create table if not exists districts (
+  id text primary key,
+  name text not null unique,
+  state text not null,
+  created_at timestamptz default now()
+);
+
+-- Schools
+create table if not exists schools (
+  id text primary key,
+  district_id text not null references districts(id),
+  name text not null,
+  address text,
+  primary_color varchar(7),      -- Hex color for primary branding
+  secondary_color varchar(7),    -- Hex color for secondary branding
+  accent_color varchar(7),       -- Hex color for accents
+  logo_url text,                 -- URL to school logo
+  type text,                     -- elementary_school, middle_school, high_school, etc.
+  grade_levels text[],           -- Array of grade levels
+  subjects text[],               -- Array of subjects offered
+  created_at timestamptz default now(),
+  unique(district_id, name)
+);
+
 -- Teachers
 create table if not exists teachers (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   email text unique not null,
   school text,
+  school_id text references schools(id),
   school_color text default '#3b7ef4',
-  avatar text default '👩‍🏫',
+  avatar text default '',
+  grade_level int check (grade_level between 0 and 12),
+  subject varchar(100),
   created_at timestamptz default now()
 );
 
@@ -175,6 +203,8 @@ create table if not exists public.support_staff_notes (
 );
 
 -- Enable Row Level Security
+alter table districts enable row level security;
+alter table schools enable row level security;
 alter table teachers enable row level security;
 alter table classes enable row level security;
 alter table students enable row level security;
@@ -185,3 +215,9 @@ alter table lessons enable row level security;
 alter table feed_posts enable row level security;
 alter table sync_logs enable row level security;
 alter table support_staff_notes enable row level security;
+
+-- RLS Policies for districts
+create policy "districts_readable_by_users" on districts for select using (true);
+
+-- RLS Policies for schools  
+create policy "schools_readable_by_users" on schools for select using (true);
