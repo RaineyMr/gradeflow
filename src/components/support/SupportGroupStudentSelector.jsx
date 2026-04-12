@@ -144,7 +144,7 @@ export default function SupportGroupStudentSelector({
                 </div>
                 
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:11, fontWeight:600, color:C.text, truncate:true }}>
+                  <div style={{ fontSize:11, fontWeight:600, color:C.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                     {student.name}
                   </div>
                   <div style={{ fontSize:9, color:C.muted }}>
