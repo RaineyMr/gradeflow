@@ -289,28 +289,31 @@ export default function Gradebook() {
         </div>
 
         {/* Category weights bar */}
-        <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>Category Weights:</div>
-        <div style={{ display: 'flex', gap: 2, height: 12, borderRadius: 6, overflow: 'hidden', background: C.border, position: 'relative' }}>
+        <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>Category Weights:</div>
+        <div style={{ display: 'flex', gap: 2, marginBottom: 8 }}>
           {categories.map(cat => (
             <div key={cat.id} style={{ 
               flex: cat.weight / 100, 
-              background: cat.color, 
-              opacity: 0.8,
-              position: 'relative',
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }} title={`${cat.name}: ${cat.weight}%`}>
+              flexDirection: 'column',
+              alignItems: 'center'
+            }}>
               <span style={{ 
-                fontSize: 9, 
+                fontSize: 12, 
                 fontWeight: 700, 
-                color: '#fff', 
-                textShadow: '0 0 2px rgba(0,0,0,0.5)',
-                padding: '0 4px',
-                whiteSpace: 'nowrap'
+                color: cat.color,
+                marginBottom: 2,
+                textAlign: 'center'
               }}>
                 {cat.weight}%
               </span>
+              <div style={{ 
+                width: '100%', 
+                height: 12, 
+                borderRadius: 6, 
+                background: cat.color, 
+                opacity: 0.8 
+              }} title={`${cat.name}: ${cat.weight}%`} />
             </div>
           ))}
         </div>
