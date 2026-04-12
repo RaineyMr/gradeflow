@@ -404,6 +404,8 @@ export default function LessonCalendar({ onBack }) {
     try {
       setLoading(true)
 
+      console.log('Loading lessons for user:', currentUser?.id, currentUser?.email)
+      
       // Always fetch from Supabase for all users (including demo accounts)
       const { data, error } = await supabase
         .from('lessons')
@@ -420,6 +422,8 @@ export default function LessonCalendar({ onBack }) {
         .eq('classes.teacher_id', currentUser?.id)
         .order('lesson_date', { ascending: true })
 
+      console.log('Supabase query result:', { data: data?.length, error })
+
       if (error) throw error
 
       const mapped = (data || []).map(row => ({
@@ -434,15 +438,18 @@ export default function LessonCalendar({ onBack }) {
         classColor: row.classes?.color,
       }))
 
+      console.log('Setting lessons from Supabase:', mapped.length)
       setAllLessons(mapped)
     } catch (err) {
       console.error('Load lessons error:', err)
+      console.log('Falling back to demo data...')
       // Fallback: load all demo classes
       const allClassLessons = []
       for (let classId = 1; classId <= 4; classId++) {
         const classLessons = lessons[classId] || []
         allClassLessons.push(...classLessons)
       }
+      console.log('Setting demo lessons:', allClassLessons.length)
       setAllLessons(allClassLessons)
     } finally {
       setLoading(false)
@@ -536,7 +543,7 @@ export default function LessonCalendar({ onBack }) {
               Lesson Calendar
             </h1>
             <p style={{ fontSize: 12, color: C.muted, margin: 0, marginTop: 4 }}>
-              {allLessons.length} lessons planned
+              {allLessons.length} lessons planned (User: {currentUser?.id?.slice(0, 8)}...)
             </p>
           </div>
         </div>
