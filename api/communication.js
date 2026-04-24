@@ -6,8 +6,11 @@
 //   POST with type='sms' → Send SMS via Twilio
 //   POST with type='check-triggers' → Check & fire grade-triggered messages
 
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
-const MODEL         = 'claude-sonnet-4-20250514'
+// LLM Proxy Configuration
+const LLM_PROXY_BASE_URL = process.env.LLM_PROXY_BASE_URL || 'https://api.anthropic.com/v1/messages'
+const LLM_PROXY_API_KEY = process.env.LLM_PROXY_API_KEY || process.env.ANTHROPIC_API_KEY
+const FALLBACK_ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
+const FALLBACK_MODEL = 'claude-sonnet-4-20250514'
 
 // ─── Default trigger settings ─────────────────────────────────────────────────
 const DEFAULT_TRIGGER_SETTINGS = {
@@ -29,29 +32,65 @@ function getLetter(pct) {
   return 'F'
 }
 
-// ─── Server-side Anthropic helper ─────────────────────────────────────────────
-async function callAnthropic(messages, system, max_tokens = 300) {
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    console.warn('[communication] ANTHROPIC_API_KEY not set — skipping AI draft')
-    return null
+// ─── Server-side LLM helper with proxy support ───────────────────────────────
+async function callLLM(messages, system, max_tokens = 300) {
+  const model = 'openai/gpt-4o' // Use OpenAI for communication tasks
+  console.log(`[communication] Using model: ${model}`)
+  
+  // Try proxy first
+  if (process.env.LLM_PROXY_BASE_URL && process.env.LLM_PROXY_API_KEY) {
+    try {
+      const response = await fetch(`${process.env.LLM_PROXY_BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.LLM_PROXY_API_KEY}`,
+        },
+        body: JSON.stringify({ model, max_tokens, messages }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`[communication] Proxy success - model: ${model}`)
+        return data.choices?.[0]?.message?.content || null
+      } else {
+        const error = await response.json()
+        console.error(`[communication] Proxy error: ${response.status} - ${error?.error?.message || 'Unknown error'}`)
+        
+        // Don't fallback on 4xx errors (client errors)
+        if (response.status >= 400 && response.status < 500) {
+          return null
+        }
+      }
+    } catch (err) {
+      console.error('[communication] Proxy call failed:', err.message)
+    }
   }
-  try {
-    const res = await fetch(ANTHROPIC_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({ model: MODEL, max_tokens, system, messages }),
-    })
-    const data = await res.json()
-    return data.content?.[0]?.text || null
-  } catch (err) {
-    console.error('[communication] Anthropic call failed:', err.message)
-    return null
+
+  // Fallback to direct Anthropic if proxy fails or not configured
+  if (process.env.ANTHROPIC_API_KEY) {
+    console.log(`[communication] Falling back to direct Anthropic API`)
+    
+    try {
+      const res = await fetch(FALLBACK_ANTHROPIC_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({ model: FALLBACK_MODEL, max_tokens, system, messages }),
+      })
+      const data = await res.json()
+      return data.content?.[0]?.text || null
+    } catch (err) {
+      console.error('[communication] Fallback call failed:', err.message)
+      return null
+    }
   }
+
+  console.warn('[communication] No LLM service available — skipping AI draft')
+  return null
 }
 
 // ─── Translate message via Claude (server-side) ───────────────────────────────
@@ -60,7 +99,7 @@ async function translateMessage(text, targetLang) {
   const langNames = { es: 'Spanish', fr: 'French', zh: 'Chinese', pt: 'Portuguese', ar: 'Arabic' }
   const langName  = langNames[targetLang] || targetLang
 
-  const result = await callAnthropic(
+  const result = await callLLM(
     [{ role: 'user', content: `Translate this school communication to ${langName}. Return only the translated text, no explanation:\n\n${text}` }],
     'You translate school communications accurately and naturally.',
     500
@@ -85,7 +124,7 @@ async function generateDraft(trigger, studentName, subject, score, teacherName, 
 
   const situation = triggerDescriptions[trigger] || `update about ${studentName} in ${subject}`
 
-  return callAnthropic(
+  return callLLM(
     [{ role: 'user', content: `Write a parent notification: ${situation}.` }],
     `You write school-to-parent communications for ${teacherName}. ${lengthGuide} Return only the message text.`,
     200

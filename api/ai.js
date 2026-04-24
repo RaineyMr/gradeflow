@@ -4,8 +4,31 @@
 // The API key NEVER touches the frontend — it lives only in Vercel env vars.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
-const MODEL         = 'claude-sonnet-4-20250514'
+// LLM Proxy Configuration
+const LLM_PROXY_BASE_URL = process.env.LLM_PROXY_BASE_URL || 'https://api.anthropic.com/v1/messages'
+const LLM_PROXY_API_KEY = process.env.LLM_PROXY_API_KEY || process.env.ANTHROPIC_API_KEY
+const FALLBACK_ANTHROPIC_API = 'https://api.anthropic.com/v1/messages'
+const FALLBACK_MODEL = 'claude-sonnet-4-20250514'
+
+// Model routing function
+function chooseModel(intent) {
+  switch (intent) {
+    case 'studyTips':
+    case 'scanScore':
+    case 'extractRoster':
+    case 'extractAnswers':
+      return 'gemini/gemini-2.5-flash'
+    case 'lessonPlan':
+    case 'lessonAccommodations':
+    case 'grade':
+      return 'anthropic/claude-3-5-sonnet'
+    case 'general':
+    case 'search':
+    case 'extractAccommodations':
+    default:
+      return 'openai/gpt-4o'
+  }
+}
 
 // ── Simple rate limiting (in-memory, resets on cold start) ────────────────────
 const rateLimitMap = new Map()
@@ -27,7 +50,8 @@ function checkRateLimit(ip) {
 
 // ── Build Anthropic request body by intent ────────────────────────────────────
 function buildRequestBody(intent, body) {
-  const base = { model: MODEL }
+  const model = chooseModel(intent)
+  const base = { model }
 
   switch (intent) {
 
@@ -298,6 +322,82 @@ Return ONLY valid JSON with this exact structure:
   }
 }
 
+// ── Proxy call function with fallback ────────────────────────────────────────
+async function callLLMProxy(requestBody, intent) {
+  const model = requestBody.model
+  console.log(`[AI] Using model: ${model} for intent: ${intent}`)
+  
+  // Try proxy first
+  if (process.env.LLM_PROXY_BASE_URL && process.env.LLM_PROXY_API_KEY) {
+    try {
+      const response = await fetch(`${process.env.LLM_PROXY_BASE_URL}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.LLM_PROXY_API_KEY}`,
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`[AI] Proxy success - model: ${model}, tokens: ${data.usage?.total_tokens || 'unknown'}`)
+        return data
+      } else {
+        const error = await response.json()
+        console.error(`[AI] Proxy error: ${response.status} - ${error?.error?.message || 'Unknown error'}`)
+        
+        // Don't fallback on 4xx errors (client errors)
+        if (response.status >= 400 && response.status < 500) {
+          throw new Error(error?.error?.message || `Proxy error ${response.status}`)
+        }
+      }
+    } catch (err) {
+      console.error('[AI] Proxy call failed:', err.message)
+    }
+  }
+
+  // Fallback to direct Anthropic if proxy fails or not configured
+  if (process.env.ANTHROPIC_API_KEY) {
+    console.log(`[AI] Falling back to direct Anthropic API`)
+    
+    // Convert OpenAI format back to Anthropic format
+    const anthropicBody = {
+      model: FALLBACK_MODEL,
+      max_tokens: requestBody.max_tokens || 1000,
+      ...(requestBody.system ? { system: requestBody.system } : {}),
+      messages: requestBody.messages,
+    }
+
+    try {
+      const response = await fetch(FALLBACK_ANTHROPIC_API, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify(anthropicBody),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`[AI] Fallback success - model: ${FALLBACK_MODEL}`)
+        return data
+      } else {
+        const error = await response.json()
+        console.error(`[AI] Fallback error: ${response.status} - ${error?.error?.message || 'Unknown error'}`)
+        throw new Error(error?.error?.message || `Anthropic API error ${response.status}`)
+      }
+    } catch (err) {
+      console.error('[AI] Fallback call failed:', err.message)
+      throw new Error('Both proxy and fallback failed')
+    }
+  }
+
+  throw new Error('No LLM service available - check LLM_PROXY_BASE_URL, LLM_PROXY_API_KEY, or ANTHROPIC_API_KEY')
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', process.env.ALLOWED_ORIGIN || '*')
@@ -310,12 +410,6 @@ export default async function handler(req, res) {
   const ip = req.headers['x-forwarded-for']?.split(',')[0] || req.socket?.remoteAddress || 'unknown'
   if (!checkRateLimit(ip)) {
     return res.status(429).json({ error: 'Too many requests. Please slow down.' })
-  }
-
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) {
-    console.error('ANTHROPIC_API_KEY not set in environment variables')
-    return res.status(500).json({ error: 'Server configuration error' })
   }
 
   const { intent, ...rest } = req.body || {}
@@ -332,30 +426,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(ANTHROPIC_API, {
-      method: 'POST',
-      headers: {
-        'Content-Type':      'application/json',
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify(requestBody),
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      console.error('Anthropic API error:', data)
-      return res.status(response.status).json({
-        error: data?.error?.message || 'Anthropic API error',
-      })
-    }
-
+    const data = await callLLMProxy(requestBody, intent)
     return res.status(200).json(data)
-
   } catch (err) {
     console.error('AI proxy error:', err)
-    return res.status(500).json({ error: 'Internal server error' })
+    return res.status(500).json({ error: err.message || 'Internal server error' })
   }
 }
 
