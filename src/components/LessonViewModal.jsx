@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, BookOpen, Target, Users, Clock, FileText, Award, Home, PlusCircle, Brain } from 'lucide-react'
+import { X, BookOpen, Target, Users, Clock, FileText, Award, Home, PlusCircle, Brain, Edit, Save, XCircle } from 'lucide-react'
 
 const C = {
   bg: '#060810',
@@ -33,19 +33,48 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
   const [loading, setLoading] = useState(true)
   const [lessonData, setLessonData] = useState(null)
   const [error, setError] = useState(null)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editableLessonData, setEditableLessonData] = useState(null)
 
   useEffect(() => {
     if (!isOpen || !lesson) return
 
     // Use lesson data directly from calendar
     setLessonData(lesson)
+    setEditableLessonData(lesson)
     setLoading(false)
     setError(null)
   }, [isOpen, lesson])
 
   if (!isOpen) return null
 
-  const renderSection = (title, content, icon, color = C.blue) => {
+  const handleSave = async () => {
+    try {
+      // Here you would typically make an API call to save the lesson data
+      // For now, we'll just update the local state
+      setLessonData(editableLessonData)
+      setIsEditing(false)
+      // TODO: Add actual API call to save lesson data
+      console.log('Lesson saved:', editableLessonData)
+    } catch (error) {
+      console.error('Error saving lesson:', error)
+      setError('Failed to save lesson')
+    }
+  }
+
+  const handleCancel = () => {
+    setEditableLessonData(lessonData)
+    setIsEditing(false)
+  }
+
+  const handleFieldChange = (field, value) => {
+    setEditableLessonData(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+
+  const renderSection = (title, content, icon, color = C.blue, field = null) => {
     const Icon = icon || BookOpen
     return (
       <div style={{ 
@@ -87,7 +116,28 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
           fontSize: 13, 
           lineHeight: 1.5 
         }}>
-          {content || <span style={{ color: C.muted, fontStyle: 'italic' }}>Not specified</span>}
+          {isEditing && field ? (
+            <textarea
+              value={editableLessonData?.[field] || ''}
+              onChange={(e) => handleFieldChange(field, e.target.value)}
+              style={{
+                width: '100%',
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: 6,
+                padding: 8,
+                color: C.text,
+                fontSize: 13,
+                lineHeight: 1.5,
+                minHeight: '60px',
+                resize: 'vertical',
+                fontFamily: 'inherit'
+              }}
+              placeholder={`Enter ${title.toLowerCase()}...`}
+            />
+          ) : (
+            content || <span style={{ color: C.muted, fontStyle: 'italic' }}>Not specified</span>
+          )}
         </div>
       </div>
     )
@@ -228,29 +278,114 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
               {lessonData?.lesson_date && ` · ${new Date(lessonData.lesson_date).toLocaleDateString()}`}
             </p>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: C.muted,
-              cursor: 'pointer',
-              fontSize: 20,
-              padding: 4,
-              borderRadius: 4,
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = C.inner
-              e.currentTarget.style.color = C.text
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'none'
-              e.currentTarget.style.color = C.muted
-            }}
-          >
-            <X size={20} />
-          </button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {isEditing ? (
+              <>
+                <button
+                  onClick={handleSave}
+                  style={{
+                    background: C.green,
+                    border: 'none',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    padding: '6px 12px',
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#1ea867'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = C.green
+                  }}
+                >
+                  <Save size={14} />
+                  Save
+                </button>
+                <button
+                  onClick={handleCancel}
+                  style={{
+                    background: C.red,
+                    border: 'none',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: 14,
+                    padding: '6px 12px',
+                    borderRadius: 6,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    fontWeight: 600,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#d63939'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = C.red
+                  }}
+                >
+                  <XCircle size={14} />
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setIsEditing(true)}
+                style={{
+                  background: C.blue,
+                  border: 'none',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: 14,
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4,
+                  fontWeight: 600,
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#3366cc'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = C.blue
+                }}
+              >
+                <Edit size={14} />
+                Edit
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: C.muted,
+                cursor: 'pointer',
+                fontSize: 20,
+                padding: 4,
+                borderRadius: 4,
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = C.inner
+                e.currentTarget.style.color = C.text
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'none'
+                e.currentTarget.style.color = C.muted
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Content */}
@@ -260,7 +395,8 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
             'Lesson Overview',
             lessonData?.title || 'Untitled Lesson',
             SECTION_ICONS.header,
-            C.blue
+            C.blue,
+            'title'
           )}
 
           {/* Section 2: Standards */}
@@ -270,7 +406,8 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
               ? lessonData.standards.map(s => typeof s === 'string' ? s : s.standard_label || s).join(', ')
               : 'No standards specified',
             SECTION_ICONS.standards,
-            C.purple
+            C.purple,
+            'standards'
           )}
 
           {/* Section 3: Objectives */}
@@ -278,7 +415,8 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
             'Learning Objectives',
             lessonData?.objectives || 'No objectives specified',
             SECTION_ICONS.objectives,
-            C.green
+            C.green,
+            'objectives'
           )}
 
           {/* Section 4: Criteria for Success */}
@@ -286,15 +424,17 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
             'Success Criteria',
             lessonData?.criteria_for_success || 'No success criteria specified',
             SECTION_ICONS.cfs,
-            C.teal
+            C.teal,
+            'criteria_for_success'
           )}
 
           {/* Section 5: Cultural Notes */}
-          {lessonData?.cultural_notes && renderSection(
+          {renderSection(
             'Cultural Notes',
-            lessonData.cultural_notes,
+            lessonData?.cultural_notes || 'No cultural notes specified',
             SECTION_ICONS.cfs,
-            C.amber
+            C.amber,
+            'cultural_notes'
           )}
 
           {/* Section 6: Lesson Steps */}
@@ -335,11 +475,11 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
-                { title: 'Warm Up', content: lessonData?.warm_up },
-                { title: 'Direct Instruction', content: lessonData?.direct_instruction },
-                { title: 'Guided Practice', content: lessonData?.guided_practice },
-                { title: 'Independent Practice', content: lessonData?.independent_practice },
-                { title: 'Closure', content: lessonData?.closure }
+                { title: 'Warm Up', content: lessonData?.warm_up, field: 'warm_up' },
+                { title: 'Direct Instruction', content: lessonData?.direct_instruction, field: 'direct_instruction' },
+                { title: 'Guided Practice', content: lessonData?.guided_practice, field: 'guided_practice' },
+                { title: 'Independent Practice', content: lessonData?.independent_practice, field: 'independent_practice' },
+                { title: 'Closure', content: lessonData?.closure, field: 'closure' }
               ].map((step, index) => (
                 <div key={index} style={{ 
                   background: C.card, 
@@ -359,7 +499,28 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
                     fontSize: 13, 
                     lineHeight: 1.4 
                   }}>
-                    {step.content || <span style={{ color: C.muted, fontStyle: 'italic' }}>Not specified</span>}
+                    {isEditing ? (
+                      <textarea
+                        value={editableLessonData?.[step.field] || ''}
+                        onChange={(e) => handleFieldChange(step.field, e.target.value)}
+                        style={{
+                          width: '100%',
+                          background: C.inner,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 4,
+                          padding: 6,
+                          color: C.text,
+                          fontSize: 13,
+                          lineHeight: 1.4,
+                          minHeight: '50px',
+                          resize: 'vertical',
+                          fontFamily: 'inherit'
+                        }}
+                        placeholder={`Enter ${step.title.toLowerCase()} content...`}
+                      />
+                    ) : (
+                      step.content || <span style={{ color: C.muted, fontStyle: 'italic' }}>Not specified</span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -371,7 +532,8 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
             'Exit Ticket',
             lessonData?.exit_ticket || 'No exit ticket specified',
             SECTION_ICONS.exitTicket,
-            C.purple
+            C.purple,
+            'exit_ticket'
           )}
 
           {/* Section 8: Homework */}
@@ -379,7 +541,8 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
             'Homework Assignment',
             lessonData?.homework_assignment || 'No homework assigned',
             SECTION_ICONS.homework,
-            C.amber
+            C.amber,
+            'homework_assignment'
           )}
 
           {/* Section 9: Accommodations */}
@@ -387,31 +550,35 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
             'Accommodations',
             lessonData?.accommodations_notes || 'No accommodations specified',
             SECTION_ICONS.accommodations,
-            C.teal
+            C.teal,
+            'accommodations_notes'
           )}
 
           {/* Section 10: Enrichment */}
-          {lessonData?.enrichment_activities && renderSection(
+          {renderSection(
             'Enrichment Activities',
-            lessonData.enrichment_activities,
+            lessonData?.enrichment_activities || 'No enrichment activities specified',
             SECTION_ICONS.optionalAddOns,
-            C.purple
+            C.purple,
+            'enrichment_activities'
           )}
 
           {/* Section 11: Supplemental Links */}
-          {lessonData?.supplemental_links && renderSection(
+          {renderSection(
             'Supplemental Resources',
-            lessonData.supplemental_links,
+            lessonData?.supplemental_links || 'No supplemental resources specified',
             SECTION_ICONS.optionalAddOns,
-            C.blue
+            C.blue,
+            'supplemental_links'
           )}
 
           {/* Section 12: Teacher Reflections */}
-          {lessonData?.teacher_reflections && renderSection(
+          {renderSection(
             'Teacher Reflections',
-            lessonData.teacher_reflections,
+            lessonData?.teacher_reflections || 'No teacher reflections specified',
             SECTION_ICONS.optionalAddOns,
-            C.green
+            C.green,
+            'teacher_reflections'
           )}
         </div>
       </div>
