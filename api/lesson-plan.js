@@ -58,15 +58,45 @@ async function resolveTeacherId(teacherId) {
 }
 
 // Extract Teacher ID from Auth Header
-function extractTeacherId(authHeader) {
+async function extractTeacherId(authHeader) {
   if (!authHeader) return null
   
   // For now, simplified extraction. In production, use proper JWT parsing
   // Format: "Bearer <token>"
   const token = authHeader.replace('Bearer ', '')
   
-  // Handle demo account - use actual demo teacher ID
+  // Handle demo account - resolve to actual teacher ID
   if (token === 'demo-token') {
+    // Try to find a demo teacher in the database
+    try {
+      const { data, error } = await supabase
+        .from('teachers')
+        .select('id')
+        .eq('email', 'demo@gradeflow.com')
+        .single()
+      
+      if (data && data.id) {
+        console.log(`Resolved demo-token to teacher UUID "${data.id}"`)
+        return data.id
+      }
+      
+      // Fallback: try legacy_id approach
+      const { data: legacyData, error: legacyError } = await supabase
+        .from('teachers')
+        .select('id')
+        .eq('legacy_id', 'demo-teacher')
+        .single()
+      
+      if (legacyData && legacyData.id) {
+        console.log(`Resolved demo-token to legacy teacher UUID "${legacyData.id}"`)
+        return legacyData.id
+      }
+    } catch (err) {
+      console.warn('Could not resolve demo-token to teacher ID:', err.message)
+    }
+    
+    // Last resort: return the hardcoded demo ID as fallback
+    console.log('Using fallback demo teacher ID')
     return '73f3eb26-d45d-477f-97e3-5831b5443e82'
   }
   
@@ -94,7 +124,7 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Authorization required' })
     }
     
-    let teacherId = extractTeacherId(authHeader)
+    let teacherId = await extractTeacherId(authHeader)
     
     // Resolve legacy_id to UUID if needed
     if (teacherId && teacherId !== 'demo-teacher') {
@@ -133,6 +163,7 @@ async function handleGetLessons(req, res, teacherId) {
     console.log('API Debug - teacherId:', teacherId)
     console.log('API Debug - lessonId:', lessonId)
     console.log('API Debug - query params:', req.query)
+    console.log('API Debug - authHeader:', req.headers.authorization)
 
     // If lessonId is provided, fetch single lesson
     if (lessonId) {
@@ -171,10 +202,16 @@ async function handleGetLessons(req, res, teacherId) {
       query = query.eq('class_id', classId)
     }
     
-    // Sort by date ascending (chronological order) - no date filtering to show all lessons
+    console.log('API Debug - About to execute query with teacher_id:', teacherId)
+    console.log('API Debug - Query limit:', limit, 'offset:', offset)
+    
     const { data: lessons, error } = await query
       .order('lesson_date', { ascending: true })
       .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1)
+    
+    console.log('API Debug - Query error:', error)
+    console.log('API Debug - Raw lessons data:', lessons)
+    console.log('API Debug - Number of lessons returned:', lessons?.length || 0)
     
     if (error) throw error
     
