@@ -2086,10 +2086,11 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
                 }}
                 onClick={() => {
                   // Navigate to edit mode with this lesson
-                  const params = new URLSearchParams()
+                  const params = new URLSearchParams(window.location.search)
                   params.set('mode', 'edit')
                   params.set('lessonId', lesson.id)
-                  window.location.search = params.toString()
+                  const newUrl = window.location.pathname + '?' + params.toString()
+                  window.location.href = newUrl
                 }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
                 onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
