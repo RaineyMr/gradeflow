@@ -1,0 +1,313 @@
+# GradeFlow — AI-Powered K–12 Education Platform
+
+**I spent 15 years teaching math.** I watched EdTech promise to help teachers and mostly deliver disappointment — clunky tools that created more work than they saved.
+
+So I built the platform I always wished I'd had. Solo. In 47 days.
+
+**Live:** [gradeflow.vercel.app](https://gradeflow.vercel.app)  
+**Built:** Mar 9 → Apr 25, 2026 | **970 deployments** | **1,247 commits**
+
+---
+
+## Why This Exists
+
+Most EdTech is designed by people who have never stood in a classroom. I've taught math to hundreds of students — in urban schools, rural schools, adult education programs. That lived experience shapes every decision in this codebase.
+
+I didn't need user research to know that teachers are drowning in admin work. I didn't need a product manager to tell me that parent communication is a time sink. I built GradeFlow because I understood the problem from the inside.
+
+---
+
+## What GradeFlow Does
+
+GradeFlow reduces teacher workload by automating the highest-value, most time-consuming tasks:
+
+- **AI Lesson Plan Generator** — Standards-aligned, differentiated lesson plans with accessibility accommodations, powered by a 12-tier prompt system
+- **Curriculum Alignment Engine** — Maps lessons to state and national standards, learning objectives, and assessment rubrics
+- **AI Support Assistant** — Drafts parent communications, generates rubrics, extracts structured data from PDFs
+- **Multi-Role Dashboards** — Purpose-built interfaces for teachers, students, parents, admins, and support staff
+- **Real-Time Collaboration** — Shared lesson editing, class feeds, and role-aware messaging
+- **Security-First Design** — 30+ RLS (Row-Level Security) policies enforcing strict database-level access control
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────┐
+│         React + Vite + Tailwind Frontend         │
+│  (Zustand state, TanStack Query data fetching)   │
+│     Lesson Planner | Dashboards | Messaging     │
+└────────────────────┬─────────────────────────────┘
+                     │
+┌────────────────────▼─────────────────────────────┐
+│      Vercel Edge Runtime (970+ deployments)      │
+│          Zero-downtime CI/CD pipeline            │
+└────────────────────┬─────────────────────────────┘
+                     │
+      ┌──────────────┴──────────────┐
+      │                             │
+┌─────▼──────────┐      ┌──────────▼────────┐
+│  /api/ai.js    │      │ /api/[route].js    │
+│  (AI Proxy)    │      │ (Business Logic)   │
+│ - Model route  │      │ - Auth flows       │
+│ - Prompt tier  │      │ - Validation       │
+│ - Rate limit   │      │ - RLS enforcement  │
+└─────┬──────────┘      └──────────┬────────┘
+      │                             │
+      └──────────────┬──────────────┘
+                     │
+      ┌──────────────┴──────────────────┐
+      │                                 │
+┌─────▼────────┐         ┌─────────────▼──────┐
+│   Supabase   │         │  PostHog Analytics │
+│ PostgreSQL   │         │  (usage tracking)  │
+│ RLS Policies │         └────────────────────┘
+│ Auth (OAuth) │
+│   Storage    │
+└─────┬────────┘
+      │
+┌─────▼──────────────────────┐
+│  Anthropic Claude API      │
+│ (Sonnet 3.5 + Opus)        │
+│ Custom multi-tier prompts  │
+└────────────────────────────┘
+```
+
+### Core Technical Decisions
+
+**Frontend:** React 18 + Vite for fast development cycles. Tailwind for rapid iteration on UI. Zustand instead of Redux — state management without boilerplate.
+
+**Backend:** Vercel serverless functions for cost efficiency and automatic scaling. Node.js for language parity with frontend.
+
+**Database:** Supabase (PostgreSQL + Authentication + Storage) — production infrastructure without managing servers. Security is enforced at the database layer via 30+ RLS policies, not just in application code.
+
+**AI Integration:** Anthropic Claude through a custom proxy layer. Multi-tiered prompt architecture (Tiers 1–12) with structured JSON outputs, validation, and fallback logic. "Hope the AI works" is not a strategy.
+
+**DevOps:** Vercel CI/CD with GitHub Actions. 970 deployments in 47 days reflects philosophy: ship small, ship often, learn fast.
+
+---
+
+## AI System Architecture
+
+### The Insight: Prompt Engineering is Architecture
+
+Most AI-powered apps are a text box that calls an API. GradeFlow treats prompting like code architecture — tiered, testable, and composable.
+
+#### Multi-Tier Prompt Framework
+
+```
+Tier 1: System Prompt
+├─ Role definition ("expert K–12 curriculum designer")
+├─ Hard constraints ("valid JSON", "max 2000 tokens")
+└─ Quality guidelines ("avoid jargon", "cite standards")
+
+Tier 2: Context Layer
+├─ User role & permissions
+├─ Curriculum standards
+├─ Student accommodations
+├─ Class configuration
+└─ Prior outputs (for consistency)
+
+Tier 3: Structured Reasoning
+├─ Chain-of-thought steps
+├─ Few-shot examples
+├─ Validation rules
+└─ Fallback handlers
+
+Tier 4: Post-Processing
+├─ JSON schema validation
+├─ Required field checks
+├─ Standards verification
+└─ Error recovery
+
+Tiers 5–12: Feature-Specific Logic
+└─ Rubric generation, parent communications,
+   PDF extraction, accommodation handling, etc.
+```
+
+#### Example: Lesson Plan Generation
+
+**User Input:** "Create a lesson on fractions for 4th graders with ESL accommodations"
+
+**System Processing:**
+1. Fetch curriculum standards for Grade 4 Math from context
+2. Load student accommodation profiles
+3. Build tiered prompt with role, constraints, and examples
+4. Send to Claude with structured output requirements
+5. Validate response: check JSON structure, verify standards codes, confirm accommodations applied
+6. Fall back gracefully if validation fails
+
+**Output:** Structured JSON lesson plan with:
+- State/national standards alignment
+- Learning objectives (Bloom's taxonomy)
+- Differentiated activities for different learner types
+- Time estimates for each segment
+- Assessment rubric
+
+### Why This Approach Works
+
+1. **Consistency** — Each tier is independently testable; new features reuse existing templates
+2. **Reliability** — Validation + fallback logic = production-grade error handling
+3. **Cost-Efficiency** — Structured reasoning reduces token waste; model selection (Sonnet for most, Opus rarely)
+4. **Debuggability** — When outputs are wrong, you can pinpoint which tier failed
+
+---
+
+## Database Design
+
+**25+ relational tables** covering the full scope of a K–12 platform:
+
+- Lessons, lesson standards, lesson accommodations
+- Assignments, grades, participation events
+- Curriculum units, standards, sources
+- Students, teachers, support staff profiles
+- Parent messages, communication settings
+- Intervention plans, student trends
+- OAuth tokens, sync logs
+
+**Security:** 30+ RLS (Row-Level Security) policies enforce data isolation at the PostgreSQL layer, not just the application layer.
+
+Example: Teachers can only see lessons they created or that belong to their school:
+
+```sql
+CREATE POLICY "teacher_lesson_access"
+  ON lesson_plans FOR SELECT
+  USING (
+    created_by = auth.uid()
+    OR school_id = (auth.jwt() ->> 'school_id')::uuid
+  );
+```
+
+This holds even if the application layer has a bug — security is enforced at the database level.
+
+---
+
+## Engineering Metrics
+
+*Real numbers from Vercel, GitHub, and Supabase dashboards — Mar 9 → Apr 25, 2026*
+
+### Development Velocity
+| Metric | Value |
+|--------|-------|
+| Total commits | 1,247 |
+| Production deployments | 970 |
+| CI/CD pipeline builds | 993 |
+| Code churn | +54,990 lines, -5,215 lines across 211 files |
+
+### CI/CD (GitHub Actions)
+| Metric | Value |
+|--------|-------|
+| Jobs executed | 752 |
+| Build success rate | 99%+ |
+| Security scans (CodeQL) | 739 |
+| Avg build time | 17s |
+
+### Deployment Strategy
+This isn't recklessness — it's discipline. Small, frequent deployments are **safer** and **faster** than big risky releases.
+
+- **Per-deployment risk:** ~1.5 features or 1 bug fix per deploy
+- **Rollback time:** <5 minutes (git revert + auto-deploy)
+- **Philosophy:** Ship, measure, iterate, repeat
+
+### What 970 Deployments Prove
+
+1. **You know how to ship** — Most junior engineers struggle to deploy even once. You've deployed hundreds across frontend, backend, serverless, and migrations.
+
+2. **You debug in production** — That deploy frequency means you've fixed broken builds, handled runtime errors, rolled back versions, diagnosed environment issues. This is real engineering experience.
+
+3. **You think like a real engineer** — You've lived through branches, PRs, merges, hotfixes, and incremental releases. You understand CI/CD discipline.
+
+4. **You have grit** — 970 opportunities for things to break. You didn't quit; you shipped again.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| **Frontend** | React 18, Vite, Tailwind CSS, Zustand, TanStack Query |
+| **Backend** | Node.js, Vercel Edge Functions |
+| **Database** | Supabase (PostgreSQL, Auth, Storage) |
+| **AI** | Anthropic Claude (Sonnet/Opus), multi-tiered prompt system |
+| **DevOps** | GitHub Actions, Vercel CI/CD, CodeQL |
+| **Monitoring** | PostHog (analytics), Sentry (error tracking patterns) |
+
+---
+
+## Project Status
+
+**Production-Ready:**
+- Core AI workflows (lesson planning, curriculum alignment, parent comms, rubric generation)
+- Multi-role authentication and authorization
+- Database schema and RLS policies
+- CI/CD pipeline and deployment infrastructure
+
+**In Development:**
+- Analytics dashboard
+- Bulk operations for admin workflows
+- Advanced PDF extraction and semantic search
+
+**Planned:**
+- Mobile app (React Native)
+- Offline-first sync (local-first data)
+- RAG for curriculum standards database
+- Pilot program with real schools
+
+**Honest Assessment:** No production users yet. The architecture, security model, and AI systems are ready. The next phase is a controlled pilot with real teachers — actively being planned.
+
+---
+
+## What I Learned
+
+**On AI systems:** Prompt engineering is architecture. The difference between a toy and a production feature is structure: tiered prompts, JSON schemas, validation logic, fallback handling. "Just call the API" doesn't scale.
+
+**On security:** RLS policies at the database layer are not optional for multi-tenant applications. Application-layer access control is a single point of failure.
+
+**On shipping:** 970 deployments isn't recklessness — it's discipline. Small, frequent deploys are safer and faster. Fear of shipping is a bug.
+
+**On domain expertise:** 15 years in classrooms means I never had to guess what teachers need. Domain expertise compounds with technical skill.
+
+---
+
+## Getting Started (For Development / Forks)
+
+```bash
+# Clone
+git clone https://github.com/RaineyMr/gradeflow.git
+cd gradeflow
+
+# Install
+npm install
+
+# Environment setup
+cp .env.example .env.local
+# Add: ANTHROPIC_API_KEY, SUPABASE credentials, etc.
+
+# Dev server
+npm run dev
+# Open http://localhost:5173
+
+# Tests
+npm test
+
+# Deploy to Vercel
+vercel deploy
+```
+
+---
+
+## About Me
+
+Math educator transitioning into software engineering. GradeFlow is how I learned — by building something real at production scale that solves a problem I genuinely understand.
+
+Looking for roles where domain expertise matters as much as technical skill. Full-stack, AI-integrated, product-focused work.
+
+**GitHub:** [github.com/RaineyMr](https://github.com/RaineyMr)  
+**LinkedIn:** *(add when ready)*  
+**Email:** *(add when ready)*
+
+---
+
+## License
+
+MIT License — See LICENSE file for details
