@@ -4,6 +4,7 @@ import { useStore } from '../lib/store'
 import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
 import StandardsSelector from '../components/standards/StandardsSelector'
 import LessonViewModal from '../components/LessonViewModal'
+import { supabase } from '../lib/supabase'
 
 const C = {
   bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8',
@@ -58,15 +59,12 @@ function Section({ title, items }) {
 }
 
 // ─── Accommodations Section ───────────────────────────────────────────────────
-// Collapsible. Shows all students with accommodations.
-// Every field is editable. Teacher can add students manually.
-// lessonAdjustments are AI-generated per lesson.
 function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGrade = '' }) {
   const { studentAccommodations, updateAccommodation, addAccommodation, removeAccommodation, setLessonAdjustments } = useStore()
   const [open,         setOpen]         = useState(false)
   const [newName,      setNewName]      = useState('')
   const [generating,   setGenerating]   = useState(false)
-  const [editingNeeds, setEditingNeeds] = useState({}) // { studentName: string (comma-sep draft) }
+  const [editingNeeds, setEditingNeeds] = useState({})
 
   const students = Object.values(studentAccommodations)
 
@@ -113,7 +111,6 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
 
   return (
     <div style={{ marginBottom:16 }}>
-      {/* Collapsible header */}
       <button
         onClick={() => setOpen(o => !o)}
         style={{ width:'100%', background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'11px 14px', display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', marginBottom: open ? 8 : 0 }}>
@@ -138,7 +135,6 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
             </div>
           )}
 
-          {/* Student rows */}
           {students.map(s => {
             const typeColor = ACCOM_TYPE_COLORS[s.accommodationType] || C.amber
             const needsDraft = editingNeeds[s.name]
@@ -147,16 +143,14 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
             return (
               <div key={s.name} style={{ background:C.inner, border:'1px solid '+typeColor+'25', borderRadius:12, padding:'12px 14px', marginBottom:10 }}>
 
-                {/* Student name + type badge + remove */}
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
                   <div style={{ fontSize:13, fontWeight:700, color:C.text, flex:1 }}>{s.name}</div>
 
-                  {/* Type selector */}
                   <div style={{ display:'flex', gap:4 }}>
                     {ACCOM_TYPES.map(type => (
                       <button key={type} onClick={() => updateAccommodation(s.name, { accommodationType: type })}
                         style={{ padding:'2px 8px', borderRadius:999, border:'none', cursor:'pointer', fontSize:9, fontWeight:700,
-                          background: s.accommodationType === type ? ACCOM_TYPE_COLORS[type]+'30' : C.raised,
+                          background: s.accommodationType === type ? ACCOM_TYPE_COLORS[type]+'30' : C.inner,
                           color:      s.accommodationType === type ? ACCOM_TYPE_COLORS[type] : C.muted,
                           outline:    s.accommodationType === type ? '1px solid '+ACCOM_TYPE_COLORS[type] : 'none' }}>
                         {type}
@@ -168,7 +162,6 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
                     style={{ background:'none', border:'none', color:C.muted, cursor:'pointer', fontSize:16, padding:'0 2px', lineHeight:1 }}>×</button>
                 </div>
 
-                {/* Specific needs — tap chips to edit as comma-separated */}
                 <div style={{ marginBottom: s.lessonAdjustments?.length > 0 ? 10 : 0 }}>
                   <div style={{ fontSize:10, fontWeight:700, color:C.muted, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6 }}>Specific Needs</div>
                   {isEditingNeeds ? (
@@ -204,7 +197,6 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
                   )}
                 </div>
 
-                {/* Lesson-specific adjustments (AI-generated) */}
                 {s.lessonAdjustments?.length > 0 && (
                   <div>
                     <div style={{ fontSize:10, fontWeight:700, color:C.teal, textTransform:'uppercase', letterSpacing:'0.06em', marginBottom:6, marginTop:10 }}>
@@ -218,7 +210,6 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
                   </div>
                 )}
 
-                {/* Notes */}
                 {s.notes && (
                   <div style={{ marginTop:8, fontSize:11, color:C.muted, fontStyle:'italic' }}>{s.notes}</div>
                 )}
@@ -226,7 +217,6 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
             )
           })}
 
-          {/* Add student manually */}
           <div style={{ display:'flex', gap:8, marginBottom: count > 0 ? 12 : 4 }}>
             <input
               value={newName}
@@ -241,7 +231,6 @@ function AccommodationsSection({ lessonTopic = '', lessonSubject = '', lessonGra
             </button>
           </div>
 
-          {/* Generate lesson adjustments button */}
           {count > 0 && lessonTopic && (
             <button onClick={handleGenerateAdjustments} disabled={generating}
               style={{ width:'100%', background:generating?C.inner:C.purple+'20', color:generating?C.muted:C.purple, border:'1px solid '+(generating?C.border:C.purple+'40'), borderRadius:10, padding:'10px', fontSize:12, fontWeight:700, cursor:generating?'not-allowed':'pointer' }}>
@@ -282,382 +271,18 @@ function LessonView({ lesson, onBack, onEdit }) {
       <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{lesson.title}</h1>
       <p style={{ color:C.muted, fontSize:12, margin:'0 0 20px' }}>{lesson.duration}{lesson.pages ? ` · ${lesson.pages}` : ''}</p>
 
-      <SectionWithAI title="Objective" items={[lesson.objective]} />
-      {lesson.warmup?.length > 0     && <SectionWithAI title="Warm-Up"    items={lesson.warmup} />}
-      {lesson.activities?.length > 0 && <SectionWithAI title="Activities" items={lesson.activities} />}
-      {lesson.materials?.length > 0  && <SectionWithAI title="Materials"  items={lesson.materials} />}
-      {lesson.homework               && <SectionWithAI title="Homework"   items={[lesson.homework]} />}
+      <Section title="Objective" items={[lesson.objective]} />
+      {lesson.warmup?.length > 0     && <Section title="Warm-Up"    items={lesson.warmup} />}
+      {lesson.activities?.length > 0 && <Section title="Activities" items={lesson.activities} />}
+      {lesson.materials?.length > 0  && <Section title="Materials"  items={lesson.materials} />}
+      {lesson.homework               && <Section title="Homework"   items={[lesson.homework]} />}
 
-      {/* Accommodations section — always shown in lesson view */}
       <AccommodationsSection
         lessonTopic={lesson.title}
         lessonSubject={lesson.subject || ''}
         lessonGrade={lesson.grade || ''}
       />
     </div>
-  )
-}
-
-// ─── AI Generator ────────────────────────────────────────────────────────────
-function AIPlanGenerator({ onBack }) {
-  const { currentUser } = useStore()
-  const [selectedStandards, setSelectedStandards] = useState([])
-  const [form, setForm] = useState({ textbook:'' })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [plan, setPlan] = useState(null)
-  const [showStandards, setShowStandards] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const students = useStore(s => s.students)
-  const accommodationStudents = students.filter(s => s.accommodations && s.accommodations.length > 0)
-
-  const subject = currentUser?.subjects?.[0] || 'Math'
-  const grade = currentUser?.gradeLevel || '5'
-
-  async function handleGenerate() {
-    setLoading(true)
-    setError('')
-    setPlan(null)
-
-    try {
-      const standardsText = selectedStandards.length > 0 ? 
-        selectedStandards.map(s => s.code+': '+s.description).join('\n') : 
-        ''
-
-      const result = await generateLessonPlan({
-        subject: subject,
-        grade: grade,
-        topic: form.textbook || `${subject} lesson`,
-        duration: 50,
-        standards: standardsText
-      })
-
-      if (!result || !result.title || !Array.isArray(result.objectives)) {
-        throw new Error('Invalid response format')
-      }
-
-      setPlan(result)
-
-      if (accommodationStudents.length > 0) {
-        setGeneratingAdjust(true)
-        try {
-          const accommodations = extractAccommodations(accommodationStudents)
-          const adjPrompt = `Create specific lesson adjustments for this lesson plan: ${JSON.stringify(result)}. 
-Student accommodations: ${JSON.stringify(accommodations)}
-Subject: ${subject}, Grade: ${grade}
-${standardsText ? `Standards: ${standardsText}` : ''}
-
-Return JSON: {"adjustments": ["specific adjustments for each accommodation type"]}`
-
-          const adjResult = safeParseJSON(await callAI(adjPrompt, 'You are an expert special education consultant. Generate practical, specific instructional adjustments for individual students based on their accommodation needs and the current lesson.', 1500))
-          if (adjResult?.adjustments) {
-            // Handle adjustments
-          }
-        } catch (adjErr) {
-          console.error('Adjustment generation failed:', adjErr)
-        }
-        setGeneratingAdjust(false)
-      }
-
-    } catch (err) {
-      setError(err.message || 'Generation failed. Please try again.')
-    }
-    setLoading(false)
-  }
-
-  async function handleSavePlan() {
-    setSaving(true)
-    try {
-      const headers = { 'Content-Type': 'application/json' }
-      if (currentUser) {
-        headers.Authorization = currentUser.id?.startsWith('demo-')
-          ? 'Bearer demo-token'
-          : `Bearer ${currentUser.id}`
-      }
-      const lessonData = {
-        header: {
-          title: plan.title,
-          subject,
-          gradeLevel: grade,
-          date: new Date().toISOString().split('T')[0],
-        },
-        standards: selectedStandards,
-        objectives: plan.objectives?.join('\n') || '',
-        lessonSteps: {
-          warmUp: '',
-          directInstruction: plan.steps?.join('\n') || '',
-          guidedPractice: '',
-          independentPractice: '',
-          closure: '',
-          extension: '',
-        },
-        exitTicket: plan.assessment?.join('\n') || '',
-        homework: { assignment: plan.homework?.join('\n') || '', dueDate: null, maxPoints: null },
-        optionalAddOns: { enrichment: '', supplementalLinks: '', reflections: plan.notes || '' },
-      }
-      const response = await fetch('/api/lesson-plan', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(lessonData),
-      })
-      if (!response.ok) {
-        const err = await response.json()
-        throw new Error(err.error || 'Save failed')
-      }
-      alert('Lesson plan saved!')
-    } catch (err) {
-      console.error('Save error:', err)
-      alert(`Failed to save: ${err.message}`)
-    }
-    setSaving(false)
-  }
-
-  if (loading) return <LoadingSpinner label="Generating your lesson plan..." />
-
-  if (plan) return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
-      <div style={{ display:'flex', gap:10, marginBottom:20 }}>
-        <button onClick={() => setPlan(null)} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600 }}>Back</button>
-        <button onClick={handleSavePlan} disabled={saving} style={{ background:C.green, border:'none', borderRadius:10, padding:'8px 16px', color:'#fff', cursor: saving ? 'not-allowed' : 'pointer', fontSize:13, fontWeight:700, opacity: saving ? 0.7 : 1 }}>{saving ? 'Saving…' : 'Save Lesson Plan'}</button>
-      </div>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 4px' }}>{plan.title}</h1>
-      <p style={{ color:C.muted, fontSize:12, marginBottom:20 }}>{subject} · {grade}</p>
-
-      {selectedStandards.length > 0 && (
-        <div style={{ background: C.teal+'12', border: '1px solid '+C.teal+'30', borderRadius: 12, padding: '12px 14px', marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: C.teal, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
-            Aligned Standards ({selectedStandards.length})
-          </div>
-          {selectedStandards.map(standard => (
-            <div key={standard.code} style={{ fontSize: 12, color: C.text, marginBottom: 4 }}>
-              <span style={{ fontWeight: 700, color: C.teal }}>{standard.code}:</span> {standard.description}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {plan.objectives?.length > 0  && <SectionWithAI title="Objectives" items={plan.objectives} />}
-      {plan.materials?.length > 0   && <SectionWithAI title="Materials"   items={plan.materials} />}
-      {plan.steps?.length > 0       && <SectionWithAI title="Steps"       items={plan.steps} />}
-      {plan.assessment?.length > 0  && <SectionWithAI title="Assessment"  items={plan.assessment} />}
-      {plan.homework?.length > 0    && <SectionWithAI title="Homework"    items={plan.homework} />}
-      {plan.notes && (
-        <div style={{ background:C.inner, borderRadius:12, padding:'12px 14px', fontSize:13, color:C.muted, marginBottom:16 }}>{plan.notes}</div>
-      )}
-
-      {generatingAdjust && (
-        <div style={{ background:C.purple+'12', border:'1px solid '+C.purple+'30', borderRadius:12, padding:'10px 14px', marginBottom:12, fontSize:12, color:C.purple }}>
-          Generating lesson adjustments...
-        </div>
-      )}
-      <AccommodationsSection
-        lessonTopic={form.textbook || `${subject} lesson`}
-        lessonSubject={subject}
-        lessonGrade={grade}
-      />
-    </div>
-  )
-
-  return (
-    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:100 }}>
-      <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>Back</button>
-      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>AI Lesson Plan Generator</h1>
-
-      <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-        {/* 1. LESSON HEADER */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-          <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: '0 0 16px' }}>Lesson Header</h2>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Subject *</label>
-              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px', fontSize: 14, color: C.text }}>
-                {subject}
-              </div>
-            </div>
-            <div>
-              <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Grade Level *</label>
-              <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 12px', fontSize: 14, color: C.text }}>
-                {grade}
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Textbook (optional)</label>
-            <input
-              type="text"
-              value={form.textbook}
-              onChange={(e) => setForm(f => ({ ...f, textbook: e.target.value }))}
-              placeholder="Publisher or title..."
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${C.border}`,
-                borderRadius: 8,
-                fontSize: 14,
-                background: C.inner,
-                color: C.text,
-                outline: 'none',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* 2. STANDARDS */}
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 20, marginBottom: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: C.text, margin: 0 }}>2. Standards</h2>
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              style={{
-                background: loading ? C.muted : C.purple,
-                color: 'white',
-                border: 'none',
-                borderRadius: 6,
-                padding: '6px 12px',
-                fontSize: 11,
-                fontWeight: 600,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.6 : 1,
-                transition: 'all 0.2s',
-              }}
-            >
-              {loading ? 'Generating...' : 'Generate'}
-            </button>
-          </div>
-
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 600, color: C.muted, marginBottom: 6, display: 'block' }}>Search TEKS / Common Core Standards</label>
-            <button
-              onClick={() => {
-                console.log('Button clicked, current showStandards:', showStandards);
-                setShowStandards(!showStandards);
-                console.log('Set showStandards to:', !showStandards);
-              }}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                border: `1px solid ${C.blue}`,
-                background: C.inner,
-                color: C.blue,
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              {showStandards ? 'Hide Picker' : 'Browse Standards'}
-            </button>
-          </div>
-
-          {selectedStandards.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {selectedStandards.map((std, i) => (
-                <span
-                  key={i}
-                  style={{
-                    background: `${C.blue}20`,
-                    color: C.blue,
-                    border: `1px solid ${C.blue}40`,
-                    borderRadius: 6,
-                    padding: '4px 10px',
-                    fontSize: 12,
-                    fontWeight: 600,
-                  }}
-                >
-                  {typeof std === 'string' ? std : std.code}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {showStandards && (
-            <div style={{ marginTop: 12 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: C.text }}>
-                  Select Learning Standards
-                </div>
-                <button
-                  onClick={() => setShowStandards(false)}
-                  style={{
-                    background: 'none',
-                    border: `1px solid ${C.border}`,
-                    borderRadius: 4,
-                    padding: '4px 8px',
-                    fontSize: 10,
-                    color: C.muted,
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.background = C.inner
-                    e.target.style.color = C.text
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.background = 'none'
-                    e.target.style.color = C.muted
-                  }}
-                >
-                  Hide Picker
-                </button>
-              </div>
-              <StandardsSelector
-                subject={subject}
-                grade={grade}
-                topic={form.textbook || `${subject} lesson`}
-                maxSelections={3}
-                showRecommendations={true}
-                schoolName={currentUser?.schoolName}
-                selectedStandards={selectedStandards}
-                onChange={(standards) => {
-                  setSelectedStandards(standards)
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {error && <p style={{ color: C.red, fontSize: 12 }}>{error}</p>}
-
-        {accommodationStudents.length > 0 && (
-          <div style={{ background: `${C.purple}12`, border: `1px solid ${C.purple}30`, borderRadius: 12, padding: '10px 14px', marginBottom: 14, fontSize: 12, color: C.purple }}>
-            {accommodationStudents.length} student{accommodationStudents.length !== 1 ? 's' : ''} with accommodations adjustments will be auto-generated after the lesson plan.
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-// ─── Build from Scratch ───────────────────────────────────────────────────────
-
-// ─── AI Assist Button Component ────────────────────────────────────────────
-function AIAssistButton({ mode, sectionName, onGenerate, loading }) {
-  const label = mode === 'refine' ? '✨ Refine' : '✨ Generate'
-  const title = mode === 'refine' 
-    ? `Refine ${sectionName} using AI` 
-    : `Generate ${sectionName} from scratch`
-  
-  return (
-    <button
-      onClick={() => onGenerate(mode)}
-      disabled={loading}
-      title={title}
-      style={{
-        background: loading ? C.muted : C.purple,
-        color: 'white',
-        border: 'none',
-        borderRadius: 6,
-        padding: '6px 12px',
-        fontSize: 11,
-        fontWeight: 600,
-        cursor: loading ? 'not-allowed' : 'pointer',
-        opacity: loading ? 0.6 : 1,
-        transition: 'all 0.2s',
-      }}
-    >
-      {loading ? '⏳ Generating...' : label}
-    </button>
   )
 }
 
@@ -687,20 +312,46 @@ function SectionWithAI({ title, children, onAIRefine, onAIGenerate, isGenerating
         </h2>
         <div style={{ display: 'flex', gap: 8 }}>
           {onAIGenerate && (
-            <AIAssistButton
-              mode="generate"
-              sectionName={title}
-              onGenerate={() => onAIGenerate('generate')}
-              loading={isGenerating}
-            />
+            <button
+              onClick={() => onAIGenerate('generate')}
+              disabled={isGenerating}
+              style={{
+                background: isGenerating ? C.muted : C.purple,
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: isGenerating ? 'not-allowed' : 'pointer',
+                opacity: isGenerating ? 0.6 : 1,
+                transition: 'all 0.2s',
+              }}
+              title={`Generate ${title} from scratch`}
+            >
+              {isGenerating ? '⏳ Generating...' : '✨ Generate'}
+            </button>
           )}
           {onAIRefine && (
-            <AIAssistButton
-              mode="refine"
-              sectionName={title}
-              onGenerate={() => onAIRefine('refine')}
-              loading={isGenerating}
-            />
+            <button
+              onClick={() => onAIRefine('refine')}
+              disabled={isGenerating}
+              style={{
+                background: isGenerating ? C.muted : C.purple,
+                color: 'white',
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: isGenerating ? 'not-allowed' : 'pointer',
+                opacity: isGenerating ? 0.6 : 1,
+                transition: 'all 0.2s',
+              }}
+              title={`Refine ${title} using AI`}
+            >
+              {isGenerating ? '⏳ Refining...' : '✨ Refine'}
+            </button>
           )}
         </div>
       </div>
@@ -877,15 +528,36 @@ function StandardsSection({ data, onChange, onAIGenerate, headerData }) {
             </button>
           </div>
           <StandardsSelector
-          subject={headerData?.subject}
-          grade={headerData?.gradeLevel}
-          selectedStandards={data || []}
-          topic={headerData?.title}
-          schoolName={currentUser?.schoolName}
-          onChange={(standards) => {
-            onChange('standards', standards)
-          }}
-        />
+            subject={headerData?.subject}
+            grade={headerData?.gradeLevel}
+            selectedStandards={data || []}
+            topic={headerData?.title}
+            schoolName={currentUser?.schoolName}
+            onChange={(standards) => {
+              onChange('standards', standards)
+            }}
+          />
+        </div>
+      )}
+
+      {data?.length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {data.map((std, i) => (
+            <span
+              key={i}
+              style={{
+                background: `${C.blue}20`,
+                color: C.blue,
+                border: `1px solid ${C.blue}40`,
+                borderRadius: 6,
+                padding: '4px 10px',
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              {typeof std === 'string' ? std : std.code}
+            </span>
+          ))}
         </div>
       )}
     </SectionWithAI>
@@ -938,7 +610,7 @@ function ObjectivesSection({ data, onChange, onAIGenerate }) {
   )
 }
 
-// ─── 4. CFS (Culturally Responsive Teaching & Success Criteria) ──────────
+// ─── 4. CFS (Criteria for Success & Culturally Responsive Teaching) ──────────
 function CFSSection({ data, onChange, onAIGenerate }) {
   const [generating, setGenerating] = React.useState(false)
 
@@ -1504,7 +1176,6 @@ function BuildFromScratch({ onBack, initialLesson }) {
 
   const [saving, setSaving] = React.useState(false)
 
-  // Auto-populate lesson header with teacher's subject and grade level
   useEffect(() => {
     if (currentUser && !lessonData.header.subject && !lessonData.header.gradeLevel) {
       const gradeMatch = currentUser.gradeLevel?.match(/(\d+)/);
@@ -1513,9 +1184,8 @@ function BuildFromScratch({ onBack, initialLesson }) {
         ? currentUser.subjects[0] 
         : currentUser.subjects || '';
 
-      // Get selectedDate from URL query params (set by Lesson Calendar)
       const params = new URLSearchParams(window.location.search)
-      const selectedDate = params.get('date') // e.g., "2025-04-15"
+      const selectedDate = params.get('date')
 
       setLessonData(prev => ({
         ...prev,
@@ -1523,13 +1193,12 @@ function BuildFromScratch({ onBack, initialLesson }) {
           ...prev.header,
           subject: subject,
           gradeLevel: gradeNum || prev.header.gradeLevel,
-          date: selectedDate || prev.header.date, // ← Pre-fill with calendar date
+          date: selectedDate || prev.header.date,
         }
       }))
     }
   }, [currentUser, lessonData.header.subject, lessonData.header.gradeLevel])
 
-  // Pre-populate lesson data when initialLesson is provided
   useEffect(() => {
     if (initialLesson) {
       console.log('Pre-populating lesson data from:', initialLesson)
@@ -1573,67 +1242,8 @@ function BuildFromScratch({ onBack, initialLesson }) {
           reflections: initialLesson.teacher_reflections || prev.optionalAddOns.reflections,
         },
       }))
-    } else {
-      // If no initial lesson, generate curriculum-based content
-      const { connectedCurricula } = useStore.getState()
-      const mathCurriculum = connectedCurricula['Math'] || 'hisd-zearn'
-      
-      console.log('Using curriculum source:', mathCurriculum)
-      
-      // Generate curriculum-aligned content based on lesson title/topic
-      if (lessonData.header.title) {
-        generateCurriculumContent(lessonData.header.title, mathCurriculum)
-      }
     }
   }, [initialLesson])
-
-  // Function to generate curriculum-aligned content
-  async function generateCurriculumContent(lessonTitle, curriculumSource) {
-    console.log('Generating curriculum content for:', lessonTitle, 'from:', curriculumSource)
-    
-    // This would integrate with curriculum service to generate standards-aligned content
-    // For now, use AI generation with curriculum context
-    try {
-      const response = await fetch('/api/ai/generate-lesson', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          intent: 'lesson-plan-section',
-          section: 'full-lesson',
-          context: {
-            lessonTitle,
-            curriculum: curriculumSource,
-            gradeLevel: '5',
-            subject: 'Math'
-          }
-        })
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        console.log('Generated curriculum content:', result)
-        // Update lesson data with curriculum-generated content
-        setLessonData(prev => ({
-          ...prev,
-          objectives: result.objectives || prev.objectives,
-          lessonSteps: {
-            ...prev.lessonSteps,
-            warmUp: result.warmUp || prev.lessonSteps.warmUp,
-            directInstruction: result.directInstruction || prev.lessonSteps.directInstruction,
-            guidedPractice: result.guidedPractice || prev.lessonSteps.guidedPractice,
-            independentPractice: result.independentPractice || prev.lessonSteps.independentPractice,
-            closure: result.closure || prev.lessonSteps.closure,
-          },
-          homework: {
-            ...prev.homework,
-            assignment: result.homework || prev.homework.assignment,
-          },
-        }))
-      }
-    } catch (err) {
-      console.error('Failed to generate curriculum content:', err)
-    }
-  }
 
   function handleSectionChange(section, value) {
     setLessonData(prev => ({
@@ -1650,19 +1260,14 @@ function BuildFromScratch({ onBack, initialLesson }) {
   async function handleSave() {
     setSaving(true)
     try {
-      // Get current user from store
       const { currentUser } = useStore.getState()
       
-      // Prepare headers with authentication
       const headers = { 'Content-Type': 'application/json' }
       
-      // Add auth header if user exists
       if (currentUser) {
         if (currentUser.id?.startsWith('demo-')) {
-          // Demo account - use demo token
           headers.Authorization = 'Bearer demo-token'
         } else {
-          // Real user - use actual auth token
           headers.Authorization = `Bearer ${currentUser.id}`
         }
       }
@@ -1696,7 +1301,6 @@ function BuildFromScratch({ onBack, initialLesson }) {
       fontFamily: 'Inter, Arial, sans-serif',
       paddingBottom: 100,
     }}>
-      {/* Header */}
       <div style={{
         background: C.card,
         borderBottom: `1px solid ${C.border}`,
@@ -1751,7 +1355,6 @@ function BuildFromScratch({ onBack, initialLesson }) {
         </div>
       </div>
 
-      {/* Content */}
       <div style={{ padding: '20px', maxWidth: 1000, margin: '0 auto' }}>
         <LessonHeaderSection data={lessonData.header} onChange={handleSectionChange} />
         <StandardsSection data={lessonData.standards} onChange={handleSectionChange} onAIGenerate={handleAIAssist} headerData={lessonData.header} />
@@ -1775,7 +1378,7 @@ function UploadDoc({ onBack }) {
   const [loading,        setLoading]        = useState(false)
   const [extracting,     setExtracting]     = useState(false)
   const [done,           setDone]           = useState(false)
-  const [extractResult,  setExtractResult]  = useState(null) // { count, noAccommodationsFound }
+  const [extractResult,  setExtractResult]  = useState(null)
   const [extractError,   setExtractError]   = useState('')
 
   async function handleFile(e) {
@@ -1786,12 +1389,10 @@ function UploadDoc({ onBack }) {
     setExtractError('')
     setExtractResult(null)
 
-    // Simulate document processing
     await new Promise(r => setTimeout(r, 1500))
     setLoading(false)
     setDone(true)
 
-    // Attempt AI accommodation extraction
     setExtracting(true)
     try {
       const reader = new FileReader()
@@ -1801,12 +1402,10 @@ function UploadDoc({ onBack }) {
           const base64    = dataUrl.split(',')[1]
           const mediaType = f.type || 'image/jpeg'
 
-          // For text files (CSV, plain text), pass as textContent instead
           const isText = f.type.includes('text') || f.name.endsWith('.csv') || f.name.endsWith('.txt')
 
           let result
           if (isText) {
-            // Decode base64 back to text for CSV/txt files
             const textContent = atob(base64)
             result = await extractAccommodations({ textContent })
           } else {
@@ -1845,7 +1444,6 @@ function UploadDoc({ onBack }) {
         </div>
       </div>
 
-      {/* Accommodation extraction result */}
       {extracting && (
         <div style={{ background:`${C.purple}12`, border:`1px solid ${C.purple}30`, borderRadius:12, padding:'12px 14px', marginBottom:14, fontSize:12, color:C.purple }}>
           ✨ Scanning for student accommodations...
@@ -1911,51 +1509,101 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   const { teacher, activeScreen, activeLessonClassId } = store
   const routerNav = useNavigate()
   
-  // DEBUG: Add page indicator
-  
   const navigate = useNavigate()
   const { goBack, getTodayLesson } = useStore()
   const handleBack  = onBack || goBack
   const todayLesson = classId ? getTodayLesson(classId) : null
   
-  // Read mode and lessonId from URL query params (set by Lesson Calendar)
   const params = new URLSearchParams(window.location.search)
-  const urlMode = params.get('mode') // e.g., "ai", "build", "upload", "edit"
-  const urlLessonId = params.get('lessonId') // specific lesson to edit
+  const urlMode = params.get('mode')
+  const urlLessonId = params.get('lessonId')
   
   const startMode   = urlMode || (initialMode === 'view' && todayLesson ? 'view' : (initialMode && initialMode !== 'view' ? initialMode : 'menu'))
   const [mode, setMode] = useState(startMode)
+  const [allLessons, setAllLessons] = useState([])
   const [savedLessons, setSavedLessons] = useState([])
+  const [currentPage, setCurrentPage] = useState(0)
   const [loadingLessons, setLoadingLessons] = useState(false)
   const [showLessonViewModal, setShowLessonViewModal] = useState(false)
   const [selectedLesson, setSelectedLesson] = useState(null)
+  
+  const LESSONS_PER_PAGE = 5
+
+  // Auto-flip to current week page when allLessons loads
+  useEffect(() => {
+    if (allLessons.length === 0) return
+
+    console.log('Auto-flip effect: allLessons length:', allLessons.length)
+
+    // Get today's date at midnight
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    // Calculate start of current week (Sunday at midnight)
+    const currentDay = today.getDay()
+    const daysToSunday = currentDay === 0 ? 0 : currentDay
+
+    const currentWeekStart = new Date(today)
+    currentWeekStart.setDate(today.getDate() - daysToSunday)
+
+    // Calculate end of current week (Saturday at 23:59:59)
+    const currentWeekEnd = new Date(currentWeekStart)
+    currentWeekEnd.setDate(currentWeekStart.getDate() + 6)
+    currentWeekEnd.setHours(23, 59, 59, 999)
+
+    console.log('Week range:', currentWeekStart.toDateString(), 'to', currentWeekEnd.toDateString())
+
+    // Find the first current-week lesson index
+    let currentWeekStartIndex = -1
+
+    for (let i = 0; i < allLessons.length; i++) {
+      const lesson = allLessons[i]
+      if (!lesson || !lesson.lesson_date) continue
+
+      let lessonDate
+      try {
+        lessonDate = new Date(lesson.lesson_date)
+        lessonDate.setHours(0, 0, 0, 0)
+      } catch (err) {
+        console.warn('Could not parse lesson date:', lesson.lesson_date)
+        continue
+      }
+
+      if (lessonDate >= currentWeekStart && lessonDate <= currentWeekEnd) {
+        currentWeekStartIndex = i
+        console.log('Found current week lesson at index', i, ':', lesson.title, lessonDate.toDateString())
+        break
+      }
+    }
+
+    // Calculate target page
+    let targetPage = 0
+    if (currentWeekStartIndex >= 0) {
+      targetPage = Math.floor(currentWeekStartIndex / LESSONS_PER_PAGE)
+      console.log('Auto-flipping to page', targetPage)
+    } else {
+      console.log('No lessons found in current week, starting at page 0')
+      targetPage = 0
+    }
+
+    // Load and display the target page
+    const paginatedLessons = allLessons.slice(
+      targetPage * LESSONS_PER_PAGE,
+      (targetPage + 1) * LESSONS_PER_PAGE
+    )
+
+    setSavedLessons(paginatedLessons)
+    setCurrentPage(targetPage)
+
+    console.log('Loaded page', targetPage, 'with', paginatedLessons.length, 'lessons')
+  }, [allLessons])
 
   useEffect(() => {
     async function fetchSavedLessons() {
       setLoadingLessons(true)
       try {
-        const { currentUser } = useStore.getState()
-        const headers = { 'Content-Type': 'application/json' }
-        if (currentUser) {
-          headers.Authorization = currentUser.id?.startsWith('demo-')
-            ? 'Bearer demo-token'
-            : `Bearer ${currentUser.id}`
-        }
-        const response = await fetch('/api/lesson-plan', { method: 'GET', headers })
-        if (response.ok) {
-          const result = await response.json()
-          // Map API response to match existing plan_data structure
-          const mappedLessons = (result.lessons || []).map(lesson => ({
-            ...lesson,
-            // Use plan_data if available, otherwise fall back to individual columns
-            objective: lesson.plan_data?.objective || lesson.objectives || '',
-            warmup: lesson.plan_data?.warmup || [],
-            activities: lesson.plan_data?.activities || [],
-            materials: lesson.plan_data?.materials || [],
-            homework: lesson.plan_data?.homework || lesson.homework_assignment || ''
-          }))
-          setSavedLessons(mappedLessons)
-        }
+        console.log('Frontend Debug - Using direct Supabase query (API bypassed)')
+        await fetchDirectSupabaseLessons()
       } catch (err) {
         console.error('Error fetching saved lessons:', err)
       }
@@ -1964,16 +1612,288 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
     fetchSavedLessons()
   }, [])
 
-  // Watch for URL mode changes and update state
+  async function fetchDirectSupabaseLessons() {
+    try {
+      const { currentUser } = useStore.getState()
+      console.log('Frontend Debug - Starting direct Supabase query for user:', currentUser)
+
+      if (!currentUser) {
+        console.log('Frontend Debug - No current user found')
+        setSavedLessons([])
+        return
+      }
+      
+      if (!supabase) {
+        console.log('Frontend Debug - Supabase client not available')
+        setSavedLessons([])
+        return
+      }
+
+      console.log('Frontend Debug - Testing Supabase connection...')
+      try {
+        const { data: testData, error: testError } = await supabase
+          .from('teachers')
+          .select('count')
+          .limit(1)
+        
+        if (testError) {
+          console.log('Frontend Debug - Supabase connection test failed:', testError)
+          setSavedLessons([])
+          return
+        } else {
+          console.log('Frontend Debug - Supabase connection test passed')
+        }
+      } catch (testErr) {
+        console.log('Frontend Debug - Supabase connection test exception:', testErr)
+        setSavedLessons([])
+        return
+      }
+
+      let teacherData = null
+      let teacherError = null
+
+      console.log('Frontend Debug - Looking up teacher for legacy_id:', currentUser.id)
+      
+      const { data: legacyData, error: legacyError } = await supabase
+        .from('teachers')
+        .select('id, legacy_id, email')
+        .eq('legacy_id', currentUser.id)
+        .single()
+
+      console.log('Frontend Debug - Legacy lookup result:', { data: legacyData, error: legacyError })
+
+      if (legacyData) {
+        teacherData = legacyData
+        console.log('Frontend Debug - Found teacher via legacy_id:', legacyData.id)
+      } else {
+        console.log('Frontend Debug - Legacy lookup failed, trying direct UUID match...')
+        const { data: idData, error: idError } = await supabase
+          .from('teachers')
+          .select('id, legacy_id, email')
+          .eq('id', currentUser.id)
+          .single()
+
+        console.log('Frontend Debug - Direct UUID lookup result:', { data: idData, error: idError })
+
+        if (idData) {
+          teacherData = idData
+          console.log('Frontend Debug - Found teacher via direct UUID:', idData.id)
+        } else {
+          console.log('Frontend Debug - Both lookups failed, trying email match...')
+          const { data: emailData, error: emailError } = await supabase
+            .from('teachers')
+            .select('id, legacy_id, email')
+            .eq('email', currentUser.email)
+            .single()
+
+          console.log('Frontend Debug - Email lookup result:', { data: emailData, error: emailError })
+
+          if (emailData) {
+            teacherData = emailData
+            console.log('Frontend Debug - Found teacher via email:', emailData.id)
+          } else {
+            teacherError = idError || legacyError || emailError
+            console.log('Frontend Debug - All teacher lookups failed:', teacherError)
+          }
+        }
+      }
+
+      if (teacherError) {
+        console.error('Frontend Debug - Teacher lookup failed:', teacherError)
+        setSavedLessons([])
+        return
+      }
+
+      const teacherId = teacherData.id
+      console.log('Frontend Debug - Resolved teacher ID:', teacherId)
+
+      let data, error
+      
+      const uuidResult = await supabase
+        .from('lessons')
+        .select(`
+          id,
+          class_id,
+          lesson_date,
+          title,
+          duration,
+          subject,
+          warm_up,
+          direct_instruction,
+          guided_practice,
+          independent_practice,
+          closure,
+          exit_ticket,
+          criteria_for_success,
+          objectives,
+          cultural_notes,
+          homework_assignment,
+          accommodations_notes,
+          enrichment_activities,
+          supplemental_links,
+          teacher_reflections,
+          classes(id, subject, period, color)
+        `)
+        .eq('teacher_id', teacherId)
+        .order('lesson_date', { ascending: true })
+      
+      if (uuidResult.data && uuidResult.data.length > 0) {
+        console.log('Frontend Debug - Found lessons with UUID teacher_id')
+        data = uuidResult.data
+        error = uuidResult.error
+      } else {
+        console.log('Frontend Debug - No lessons with UUID, trying legacy ID:', currentUser.id)
+        
+        const legacyResult = await supabase
+          .from('lessons')
+          .select(`
+            id,
+            class_id,
+            lesson_date,
+            title,
+            duration,
+            subject,
+            warm_up,
+            direct_instruction,
+            guided_practice,
+            independent_practice,
+            closure,
+            exit_ticket,
+            criteria_for_success,
+            objectives,
+            cultural_notes,
+            homework_assignment,
+            accommodations_notes,
+            enrichment_activities,
+            supplemental_links,
+            teacher_reflections,
+            classes(id, subject, period, color)
+          `)
+          .eq('teacher_id', currentUser.id)
+          .order('lesson_date', { ascending: true })
+        
+        data = legacyResult.data
+        error = legacyResult.error
+        
+        if (data && data.length > 0) {
+          console.log('Frontend Debug - Found lessons with legacy teacher_id')
+        }
+      }
+
+      if (error) {
+        console.error('Frontend Debug - Direct query error:', error)
+        setSavedLessons([])
+        return
+      }
+
+      console.log('Frontend Debug - Direct Supabase query returned:', data?.length || 0, 'lessons')
+
+      const filteredLessons = (data || []).filter(lesson => {
+        const isTestLesson = 
+          lesson.title?.includes('Sample') ||
+          lesson.title?.includes('Test') ||
+          lesson.id?.startsWith('demo-') ||
+          lesson.title?.includes('Lesson Plan') ||
+          !lesson.lesson_date ||
+          lesson.lesson_date?.includes('2024')
+          
+        return !isTestLesson
+      })
+      
+      console.log('Frontend Debug - Filtered lessons:', filteredLessons.length, 'real lessons')
+
+      const sortedLessons = [...filteredLessons].sort((a, b) => {
+        try {
+          const dateA = new Date(a.lesson_date)
+          const dateB = new Date(b.lesson_date)
+          return dateA - dateB
+        } catch (err) {
+          console.warn('Frontend Debug - Error sorting lessons:', err)
+          return 0
+        }
+      })
+
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const currentDay = today.getDay()
+      const daysToSunday = currentDay === 0 ? 0 : currentDay
+      
+      const currentWeekStart = new Date(today)
+      currentWeekStart.setDate(today.getDate() - daysToSunday)
+      
+      const currentWeekEnd = new Date(currentWeekStart)
+      currentWeekEnd.setDate(currentWeekStart.getDate() + 6)
+      currentWeekEnd.setHours(23, 59, 59, 999)
+      
+      console.log('Frontend Debug - Today:', today.toDateString())
+      console.log('Frontend Debug - Current week start:', currentWeekStart.toDateString())
+      console.log('Frontend Debug - Current week end:', currentWeekEnd.toDateString())
+      
+      let currentWeekStartIndex = -1
+      
+      try {
+        sortedLessons.forEach((lesson, index) => {
+          if (lesson && lesson.lesson_date) {
+            let lessonDate
+            try {
+              lessonDate = new Date(lesson.lesson_date)
+              
+              if (isNaN(lessonDate.getTime())) {
+                console.warn('Frontend Debug - Invalid lesson date:', lesson.lesson_date)
+                return
+              }
+              
+              if (index < 3) {
+                console.log(`Frontend Debug - Lesson ${index}: ${lesson.title} on ${lessonDate.toDateString()}`)
+              }
+              
+              if (lessonDate >= currentWeekStart && lessonDate <= currentWeekEnd) {
+                if (currentWeekStartIndex === -1) {
+                  currentWeekStartIndex = index
+                  console.log('Frontend Debug - Found first current week lesson:', lesson.title)
+                }
+              }
+            } catch (dateErr) {
+              console.warn('Frontend Debug - Error parsing lesson date:', dateErr)
+            }
+          }
+        })
+      } catch (err) {
+        console.error('Frontend Debug - Error finding current week lessons:', err)
+        currentWeekStartIndex = -1
+      }
+      
+      console.log('Frontend Debug - Current week start index:', currentWeekStartIndex)
+      
+      setAllLessons(sortedLessons)
+      
+      let targetPage = 0
+      if (currentWeekStartIndex >= 0) {
+        targetPage = Math.floor(currentWeekStartIndex / LESSONS_PER_PAGE)
+      }
+      
+      const paginatedLessons = sortedLessons.slice(
+        targetPage * LESSONS_PER_PAGE, 
+        (targetPage + 1) * LESSONS_PER_PAGE
+      )
+      
+      console.log('Frontend Debug - Showing page', targetPage, 'with', paginatedLessons.length, 'lessons')
+      setSavedLessons(paginatedLessons)
+      setCurrentPage(targetPage)
+
+    } catch (error) {
+      console.error('Frontend Debug - Direct query exception:', error)
+      setSavedLessons([])
+    }
+  }
+
   useEffect(() => {
     if (urlMode && urlMode !== mode) {
       setMode(urlMode)
     }
   }, [urlMode, mode])
 
-  // Handle edit mode with specific lessonId from calendar
   if (mode === 'edit' && urlLessonId) {
-    // First try to fetch from API for real lessons
     const [apiLesson, setApiLesson] = useState(null)
     const [loadingApi, setLoadingApi] = useState(true)
     
@@ -1998,8 +1918,6 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
             if (lesson) {
               setApiLesson(lesson)
             }
-          } else {
-            console.error('Failed to fetch lesson:', response.status)
           }
         } catch (error) {
           console.error('Error fetching lesson:', error)
@@ -2012,22 +1930,16 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
     }, [urlLessonId])
     
     if (loadingApi) {
-      return (
-        <div style={{ textAlign: 'center', padding: '40px 0', color: C.muted }}>
-          <LoadingSpinner label="Loading lesson..." />
-        </div>
-      )
+      return <LoadingSpinner label="Loading lesson..." />
     }
     
     if (apiLesson) {
       return <BuildFromScratch onBack={handleBack} initialLesson={apiLesson} />
     }
     
-    // Fallback: try to find in store data
     const { lessons } = store
     let targetLesson = null
     
-    // Search through all classes for the lesson
     for (const classId in lessons) {
       const classLessons = lessons[classId] || []
       const found = classLessons.find(l => l.id === urlLessonId)
@@ -2044,7 +1956,8 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
   if (mode === 'ai')     return <AIPlanGenerator   onBack={() => setMode('menu')} />
-    if (mode === 'upload') return <UploadDoc        onBack={() => setMode('menu')} />
+  if (mode === 'upload') return <UploadDoc        onBack={() => setMode('menu')} />
+  if (mode === 'build')  return <BuildFromScratch onBack={() => setMode('menu')} />
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
@@ -2078,9 +1991,9 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
         </button>
       ))}
 
-      {/* My Saved Lessons Section */}
       <div style={{ marginTop:32, marginBottom:24 }}>
-        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>📚 My Saved Lessons</h2>
+        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 8px' }}>📚 My Saved Lessons</h2>
+        
         {loadingLessons ? (
           <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>
             Loading your saved lessons...
@@ -2107,7 +2020,6 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
                   gap:12
                 }}
                 onClick={() => {
-                  // Show lesson in view modal like calendar does
                   setSelectedLesson(lesson)
                   setShowLessonViewModal(true)
                 }}
@@ -2155,7 +2067,112 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
           </div>
         )}
 
-        {/* Lesson View Modal */}
+        {allLessons.length > LESSONS_PER_PAGE && (
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            gap: 8, 
+            marginTop: 16,
+            padding: '12px 0',
+            borderTop: `1px solid ${C.border}`
+          }}>
+            <button
+              onClick={() => {
+                const newPage = Math.max(0, currentPage - 1)
+                setCurrentPage(newPage)
+                const start = newPage * LESSONS_PER_PAGE
+                const end = start + LESSONS_PER_PAGE
+                setSavedLessons(allLessons.slice(start, end))
+              }}
+              disabled={currentPage === 0}
+              style={{
+                background: currentPage === 0 ? C.inner : C.blue,
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 12px',
+                color: currentPage === 0 ? C.muted : 'white',
+                fontSize: 12,
+                cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+                fontWeight: 600
+              }}
+            >
+              ← Prev
+            </button>
+            
+            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+              {(() => {
+                const totalPages = Math.ceil(allLessons.length / LESSONS_PER_PAGE)
+                const pages = []
+                
+                let startPage = Math.max(0, currentPage - 2)
+                let endPage = Math.min(totalPages - 1, currentPage + 2)
+                
+                if (endPage - startPage < 4) {
+                  if (startPage === 0) {
+                    endPage = Math.min(4, totalPages - 1)
+                  } else {
+                    startPage = Math.max(0, endPage - 4)
+                  }
+                }
+                
+                for (let i = startPage; i <= endPage; i++) {
+                  pages.push(
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setCurrentPage(i)
+                        const start = i * LESSONS_PER_PAGE
+                        const end = start + LESSONS_PER_PAGE
+                        setSavedLessons(allLessons.slice(start, end))
+                      }}
+                      style={{
+                        background: i === currentPage ? C.blue : C.inner,
+                        border: 'none',
+                        borderRadius: 4,
+                        padding: '4px 8px',
+                        color: i === currentPage ? 'white' : C.text,
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        fontWeight: i === currentPage ? 700 : 600,
+                        minWidth: '24px'
+                      }}
+                    >
+                      {i + 1}
+                    </button>
+                  )
+                }
+                
+                return pages
+              })()}
+            </div>
+            
+            <button
+              onClick={() => {
+                const totalPages = Math.ceil(allLessons.length / LESSONS_PER_PAGE)
+                const newPage = Math.min(totalPages - 1, currentPage + 1)
+                setCurrentPage(newPage)
+                const start = newPage * LESSONS_PER_PAGE
+                const end = start + LESSONS_PER_PAGE
+                setSavedLessons(allLessons.slice(start, end))
+              }}
+              disabled={currentPage >= Math.ceil(allLessons.length / LESSONS_PER_PAGE) - 1}
+              style={{
+                background: currentPage >= Math.ceil(allLessons.length / LESSONS_PER_PAGE) - 1 ? C.inner : C.blue,
+                border: 'none',
+                borderRadius: 6,
+                padding: '6px 12px',
+                color: currentPage >= Math.ceil(allLessons.length / LESSONS_PER_PAGE) - 1 ? C.muted : 'white',
+                fontSize: 12,
+                cursor: currentPage >= Math.ceil(allLessons.length / LESSONS_PER_PAGE) - 1 ? 'not-allowed' : 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Next →
+            </button>
+          </div>
+        )}
+
         <LessonViewModal
           lesson={selectedLesson}
           isOpen={showLessonViewModal}
@@ -2165,6 +2182,17 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
           }}
         />
       </div>
+    </div>
+  )
+}
+
+// ─── AI Plan Generator (STUB) ─────────────────────────────────────────────
+function AIPlanGenerator({ onBack }) {
+  return (
+    <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px' }}>
+      <button onClick={onBack} style={{ background:C.inner, border:'none', borderRadius:10, padding:'8px 14px', color:C.text, cursor:'pointer', fontSize:13, fontWeight:600, marginBottom:20 }}>← Back</button>
+      <h1 style={{ fontSize:18, fontWeight:800, margin:'0 0 20px' }}>AI Lesson Plan Generator</h1>
+      <p style={{ color:C.muted, fontSize:13 }}>Coming soon...</p>
     </div>
   )
 }
