@@ -2063,7 +2063,7 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
 
       {/* My Saved Lessons Section */}
       <div style={{ marginTop:32, marginBottom:24 }}>
-        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>📚 My Saved Lessons (April 2026)</h2>
+        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>📚 My Saved Lessons</h2>
         {loadingLessons ? (
           <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>
             Loading your saved lessons...
@@ -2071,7 +2071,7 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
         ) : savedLessons.length === 0 ? (
           <div style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'16px', textAlign:'center', color:C.muted, fontSize:13 }}>
             <div style={{ fontSize:24, marginBottom:8 }}>📝</div>
-            <div>No saved lesson plans for April 2026</div>
+            <div>No saved lesson plans yet</div>
             <div style={{ fontSize:11, marginTop:4 }}>Create your first lesson plan above</div>
           </div>
         ) : (

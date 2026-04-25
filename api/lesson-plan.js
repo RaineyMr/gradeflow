@@ -171,13 +171,8 @@ async function handleGetLessons(req, res, teacherId) {
       query = query.eq('class_id', classId)
     }
     
-    // Filter for April 2026 lessons and sort by date ascending (chronological order)
-    const aprilStart = '2026-04-01'
-    const aprilEnd = '2026-04-30'
-    
+    // Sort by date ascending (chronological order) - no date filtering to show all lessons
     const { data: lessons, error } = await query
-      .gte('lesson_date', aprilStart)
-      .lte('lesson_date', aprilEnd)
       .order('lesson_date', { ascending: true })
       .range(parseInt(offset), parseInt(offset) + parseInt(limit) - 1)
     
