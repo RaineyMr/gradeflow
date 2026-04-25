@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../lib/store'
 import { generateLessonPlan, extractAccommodations, generateLessonAccommodations } from '../lib/ai'
 import StandardsSelector from '../components/standards/StandardsSelector'
+import LessonViewModal from '../components/LessonViewModal'
 
 const C = {
   bg:'#060810', card:'#161923', inner:'#1e2231', text:'#eef0f8',
@@ -1532,24 +1533,44 @@ function BuildFromScratch({ onBack, initialLesson }) {
   useEffect(() => {
     if (initialLesson) {
       console.log('Pre-populating lesson data from:', initialLesson)
-      setLessonData(prev => ({
+      setLessonData(prev =>({
         ...prev,
         header: {
           ...prev.header,
           title: initialLesson.title || prev.header.title,
-          date: initialLesson.date || prev.header.date,
-          subject: 'Math', // Default to Math for demo lessons
-          gradeLevel: '5', // Default to 5th grade for demo lessons
+          date: initialLesson.lesson_date || initialLesson.date || prev.header.date,
+          subject: initialLesson.subject || prev.header.subject,
+          gradeLevel: initialLesson.grade_level || prev.header.gradeLevel,
         },
+        standards: initialLesson.standards || prev.standards,
         objectives: initialLesson.objectives || prev.objectives,
+        cfs: {
+          ...prev.cfs,
+          successCriteria: initialLesson.criteria_for_success || prev.cfs.successCriteria,
+          culturalNotes: initialLesson.cultural_notes || prev.cfs.culturalNotes,
+        },
         lessonSteps: {
           ...prev.lessonSteps,
-          warmUp: Array.isArray(initialLesson.warmup) ? initialLesson.warmup.join('\n') : initialLesson.warmup || prev.lessonSteps.warmUp,
-          directInstruction: Array.isArray(initialLesson.activities) ? initialLesson.activities.join('\n') : initialLesson.activities || prev.lessonSteps.directInstruction,
+          warmUp: initialLesson.warm_up || prev.lessonSteps.warmUp,
+          directInstruction: initialLesson.direct_instruction || prev.lessonSteps.directInstruction,
+          guidedPractice: initialLesson.guided_practice || prev.lessonSteps.guidedPractice,
+          independentPractice: initialLesson.independent_practice || prev.lessonSteps.independentPractice,
+          closure: initialLesson.closure || prev.lessonSteps.closure,
+          extension: initialLesson.enrichment_activities || prev.lessonSteps.extension,
         },
+        exitTicket: initialLesson.exit_ticket || prev.exitTicket,
         homework: {
           ...prev.homework,
-          assignment: initialLesson.homework || prev.homework.assignment,
+          assignment: initialLesson.homework_assignment || prev.homework.assignment,
+          dueDate: initialLesson.homework_due_date || prev.homework.dueDate,
+          maxPoints: initialLesson.homework_max_points || prev.homework.maxPoints,
+        },
+        accommodations: initialLesson.accommodations_notes || prev.accommodations,
+        optionalAddOns: {
+          ...prev.optionalAddOns,
+          enrichment: initialLesson.enrichment_activities || prev.optionalAddOns.enrichment,
+          supplementalLinks: initialLesson.supplemental_links || prev.optionalAddOns.supplementalLinks,
+          reflections: initialLesson.teacher_reflections || prev.optionalAddOns.reflections,
         },
       }))
     } else {
@@ -1906,6 +1927,8 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   const [mode, setMode] = useState(startMode)
   const [savedLessons, setSavedLessons] = useState([])
   const [loadingLessons, setLoadingLessons] = useState(false)
+  const [showLessonViewModal, setShowLessonViewModal] = useState(false)
+  const [selectedLesson, setSelectedLesson] = useState(null)
 
   useEffect(() => {
     async function fetchSavedLessons() {
@@ -2021,13 +2044,7 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
   if (mode === 'ai')     return <AIPlanGenerator   onBack={() => setMode('menu')} />
-  if (mode === 'build') {
-    // Check if we have an active lesson ID to load
-    const activeLessonId = store.activeLessonId
-    const activeLesson = savedLessons.find(l => l.id === activeLessonId)
-    return <BuildFromScratch onBack={() => setMode('menu')} initialLesson={activeLesson} />
-  }
-  if (mode === 'upload') return <UploadDoc        onBack={() => setMode('menu')} />
+    if (mode === 'upload') return <UploadDoc        onBack={() => setMode('menu')} />
 
   return (
     <div style={{ minHeight:'100vh', background:C.bg, color:C.text, fontFamily:'Inter, Arial, sans-serif', padding:'20px 16px', paddingBottom:80 }}>
@@ -2063,7 +2080,7 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
 
       {/* My Saved Lessons Section */}
       <div style={{ marginTop:32, marginBottom:24 }}>
-        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>📚 My Saved Lessons (April 2026)</h2>
+        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>📚 My Saved Lessons</h2>
         {loadingLessons ? (
           <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>
             Loading your saved lessons...
@@ -2071,7 +2088,7 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
         ) : savedLessons.length === 0 ? (
           <div style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'16px', textAlign:'center', color:C.muted, fontSize:13 }}>
             <div style={{ fontSize:24, marginBottom:8 }}>📝</div>
-            <div>No saved lesson plans for April 2026</div>
+            <div>No saved lesson plans yet</div>
             <div style={{ fontSize:11, marginTop:4 }}>Create your first lesson plan above</div>
           </div>
         ) : (
@@ -2090,9 +2107,9 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
                   gap:12
                 }}
                 onClick={() => {
-                  // Store the selected lesson and switch to build mode
-                  store.setActiveLessonId(lesson.id)
-                  setMode('build')
+                  // Show lesson in view modal like calendar does
+                  setSelectedLesson(lesson)
+                  setShowLessonViewModal(true)
                 }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
                 onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
@@ -2137,6 +2154,16 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
             ))}
           </div>
         )}
+
+        {/* Lesson View Modal */}
+        <LessonViewModal
+          lesson={selectedLesson}
+          isOpen={showLessonViewModal}
+          onClose={() => {
+            setShowLessonViewModal(false)
+            setSelectedLesson(null)
+          }}
+        />
       </div>
     </div>
   )
