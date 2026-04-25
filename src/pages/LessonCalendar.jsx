@@ -171,6 +171,7 @@ export default function LessonCalendar({ onBack }) {
   const [showLessonViewModal, setShowLessonViewModal] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [allLessons, setAllLessons] = useState([]);
 
   // Load lessons from Supabase
@@ -216,14 +217,18 @@ export default function LessonCalendar({ onBack }) {
 
       if (teacherError) {
         console.error('❌ Teacher lookup failed:', teacherError);
+        console.error('🔧 Database connection issue - check .env.local Supabase URL');
         setAllLessons([]);
+        setError('Database connection issue - check .env.local Supabase URL');
         setLoading(false);
         return;
       }
 
       if (!teacherData) {
         console.warn('⚠️ Teacher not found');
+        console.warn('🔧 Check if teacher exists in database');
         setAllLessons([]);
+        setError('Teacher not found - check if teacher exists in database');
         setLoading(false);
         return;
       }
@@ -267,103 +272,6 @@ export default function LessonCalendar({ onBack }) {
         setAllLessons([]);
         setLoading(false);
         return;
-      }
-
-      console.log('✅ Loaded', data.length, 'lessons');
-      console.log('📋 Raw lesson data:', data);
-
-      // If no lessons from database, fall back to demo data for testing
-      if (data.length === 0) {
-        console.log('📚 No lessons in database, using demo data for testing');
-        const demoLessons = [
-          {
-            id: 'demo-1',
-            classId: 1,
-            date: '2026-04-24',
-            title: 'Demo Lesson - Math Review',
-            duration: 45,
-            status: 'pending',
-            subject: 'Math',
-            period: '1st',
-            classColor: '#3b7ef4',
-            warm_up: 'Quick math facts review',
-            direct_instruction: 'Model problem solving',
-            guided_practice: 'Work through examples',
-            independent_practice: 'Practice problems',
-            closure: 'Exit ticket',
-            exit_ticket: '3 problems',
-            criteria_for_success: '80% accuracy',
-            objectives: 'Review multiplication',
-            hasCompleteData: true,
-          },
-          {
-            id: 'demo-2',
-            classId: 2,
-            date: '2026-04-25',
-            title: 'Demo Lesson - Reading Comprehension',
-            duration: 45,
-            status: 'pending',
-            subject: 'Reading',
-            period: '2nd',
-            classColor: '#22c97a',
-            warm_up: 'Vocabulary review',
-            direct_instruction: 'Reading strategy',
-            guided_practice: 'Group reading',
-            independent_practice: 'Silent reading',
-            closure: 'Discussion',
-            exit_ticket: 'Summary',
-            criteria_for_success: 'Complete summary',
-            objectives: 'Improve comprehension',
-            hasCompleteData: true,
-          }
-        ];
-        setAllLessons(demoLessons);
-        setLoading(false);
-        return;
-      }
-
-      // Map Supabase data with complete lesson information
-      const mappedLessons = data.map((row) => ({
-        id: row.id,
-        classId: row.class_id,
-        date: row.lesson_date,
-        title: row.title || 'Untitled',
-        duration: row.duration || 45,
-        status: 'pending',
-        subject: row.subject || row.classes?.subject,
-        period: row.classes?.period,
-        classColor: row.classes?.color || C.blue,
-        // Include all lesson data for modal
-        warm_up: row.warm_up,
-        direct_instruction: row.direct_instruction,
-        guided_practice: row.guided_practice,
-        independent_practice: row.independent_practice,
-        closure: row.closure,
-        exit_ticket: row.exit_ticket,
-        criteria_for_success: row.criteria_for_success,
-        objectives: row.objectives,
-        cultural_notes: row.cultural_notes,
-        homework_assignment: row.homework_assignment,
-        accommodations_notes: row.accommodations_notes,
-        enrichment_activities: row.enrichment_activities,
-        supplemental_links: row.supplemental_links,
-        teacher_reflections: row.teacher_reflections,
-        // Add a flag to identify lessons with complete data
-        hasCompleteData: !!(row.warm_up && row.direct_instruction && row.guided_practice && row.independent_practice && row.exit_ticket && row.objectives),
-      }));
-
-      // Sort lessons to prioritize those with complete data
-      const sortedLessons = mappedLessons.sort((a, b) => {
-        if (a.hasCompleteData && !b.hasCompleteData) return -1;
-        if (!a.hasCompleteData && b.hasCompleteData) return 1;
-        return 0;
-      });
-
-      setAllLessons(sortedLessons);
-    } catch (err) {
-      console.error('❌ Unexpected error loading lessons:', err);
-      setAllLessons([]);
-    } finally {
       setLoading(false);
     }
   };
