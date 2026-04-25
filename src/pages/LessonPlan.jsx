@@ -2021,7 +2021,12 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
   
   if (mode === 'view' && todayLesson) return <LessonView lesson={todayLesson} onBack={handleBack} onEdit={() => setMode('build')} />
   if (mode === 'ai')     return <AIPlanGenerator   onBack={() => setMode('menu')} />
-  if (mode === 'build')  return <BuildFromScratch onBack={() => setMode('menu')} />
+  if (mode === 'build') {
+    // Check if we have an active lesson ID to load
+    const activeLessonId = store.activeLessonId
+    const activeLesson = savedLessons.find(l => l.id === activeLessonId)
+    return <BuildFromScratch onBack={() => setMode('menu')} initialLesson={activeLesson} />
+  }
   if (mode === 'upload') return <UploadDoc        onBack={() => setMode('menu')} />
 
   return (
@@ -2085,12 +2090,9 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
                   gap:12
                 }}
                 onClick={() => {
-                  // Navigate to edit mode with this lesson
-                  const params = new URLSearchParams(window.location.search)
-                  params.set('mode', 'edit')
-                  params.set('lessonId', lesson.id)
-                  const newUrl = window.location.pathname + '?' + params.toString()
-                  window.location.href = newUrl
+                  // Store the selected lesson and switch to build mode
+                  store.setActiveLessonId(lesson.id)
+                  setMode('build')
                 }}
                 onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
                 onMouseLeave={e => e.currentTarget.style.borderColor = C.border}
