@@ -273,6 +273,58 @@ export default function LessonCalendar({ onBack }) {
         setLoading(false);
         return;
       }
+
+      console.log('✅ Loaded', data.length, 'lessons');
+      console.log('📋 Raw lesson data:', data);
+
+      // Debug: Show what we got from database
+      if (data.length === 0) {
+        console.log('📚 No lessons found in database for teacher:', teacherId);
+        console.log('🔍 Query details: teacher_id =', teacherId);
+        console.log('💡 Tip: Use + button to create your first lesson');
+        setAllLessons([]);
+        setLoading(false);
+        return;
+      }
+
+      // Map Supabase data with complete lesson information
+      const mappedLessons = data.map((row) => ({
+        id: row.id,
+        classId: row.class_id,
+        date: row.lesson_date,
+        title: row.title || 'Untitled',
+        duration: row.duration || 45,
+        status: 'pending',
+        subject: row.subject || row.classes?.subject,
+        period: row.classes?.period,
+        classColor: row.classes?.color || C.blue,
+        // Include all lesson data for modal
+        warm_up: row.warm_up,
+        direct_instruction: row.direct_instruction,
+        guided_practice: row.guided_practice,
+        independent_practice: row.independent_practice,
+        closure: row.closure,
+        exit_ticket: row.exit_ticket,
+        criteria_for_success: row.criteria_for_success,
+        objectives: row.objectives,
+        cultural_notes: row.cultural_notes,
+        homework_assignment: row.homework_assignment,
+        accommodations_notes: row.accommodations_notes,
+        enrichment_activities: row.enrichment_activities,
+        supplemental_links: row.supplemental_links,
+        teacher_reflections: row.teacher_reflections,
+        // Add a flag to identify lessons with complete data
+        hasCompleteData: !!(row.warm_up && row.direct_instruction && row.guided_practice && row.independent_practice && row.exit_ticket && row.objectives),
+      }));
+
+      // Sort lessons to prioritize those with complete data
+      const sortedLessons = mappedLessons.sort((a, b) => {
+        if (a.hasCompleteData && !b.hasCompleteData) return -1;
+        if (!a.hasCompleteData && b.hasCompleteData) return 1;
+        return 0;
+      });
+
+      setAllLessons(sortedLessons);
     } catch (error) {
       console.error('❌ Failed to load lessons:', error);
       setAllLessons([]);
