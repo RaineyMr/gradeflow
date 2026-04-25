@@ -272,6 +272,12 @@ export default function LessonCalendar({ onBack }) {
         setAllLessons([]);
         setLoading(false);
         return;
+      }
+    } catch (error) {
+      console.error('❌ Failed to load lessons:', error);
+      setAllLessons([]);
+      setLoading(false);
+    } finally {
       setLoading(false);
     }
   };
