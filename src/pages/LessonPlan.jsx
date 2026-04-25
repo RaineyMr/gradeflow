@@ -2030,9 +2030,35 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
       <h1 style={{ fontSize:22, fontWeight:800, margin:'0 0 4px' }}>Lesson Plans</h1>
       <p style={{ color:C.muted, fontSize:13, margin:'0 0 24px' }}>Create · Upload · AI-generate</p>
 
+      <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>Create New Lesson</h2>
+      {[
+        { id:'ai',       icon:'✨', label:'AI Generate',       desc:'Fill in subject, grade, topic → full lesson plan',  color:C.purple },
+        { id:'build',    icon:'📝', label:'Build from Scratch', desc:'Write your own lesson plan with guided sections',   color:C.blue   },
+        { id:'upload',   icon:'📤', label:'Upload Document',   desc:'PDF · Word · CSV · Image — AI scans for accommodations', color:C.teal },
+        { id:'calendar', icon:'📅', label:'Lesson Calendar',   desc:'Plan lessons by date with curriculum integration',   color:C.green },
+      ].map(item => (
+        <button key={item.id} onClick={() => {
+          if (item.id === 'calendar') {
+            navigate('/teacher/lessons/calendar')
+          } else {
+            setMode(item.id)
+          }
+        }}
+          style={{ width:'100%', background:C.card, border:`1px solid ${item.color}22`, borderRadius:16, padding:16, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14, marginBottom:12 }}
+          onMouseEnter={e => e.currentTarget.style.borderColor=item.color}
+          onMouseLeave={e => e.currentTarget.style.borderColor=`${item.color}22`}>
+          <div style={{ width:48, height:48, borderRadius:12, background:`${item.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>{item.icon}</div>
+          <div>
+            <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>{item.label}</div>
+            <div style={{ fontSize:11, color:C.muted }}>{item.desc}</div>
+          </div>
+          <span style={{ marginLeft:'auto', color:C.muted, fontSize:18 }}>{'>'}</span>
+        </button>
+      ))}
+
       {/* My Saved Lessons Section */}
-      <div style={{ marginBottom:24 }}>
-        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>📚 My Saved Lessons</h2>
+      <div style={{ marginTop:32, marginBottom:24 }}>
+        <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>📚 My Saved Lessons (April 2026)</h2>
         {loadingLessons ? (
           <div style={{ textAlign:'center', padding:'20px 0', color:C.muted, fontSize:13 }}>
             Loading your saved lessons...
@@ -2040,8 +2066,8 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
         ) : savedLessons.length === 0 ? (
           <div style={{ background:C.inner, border:`1px solid ${C.border}`, borderRadius:12, padding:'16px', textAlign:'center', color:C.muted, fontSize:13 }}>
             <div style={{ fontSize:24, marginBottom:8 }}>📝</div>
-            <div>No saved lesson plans yet</div>
-            <div style={{ fontSize:11, marginTop:4 }}>Create your first lesson plan below</div>
+            <div>No saved lesson plans for April 2026</div>
+            <div style={{ fontSize:11, marginTop:4 }}>Create your first lesson plan above</div>
           </div>
         ) : (
           <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -2109,32 +2135,6 @@ export default function LessonPlan({ initialMode, classId, onBack }) {
           </div>
         )}
       </div>
-
-      <h2 style={{ fontSize:16, fontWeight:700, color:C.text, margin:'0 0 12px' }}>Create New Lesson</h2>
-      {[
-        { id:'ai',       icon:'✨', label:'AI Generate',       desc:'Fill in subject, grade, topic → full lesson plan',  color:C.purple },
-        { id:'build',    icon:'📝', label:'Build from Scratch', desc:'Write your own lesson plan with guided sections',   color:C.blue   },
-        { id:'upload',   icon:'📤', label:'Upload Document',   desc:'PDF · Word · CSV · Image — AI scans for accommodations', color:C.teal },
-        { id:'calendar', icon:'📅', label:'Lesson Calendar',   desc:'Plan lessons by date with curriculum integration',   color:C.green },
-      ].map(item => (
-        <button key={item.id} onClick={() => {
-          if (item.id === 'calendar') {
-            navigate('/teacher/lessons/calendar')
-          } else {
-            setMode(item.id)
-          }
-        }}
-          style={{ width:'100%', background:C.card, border:`1px solid ${item.color}22`, borderRadius:16, padding:16, textAlign:'left', cursor:'pointer', display:'flex', alignItems:'center', gap:14, marginBottom:12 }}
-          onMouseEnter={e => e.currentTarget.style.borderColor=item.color}
-          onMouseLeave={e => e.currentTarget.style.borderColor=`${item.color}22`}>
-          <div style={{ width:48, height:48, borderRadius:12, background:`${item.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, flexShrink:0 }}>{item.icon}</div>
-          <div>
-            <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>{item.label}</div>
-            <div style={{ fontSize:11, color:C.muted }}>{item.desc}</div>
-          </div>
-          <span style={{ marginLeft:'auto', color:C.muted, fontSize:18 }}>{'>'}</span>
-        </button>
-      ))}
     </div>
   )
 }
