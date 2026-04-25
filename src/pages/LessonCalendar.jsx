@@ -175,6 +175,8 @@ export default function LessonCalendar({ onBack }) {
 
   // Load lessons from Supabase
   const loadLessons = async () => {
+    console.log('🔍 Starting loadLessons - currentUser:', currentUser);
+    
     if (!currentUser?.id) {
       console.log('⚠️ No current user');
       setAllLessons([]);
@@ -268,6 +270,57 @@ export default function LessonCalendar({ onBack }) {
       }
 
       console.log('✅ Loaded', data.length, 'lessons');
+      console.log('📋 Raw lesson data:', data);
+
+      // If no lessons from database, fall back to demo data for testing
+      if (data.length === 0) {
+        console.log('📚 No lessons in database, using demo data for testing');
+        const demoLessons = [
+          {
+            id: 'demo-1',
+            classId: 1,
+            date: '2026-04-24',
+            title: 'Demo Lesson - Math Review',
+            duration: 45,
+            status: 'pending',
+            subject: 'Math',
+            period: '1st',
+            classColor: '#3b7ef4',
+            warm_up: 'Quick math facts review',
+            direct_instruction: 'Model problem solving',
+            guided_practice: 'Work through examples',
+            independent_practice: 'Practice problems',
+            closure: 'Exit ticket',
+            exit_ticket: '3 problems',
+            criteria_for_success: '80% accuracy',
+            objectives: 'Review multiplication',
+            hasCompleteData: true,
+          },
+          {
+            id: 'demo-2',
+            classId: 2,
+            date: '2026-04-25',
+            title: 'Demo Lesson - Reading Comprehension',
+            duration: 45,
+            status: 'pending',
+            subject: 'Reading',
+            period: '2nd',
+            classColor: '#22c97a',
+            warm_up: 'Vocabulary review',
+            direct_instruction: 'Reading strategy',
+            guided_practice: 'Group reading',
+            independent_practice: 'Silent reading',
+            closure: 'Discussion',
+            exit_ticket: 'Summary',
+            criteria_for_success: 'Complete summary',
+            objectives: 'Improve comprehension',
+            hasCompleteData: true,
+          }
+        ];
+        setAllLessons(demoLessons);
+        setLoading(false);
+        return;
+      }
 
       // Map Supabase data with complete lesson information
       const mappedLessons = data.map((row) => ({
@@ -342,12 +395,15 @@ export default function LessonCalendar({ onBack }) {
   // Group lessons by date
   const lessonsByDate = useMemo(() => {
     const map = {};
+    console.log('🗓️ Grouping lessons by date. Total lessons:', allLessons.length);
     allLessons.forEach((lesson) => {
+      console.log('📅 Processing lesson:', lesson.date, lesson.title);
       if (!map[lesson.date]) {
         map[lesson.date] = [];
       }
       map[lesson.date].push(lesson);
     });
+    console.log('📋 Final lessonsByDate map:', map);
     return map;
   }, [allLessons]);
 
