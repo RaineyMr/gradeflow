@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, BookOpen, Target, Users, Clock, FileText, Award, Home, PlusCircle, Brain, Edit, Save, XCircle } from 'lucide-react'
+import StandardsSelector from '../components/standards/StandardsSelector'
+import { useStore } from '../lib/store'
 
 const C = {
   bg: '#060810',
@@ -30,11 +32,14 @@ const SECTION_ICONS = {
 }
 
 export default function LessonViewModal({ lesson, isOpen, onClose }) {
+  const { currentUser } = useStore()
   const [loading, setLoading] = useState(true)
   const [lessonData, setLessonData] = useState(null)
   const [error, setError] = useState(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editableLessonData, setEditableLessonData] = useState(null)
+  const [showStandardsSelector, setShowStandardsSelector] = useState(false)
+  const [selectedStandards, setSelectedStandards] = useState([])
 
   useEffect(() => {
     if (!isOpen || !lesson) return
@@ -42,6 +47,14 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
     // Use lesson data directly from calendar
     setLessonData(lesson)
     setEditableLessonData(lesson)
+    
+    // Initialize selected standards from lesson data
+    if (lesson.standards) {
+      setSelectedStandards(Array.isArray(lesson.standards) ? lesson.standards : [])
+    } else {
+      setSelectedStandards([])
+    }
+    
     setLoading(false)
     setError(null)
   }, [isOpen, lesson])
@@ -50,12 +63,19 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
 
   const handleSave = async () => {
     try {
+      // Include selected standards in the lesson data
+      const updatedLessonData = {
+        ...editableLessonData,
+        standards: selectedStandards
+      }
+      
       // Here you would typically make an API call to save the lesson data
       // For now, we'll just update the local state
-      setLessonData(editableLessonData)
+      setLessonData(updatedLessonData)
+      setEditableLessonData(updatedLessonData)
       setIsEditing(false)
       // TODO: Add actual API call to save lesson data
-      console.log('Lesson saved:', editableLessonData)
+      console.log('Lesson saved:', updatedLessonData)
     } catch (error) {
       console.error('Error saving lesson:', error)
       setError('Failed to save lesson')
@@ -400,15 +420,117 @@ export default function LessonViewModal({ lesson, isOpen, onClose }) {
           )}
 
           {/* Section 2: Standards */}
-          {renderSection(
-            'Learning Standards',
-            lessonData?.standards?.length > 0 
-              ? lessonData.standards.map(s => typeof s === 'string' ? s : s.standard_label || s).join(', ')
-              : 'No standards specified',
-            SECTION_ICONS.standards,
-            C.purple,
-            'standards'
-          )}
+          <div style={{ 
+            background: C.inner, 
+            border: `1px solid ${C.border}`, 
+            borderRadius: 12, 
+            padding: 16, 
+            marginBottom: 16 
+          }}>
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 8, 
+              marginBottom: 12 
+            }}>
+              <div style={{ 
+                width: 32, 
+                height: 32, 
+                borderRadius: 8, 
+                background: `${C.purple}22`, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: C.purple 
+              }}>
+                <Target size={16} />
+              </div>
+              <h3 style={{ 
+                fontSize: 14, 
+                fontWeight: 700, 
+                color: C.text, 
+                margin: 0 
+              }}>
+                Learning Standards
+              </h3>
+            </div>
+            
+            {isEditing ? (
+              <div>
+                {/* Selected standards display */}
+                {selectedStandards.length > 0 && (
+                  <div style={{ 
+                    marginBottom: 12, 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    gap: 6 
+                  }}>
+                    {selectedStandards.map((standard, i) => {
+                      const standardCode = typeof standard === 'string' ? standard : standard.code
+                      return (
+                        <span
+                          key={i}
+                          style={{
+                            background: `${C.purple}20`,
+                            color: C.purple,
+                            border: `1px solid ${C.purple}40`,
+                            borderRadius: 6,
+                            padding: '4px 8px',
+                            fontSize: 11,
+                            fontWeight: 600,
+                          }}
+                        >
+                          {standardCode}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+                
+                {/* Browse/Hide Standards Button */}
+                <button
+                  onClick={() => setShowStandardsSelector(!showStandardsSelector)}
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    border: `1px solid ${C.purple}`,
+                    background: C.inner,
+                    color: C.purple,
+                    borderRadius: 8,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    marginBottom: showStandardsSelector ? 12 : 0,
+                  }}
+                >
+                  {showStandardsSelector ? 'Hide Standards Selector' : 'Browse Standards'}
+                </button>
+                
+                {/* Standards Selector */}
+                {showStandardsSelector && (
+                  <StandardsSelector
+                    subject={lessonData?.subject || currentUser?.subjects?.[0] || 'Math'}
+                    grade={currentUser?.gradeLevel || '5'}
+                    topic={lessonData?.title || ''}
+                    schoolName={currentUser?.schoolName}
+                    selectedStandards={selectedStandards}
+                    onChange={setSelectedStandards}
+                  />
+                )}
+              </div>
+            ) : (
+              <div style={{ 
+                color: C.text, 
+                fontSize: 13, 
+                lineHeight: 1.5 
+              }}>
+                {lessonData?.standards?.length > 0 
+                  ? lessonData.standards.map(s => typeof s === 'string' ? s : s.standard_label || s.code || s).join(', ')
+                  : 'No standards specified'
+                }
+              </div>
+            )}
+          </div>
 
           {/* Section 3: Objectives */}
           {renderSection(
